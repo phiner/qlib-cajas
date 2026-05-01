@@ -32,6 +32,10 @@ from .qlib_adapter_contract import QlibAdapterContract, ContractIssue, validate_
 from .qlib_adapter_contract_builder import build_qlib_adapter_contract
 from .qlib_integration_packet import build_qlib_integration_packet
 from .qlib_compatibility_report import build_qlib_compatibility_report
+from .qlib_dataset_contract import QlibDatasetContract, DatasetContractIssue
+from .qlib_dataset_contract_builder import build_qlib_dataset_contract
+from .qlib_handler_input_builder import build_qlib_handler_input
+from .qlib_handler_smoke_validator import validate_qlib_handler_input
 
 __all__ = [
     "BaselineReportPack",
@@ -67,4 +71,9 @@ __all__ = [
     "build_qlib_adapter_contract",
     "build_qlib_integration_packet",
     "build_qlib_compatibility_report",
+    "QlibDatasetContract",
+    "DatasetContractIssue",
+    "build_qlib_dataset_contract",
+    "build_qlib_handler_input",
+    "validate_qlib_handler_input",
 ]
