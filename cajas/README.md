@@ -338,6 +338,25 @@ Interpretation:
 - warnings: acceptable for offline smoke, require manual review before model bridge
 - blocking issues: must be fixed before Phase 86-95
 
+## Qlib Model / Experiment Bridge Workflow
+
+This phase introduces bounded CPU-only research training from offline handler input artifacts.
+
+Run:
+
+```bash
+python cajas/scripts/build_qlib_model_training_contract.py --handler-input ... --handler-manifest ... --dataset-contract ... --handler-smoke-report ... --out ...
+python cajas/scripts/train_qlib_model_bridge_baseline.py --training-contract ... --out-dir ... --seed 42 --max-rows 5000
+python cajas/scripts/register_qlib_model_run.py --experiment-dir ... --registry ...
+python cajas/scripts/compare_qlib_model_runs.py --registry ... --out ...
+python cajas/scripts/run_qlib_model_bridge_smoke.py --out-root tmp/qlib-model-bridge-smoke
+```
+
+Boundaries:
+- research-only metrics (accuracy, macro F1, distributions)
+- no trading PnL metrics
+- no broker/live execution logic
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:

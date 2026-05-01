@@ -29,6 +29,16 @@ def main() -> int:
         "EURUSD,2025-01-01 00:15:00,1.15,1.21,1.12,1.20,110,down\n",
         encoding="utf-8",
     )
+    fixture_csv.write_text(
+        "instrument,datetime,open,high,low,close,volume,future_direction_8\n"
+        "EURUSD,2025-01-01 00:00:00,1.1,1.2,1.0,1.15,100,up\n"
+        "EURUSD,2025-01-01 00:15:00,1.15,1.21,1.12,1.20,110,down\n"
+        "EURUSD,2025-01-01 00:30:00,1.20,1.24,1.18,1.22,120,up\n"
+        "EURUSD,2025-01-01 00:45:00,1.22,1.26,1.19,1.21,130,down\n"
+        "EURUSD,2025-01-01 01:00:00,1.21,1.27,1.20,1.26,125,up\n"
+        "EURUSD,2025-01-01 01:15:00,1.26,1.28,1.23,1.24,128,down\n",
+        encoding="utf-8",
+    )
 
     py = sys.executable
     contract_path = out_root / "dataset_contract" / "qlib_dataset_contract.json"

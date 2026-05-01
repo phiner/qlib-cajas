@@ -349,6 +349,32 @@ Boundaries remain unchanged:
 - no Qlib core modifications
 - no trading execution logic
 
+## Phase 086-095 Model / Experiment Bridge
+
+This phase enables a controlled, CPU-first research model bridge:
+
+1. build model training contract from handler artifacts
+2. train bounded baseline model (research-only)
+3. write experiment artifacts and metrics
+4. register run in research registry
+5. build comparison report across runs
+
+Commands:
+
+```bash
+python cajas/scripts/build_qlib_model_training_contract.py --handler-input ... --handler-manifest ... --dataset-contract ... --handler-smoke-report ... --out ...
+python cajas/scripts/train_qlib_model_bridge_baseline.py --training-contract ... --out-dir ... --seed 42 --max-rows 5000
+python cajas/scripts/register_qlib_model_run.py --experiment-dir ... --registry ...
+python cajas/scripts/compare_qlib_model_runs.py --registry ... --out ...
+python cajas/scripts/run_qlib_model_bridge_smoke.py --out-root tmp/qlib-model-bridge-smoke
+```
+
+Safety constraints:
+- CPU only
+- deterministic seed
+- bounded rows in smoke
+- no trading/broker/live execution semantics
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model
