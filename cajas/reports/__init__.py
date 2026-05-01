@@ -36,6 +36,12 @@ from .qlib_dataset_contract import QlibDatasetContract, DatasetContractIssue
 from .qlib_dataset_contract_builder import build_qlib_dataset_contract
 from .qlib_handler_input_builder import build_qlib_handler_input
 from .qlib_handler_smoke_validator import validate_qlib_handler_input
+from .qlib_model_training_contract import QlibModelTrainingContract, ModelContractIssue
+from .qlib_model_training_contract_builder import build_qlib_model_training_contract
+from .qlib_experiment_artifacts import write_experiment_artifacts
+from .qlib_model_metrics import compute_classification_metrics
+from .qlib_model_run_registry import register_qlib_model_run, load_qlib_model_registry
+from .qlib_model_run_comparison import build_qlib_model_run_comparison
 
 __all__ = [
     "BaselineReportPack",
@@ -76,4 +82,12 @@ __all__ = [
     "build_qlib_dataset_contract",
     "build_qlib_handler_input",
     "validate_qlib_handler_input",
+    "QlibModelTrainingContract",
+    "ModelContractIssue",
+    "build_qlib_model_training_contract",
+    "write_experiment_artifacts",
+    "compute_classification_metrics",
+    "register_qlib_model_run",
+    "load_qlib_model_registry",
+    "build_qlib_model_run_comparison",
 ]
