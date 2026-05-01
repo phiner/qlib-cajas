@@ -104,3 +104,17 @@ Important: `future_direction_8` is a research label, not a trading signal.
 - Dry-run artifacts are local metadata files and do not contain raw dataset rows.
 - Prepared CSV remains a local source input for dry-run validation.
 - Artifact output under `tmp/` is local-only and should not be committed.
+
+## Phase 8 Audit Rules
+
+- Feature audit rules:
+  - leakage columns must not appear in feature inputs
+  - non-numeric features are rejected
+  - all-null feature columns are rejected
+  - constant feature columns are warnings
+- Label audit rules:
+  - expected classes are `down`, `flat`, `up`
+  - unknown classes are rejected
+  - missing labels are rejected
+  - very rare classes are warnings
+- `future_close_8` and `future_return_8` remain audit columns, not model features.

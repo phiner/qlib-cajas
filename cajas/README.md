@@ -97,6 +97,26 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 8: Baseline Readiness Gate
+
+- Added feature audit module:
+  - `cajas/audits/feature_audit.py`
+- Added label audit module:
+  - `cajas/audits/label_audit.py`
+- Added baseline readiness gate:
+  - `cajas/readiness/baseline_readiness.py`
+- Added readiness CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/check_baseline_readiness.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- JSON mode:
+  - `./.venv-qlib313/bin/python cajas/scripts/check_baseline_readiness.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --json`
+- Optional artifact output:
+  - `--write-artifacts --output-dir tmp/cajas/baseline_readiness --run-name phase8_baseline_readiness`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 7: Dry-Run Artifact Recorder
 
 - Added local dry-run artifact recorder:

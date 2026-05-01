@@ -52,6 +52,18 @@ artifacts:
     - workflow_summary.json
     - validation_report.json
 
+readiness:
+  enabled: true
+  training_must_be_disabled: true
+  expected_label_classes:
+    - down
+    - flat
+    - up
+  rare_class_min_count: 10
+  fail_on_feature_leakage: true
+  fail_on_non_numeric_features: true
+  strict_warnings: false
+
 qlib:
   core_modified: false
   provider_format_enabled: false

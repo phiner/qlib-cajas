@@ -167,3 +167,18 @@ Next step needed:
 
 - Add a controlled baseline-training preparation gate that stays disabled by default.
 - Or add a deeper DatasetH compatibility probe before enabling any training switch.
+
+## Phase 8 Update
+
+- Added baseline readiness gate for future baseline planning:
+  - config validation
+  - training-disabled enforcement
+  - feature leakage/schema audits
+  - label class/distribution audits
+- Added readiness CLI with text/JSON/strict and optional local artifact output.
+- This remains a safety and data-quality gate only. It is not model training.
+
+## Phase 9 Recommendation
+
+- Add a training-disabled LightGBM baseline plan object with explicit activation gate.
+- If explicitly approved later, add a controlled baseline training command that writes local artifacts only and does not include trading behaviors.
