@@ -111,6 +111,17 @@ Do not push to upstream. It is recommended to disable upstream push:
 git remote set-url --push upstream DISABLE
 ```
 
+## Codex Communication and Push Policy
+
+- Codex must communicate with the user in English only.
+- Codex must not use Chinese in progress updates, questions, or completion reports unless explicitly requested by the user.
+- Codex must not run `git push`.
+- Codex may create local commits after validation.
+- After local commits, Codex must stop and report:
+  - commit hashes
+  - `git status --short`
+  - exact `git push` command for the user to run manually.
+
 ### Commit Style
 
 Use small, focused commits.
