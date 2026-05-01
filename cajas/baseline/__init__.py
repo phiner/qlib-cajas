@@ -67,6 +67,7 @@ from .feature_set_comparison import run_feature_set_comparison
 from .calibration_analysis import analyze_calibration
 from .seed_stability import run_seed_stability_experiment
 from .error_slice_analysis import analyze_error_slices
+from .qlib_model_bridge_trainer import train_qlib_model_bridge_baseline
 
 __all__ = [
     "BaselineModelSpec",
@@ -134,4 +135,5 @@ __all__ = [
     "analyze_calibration",
     "run_seed_stability_experiment",
     "analyze_error_slices",
+    "train_qlib_model_bridge_baseline",
 ]
