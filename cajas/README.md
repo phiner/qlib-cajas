@@ -357,6 +357,24 @@ Boundaries:
 - no trading PnL metrics
 - no broker/live execution logic
 
+## Research Gate and No-Broker Dry Run Workflow
+
+This phase adds a conservative gate packet over model bridge artifacts and a no-broker review packet.
+
+Run:
+
+```bash
+python cajas/scripts/build_research_gate_packet.py --contract ... --experiment-dir ... --registry ... --comparison ... --out ...
+python cajas/scripts/build_no_broker_dry_run_packet.py --gate-packet ... --out ...
+python cajas/scripts/build_research_gate_summary.py --gate-packet ... --no-broker-packet ... --out ...
+python cajas/scripts/run_research_gate_smoke.py --out-root tmp/research-gate-smoke
+```
+
+Notes:
+- gate status is encoded in JSON data (`offline_review_ready`, `needs_manual_review`, `blocked`)
+- blocked status does not mean CLI crash
+- still research-only: no broker, no live data routing, no paper execution
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:

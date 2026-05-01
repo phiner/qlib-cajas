@@ -375,6 +375,30 @@ Safety constraints:
 - bounded rows in smoke
 - no trading/broker/live execution semantics
 
+## Research Gate and No-Broker Dry Run Workflow
+
+Phase 096-105 adds a conservative review gate above model bridge artifacts:
+
+1. build research gate packet from contract, experiment, registry, and comparison artifacts
+2. build no-broker dry-run packet that explicitly disables execution capabilities
+3. build markdown summary for manual review
+
+Commands:
+
+```bash
+python cajas/scripts/build_research_gate_packet.py --contract ... --experiment-dir ... --registry ... --comparison ... --out ...
+python cajas/scripts/build_no_broker_dry_run_packet.py --gate-packet ... --out ...
+python cajas/scripts/build_research_gate_summary.py --gate-packet ... --no-broker-packet ... --out ...
+python cajas/scripts/run_research_gate_smoke.py --out-root tmp/research-gate-smoke
+```
+
+Interpretation:
+- `offline_review_ready`: conservative checks passed
+- `needs_manual_review`: warnings exist and must be reviewed
+- `blocked`: required checks failed or required artifacts missing
+
+This phase remains research-only with no broker/live/paper execution integration.
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model
