@@ -9,6 +9,12 @@ from .run_registry import (
 )
 from .registry_reports import RunRegistrySummaryReport, build_run_registry_summary
 from .run_health_check import RunHealthIssue, RunHealthReport, check_run_registry_health
+from .registry_cleanup import (
+    RegistryCleanupReport,
+    RegistryRecordClassification,
+    classify_run_registry_records,
+    write_filtered_registry_copy,
+)
 
 __all__ = [
     "RunRegistryRecord",
@@ -21,4 +27,8 @@ __all__ = [
     "RunHealthIssue",
     "RunHealthReport",
     "check_run_registry_health",
+    "RegistryRecordClassification",
+    "RegistryCleanupReport",
+    "classify_run_registry_records",
+    "write_filtered_registry_copy",
 ]
