@@ -28,6 +28,10 @@ from .research_decision_schema import (
 from .research_decision_builder import build_research_decision
 from .candidate_promotion_manifest import build_candidate_promotion_manifest
 from .research_report_index import build_research_report_index
+from .qlib_adapter_contract import QlibAdapterContract, ContractIssue, validate_qlib_adapter_contract
+from .qlib_adapter_contract_builder import build_qlib_adapter_contract
+from .qlib_integration_packet import build_qlib_integration_packet
+from .qlib_compatibility_report import build_qlib_compatibility_report
 
 __all__ = [
     "BaselineReportPack",
@@ -57,4 +61,10 @@ __all__ = [
     "build_research_decision",
     "build_candidate_promotion_manifest",
     "build_research_report_index",
+    "QlibAdapterContract",
+    "ContractIssue",
+    "validate_qlib_adapter_contract",
+    "build_qlib_adapter_contract",
+    "build_qlib_integration_packet",
+    "build_qlib_compatibility_report",
 ]
