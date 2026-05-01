@@ -23,6 +23,7 @@ def main() -> int:
     p.add_argument("--no-broker-packet", required=True)
     p.add_argument("--manifest", required=True)
     p.add_argument("--reproducibility-report", required=True)
+    p.add_argument("--stable-reproducibility-report", default=None)
     p.add_argument("--ci-plan", required=True)
     p.add_argument("--out", required=True)
     args = p.parse_args()
@@ -32,6 +33,7 @@ def main() -> int:
         no_broker_packet=_load(args.no_broker_packet),
         manifest=_load(args.manifest),
         reproducibility_report=_load(args.reproducibility_report),
+        stable_reproducibility_report=None if args.stable_reproducibility_report is None else _load(args.stable_reproducibility_report),
         ci_plan=_load(args.ci_plan),
     )
     out = Path(args.out).expanduser().resolve()

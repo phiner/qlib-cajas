@@ -10,7 +10,13 @@ def render_final_readiness_summary(*, packet: dict) -> str:
         f"- final_status: `{packet.get('final_status')}`",
         f"- gate_status: `{packet.get('gate_summary', {}).get('final_status')}`",
         f"- reproducibility_status: `{packet.get('reproducibility_summary', {}).get('final_status')}`",
+        f"- stable_reproducibility_status: `{packet.get('stable_reproducibility_summary', {}).get('final_status')}`",
         f"- ci_tiers: `{packet.get('ci_plan_summary', {}).get('tier_count')}`",
+        "",
+        "## Stable Reproducibility",
+        f"- normalized_artifact_count: `{packet.get('stable_reproducibility_summary', {}).get('normalized_artifact_count')}`",
+        f"- true_mismatch_count: `{packet.get('stable_reproducibility_summary', {}).get('true_mismatch_count')}`",
+        f"- expected_variability_count: `{packet.get('stable_reproducibility_summary', {}).get('expected_variability_count')}`",
         "",
         "## Missing Artifacts",
     ]
