@@ -269,6 +269,17 @@ This phase still excludes:
 - All generated outputs are local artifacts under `tmp/` and remain classification-only.
 - No trading/backtest/profit analysis is included.
 
+## Phase 27-30: Sanitation, Export, and Health Checks
+
+- Added numeric feature-value audit and model-input sanitation in baseline training.
+- Added hardened multi-model status artifacts (`completed/skipped/failed`) and summary CSV outputs.
+- Added markdown export for baseline report JSON:
+  - `cajas/scripts/export_baseline_reports.py`
+- Added run registry health checks:
+  - `cajas/scripts/check_run_health.py`
+- Source prepared CSV remains unchanged; sanitation applies only to model input matrices.
+- No trading/backtest/profit analysis is included.
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

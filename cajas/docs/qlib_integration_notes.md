@@ -323,6 +323,19 @@ Next step needed:
 - Add report-pack markdown export for human-friendly review.
 - Optionally add dashboard-ready JSON export for baseline comparison views.
 
+## Phase 27-30 Update
+
+- Addressed sklearn robustness by adding numeric feature-value auditing and model-input sanitation.
+- Sanitization is applied only to training/prediction matrices and does not mutate source prepared CSV files.
+- Added robust multi-model status artifacts with per-model completion/failure tracking.
+- Added markdown report export and run health checks over registry/artifact consistency.
+- All outputs remain classification-only and outside trading/backtest/profit scope.
+
+## Phase 31 Recommendation
+
+- Add confidence-focused classification calibration analysis and export.
+- Optionally add dashboard data export for prediction-review and health status timelines.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:

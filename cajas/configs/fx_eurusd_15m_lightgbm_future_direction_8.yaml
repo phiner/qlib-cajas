@@ -356,3 +356,51 @@ run_registry_summary:
   output:
     default_output_dir: tmp/cajas/registry_reports
     default_run_name: phase26_registry_summary
+
+numeric_sanitation:
+  enabled: true
+  phase: phase27
+  clip_abs_value: 1000000.0
+  fill_value: 0.0
+  large_value_threshold: 1000000000000.0
+  artifacts:
+    generated_files:
+      - feature_value_audit_train.json
+      - feature_value_audit_valid.json
+      - feature_value_audit_test.json
+      - numeric_sanitization_train.json
+      - numeric_sanitization_valid.json
+      - numeric_sanitization_test.json
+
+robust_multi_model_baseline:
+  enabled: true
+  phase: phase28
+  continue_on_model_failure: true
+  require_at_least_one_completed_model: true
+  status_artifacts:
+    - multi_model_baseline_report.json
+    - multi_model_metrics.csv
+    - model_run_status.csv
+
+baseline_report_exports:
+  enabled: true
+  phase: phase29
+  output:
+    default_output_dir: tmp/cajas/exported_reports
+    default_run_name: phase29_exported_reports
+  artifacts:
+    generated_files:
+      - baseline_report.md
+      - export_manifest.json
+
+run_health_check:
+  enabled: true
+  phase: phase30
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/run_health
+    default_run_name: phase30_run_health
+  artifacts:
+    generated_files:
+      - run_health_report.json
+      - run_health_issues.csv

@@ -217,3 +217,9 @@ Notes:
 - Baseline report packs, multi-model comparisons, feature summaries, and registry summaries are derived local artifacts under `tmp/`.
 - These files should not be committed.
 - Reported metrics remain classification-only and do not include trading/performance outputs.
+
+## Phase 27-30 Sanitation and Health Artifacts
+
+- Numeric sanitation reports are model-input diagnostics only and do not modify source prepared CSV.
+- Markdown exports and run-health outputs are derived local artifacts under `tmp/`.
+- These outputs should not be committed.
