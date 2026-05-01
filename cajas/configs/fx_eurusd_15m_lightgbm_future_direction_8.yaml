@@ -1,0 +1,628 @@
+name: fx_eurusd_15m_lightgbm_future_direction_8
+description: >
+  Draft market recognition research config for EURUSD 15m future_direction_8.
+  This config is training-disabled in Phase 12.
+
+research_scope:
+  market_recognition_only: true
+  trading_signal: false
+  live_trading: false
+  backtest_profit_analysis: false
+
+data_adapter:
+  csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
+  label_col: future_direction_8
+  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  dataset_class: cajas.datasets.prepared_dataset.PreparedDataset
+  leakage_columns:
+    - future_close_8
+    - future_return_8
+  segments:
+    train:
+      start: "2025-01-01"
+      end: "2025-08-31"
+    valid:
+      start: "2025-09-01"
+      end: "2025-10-31"
+    test:
+      start: "2025-11-01"
+      end: "2025-12-31"
+
+workflow_bridge:
+  class: cajas.workflows.prepared_workflow.PreparedWorkflow
+  config_class: cajas.workflows.prepared_workflow.PreparedWorkflowConfig
+  dry_run_only: true
+
+model:
+  draft_class: LightGBM
+  enabled: false
+  note: "Model training is disabled in Phase 9."
+
+training:
+  enabled: false
+  reason: "Qlib workflow training remains disabled; local baseline training is controlled separately."
+
+artifacts:
+  enabled: false
+  default_output_dir: tmp/cajas/experiment_dry_runs
+  default_run_name: phase7_eurusd_15m_dry_run
+  generated_files:
+    - run_manifest.json
+    - config_snapshot.json
+    - workflow_summary.json
+    - validation_report.json
+
+readiness:
+  enabled: true
+  training_must_be_disabled: true
+  expected_label_classes:
+    - down
+    - flat
+    - up
+  rare_class_min_count: 10
+  fail_on_feature_leakage: true
+  fail_on_non_numeric_features: true
+  strict_warnings: false
+
+qlib:
+  core_modified: false
+  provider_format_enabled: false
+  note: "No Qlib core provider integration is performed in Phase 7."
+
+baseline_plan:
+  enabled: true
+  model_family: LightGBM
+  task_type: multiclass_classification
+  target_label: future_direction_8
+  training_allowed: false
+  training_executed: false
+  required_optional_dependencies:
+    - sklearn
+    - lightgbm
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_plans
+    default_run_name: phase9_baseline_plan
+    generated_files:
+      - baseline_plan_report.json
+
+baseline_scaffold:
+  enabled: true
+  training_allowed: false
+  training_executed: false
+  model_family: LightGBM
+  task_type: multiclass_classification
+  label_encoding_plan:
+    down: 0
+    flat: 1
+    up: 2
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_scaffolds
+    default_run_name: phase10_baseline_scaffold
+    generated_files:
+      - baseline_scaffold_report.json
+
+baseline_preflight:
+  enabled: true
+  phase: phase11
+  phase_policy_allows_training: false
+  can_train_now: false
+  training_executed: false
+  path_hygiene:
+    forbidden_patterns:
+      - caixas/
+      - taskDocs/
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_preflight
+    default_run_name: phase11_baseline_preflight
+    generated_files:
+      - baseline_preflight_report.json
+      - baseline_execution_contract.json
+
+baseline_disabled_run:
+  enabled: true
+  phase: phase12
+  phase_policy_allows_training: false
+  can_train: false
+  training_executed: false
+  model_built: false
+  predictions_generated: false
+  evaluation_executed: false
+  serialized_model: false
+  note: "Future training command skeleton only; blocked before model construction."
+  produces_trading_signal: false
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_disabled_runs
+    default_run_name: phase12_baseline_disabled
+    generated_files:
+      - baseline_blocked_run_report.json
+      - baseline_run_contract.json
+
+future_training_skeleton:
+  enabled: true
+  phase: phase13
+  user_training_approval: false
+  phase_policy_allows_training: false
+  can_enable_training: false
+  can_train_now: false
+  training_executed: false
+  model_built: false
+  fit_executed: false
+  prediction_executed: false
+  evaluation_executed: false
+  serialization_executed: false
+  note: "Future training skeleton only; Phase 13 intentionally blocks before model construction."
+  cli_enable_training_flag_exposed: false
+  produces_trading_signal: false
+  artifacts:
+    default_output_dir: tmp/cajas/future_training_skeletons
+    default_run_name: phase13_future_training_skeleton
+    generated_files:
+      - future_training_skeleton_report.json
+      - training_enable_contract.json
+
+training_input_preview:
+  enabled: true
+  phase: phase14
+  label_encoding:
+    future_direction_8:
+      down: 0
+      flat: 1
+      up: 2
+  metrics:
+    task_type: multiclass_classification
+    primary_metric: macro_f1
+    enabled_metrics:
+      - accuracy
+      - macro_f1
+      - weighted_f1
+      - per_class_precision
+      - per_class_recall
+      - confusion_matrix
+      - class_distribution
+    forbidden_metrics:
+      - profit
+      - return
+      - sharpe
+      - drawdown
+  artifacts:
+    default_output_dir: tmp/cajas/training_input_previews
+    default_run_name: phase14_training_inputs_preview
+    generated_files:
+      - training_input_materialization_report.json
+      - label_encoding_preview.json
+      - metric_plan.json
+
+qlib_compatibility:
+  enabled: true
+  phase: phase15
+  require_qlib_import: false
+  initialize_qlib: false
+  modify_qlib_core: false
+  dataset_h_shape_probe:
+    enabled: true
+    compatible_shape_required: true
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_compat
+    default_run_name: phase15_qlib_dataset_compat
+    generated_files:
+      - qlib_dataset_compat_report.json
+      - qlib_import_status.json
+
+qlib_dataset_h_adapter:
+  enabled: true
+  phase: phase16
+  initialize_qlib: false
+  modify_qlib_core: false
+  require_qlib_import: false
+  require_true_subclass: false
+  adapter_class: cajas.qlib_compat.prepared_dataset_h_adapter.PreparedQlibDatasetHAdapter
+  compare_against:
+    - cajas.datasets.prepared_dataset.PreparedDataset
+    - cajas.qlib_compat.prepared_dataset_h_like.PreparedDatasetHLike
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_adapter
+    default_run_name: phase16_qlib_dataset_h_adapter
+    generated_files:
+      - qlib_dataset_h_adapter_report.json
+      - qlib_dataset_h_adapter_description.json
+
+qlib_workflow_config_probe:
+  enabled: true
+  phase: phase17
+  initialize_qlib: false
+  execute_qlib_workflow: false
+  training_enabled: false
+  training_executed: false
+  dataset_adapter_class: cajas.qlib_compat.prepared_dataset_h_adapter.PreparedQlibDatasetHAdapter
+  model_family: LightGBM
+  model_enabled: false
+  model_constructed: false
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_workflow_config
+    default_run_name: phase17_qlib_workflow_config
+    generated_files:
+      - qlib_workflow_config_probe_report.json
+      - qlib_workflow_config_draft.json
+
+qlib_workflow_dry_run_loader:
+  enabled: true
+  phase: phase18
+  initialize_qlib: false
+  execute_qlib_workflow: false
+  training_enabled: false
+  training_executed: false
+  model_enabled: false
+  model_constructed: false
+  resolve_classes: true
+  instantiate_classes: false
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_workflow_dry_run_loader
+    default_run_name: phase18_qlib_workflow_dry_run_loader
+    generated_files:
+      - qlib_workflow_dry_run_loader_report.json
+      - class_resolution_report.json
+      - qlib_workflow_config_draft.json
+
+local_baseline_training:
+  enabled: true
+  phase: phase20
+  scope: market_recognition_classification_only
+  model_family: LightGBM
+  fallback_model_family: sklearn_random_forest
+  random_state: 42
+  output:
+    default_output_dir: tmp/cajas/baseline_runs
+    default_run_name: phase20_local_baseline
+    registry_path: tmp/cajas/run_registry/runs.jsonl
+  artifacts:
+    generated_files:
+      - run_manifest.json
+      - training_config.json
+      - feature_columns.json
+      - label_encoding.json
+      - label_distribution.json
+      - metrics_valid.json
+      - metrics_test.json
+      - confusion_matrix_valid.csv
+      - confusion_matrix_test.csv
+      - predictions_valid.csv
+      - predictions_test.csv
+      - model_metadata.json
+      - model.joblib
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+    - order_recommendations
+
+baseline_artifact_review:
+  enabled: true
+  phase: phase21
+  default_run_dir: tmp/cajas/baseline_runs/phase20_local_baseline
+  low_confidence_threshold: 0.45
+  high_confidence_error_threshold: 0.70
+  output:
+    default_output_dir: tmp/cajas/baseline_reviews
+    default_run_name: phase21_baseline_review
+  artifacts:
+    generated_files:
+      - baseline_artifact_inspection_report.json
+      - valid_prediction_review_report.json
+      - test_prediction_review_report.json
+      - valid_low_confidence_samples.csv
+      - valid_high_confidence_errors.csv
+      - valid_error_summary_by_class.csv
+      - test_low_confidence_samples.csv
+      - test_high_confidence_errors.csv
+      - test_error_summary_by_class.csv
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+    - order_recommendations
+
+baseline_report_pack:
+  enabled: true
+  phase: phase23
+  default_run_dir: tmp/cajas/baseline_runs/phase20_local_baseline
+  output:
+    default_output_dir: tmp/cajas/baseline_report_packs
+    default_run_name: phase23_baseline_report_pack
+
+multi_model_baseline:
+  enabled: true
+  phase: phase24
+  model_families:
+    - LightGBM
+    - RandomForest
+    - HistGradientBoosting
+  primary_metric: test_macro_f1
+  output:
+    default_output_dir: tmp/cajas/multi_model_baselines
+    default_run_name: phase24_multi_model_baseline
+
+feature_importance_summary:
+  enabled: true
+  phase: phase25
+  top_k: 50
+  output:
+    default_output_dir: tmp/cajas/feature_importance_summaries
+    default_run_name: phase25_feature_importance_summary
+
+run_registry_summary:
+  enabled: true
+  phase: phase26
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/registry_reports
+    default_run_name: phase26_registry_summary
+
+numeric_sanitation:
+  enabled: true
+  phase: phase27
+  clip_abs_value: 1000000.0
+  fill_value: 0.0
+  large_value_threshold: 1000000000000.0
+  artifacts:
+    generated_files:
+      - feature_value_audit_train.json
+      - feature_value_audit_valid.json
+      - feature_value_audit_test.json
+      - numeric_sanitization_train.json
+      - numeric_sanitization_valid.json
+      - numeric_sanitization_test.json
+
+robust_multi_model_baseline:
+  enabled: true
+  phase: phase28
+  continue_on_model_failure: true
+  require_at_least_one_completed_model: true
+  status_artifacts:
+    - multi_model_baseline_report.json
+    - multi_model_metrics.csv
+    - model_run_status.csv
+
+baseline_report_exports:
+  enabled: true
+  phase: phase29
+  output:
+    default_output_dir: tmp/cajas/exported_reports
+    default_run_name: phase29_exported_reports
+  artifacts:
+    generated_files:
+      - baseline_report.md
+      - export_manifest.json
+
+run_health_check:
+  enabled: true
+  phase: phase30
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/run_health
+    default_run_name: phase30_run_health
+  artifacts:
+    generated_files:
+      - run_health_report.json
+      - run_health_issues.csv
+
+registry_cleanup:
+  enabled: true
+  phase: phase31
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/registry_cleanup
+    default_run_name: phase31_registry_cleanup
+
+dashboard_export:
+  enabled: true
+  phase: phase32
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/dashboard_exports
+    default_run_name: phase32_dashboard_export
+
+confidence_analysis:
+  enabled: true
+  phase: phase33
+  default_prediction_csv: tmp/cajas/baseline_runs/phase20_local_baseline/predictions_test.csv
+  bucket_edges:
+    - 0.0
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  output:
+    default_output_dir: tmp/cajas/confidence_analysis
+    default_run_name: phase33_confidence_analysis
+
+research_report_pack:
+  enabled: true
+  phase: phase34
+  title: EURUSD 15m Market Recognition Baseline Research
+  output:
+    default_output_dir: tmp/cajas/research_report_packs
+    default_run_name: phase34_research_report_pack
+
+external_holdout_validation:
+  enabled: true
+  phase: phase35
+  train_period:
+    name: train_2020_2024
+    raw_input: ~/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv
+    prepared_dir: tmp/cajas/eurusd_15m_2020_2024_phase35_train
+  holdout_period:
+    name: holdout_2025
+    raw_input: ~/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv
+    prepared_dir: tmp/cajas/eurusd_15m_2025_phase35_holdout
+  model_family: LightGBM
+  random_state: 42
+  output:
+    default_output_dir: tmp/cajas/external_holdout_runs
+    default_run_name: phase35_train_2020_2024_validate_2025
+  artifacts:
+    generated_files:
+      - run_manifest.json
+      - training_config.json
+      - external_holdout_dataset_summary.json
+      - feature_columns.json
+      - label_encoding.json
+      - label_distribution_train.json
+      - label_distribution_holdout.json
+      - metrics_holdout.json
+      - confusion_matrix_holdout.csv
+      - predictions_holdout.csv
+      - feature_value_audit_train.json
+      - feature_value_audit_holdout.json
+      - numeric_sanitization_train.json
+      - numeric_sanitization_holdout.json
+      - model_metadata.json
+      - model.joblib
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+
+external_holdout_benchmark:
+  enabled: true
+  phase: phase36
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/external_holdout_benchmarks
+    default_run_name: phase36_external_holdout_benchmark
+
+flat_class_diagnosis:
+  enabled: true
+  phase: phase37
+  scope: classification_research_only
+  flat_label: flat
+  output:
+    default_output_dir: tmp/cajas/flat_class_diagnosis
+    default_run_name: phase37_flat_class_diagnosis
+
+horizon_label_preview:
+  enabled: true
+  phase: phase38
+  scope: classification_research_only
+  horizons:
+    - 4
+    - 8
+    - 16
+  output:
+    default_output_dir: tmp/cajas/horizon_label_previews
+
+feature_group_audit:
+  enabled: true
+  phase: phase39
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/feature_group_audits
+    default_run_name: phase39_feature_group_audit
+
+research_decision_report:
+  enabled: true
+  phase: phase40
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/research_decision_reports
+    default_run_name: phase40_research_decision_report
+
+label_redesign:
+  enabled: true
+  phase: phase41
+  horizons: [4, 8, 16]
+  thresholds: [0.0, 0.00005, 0.00010, 0.00020, 0.00030]
+  threshold_semantics: classification_label_threshold_only_not_trading
+
+label_variant_external_holdout:
+  enabled: true
+  phase: phase42
+  train_period: 2020_2024
+  holdout_period: 2025
+  model_family: LightGBM
+  label_modes: [multiclass, binary_drop_flat]
+  output:
+    default_output_dir: tmp/cajas/label_variant_runs
+
+label_variant_comparison:
+  enabled: true
+  phase: phase44
+  primary_metric: macro_f1
+  output:
+    default_output_dir: tmp/cajas/label_variant_comparisons
+    default_run_name: phase44_label_variant_comparison
+
+label_decision_report:
+  enabled: true
+  phase: phase45
+  output:
+    default_output_dir: tmp/cajas/label_decision_reports
+    default_run_name: phase45_label_decision_report
+
+feature_engineering:
+  enabled: true
+  phase: phase46
+  windows: [4, 8, 16, 32]
+  output:
+    default_output_dir: tmp/cajas/feature_sets
+
+feature_set_comparison:
+  enabled: true
+  phase: phase48
+  feature_sets: [minimal_v1, structure_v1, structure_plus_rolling_v1]
+  output:
+    default_output_dir: tmp/cajas/feature_set_comparisons
+    default_run_name: phase48_feature_set_comparison
+
+calibration_analysis:
+  enabled: true
+  phase: phase49
+  bucket_count: 10
+  output:
+    default_output_dir: tmp/cajas/calibration_analysis
+    default_run_name: phase49_calibration_analysis
+
+seed_stability:
+  enabled: true
+  phase: phase50
+  seeds: [7, 21, 42, 84, 168]
+  output:
+    default_output_dir: tmp/cajas/seed_stability
+    default_run_name: phase50_seed_stability
+
+rolling_year_validation:
+  enabled: true
+  phase: phase51
+  output:
+    default_output_dir: tmp/cajas/rolling_year_validation
+    default_run_name: phase51_rolling_year_plan
+
+error_slice_analysis:
+  enabled: true
+  phase: phase52
+  output:
+    default_output_dir: tmp/cajas/error_slice_analysis
+    default_run_name: phase52_error_slice_analysis
+
+leakage_drift_audit:
+  enabled: true
+  phase: phase53
+  output:
+    default_output_dir: tmp/cajas/leakage_drift_audits
+    default_run_name: phase53_leakage_drift_audit
+
+qlib_readiness_report:
+  enabled: true
+  phase: phase54
+  output:
+    default_output_dir: tmp/cajas/qlib_readiness_reports
+    default_run_name: phase54_qlib_readiness_report
+
+research_roadmap_report:
+  enabled: true
+  phase: phase55
+  output:
+    default_output_dir: tmp/cajas/research_roadmap_reports
+    default_run_name: phase55_research_roadmap_report
