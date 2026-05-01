@@ -23,7 +23,8 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
             "Probe Qlib DatasetH adapter compatibility (no training). "
-            "For workflow-config inspection also see probe_qlib_workflow_config.py."
+            "For workflow-config inspection see probe_qlib_workflow_config.py. "
+            "For class-path dry-run validation see run_qlib_workflow_dry_run_loader.py."
         )
     )
     p.add_argument("--config", required=True)

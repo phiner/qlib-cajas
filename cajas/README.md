@@ -205,7 +205,28 @@ This phase still excludes:
 - Policy remains unchanged:
   - training remains disabled
   - no model construction / fit / predict / evaluate / serialize
-  - no qlib core change and no trading scope
+- no qlib core change and no trading scope
+
+## Phase 18: Qlib Workflow Dry-Run Loader
+
+- Added class path resolver:
+  - `cajas/qlib_compat/class_resolver.py`
+- Added workflow dry-run loader:
+  - `cajas/qlib_compat/workflow_dry_run_loader.py`
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_qlib_workflow_dry_run_loader.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Optional artifact output:
+  - `--write-artifacts --output-dir tmp/cajas/qlib_workflow_dry_run_loader --run-name phase18_qlib_workflow_dry_run_loader`
+  - files:
+    - `qlib_workflow_dry_run_loader_report.json`
+    - `class_resolution_report.json`
+    - `qlib_workflow_config_draft.json`
+- Phase 18 boundaries remain unchanged:
+  - qlib is not initialized
+  - qlib workflow is not executed
+  - training remains disabled
+  - model classes are resolved but not instantiated
+  - no trading or signal generation behavior
 
 ## Phase 9: Training-Disabled Baseline Plan
 

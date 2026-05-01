@@ -243,3 +243,22 @@ qlib_workflow_config_probe:
     generated_files:
       - qlib_workflow_config_probe_report.json
       - qlib_workflow_config_draft.json
+
+qlib_workflow_dry_run_loader:
+  enabled: true
+  phase: phase18
+  initialize_qlib: false
+  execute_qlib_workflow: false
+  training_enabled: false
+  training_executed: false
+  model_enabled: false
+  model_constructed: false
+  resolve_classes: true
+  instantiate_classes: false
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_workflow_dry_run_loader
+    default_run_name: phase18_qlib_workflow_dry_run_loader
+    generated_files:
+      - qlib_workflow_dry_run_loader_report.json
+      - class_resolution_report.json
+      - qlib_workflow_config_draft.json

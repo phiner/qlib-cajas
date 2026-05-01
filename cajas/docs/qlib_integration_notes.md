@@ -258,6 +258,25 @@ Next step needed:
 - Option A: add an explicit user-approved training enable switch while preserving no-trading boundaries.
 - Option B: first add a stronger Qlib DatasetH compatibility probe and keep training disabled.
 
+## Phase 18 Update
+
+- Added class-path resolution utilities for config-declared classes:
+  - `cajas.qlib_compat.class_resolver`
+- Added workflow dry-run loader:
+  - `cajas.qlib_compat.workflow_dry_run_loader`
+  - `cajas/scripts/run_qlib_workflow_dry_run_loader.py`
+- Phase 18 extends Phase 17 by validating class paths and disabled execution flags in one dry-run report.
+- This remains inspection-only:
+  - no qlib initialization
+  - no qlib workflow execution
+  - no model construction
+  - no model training
+
+## Phase 19 Recommendation
+
+- Add a workflow dry-run manifest registry for comparing multiple config snapshots, or
+- If explicitly approved by the user, prepare a separately gated baseline training phase.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:

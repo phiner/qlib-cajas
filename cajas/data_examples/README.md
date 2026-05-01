@@ -193,3 +193,9 @@ Notes:
 - Workflow-config probe artifacts are local files under `tmp/` (for example `tmp/cajas/qlib_workflow_config/`).
 - The draft workflow config does not include raw dataset rows.
 - The probe output is compatibility metadata, not a training output.
+
+## Phase 18 Workflow Dry-Run Loader Artifacts
+
+- Dry-run loader artifacts are local files under `tmp/` (for example `tmp/cajas/qlib_workflow_dry_run_loader/`).
+- Class resolution reports are metadata only and do not contain raw dataset rows.
+- The generated workflow config draft remains inspection-only for disabled execution validation.

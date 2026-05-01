@@ -17,7 +17,12 @@ from cajas.qlib_compat.workflow_config_probe import probe_qlib_workflow_config
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Probe Qlib workflow config shape (no qlib init, no training).")
+    p = argparse.ArgumentParser(
+        description=(
+            "Probe Qlib workflow config shape (no qlib init, no training). "
+            "For class-path dry-run validation see run_qlib_workflow_dry_run_loader.py."
+        )
+    )
     p.add_argument("--config", required=True)
     p.add_argument("--input-override", default=None)
     p.add_argument("--json", action="store_true")
