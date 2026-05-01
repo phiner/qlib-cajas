@@ -1,0 +1,62 @@
+meta:
+  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase0
+  research_layer: cajas
+  note: "Research config draft only; not a trading strategy or production signal."
+
+market:
+  symbol: EURUSD
+  timeframe: 15m
+
+task:
+  name: market_recognition_future_direction_classification
+  label_column: future_direction_8
+  horizon: 8
+  flat_threshold: 0.0002
+  classes: [up, flat, down]
+
+dataset:
+  prepared_csv_path: tmp/cajas/fx_eurusd_15m_phase0/prepared_dataset.csv
+  datetime_column: datetime
+  symbol_column: symbol
+  split:
+    train: ["2025-01-01", "2025-08-31"]
+    valid: ["2025-09-01", "2025-10-31"]
+    test: ["2025-11-01", "2025-12-31"]
+
+model:
+  family: lightgbm
+  objective: multiclass
+  num_class: 3
+  metric: multi_logloss
+  params:
+    learning_rate: 0.05
+    num_leaves: 31
+    feature_fraction: 0.9
+    bagging_fraction: 0.9
+    bagging_freq: 5
+    min_data_in_leaf: 50
+
+features:
+  columns:
+    - return_1
+    - log_return_1
+    - hl_range
+    - body_size
+    - upper_shadow
+    - lower_shadow
+    - body_ratio
+    - close_position_in_range
+    - range_pct
+    - volume_change_1
+    - return_mean_4
+    - return_mean_8
+    - return_mean_16
+    - return_std_8
+    - return_std_16
+    - range_mean_8
+    - range_mean_16
+
+disclaimer:
+  - this is a research config draft
+  - not a trading strategy
+  - not a production signal
