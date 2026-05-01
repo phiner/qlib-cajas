@@ -70,3 +70,12 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - label column (`future_direction_8` by default)
   - leakage columns: `future_close_8`, `future_return_8`
 - `future_close_8` and `future_return_8` may remain in dataset output for auditability, but must not be used as model features.
+
+## Phase 4 Adapter Notes
+
+- `PreparedDataset` (DatasetH-like adapter) returns segment-wise features and labels.
+- Audit columns remain allowed in the dataset file:
+  - `future_close_8`
+  - `future_return_8`
+- These audit columns are explicitly excluded from feature sets.
+- Labels remain string classes (`up`, `down`, `flat`) in this phase.

@@ -1,13 +1,14 @@
 # Draft only. This config documents the intended Qlib integration shape.
-# Phase 3 status: draft contract only; do not run model training yet.
+# Phase 4 status: draft contract only; do not run model training yet.
 # Data source is the Phase 1 prepared CSV.
 # Handler target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+# Dataset adapter target: cajas.datasets.prepared_dataset.PreparedDataset
 # Leakage columns future_close_8 and future_return_8 are audit-only (not features).
 # No trading strategy, no live execution.
 meta:
-  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase3_draft
+  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase4_draft
   research_layer: cajas
-  note: "Research config draft only; no training in Phase 3."
+  note: "Research config draft only; no training in Phase 4."
 
 market:
   symbol: EURUSD
@@ -23,6 +24,7 @@ task:
 dataset:
   prepared_csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
   handler_target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  data_adapter_target: cajas.datasets.prepared_dataset.PreparedDataset
   datetime_column: datetime
   symbol_column: symbol
   timeframe_column: timeframe
@@ -33,6 +35,20 @@ dataset:
     train: ["2025-01-01", "2025-08-31"]
     valid: ["2025-09-01", "2025-10-31"]
     test: ["2025-11-01", "2025-12-31"]
+data_adapter:
+  class: cajas.datasets.prepared_dataset.PreparedDataset
+  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  label_col: future_direction_8
+  leakage_columns:
+    - future_close_8
+    - future_return_8
+  segments:
+    train: ["2025-01-01", "2025-08-31"]
+    valid: ["2025-09-01", "2025-10-31"]
+    test: ["2025-11-01", "2025-12-31"]
+  TODO_runtime:
+    - map this external adapter to a concrete Qlib runtime workflow later
+    - keep training disabled until dataset contract is stable
 
 model:
   family: lightgbm
@@ -72,7 +88,8 @@ features:
 
 disclaimer:
   - this is a research config draft
-  - no training should be run in phase 3
+  - no training should be run in phase 4
+  - this is not a full qlib workflow yet
   - for market recognition only
   - not a trading strategy
   - not a production signal

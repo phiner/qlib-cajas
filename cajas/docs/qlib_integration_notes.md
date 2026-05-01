@@ -91,3 +91,22 @@ Next step needed:
 - Add a Qlib-compatible wrapper or experiment runner that validates DatasetH-like prepare semantics end-to-end.
 - Keep qlib core unchanged.
 - Continue to avoid model training until dataset contract and split semantics are stable.
+
+## Phase 4 Update
+
+- Added a Qlib-inspired external adapter:
+  - `cajas.datasets.prepared_dataset.PreparedDataset`
+- This adapter wraps `PreparedCsvHandler` and exposes segment-wise `(features, labels)` via `prepare(segment)`.
+- Adapter scope:
+  - research-only data contract checks
+  - feature/label shape and segment slicing verification
+  - explicit exclusion of leakage fields from features
+- Adapter boundary:
+  - intentionally outside `qlib/` core
+  - not a full Qlib DatasetH subclass
+  - does not run Qlib LightGBM training in this phase
+
+## Next Integration Step
+
+- Wire the external adapter contract into a small Qlib-facing runner in `cajas/` to validate DatasetH-style workflow calls.
+- Keep training disabled until the data contract is stable and reproducible.

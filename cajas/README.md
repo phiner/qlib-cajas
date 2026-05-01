@@ -76,3 +76,23 @@ Notes:
   - `python cajas/scripts/validate_prepared_dataset_handler.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8`
 - This phase validates dataset access, schema checks, and train/valid/test segment slicing only.
 - No model training, no qlib core changes, no trading logic.
+
+## Phase 4: Package Cleanup and Dataset Adapter
+
+- Confirmed package init path:
+  - `cajas/handlers/__init__.py`
+- Added dev test dependency file:
+  - `requirements-dev.txt` (pytest)
+- Added DatasetH-like external adapter:
+  - `cajas/datasets/prepared_dataset.py`
+- Added adapter validation CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/validate_prepared_dataset_adapter.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8`
+- Existing handler validation CLI remains:
+  - `./.venv-qlib313/bin/python cajas/scripts/validate_prepared_dataset_handler.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8`
+- Test command:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests/test_prepared_csv_handler.py cajas/tests/test_prepared_dataset.py`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
