@@ -1,7 +1,7 @@
 name: fx_eurusd_15m_lightgbm_future_direction_8
 description: >
   Draft market recognition research config for EURUSD 15m future_direction_8.
-  This config is training-disabled in Phase 7.
+  This config is training-disabled in Phase 9.
 
 research_scope:
   market_recognition_only: true
@@ -36,7 +36,7 @@ workflow_bridge:
 model:
   draft_class: LightGBM
   enabled: false
-  note: "Model training is disabled in Phase 6."
+  note: "Model training is disabled in Phase 9."
 
 training:
   enabled: false
@@ -68,3 +68,19 @@ qlib:
   core_modified: false
   provider_format_enabled: false
   note: "No Qlib core provider integration is performed in Phase 7."
+
+baseline_plan:
+  enabled: true
+  model_family: LightGBM
+  task_type: multiclass_classification
+  target_label: future_direction_8
+  training_allowed: false
+  training_executed: false
+  required_optional_dependencies:
+    - sklearn
+    - lightgbm
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_plans
+    default_run_name: phase9_baseline_plan
+    generated_files:
+      - baseline_plan_report.json

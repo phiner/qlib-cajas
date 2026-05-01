@@ -118,3 +118,12 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - missing labels are rejected
   - very rare classes are warnings
 - `future_close_8` and `future_return_8` remain audit columns, not model features.
+
+## Phase 9 Planning Notes
+
+- Missing-value audit now includes:
+  - missing counts
+  - missing ratios
+  - top missing feature summary
+- Baseline plan artifacts do not contain raw rows.
+- Dependency probe is environment-only and does not install packages.

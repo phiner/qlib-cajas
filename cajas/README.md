@@ -97,6 +97,27 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 9: Training-Disabled Baseline Plan
+
+- Added dependency probe module:
+  - `cajas/environment/dependency_probe.py`
+- Enhanced feature audit details:
+  - missing value ratios
+  - top missing feature summary
+- Added training-disabled baseline planning module:
+  - `cajas/baseline/baseline_plan.py`
+- Added baseline plan CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_baseline_plan.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- JSON mode:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_baseline_plan.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --json`
+- Optional local artifact:
+  - `--write-artifacts --output-dir tmp/cajas/baseline_plans --run-name phase9_baseline_plan`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 8: Baseline Readiness Gate
 
 - Added feature audit module:

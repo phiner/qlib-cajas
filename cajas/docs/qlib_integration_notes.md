@@ -182,3 +182,18 @@ Next step needed:
 
 - Add a training-disabled LightGBM baseline plan object with explicit activation gate.
 - If explicitly approved later, add a controlled baseline training command that writes local artifacts only and does not include trading behaviors.
+
+## Phase 9 Update
+
+- Added baseline planning artifact (training-disabled):
+  - readiness (non-strict/strict)
+  - dependency probe (`pandas`, `yaml`, `sklearn`, `lightgbm`)
+  - model spec for future baseline phases
+  - blockers and warnings summary
+- Added `build_baseline_plan.py` CLI for planning output only.
+- No model build/fit/predict/evaluate/serialize logic is included.
+
+## Phase 10 Recommendation
+
+- Add a controlled baseline training scaffold with `training.enabled: false` as default.
+- Or add a deeper Qlib DatasetH compatibility probe before enabling any training action.
