@@ -1,7 +1,7 @@
 name: fx_eurusd_15m_lightgbm_future_direction_8
 description: >
   Draft market recognition research config for EURUSD 15m future_direction_8.
-  This config is training-disabled in Phase 6.
+  This config is training-disabled in Phase 7.
 
 research_scope:
   market_recognition_only: true
@@ -40,9 +40,19 @@ model:
 
 training:
   enabled: false
-  reason: "Phase 6 validates config and workflow dry-run only."
+  reason: "Phase 7 validates config/workflow dry-run and optional local artifacts."
+
+artifacts:
+  enabled: false
+  default_output_dir: tmp/cajas/experiment_dry_runs
+  default_run_name: phase7_eurusd_15m_dry_run
+  generated_files:
+    - run_manifest.json
+    - config_snapshot.json
+    - workflow_summary.json
+    - validation_report.json
 
 qlib:
   core_modified: false
   provider_format_enabled: false
-  note: "No Qlib core provider integration is performed in Phase 6."
+  note: "No Qlib core provider integration is performed in Phase 7."

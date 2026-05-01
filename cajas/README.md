@@ -97,6 +97,30 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 7: Dry-Run Artifact Recorder
+
+- Added local dry-run artifact recorder:
+  - `cajas/recorders/dry_run_recorder.py`
+- Extended experiment plan dry-run CLI with optional artifact writing:
+  - `--write-artifacts`
+  - `--output-dir`
+  - `--run-name`
+- Artifact file names:
+  - `run_manifest.json`
+  - `config_snapshot.json`
+  - `workflow_summary.json`
+  - `validation_report.json`
+- Example:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_experiment_plan_dry_run.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --write-artifacts --output-dir tmp/cajas/experiment_dry_runs --run-name phase7_eurusd_15m_dry_run`
+- Artifact outputs under `tmp/` are local-only and should not be committed.
+- Test command:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests/test_prepared_csv_handler.py cajas/tests/test_prepared_dataset.py cajas/tests/test_prepared_workflow.py cajas/tests/test_experiment_config.py caixas/tests/test_experiment_plan_dry_run.py cajas/tests/test_dry_run_recorder.py caixas/tests/test_experiment_plan_artifacts.py`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 6: Experiment Config Plan Dry-Run
 
 - Added training-disabled config loader:

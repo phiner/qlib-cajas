@@ -98,3 +98,9 @@ Important: `future_direction_8` is a research label, not a trading signal.
 - Leakage audit columns remain non-feature fields:
   - `future_close_8`
   - `future_return_8`
+
+## Phase 7 Dry-Run Artifact Notes
+
+- Dry-run artifacts are local metadata files and do not contain raw dataset rows.
+- Prepared CSV remains a local source input for dry-run validation.
+- Artifact output under `tmp/` is local-only and should not be committed.

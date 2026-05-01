@@ -151,3 +151,19 @@ Next step needed:
 
 - Add a minimal Qlib-style dry-run report/recorder artifact that captures config and segment-shape evidence.
 - Keep training disabled by default until config contract stability is confirmed across repeated datasets.
+
+## Phase 7 Update
+
+- Added local dry-run artifact recorder in `cajas/recorders/`:
+  - run manifest
+  - normalized config snapshot
+  - workflow summary
+  - validation report
+- Extended `run_experiment_plan_dry_run.py` to optionally persist artifacts.
+- This recorder is Qlib-recorder-inspired but remains fully external to `qlib/` core.
+- Model training remains disabled.
+
+## Phase 8 Recommendation
+
+- Add a controlled baseline-training preparation gate that stays disabled by default.
+- Or add a deeper DatasetH compatibility probe before enabling any training switch.
