@@ -7,6 +7,8 @@ from .markdown_report_exporter import (
     render_registry_summary_markdown,
     write_markdown_report,
 )
+from .dashboard_export import DashboardExportReport, export_dashboard_data
+from .research_report_pack import ResearchReportPack, build_research_report_pack
 
 __all__ = [
     "BaselineReportPack",
@@ -15,4 +17,8 @@ __all__ = [
     "render_baseline_report_pack_markdown",
     "render_multi_model_comparison_markdown",
     "render_registry_summary_markdown",
+    "DashboardExportReport",
+    "export_dashboard_data",
+    "ResearchReportPack",
+    "build_research_report_pack",
 ]
