@@ -56,6 +56,10 @@ from .confidence_analysis import (
     ConfidenceBucketSummary,
     analyze_prediction_confidence,
 )
+from .external_holdout_trainer import (
+    ExternalHoldoutTrainingReport,
+    train_external_holdout_baseline,
+)
 
 __all__ = [
     "BaselineModelSpec",
@@ -89,6 +93,7 @@ __all__ = [
     "NumericSanitizationReport",
     "ConfidenceBucketSummary",
     "ConfidenceAnalysisReport",
+    "ExternalHoldoutTrainingReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -111,4 +116,5 @@ __all__ = [
     "audit_feature_values",
     "sanitize_features_for_model",
     "analyze_prediction_confidence",
+    "train_external_holdout_baseline",
 ]
