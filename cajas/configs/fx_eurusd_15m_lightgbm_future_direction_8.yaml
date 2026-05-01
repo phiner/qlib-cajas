@@ -84,3 +84,19 @@ baseline_plan:
     default_run_name: phase9_baseline_plan
     generated_files:
       - baseline_plan_report.json
+
+baseline_scaffold:
+  enabled: true
+  training_allowed: false
+  training_executed: false
+  model_family: LightGBM
+  task_type: multiclass_classification
+  label_encoding_plan:
+    down: 0
+    flat: 1
+    up: 2
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_scaffolds
+    default_run_name: phase10_baseline_scaffold
+    generated_files:
+      - baseline_scaffold_report.json

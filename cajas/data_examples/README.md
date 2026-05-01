@@ -127,3 +127,9 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - top missing feature summary
 - Baseline plan artifacts do not contain raw rows.
 - Dependency probe is environment-only and does not install packages.
+
+## Phase 10 Scaffold Notes
+
+- Label encoding plan (`down:0`, `flat:1`, `up:2`) is planning metadata only.
+- Prepared CSV labels remain string classes in this phase.
+- Baseline scaffold artifacts do not contain raw rows.

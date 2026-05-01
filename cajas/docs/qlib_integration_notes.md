@@ -197,3 +197,20 @@ Next step needed:
 
 - Add a controlled baseline training scaffold with `training.enabled: false` as default.
 - Or add a deeper Qlib DatasetH compatibility probe before enabling any training action.
+
+## Phase 10 Update
+
+- Added a training guard to make accidental training impossible in this phase.
+- Added a baseline scaffold report that combines:
+  - baseline plan
+  - readiness summary
+  - dependency probe
+  - dataset spec
+  - label encoding plan (spec-only)
+- Added scaffold CLI and optional local scaffold artifact output.
+- This remains a safety wrapper and planning layer; no model is built or trained.
+
+## Phase 11 Recommendation
+
+- Add a controlled training command scaffold with `training.enabled` still false by default and explicit multi-flag safety checks.
+- Or prioritize a deeper Qlib DatasetH compatibility probe before any training enablement.

@@ -97,6 +97,25 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 10: Training-Guarded Baseline Scaffold
+
+- Added baseline training safety guard:
+  - `cajas/baseline/training_guard.py`
+- Added training-disabled baseline scaffold:
+  - `cajas/baseline/baseline_scaffold.py`
+- Added baseline scaffold CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_baseline_scaffold.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- JSON mode:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_baseline_scaffold.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --json`
+- Optional local artifact:
+  - `--write-artifacts --output-dir tmp/cajas/baseline_scaffolds --run-name phase10_baseline_scaffold`
+- Label encoding plan is included as a spec (`down:0`, `flat:1`, `up:2`) and is not executed on data.
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:
