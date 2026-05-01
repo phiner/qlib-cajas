@@ -452,3 +452,11 @@ Next step needed:
 
 - Add a true Qlib workflow dry-run loader without execution.
 - Or, with explicit approval, add controlled baseline training outside Qlib first.
+
+## Phase 36-40 Update
+
+- External holdout benchmarking now separates internal-split and external-holdout metrics.
+- Flat-class behavior is diagnosed explicitly from holdout prediction artifacts.
+- Horizon label preview compares 4/8/16 label distributions as research-only diagnostics.
+- Feature-group audits provide ablation planning inputs without running trading workflows.
+- Research decision reporting is classification-only and does not include trading/backtest/profit conclusions.

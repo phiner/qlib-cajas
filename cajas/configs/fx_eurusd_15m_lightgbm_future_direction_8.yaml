@@ -484,4 +484,48 @@ external_holdout_validation:
     - trading_signals
     - backtest_results
     - profit_metrics
+
+external_holdout_benchmark:
+  enabled: true
+  phase: phase36
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/external_holdout_benchmarks
+    default_run_name: phase36_external_holdout_benchmark
+
+flat_class_diagnosis:
+  enabled: true
+  phase: phase37
+  scope: classification_research_only
+  flat_label: flat
+  output:
+    default_output_dir: tmp/cajas/flat_class_diagnosis
+    default_run_name: phase37_flat_class_diagnosis
+
+horizon_label_preview:
+  enabled: true
+  phase: phase38
+  scope: classification_research_only
+  horizons:
+    - 4
+    - 8
+    - 16
+  output:
+    default_output_dir: tmp/cajas/horizon_label_previews
+
+feature_group_audit:
+  enabled: true
+  phase: phase39
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/feature_group_audits
+    default_run_name: phase39_feature_group_audit
+
+research_decision_report:
+  enabled: true
+  phase: phase40
+  scope: classification_research_only
+  output:
+    default_output_dir: tmp/cajas/research_decision_reports
+    default_run_name: phase40_research_decision_report
     - order_recommendations

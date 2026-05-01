@@ -458,3 +458,13 @@ This phase still excludes:
   - Qlib workflow is not executed
   - training remains disabled
   - no qlib core changes and no trading scope
+
+## Phase 36-40: Holdout Diagnosis and Research Decision
+
+- Added external holdout benchmarking for internal-split vs external-holdout runs.
+- Added flat-class diagnosis for rare-class support/prediction behavior.
+- Added horizon label preview for `future_direction_4`, `future_direction_8`, `future_direction_16`.
+- Added feature-group audit for ablation planning.
+- Added phase-level research decision reporting from existing local artifacts.
+- All outputs remain classification research artifacts under `tmp/`.
+- No trading strategy, backtest, or profit analysis is added.

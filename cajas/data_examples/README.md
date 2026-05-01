@@ -235,3 +235,9 @@ Notes:
 - Raw multi-year CSV files remain outside the repo under local data paths.
 - Prepared train (2020-2024) and holdout (2025) outputs are intentionally separated under `tmp/`.
 - External holdout artifacts are derived local files and should not be committed.
+
+## Phase 36-40 Derived Artifacts
+
+- Horizon label previews (`future_direction_4/8/16`) are derived from prepared datasets and written under `tmp/`.
+- Feature-group audit outputs are derived metadata for classification feature analysis.
+- Research decision reports are research artifacts and are not trading guidance.
