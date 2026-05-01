@@ -310,6 +310,19 @@ Next step needed:
 - Add baseline comparison across multiple run directories using registry metadata.
 - Optionally add model feature-importance inspection where model family support exists.
 
+## Phase 23-26 Update
+
+- Added baseline report pack generation from existing run artifacts.
+- Added controlled multi-model baseline runs (LightGBM/RandomForest/HistGradientBoosting) with classification-only comparison.
+- Added feature importance aggregation across runs.
+- Added run registry summary reporting from local JSONL records.
+- These workflows extend local baseline research and remain separate from qlib workflow execution.
+
+## Phase 27 Recommendation
+
+- Add report-pack markdown export for human-friendly review.
+- Optionally add dashboard-ready JSON export for baseline comparison views.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:

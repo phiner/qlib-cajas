@@ -211,3 +211,9 @@ Notes:
 - Baseline review files are derived local artifacts under `tmp/` and should not be committed.
 - Review outputs summarize classification behavior from prediction CSV artifacts.
 - Prediction labels remain market-recognition classes and are not trading actions.
+
+## Phase 23-26 Reporting Artifacts
+
+- Baseline report packs, multi-model comparisons, feature summaries, and registry summaries are derived local artifacts under `tmp/`.
+- These files should not be committed.
+- Reported metrics remain classification-only and do not include trading/performance outputs.

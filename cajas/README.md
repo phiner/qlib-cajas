@@ -256,6 +256,19 @@ This phase still excludes:
   - no trading signals
   - no backtest/profit analysis
 
+## Phase 23-26: Reporting and Comparison Workflow
+
+- Added baseline report pack builder:
+  - `cajas/scripts/build_baseline_report_pack.py`
+- Added multi-model local baseline runner:
+  - `cajas/scripts/train_multi_model_baselines.py`
+- Added feature-importance summary across runs:
+  - `cajas/scripts/summarize_feature_importance.py`
+- Added run registry summary reports:
+  - `cajas/scripts/summarize_run_registry.py`
+- All generated outputs are local artifacts under `tmp/` and remain classification-only.
+- No trading/backtest/profit analysis is included.
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:
