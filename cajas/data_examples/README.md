@@ -133,3 +133,9 @@ Important: `future_direction_8` is a research label, not a trading signal.
 - Label encoding plan (`down:0`, `flat:1`, `up:2`) is planning metadata only.
 - Prepared CSV labels remain string classes in this phase.
 - Baseline scaffold artifacts do not contain raw rows.
+
+## Phase 11 Preflight Notes
+
+- Preflight reports do not contain raw rows.
+- Path hygiene checks protect command/path accuracy (`cajas/` vs typo `caixas/`).
+- Prepared CSV labels remain string classes.

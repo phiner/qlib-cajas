@@ -214,3 +214,21 @@ Next step needed:
 
 - Add a controlled training command scaffold with `training.enabled` still false by default and explicit multi-flag safety checks.
 - Or prioritize a deeper Qlib DatasetH compatibility probe before any training enablement.
+
+## Phase 11 Update
+
+- Added baseline execution contract to separate allowed planning actions from forbidden model/trading actions.
+- Added baseline preflight report that consolidates:
+  - config checks
+  - readiness
+  - baseline plan
+  - baseline scaffold
+  - dependency probe
+  - path hygiene
+- Added path hygiene checks to catch typo paths such as `caixas/`.
+- Training remains disabled and preflight keeps `can_train_now: false`.
+
+## Phase 12 Recommendation
+
+- Add an explicitly disabled training command skeleton with no model fit path.
+- Or, if explicitly approved, move to a controlled baseline training phase with artifact-only outputs and no trading behaviors.

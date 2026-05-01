@@ -1,7 +1,7 @@
 name: fx_eurusd_15m_lightgbm_future_direction_8
 description: >
   Draft market recognition research config for EURUSD 15m future_direction_8.
-  This config is training-disabled in Phase 9.
+  This config is training-disabled in Phase 11.
 
 research_scope:
   market_recognition_only: true
@@ -100,3 +100,20 @@ baseline_scaffold:
     default_run_name: phase10_baseline_scaffold
     generated_files:
       - baseline_scaffold_report.json
+
+baseline_preflight:
+  enabled: true
+  phase: phase11
+  phase_policy_allows_training: false
+  can_train_now: false
+  training_executed: false
+  path_hygiene:
+    forbidden_patterns:
+      - caixas/
+      - taskDocs/
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_preflight
+    default_run_name: phase11_baseline_preflight
+    generated_files:
+      - baseline_preflight_report.json
+      - baseline_execution_contract.json

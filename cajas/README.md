@@ -97,6 +97,25 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 11: Baseline Execution Contract and Preflight
+
+- Added path hygiene checker:
+  - `cajas/quality/path_hygiene.py`
+  - `cajas/scripts/check_path_hygiene.py`
+- Added baseline execution contract:
+  - `cajas/baseline/execution_contract.py`
+- Added baseline preflight gate:
+  - `cajas/baseline/baseline_preflight.py`
+  - `cajas/scripts/run_baseline_preflight.py`
+- CLI commands:
+  - `./.venv-qlib313/bin/python cajas/scripts/check_path_hygiene.py`
+  - `./.venv-qlib313/bin/python cajas/scripts/run_baseline_preflight.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 10: Training-Guarded Baseline Scaffold
 
 - Added baseline training safety guard:
