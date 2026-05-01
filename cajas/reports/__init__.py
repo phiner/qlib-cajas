@@ -51,6 +51,13 @@ from .reproducibility_check import build_reproducibility_report
 from .ci_validation_plan import build_ci_validation_plan
 from .final_readiness_packet import build_final_readiness_packet
 from .final_readiness_summary import render_final_readiness_summary
+from .artifact_normalizer import normalize_json_artifact, normalize_markdown_artifact
+from .stable_fingerprint import build_stable_fingerprint
+from .stable_reproducibility_check import build_stable_reproducibility_report
+from .artifact_lineage import build_artifact_lineage, render_artifact_lineage_md
+from .research_run_catalog import build_research_run_catalog, render_research_run_catalog_md
+from .offline_review_packet import build_offline_review_packet, render_offline_review_packet_md
+from .final_research_bundle import build_final_research_bundle, render_final_research_bundle_md
 
 __all__ = [
     "BaselineReportPack",
@@ -111,4 +118,16 @@ __all__ = [
     "build_ci_validation_plan",
     "build_final_readiness_packet",
     "render_final_readiness_summary",
+    "normalize_json_artifact",
+    "normalize_markdown_artifact",
+    "build_stable_fingerprint",
+    "build_stable_reproducibility_report",
+    "build_artifact_lineage",
+    "render_artifact_lineage_md",
+    "build_research_run_catalog",
+    "render_research_run_catalog_md",
+    "build_offline_review_packet",
+    "render_offline_review_packet_md",
+    "build_final_research_bundle",
+    "render_final_research_bundle_md",
 ]
