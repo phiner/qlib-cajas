@@ -241,3 +241,15 @@ Notes:
 - Horizon label previews (`future_direction_4/8/16`) are derived from prepared datasets and written under `tmp/`.
 - Feature-group audit outputs are derived metadata for classification feature analysis.
 - Research decision reports are research artifacts and are not trading guidance.
+
+## Phase 41-45 Derived Artifacts
+
+- Threshold label variant CSVs and reports are derived under `tmp/cajas/label_variants/`.
+- Label-variant holdout runs and comparison reports are derived classification artifacts under `tmp/`.
+- Binary and multiclass variant labels are research labels, not trading actions.
+
+## Phase 46-55 Derived Artifacts
+
+- Feature-engineering outputs, calibration summaries, seed stability reports, and drift audits are all derived local artifacts under `tmp/`.
+- Rolling-year validation output is a planning/report artifact by default.
+- Qlib readiness and roadmap reports are research governance artifacts, not trading guidance.

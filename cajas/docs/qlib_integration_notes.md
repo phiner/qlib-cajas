@@ -460,3 +460,17 @@ Next step needed:
 - Horizon label preview compares 4/8/16 label distributions as research-only diagnostics.
 - Feature-group audits provide ablation planning inputs without running trading workflows.
 - Research decision reporting is classification-only and does not include trading/backtest/profit conclusions.
+
+## Phase 41-45 Update
+
+- Label redesign workflow now tests threshold-based flat definitions and horizon-specific label variants.
+- Binary up/down (`binary_drop_flat`) is available as a classification comparison baseline.
+- External holdout comparison remains 2020-2024 train vs 2025 holdout.
+- Label thresholds are classification-only label semantics and are not trading thresholds.
+
+## Phase 46-55 Update
+
+- Feature engineering and feature-set versioning are now explicit and testable.
+- Calibration, seed stability, rolling-year planning, and error-slice diagnostics extend classification QA.
+- Leakage/drift auditing and readiness reporting prepare for future controlled Qlib integration decisions.
+- Qlib remains uninitialized and workflow execution remains disabled in this phase range.

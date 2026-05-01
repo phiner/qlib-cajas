@@ -528,3 +528,101 @@ research_decision_report:
   output:
     default_output_dir: tmp/cajas/research_decision_reports
     default_run_name: phase40_research_decision_report
+
+label_redesign:
+  enabled: true
+  phase: phase41
+  horizons: [4, 8, 16]
+  thresholds: [0.0, 0.00005, 0.00010, 0.00020, 0.00030]
+  threshold_semantics: classification_label_threshold_only_not_trading
+
+label_variant_external_holdout:
+  enabled: true
+  phase: phase42
+  train_period: 2020_2024
+  holdout_period: 2025
+  model_family: LightGBM
+  label_modes: [multiclass, binary_drop_flat]
+  output:
+    default_output_dir: tmp/cajas/label_variant_runs
+
+label_variant_comparison:
+  enabled: true
+  phase: phase44
+  primary_metric: macro_f1
+  output:
+    default_output_dir: tmp/cajas/label_variant_comparisons
+    default_run_name: phase44_label_variant_comparison
+
+label_decision_report:
+  enabled: true
+  phase: phase45
+  output:
+    default_output_dir: tmp/cajas/label_decision_reports
+    default_run_name: phase45_label_decision_report
+
+feature_engineering:
+  enabled: true
+  phase: phase46
+  windows: [4, 8, 16, 32]
+  output:
+    default_output_dir: tmp/cajas/feature_sets
+
+feature_set_comparison:
+  enabled: true
+  phase: phase48
+  feature_sets: [minimal_v1, structure_v1, structure_plus_rolling_v1]
+  output:
+    default_output_dir: tmp/cajas/feature_set_comparisons
+    default_run_name: phase48_feature_set_comparison
+
+calibration_analysis:
+  enabled: true
+  phase: phase49
+  bucket_count: 10
+  output:
+    default_output_dir: tmp/cajas/calibration_analysis
+    default_run_name: phase49_calibration_analysis
+
+seed_stability:
+  enabled: true
+  phase: phase50
+  seeds: [7, 21, 42, 84, 168]
+  output:
+    default_output_dir: tmp/cajas/seed_stability
+    default_run_name: phase50_seed_stability
+
+rolling_year_validation:
+  enabled: true
+  phase: phase51
+  output:
+    default_output_dir: tmp/cajas/rolling_year_validation
+    default_run_name: phase51_rolling_year_plan
+
+error_slice_analysis:
+  enabled: true
+  phase: phase52
+  output:
+    default_output_dir: tmp/cajas/error_slice_analysis
+    default_run_name: phase52_error_slice_analysis
+
+leakage_drift_audit:
+  enabled: true
+  phase: phase53
+  output:
+    default_output_dir: tmp/cajas/leakage_drift_audits
+    default_run_name: phase53_leakage_drift_audit
+
+qlib_readiness_report:
+  enabled: true
+  phase: phase54
+  output:
+    default_output_dir: tmp/cajas/qlib_readiness_reports
+    default_run_name: phase54_qlib_readiness_report
+
+research_roadmap_report:
+  enabled: true
+  phase: phase55
+  output:
+    default_output_dir: tmp/cajas/research_roadmap_reports
+    default_run_name: phase55_research_roadmap_report

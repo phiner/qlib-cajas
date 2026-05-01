@@ -468,3 +468,18 @@ This phase still excludes:
 - Added phase-level research decision reporting from existing local artifacts.
 - All outputs remain classification research artifacts under `tmp/`.
 - No trading strategy, backtest, or profit analysis is added.
+
+## Phase 41-45: Label Redesign and Horizon Holdout
+
+- Added threshold-based label generation for `future_direction_{horizon}_thr_{threshold}` variants.
+- Added label-variant external holdout training with `multiclass` and `binary_drop_flat` modes.
+- Added label-variant comparison and phase-level label decision reporting.
+- Threshold semantics are classification label thresholds only, not trading thresholds.
+
+## Phase 46-55: Research Quality and Qlib Readiness
+
+- Added K-line structure feature builder and feature-set registry/comparison.
+- Added calibration analysis, seed stability runner, and rolling-year validation plan builder.
+- Added error-slice analysis and leakage/drift audit v2.
+- Added Qlib readiness report v2 and research roadmap report.
+- Qlib workflow remains unexecuted; all outputs stay classification research artifacts under `tmp/`.
