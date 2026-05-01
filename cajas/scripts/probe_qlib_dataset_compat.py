@@ -17,7 +17,12 @@ from cajas.qlib_compat.dataset_shape_probe import run_dataset_h_shape_probe
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Probe Qlib DatasetH compatibility (no training).")
+    p = argparse.ArgumentParser(
+        description=(
+            "Probe Qlib DatasetH compatibility (no training). "
+            "For adapter-level comparison also see probe_qlib_dataset_h_adapter.py."
+        )
+    )
     p.add_argument("--config", required=True)
     p.add_argument("--input-override", default=None)
     p.add_argument("--json", action="store_true")

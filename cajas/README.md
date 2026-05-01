@@ -329,3 +329,21 @@ This phase still excludes:
   - no model build / fit / predict / evaluate / serialize
   - no qlib core modifications
   - no trading scope
+
+## Phase 16: Qlib DatasetH Adapter Probe (No Training)
+
+- Added real Qlib DatasetH adapter probe module:
+  - `cajas/qlib_compat/prepared_dataset_h_adapter.py`
+- Added adapter comparison probe:
+  - `cajas/qlib_compat/adapter_comparison_probe.py`
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/probe_qlib_dataset_h_adapter.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Probe scope:
+  - compares `PreparedDataset`, `PreparedDatasetHLike`, and Qlib adapter outputs
+  - accepts Qlib-style `prepare(..., col_set=..., data_key=...)` signature
+  - keeps adapter external to qlib core
+- Boundaries remain unchanged:
+  - `qlib.init()` is not called
+  - training remains disabled
+  - no model build / fit / predict / evaluate / serialize
+  - no qlib core modifications and no trading scope

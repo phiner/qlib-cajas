@@ -180,3 +180,10 @@ Notes:
 - Dataset compatibility probe consumes the prepared CSV output as local input.
 - Compatibility reports are written under local `tmp/` paths (for example `tmp/cajas/qlib_compat/`).
 - No raw market rows are committed by this probe flow.
+
+## Phase 16 Adapter Probe Artifacts
+
+- Adapter probe consumes prepared CSV outputs as local inputs.
+- Probe artifacts live under local `tmp/` paths (for example `tmp/cajas/qlib_adapter/`).
+- No raw rows are committed by this flow.
+- No model artifacts are produced.

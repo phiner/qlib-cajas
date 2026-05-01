@@ -316,3 +316,22 @@ Next step needed:
 
 - If feasible, add a true Qlib `DatasetH` wrapper in `cajas/` while keeping training disabled.
 - Controlled baseline training remains a separate, explicit-approval phase.
+
+## Phase 16 Update
+
+- Phase 15 confirmed Qlib import availability and DatasetH/DataHandler symbols in this environment.
+- Added external real-adapter probe path:
+  - `cajas.qlib_compat.prepared_dataset_h_adapter.PreparedQlibDatasetHAdapter`
+- Added adapter comparison probe:
+  - `cajas.qlib_compat.adapter_comparison_probe.run_adapter_comparison_probe`
+- Added CLI:
+  - `cajas/scripts/probe_qlib_dataset_h_adapter.py`
+- This remains compatibility-only:
+  - no qlib.init()
+  - no training
+  - no qlib core changes
+
+## Phase 17 Recommendation
+
+- If this adapter probe remains stable, add a controlled no-fit baseline trainer object that emits model-config metadata only.
+- Or add a real Qlib workflow-config probe without training execution.

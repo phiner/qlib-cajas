@@ -207,3 +207,21 @@ qlib_compatibility:
     generated_files:
       - qlib_dataset_compat_report.json
       - qlib_import_status.json
+
+qlib_dataset_h_adapter:
+  enabled: true
+  phase: phase16
+  initialize_qlib: false
+  modify_qlib_core: false
+  require_qlib_import: false
+  require_true_subclass: false
+  adapter_class: cajas.qlib_compat.prepared_dataset_h_adapter.PreparedQlibDatasetHAdapter
+  compare_against:
+    - cajas.datasets.prepared_dataset.PreparedDataset
+    - cajas.qlib_compat.prepared_dataset_h_like.PreparedDatasetHLike
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_adapter
+    default_run_name: phase16_qlib_dataset_h_adapter
+    generated_files:
+      - qlib_dataset_h_adapter_report.json
+      - qlib_dataset_h_adapter_description.json
