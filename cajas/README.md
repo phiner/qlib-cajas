@@ -243,6 +243,19 @@ This phase still excludes:
   - no qlib core changes
   - no qlib workflow execution
 
+## Phase 21: Baseline Artifact Inspection and Prediction Review
+
+- Added baseline artifact inspector:
+  - `cajas/baseline/baseline_artifact_inspector.py`
+- Added prediction review module:
+  - `cajas/baseline/prediction_review.py`
+- Added inspection CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/inspect_baseline_run.py --run-dir tmp/cajas/baseline_runs/phase20_local_baseline`
+- Review artifacts are written under `tmp/` and remain local-only.
+- Review scope is classification-only artifact QA:
+  - no trading signals
+  - no backtest/profit analysis
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

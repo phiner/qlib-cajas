@@ -295,6 +295,21 @@ Next step needed:
 - Optionally compare LightGBM and sklearn fallback behavior on repeatable runs.
 - Keep trading logic out of scope.
 
+## Phase 21 Update
+
+- Added post-training artifact inspection for local baseline run directories.
+- Added prediction review reports for valid/test splits:
+  - low-confidence samples
+  - high-confidence errors
+  - per-class error summary
+- These review artifacts are for human/data QA and remain classification-only.
+- No qlib workflow execution, and no trading/backtest/profit analysis outputs were introduced.
+
+## Phase 22 Recommendation
+
+- Add baseline comparison across multiple run directories using registry metadata.
+- Optionally add model feature-importance inspection where model family support exists.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:

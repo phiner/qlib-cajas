@@ -205,3 +205,9 @@ Notes:
 - Local baseline training consumes the prepared CSV and existing train/valid/test segments.
 - Prediction artifacts are classification inspection outputs and are not trading signals.
 - Metrics artifacts are classification-only and exclude trading/performance metrics.
+
+## Phase 21 Baseline Review Artifacts
+
+- Baseline review files are derived local artifacts under `tmp/` and should not be committed.
+- Review outputs summarize classification behavior from prediction CSV artifacts.
+- Prediction labels remain market-recognition classes and are not trading actions.

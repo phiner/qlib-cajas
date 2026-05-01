@@ -294,3 +294,29 @@ local_baseline_training:
     - backtest_results
     - profit_metrics
     - order_recommendations
+
+baseline_artifact_review:
+  enabled: true
+  phase: phase21
+  default_run_dir: tmp/cajas/baseline_runs/phase20_local_baseline
+  low_confidence_threshold: 0.45
+  high_confidence_error_threshold: 0.70
+  output:
+    default_output_dir: tmp/cajas/baseline_reviews
+    default_run_name: phase21_baseline_review
+  artifacts:
+    generated_files:
+      - baseline_artifact_inspection_report.json
+      - valid_prediction_review_report.json
+      - test_prediction_review_report.json
+      - valid_low_confidence_samples.csv
+      - valid_high_confidence_errors.csv
+      - valid_error_summary_by_class.csv
+      - test_low_confidence_samples.csv
+      - test_high_confidence_errors.csv
+      - test_error_summary_by_class.csv
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+    - order_recommendations
