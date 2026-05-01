@@ -50,7 +50,8 @@ class PreparedCsvHandlerTests(unittest.TestCase):
     def test_required_columns_validation(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             rows = self._base_rows()
-            del rows[0]["volume"]
+            for row in rows:
+                del row["volume"]
             path = self._write_csv(tmp_dir, rows)
             with self.assertRaisesRegex(ValueError, "Missing required columns"):
                 PreparedCsvHandler(str(path))
