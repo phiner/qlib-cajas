@@ -26,6 +26,8 @@ class FeatureAuditReport:
     all_null_features: list[str]
     constant_features: list[str]
     missing_value_counts: dict[str, int]
+    missing_value_ratios: dict[str, float]
+    top_missing_features: list[dict[str, object]]
     issues: list[FeatureAuditIssue]
 
     def to_dict(self) -> dict:
@@ -38,6 +40,7 @@ def audit_features(
     features_df: pd.DataFrame,
     *,
     declared_leakage_columns: list[str] | tuple[str, ...],
+    top_n_missing: int = 10,
 ) -> FeatureAuditReport:
     df = features_df.copy()
     issues: list[FeatureAuditIssue] = []
@@ -101,7 +104,12 @@ def audit_features(
                 )
             )
 
+    row_count = len(df)
     missing_counts = {c: int(df[c].isna().sum()) for c in feature_columns}
+    missing_ratios = {
+        c: (float(missing_counts[c]) / float(row_count) if row_count > 0 else 0.0)
+        for c in feature_columns
+    }
     for col, count in missing_counts.items():
         if count > 0 and col not in all_null:
             issues.append(
@@ -113,6 +121,19 @@ def audit_features(
                 )
             )
 
+    top_missing = sorted(
+        [
+            {
+                "column": col,
+                "missing_count": missing_counts[col],
+                "missing_ratio": missing_ratios[col],
+            }
+            for col in feature_columns
+            if missing_counts[col] > 0
+        ],
+        key=lambda x: (-int(x["missing_count"]), str(x["column"])),
+    )[:top_n_missing]
+
     return FeatureAuditReport(
         feature_count=len(feature_columns),
         feature_columns=feature_columns,
@@ -122,5 +143,7 @@ def audit_features(
         all_null_features=all_null,
         constant_features=sorted(constant),
         missing_value_counts=missing_counts,
+        missing_value_ratios=missing_ratios,
+        top_missing_features=top_missing,
         issues=issues,
     )

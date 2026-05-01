@@ -34,6 +34,18 @@ class FeatureAuditTests(unittest.TestCase):
         self.assertEqual(report.feature_count, 2)
         self.assertFalse(any(i.severity == "error" for i in report.issues))
 
+    def test_missing_ratios_and_top_missing(self) -> None:
+        df = pd.DataFrame({"a": [1.0, None, None], "b": [1.0, 2.0, None]})
+        report = audit_features(df, declared_leakage_columns=[])
+        self.assertEqual(report.missing_value_counts["a"], 2)
+        self.assertAlmostEqual(report.missing_value_ratios["a"], 2.0 / 3.0)
+        self.assertEqual(report.top_missing_features[0]["column"], "a")
+
+    def test_no_missing_top_list_empty(self) -> None:
+        df = pd.DataFrame({"a": [1.0, 2.0], "b": [2.0, 3.0]})
+        report = audit_features(df, declared_leakage_columns=[])
+        self.assertEqual(report.top_missing_features, [])
+
 
 if __name__ == "__main__":
     unittest.main()
