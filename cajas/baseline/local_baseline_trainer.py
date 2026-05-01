@@ -12,7 +12,9 @@ import pandas as pd
 import yaml
 
 from cajas.baseline.classification_metrics import compute_classification_metrics
+from cajas.baseline.feature_value_audit import audit_feature_values
 from cajas.baseline.label_encoding import default_future_direction_8_encoding, encode_labels_for_preview
+from cajas.baseline.numeric_sanitizer import sanitize_features_for_model
 from cajas.config.experiment_config import build_workflow_config, load_experiment_config
 from cajas.datasets.prepared_dataset import PreparedDataset
 from cajas.handlers.prepared_csv_handler import PreparedCsvHandler
@@ -60,6 +62,7 @@ class LocalBaselineTrainingReport:
     qlib_workflow_executed: bool
     trading_backtest_profit_outputs: bool
     run_registry_path: str
+    sanitation_summary: dict
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -83,6 +86,18 @@ def _load_local_training_policy(config_path: str) -> dict[str, Any]:
         return {}
     if not isinstance(policy, dict):
         raise ValueError("local_baseline_training must be a mapping")
+    return policy
+
+
+def _load_numeric_sanitation_policy(config_path: str) -> dict[str, Any]:
+    root = yaml.safe_load(Path(config_path).read_text(encoding="utf-8"))
+    if not isinstance(root, dict):
+        raise ValueError("config root must be a mapping")
+    policy = root.get("numeric_sanitation")
+    if policy is None:
+        return {}
+    if not isinstance(policy, dict):
+        raise ValueError("numeric_sanitation must be a mapping")
     return policy
 
 
@@ -181,6 +196,7 @@ def train_local_baseline(
 
     cfg = load_experiment_config(config_path)
     policy = _load_local_training_policy(config_path)
+    sanitation_cfg = _load_numeric_sanitation_policy(config_path)
     wf_cfg = build_workflow_config(cfg, csv_path_override=input_override)
     if not wf_cfg.label_col:
         raise ValueError("label_col is required for local baseline training")
@@ -200,6 +216,30 @@ def train_local_baseline(
     valid_x, valid_y = dataset.prepare("valid")
     test_x, test_y = dataset.prepare("test")
 
+    clip_abs_value = float(sanitation_cfg.get("clip_abs_value", 1e6))
+    fill_value = float(sanitation_cfg.get("fill_value", 0.0))
+    large_value_threshold = float(sanitation_cfg.get("large_value_threshold", 1e12))
+
+    audit_train = audit_feature_values(train_x, large_value_threshold=large_value_threshold)
+    audit_valid = audit_feature_values(valid_x, large_value_threshold=large_value_threshold)
+    audit_test = audit_feature_values(test_x, large_value_threshold=large_value_threshold)
+
+    train_x_sanitized, san_train = sanitize_features_for_model(
+        train_x,
+        clip_abs_value=clip_abs_value,
+        fill_value=fill_value,
+    )
+    valid_x_sanitized, san_valid = sanitize_features_for_model(
+        valid_x,
+        clip_abs_value=clip_abs_value,
+        fill_value=fill_value,
+    )
+    test_x_sanitized, san_test = sanitize_features_for_model(
+        test_x,
+        clip_abs_value=clip_abs_value,
+        fill_value=fill_value,
+    )
+
     train_seg_df = handler.prepare_segment(*wf_cfg.segments["train"])
     valid_seg_df = handler.prepare_segment(*wf_cfg.segments["valid"])
     test_seg_df = handler.prepare_segment(*wf_cfg.segments["test"])
@@ -215,13 +255,13 @@ def train_local_baseline(
 
     model_family_requested, model_family_used, model = _make_model(model_family, random_state, warnings)
 
-    model.fit(train_x, train_y_enc)
+    model.fit(train_x_sanitized, train_y_enc)
 
-    valid_pred = model.predict(valid_x)
-    test_pred = model.predict(test_x)
+    valid_pred = model.predict(valid_x_sanitized)
+    test_pred = model.predict(test_x_sanitized)
 
-    valid_proba = model.predict_proba(valid_x) if hasattr(model, "predict_proba") else None
-    test_proba = model.predict_proba(test_x) if hasattr(model, "predict_proba") else None
+    valid_proba = model.predict_proba(valid_x_sanitized) if hasattr(model, "predict_proba") else None
+    test_proba = model.predict_proba(test_x_sanitized) if hasattr(model, "predict_proba") else None
 
     valid_metrics = compute_classification_metrics(
         y_true=valid_y_enc,
@@ -281,6 +321,19 @@ def train_local_baseline(
             "training_executed": True,
             "qlib_workflow_executed": False,
             "trading_backtest_profit_outputs": False,
+            "numeric_sanitation": {
+                "clip_abs_value": clip_abs_value,
+                "fill_value": fill_value,
+                "large_value_threshold": large_value_threshold,
+                "artifacts_written": [
+                    "feature_value_audit_train.json",
+                    "feature_value_audit_valid.json",
+                    "feature_value_audit_test.json",
+                    "numeric_sanitization_train.json",
+                    "numeric_sanitization_valid.json",
+                    "numeric_sanitization_test.json",
+                ],
+            },
         },
     )
     _write_json(
@@ -299,6 +352,12 @@ def train_local_baseline(
     _write_json(run_dir / "label_distribution.json", label_distribution)
     _write_json(run_dir / "metrics_valid.json", valid_metrics)
     _write_json(run_dir / "metrics_test.json", test_metrics)
+    _write_json(run_dir / "feature_value_audit_train.json", audit_train.to_dict())
+    _write_json(run_dir / "feature_value_audit_valid.json", audit_valid.to_dict())
+    _write_json(run_dir / "feature_value_audit_test.json", audit_test.to_dict())
+    _write_json(run_dir / "numeric_sanitization_train.json", san_train.to_dict())
+    _write_json(run_dir / "numeric_sanitization_valid.json", san_valid.to_dict())
+    _write_json(run_dir / "numeric_sanitization_test.json", san_test.to_dict())
 
     pd.DataFrame(valid_metrics["confusion_matrix"]["rows"]).to_csv(
         run_dir / "confusion_matrix_valid.csv", index=False
@@ -321,6 +380,12 @@ def train_local_baseline(
             "test_rows": int(len(test_x)),
             "target_label": wf_cfg.label_col,
             "training_executed": True,
+            "numeric_sanitation_enabled": True,
+            "numeric_sanitization": {
+                "clip_abs_value": clip_abs_value,
+                "fill_value": fill_value,
+                "large_value_threshold": large_value_threshold,
+            },
             "notes": [
                 "Local baseline classification model for market-recognition research.",
                 "No trading/backtest/profit analysis outputs are produced.",
@@ -378,4 +443,16 @@ def train_local_baseline(
         qlib_workflow_executed=False,
         trading_backtest_profit_outputs=False,
         run_registry_path=str(Path(registry_path).expanduser().resolve()),
+        sanitation_summary={
+            "audits": {
+                "train": audit_train.to_dict(),
+                "valid": audit_valid.to_dict(),
+                "test": audit_test.to_dict(),
+            },
+            "sanitization": {
+                "train": san_train.to_dict(),
+                "valid": san_valid.to_dict(),
+                "test": san_test.to_dict(),
+            },
+        },
     )

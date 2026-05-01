@@ -49,6 +49,8 @@ from .feature_importance_summary import (
     summarize_feature_importance_across_runs,
 )
 from .multi_model_baseline import MultiModelBaselineReport, run_multi_model_baseline
+from .feature_value_audit import FeatureValueAuditReport, FeatureValueIssue, audit_feature_values
+from .numeric_sanitizer import NumericSanitizationReport, sanitize_features_for_model
 
 __all__ = [
     "BaselineModelSpec",
@@ -77,6 +79,9 @@ __all__ = [
     "AggregatedFeatureImportanceItem",
     "FeatureImportanceSummaryReport",
     "MultiModelBaselineReport",
+    "FeatureValueIssue",
+    "FeatureValueAuditReport",
+    "NumericSanitizationReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -96,4 +101,6 @@ __all__ = [
     "inspect_feature_importance",
     "summarize_feature_importance_across_runs",
     "run_multi_model_baseline",
+    "audit_feature_values",
+    "sanitize_features_for_model",
 ]

@@ -92,6 +92,9 @@ class LocalBaselineTrainerTests(unittest.TestCase):
             self.assertFalse(report.trading_backtest_profit_outputs)
             self.assertIn("predictions_valid.csv", report.artifact_files)
             self.assertIn("metrics_valid.json", report.artifact_files)
+            self.assertIn("feature_value_audit_train.json", report.artifact_files)
+            self.assertIn("numeric_sanitization_train.json", report.artifact_files)
+            self.assertIn("sanitation_summary", report.to_dict())
 
             registry_path = Path(report.run_registry_path)
             self.assertTrue(registry_path.exists())
@@ -115,6 +118,23 @@ class LocalBaselineTrainerTests(unittest.TestCase):
                     run_name="phase20_test",
                     model_family="sklearn_random_forest",
                 )
+
+    def test_training_succeeds_with_inf_values_after_sanitation(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            csv_path = self._write_dataset(tmp_dir)
+            df = pd.read_csv(csv_path)
+            df.loc[0, "f1"] = float("inf")
+            df.loc[1, "f2"] = float("-inf")
+            df.to_csv(csv_path, index=False)
+            cfg = self._write_cfg(tmp_dir, csv_path)
+            output_dir = Path(tmp_dir) / "runs"
+            report = train_local_baseline(
+                config_path=str(cfg),
+                output_dir=output_dir,
+                run_name="phase20_inf_test",
+                model_family="RandomForest",
+            )
+            self.assertTrue(report.training_executed)
 
 
 if __name__ == "__main__":
