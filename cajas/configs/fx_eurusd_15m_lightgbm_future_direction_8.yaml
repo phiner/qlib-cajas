@@ -528,4 +528,3 @@ research_decision_report:
   output:
     default_output_dir: tmp/cajas/research_decision_reports
     default_run_name: phase40_research_decision_report
-    - order_recommendations
