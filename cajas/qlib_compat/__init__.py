@@ -20,6 +20,17 @@ from .workflow_config_probe import (
     probe_qlib_workflow_config,
     validate_qlib_workflow_config_dict,
 )
+from .class_resolver import (
+    ClassResolutionResult,
+    ClassResolverReport,
+    resolve_dotted_path,
+    resolve_dotted_paths,
+)
+from .workflow_dry_run_loader import (
+    WorkflowDryRunIssue,
+    WorkflowDryRunLoaderReport,
+    run_qlib_workflow_dry_run_loader,
+)
 
 __all__ = [
     "QlibImportStatus",
@@ -38,4 +49,11 @@ __all__ = [
     "build_training_disabled_qlib_workflow_config",
     "validate_qlib_workflow_config_dict",
     "probe_qlib_workflow_config",
+    "ClassResolutionResult",
+    "ClassResolverReport",
+    "resolve_dotted_path",
+    "resolve_dotted_paths",
+    "WorkflowDryRunIssue",
+    "WorkflowDryRunLoaderReport",
+    "run_qlib_workflow_dry_run_loader",
 ]
