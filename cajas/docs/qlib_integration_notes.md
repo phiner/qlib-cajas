@@ -279,6 +279,30 @@ Next step needed:
 
 ## Phase 19-20 Update
 
+## Research Decision Packet Workflow
+
+The phase 56-65 decision layer is a conservative research audit path:
+
+1. aggregate label/feature/calibration/stability/readiness artifacts
+2. produce a research decision packet
+3. optionally build a candidate promotion manifest for manual review
+4. index generated artifacts for traceability
+
+Reference commands:
+
+```bash
+python cajas/scripts/build_research_decision_packet.py --reports-dir ... --out-dir ...
+python cajas/scripts/build_candidate_promotion_manifest.py --decision-packet ... --out-dir ... --label-variant-id ... --feature-set-id ... --target-name ... --horizon 8 --model-family LightGBM
+python cajas/scripts/build_research_report_index.py --root-dir ... --out-dir ...
+python cajas/scripts/run_research_packet_smoke.py --out-root tmp/research-packet-smoke
+```
+
+Boundaries:
+- research readiness only
+- no trading strategy or order execution behavior
+- no qlib core modifications
+- `candidate_for_qlib_trial` means candidate for controlled manual review, not production deployment
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model

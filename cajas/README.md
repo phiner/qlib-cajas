@@ -258,6 +258,24 @@ This phase still excludes:
 
 ## Phase 23-26: Reporting and Comparison Workflow
 
+## Research Decision Packet Workflow
+
+This workflow is for research readiness only. It does not trade, does not modify Qlib core, and does not imply production deployment.
+
+Commands:
+
+```bash
+python cajas/scripts/build_research_decision_packet.py --reports-dir ... --out-dir ...
+python cajas/scripts/build_candidate_promotion_manifest.py --decision-packet ... --out-dir ... --label-variant-id ... --feature-set-id ... --target-name ... --horizon 8 --model-family LightGBM
+python cajas/scripts/build_research_report_index.py --root-dir ... --out-dir ...
+python cajas/scripts/run_research_packet_smoke.py --out-root tmp/research-packet-smoke
+```
+
+Promotion manifest meaning:
+- candidate for manual review only
+- not a production deployment
+- not a trading execution switch
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:
