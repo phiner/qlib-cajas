@@ -46,6 +46,11 @@ from .research_gate_builder import build_research_gate_packet
 from .research_gate_schema import ResearchGatePacket, GateCheckResult, ManualReviewItem, BlockedAction
 from .no_broker_dry_run_packet import build_no_broker_dry_run_packet
 from .research_gate_summary import render_research_gate_summary
+from .research_pipeline_manifest import build_research_pipeline_manifest
+from .reproducibility_check import build_reproducibility_report
+from .ci_validation_plan import build_ci_validation_plan
+from .final_readiness_packet import build_final_readiness_packet
+from .final_readiness_summary import render_final_readiness_summary
 
 __all__ = [
     "BaselineReportPack",
@@ -101,4 +106,9 @@ __all__ = [
     "BlockedAction",
     "build_no_broker_dry_run_packet",
     "render_research_gate_summary",
+    "build_research_pipeline_manifest",
+    "build_reproducibility_report",
+    "build_ci_validation_plan",
+    "build_final_readiness_packet",
+    "render_final_readiness_summary",
 ]
