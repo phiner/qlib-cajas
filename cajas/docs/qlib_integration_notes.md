@@ -281,3 +281,18 @@ Next step needed:
 
 - If explicitly user-approved, add a controlled baseline training implementation with artifact-only output and no trading scope.
 - Otherwise, prioritize a deeper true Qlib `DatasetH` compatibility probe before any training enablement.
+
+## Phase 14 Update
+
+- Added training input materialization preview flow for inspection-only artifacts:
+  - `cajas/baseline/label_encoding.py`
+  - `cajas/baseline/metric_plan.py`
+  - `cajas/baseline/training_input_materialization.py`
+  - `cajas/scripts/materialize_training_inputs_preview.py`
+- Materialization output remains local under `tmp/` and can include:
+  - `training_input_materialization_report.json`
+  - `label_encoding_preview.json`
+  - `metric_plan.json`
+  - optional train/valid/test features, labels, encoded-label CSV previews
+- This phase still does not build, fit, predict, evaluate, or serialize any model.
+- This phase still does not change Qlib core or introduce trading behavior.

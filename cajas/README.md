@@ -184,6 +184,29 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 14: Training Input Materialization Preview (No Training)
+
+- Added label encoding preview module:
+  - `cajas/baseline/label_encoding.py`
+- Added multiclass metric planning module:
+  - `cajas/baseline/metric_plan.py`
+- Added training input materialization preview module:
+  - `cajas/baseline/training_input_materialization.py`
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/materialize_training_inputs_preview.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --output-dir tmp/cajas/training_input_previews --run-name phase14_training_inputs_preview`
+- Optional modes:
+  - `--no-csv` writes only JSON artifacts
+  - `--json` prints report JSON
+- Local preview artifacts under `tmp/`:
+  - `training_input_materialization_report.json`
+  - `label_encoding_preview.json`
+  - `metric_plan.json`
+  - `train|valid|test` feature/label/encoded-label CSVs when CSV output is enabled
+- Policy remains unchanged:
+  - training remains disabled
+  - no model construction / fit / predict / evaluate / serialize
+  - no qlib core change and no trading scope
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

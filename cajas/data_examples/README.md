@@ -157,3 +157,20 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - `training_enable_contract.json`
 - Labels remain string classes until a future explicitly approved training phase.
 - Label encoding plan remains metadata-only in this phase.
+
+## Phase 14 Preview Artifacts
+
+Phase 14 adds derived training-input preview artifacts under local `tmp/` output paths.
+
+Examples:
+- `train_features.csv`, `valid_features.csv`, `test_features.csv`
+- `train_labels.csv`, `valid_labels.csv`, `test_labels.csv`
+- `train_encoded_labels.csv`, `valid_encoded_labels.csv`, `test_encoded_labels.csv`
+- `training_input_materialization_report.json`
+- `label_encoding_preview.json`
+- `metric_plan.json`
+
+Notes:
+- These are derived preview artifacts for inspection only.
+- Encoded labels are preview artifacts only; source prepared CSV labels remain unchanged.
+- Source prepared CSV remains local data input and should not be modified by preview materialization.

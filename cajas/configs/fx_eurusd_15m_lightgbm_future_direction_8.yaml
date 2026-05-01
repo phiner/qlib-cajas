@@ -159,3 +159,35 @@ future_training_skeleton:
     generated_files:
       - future_training_skeleton_report.json
       - training_enable_contract.json
+
+training_input_preview:
+  enabled: true
+  phase: phase14
+  label_encoding:
+    future_direction_8:
+      down: 0
+      flat: 1
+      up: 2
+  metrics:
+    task_type: multiclass_classification
+    primary_metric: macro_f1
+    enabled_metrics:
+      - accuracy
+      - macro_f1
+      - weighted_f1
+      - per_class_precision
+      - per_class_recall
+      - confusion_matrix
+      - class_distribution
+    forbidden_metrics:
+      - profit
+      - return
+      - sharpe
+      - drawdown
+  artifacts:
+    default_output_dir: tmp/cajas/training_input_previews
+    default_run_name: phase14_training_inputs_preview
+    generated_files:
+      - training_input_materialization_report.json
+      - label_encoding_preview.json
+      - metric_plan.json
