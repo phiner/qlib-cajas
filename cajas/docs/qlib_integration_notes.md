@@ -277,6 +277,24 @@ Next step needed:
 - Add a workflow dry-run manifest registry for comparing multiple config snapshots, or
 - If explicitly approved by the user, prepare a separately gated baseline training phase.
 
+## Phase 19-20 Update
+
+- Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
+- Added first controlled local baseline training path:
+  - classification-only supervised model
+  - valid/test prediction artifacts for inspection
+  - classification metrics only (accuracy/F1/confusion matrix/per-class precision-recall-f1)
+- This training path is local baseline research and is not qlib workflow training.
+- Boundaries remain:
+  - no qlib workflow execution
+  - no trading/backtest/profit analysis outputs
+
+## Phase 21 Recommendation
+
+- Add model artifact inspection and prediction review tooling.
+- Optionally compare LightGBM and sklearn fallback behavior on repeatable runs.
+- Keep trading logic out of scope.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:

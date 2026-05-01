@@ -228,6 +228,21 @@ This phase still excludes:
   - model classes are resolved but not instantiated
   - no trading or signal generation behavior
 
+## Phase 19-20: Run Registry and Controlled Local Baseline Training
+
+- Added local run manifest registry:
+  - `cajas/registry/run_registry.py`
+- Added controlled local baseline training module:
+  - `cajas/baseline/local_baseline_trainer.py`
+- Added training CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/train_local_baseline.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml --output-dir tmp/cajas/baseline_runs --run-name phase20_local_baseline`
+- Local baseline artifacts are written under `tmp/` and include model metadata, predictions, and classification metrics.
+- Scope remains market-recognition classification only:
+  - no trading signal generation
+  - no backtest/profit analysis
+  - no qlib core changes
+  - no qlib workflow execution
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

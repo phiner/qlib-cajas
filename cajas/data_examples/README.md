@@ -199,3 +199,9 @@ Notes:
 - Dry-run loader artifacts are local files under `tmp/` (for example `tmp/cajas/qlib_workflow_dry_run_loader/`).
 - Class resolution reports are metadata only and do not contain raw dataset rows.
 - The generated workflow config draft remains inspection-only for disabled execution validation.
+
+## Phase 19-20 Local Baseline Training Artifacts
+
+- Local baseline training consumes the prepared CSV and existing train/valid/test segments.
+- Prediction artifacts are classification inspection outputs and are not trading signals.
+- Metrics artifacts are classification-only and exclude trading/performance metrics.

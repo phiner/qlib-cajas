@@ -40,7 +40,7 @@ model:
 
 training:
   enabled: false
-  reason: "Phase 12 keeps baseline command scaffold blocked before model construction."
+  reason: "Qlib workflow training remains disabled; local baseline training is controlled separately."
 
 artifacts:
   enabled: false
@@ -262,3 +262,35 @@ qlib_workflow_dry_run_loader:
       - qlib_workflow_dry_run_loader_report.json
       - class_resolution_report.json
       - qlib_workflow_config_draft.json
+
+local_baseline_training:
+  enabled: true
+  phase: phase20
+  scope: market_recognition_classification_only
+  model_family: LightGBM
+  fallback_model_family: sklearn_random_forest
+  random_state: 42
+  output:
+    default_output_dir: tmp/cajas/baseline_runs
+    default_run_name: phase20_local_baseline
+    registry_path: tmp/cajas/run_registry/runs.jsonl
+  artifacts:
+    generated_files:
+      - run_manifest.json
+      - training_config.json
+      - feature_columns.json
+      - label_encoding.json
+      - label_distribution.json
+      - metrics_valid.json
+      - metrics_test.json
+      - confusion_matrix_valid.csv
+      - confusion_matrix_test.csv
+      - predictions_valid.csv
+      - predictions_test.csv
+      - model_metadata.json
+      - model.joblib
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+    - order_recommendations
