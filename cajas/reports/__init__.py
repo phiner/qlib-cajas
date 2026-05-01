@@ -19,6 +19,15 @@ from .label_variant_comparison import compare_label_variant_runs, write_label_va
 from .label_decision_report import build_label_decision_report
 from .qlib_readiness_report import build_qlib_readiness_report
 from .research_roadmap_report import build_research_roadmap_report
+from .research_decision_schema import (
+    ResearchDecisionInput,
+    ResearchDecisionFinding,
+    ResearchDecisionRecommendation,
+    ResearchDecisionResult,
+)
+from .research_decision_builder import build_research_decision
+from .candidate_promotion_manifest import build_candidate_promotion_manifest
+from .research_report_index import build_research_report_index
 
 __all__ = [
     "BaselineReportPack",
@@ -41,4 +50,11 @@ __all__ = [
     "build_label_decision_report",
     "build_qlib_readiness_report",
     "build_research_roadmap_report",
+    "ResearchDecisionInput",
+    "ResearchDecisionFinding",
+    "ResearchDecisionRecommendation",
+    "ResearchDecisionResult",
+    "build_research_decision",
+    "build_candidate_promotion_manifest",
+    "build_research_report_index",
 ]
