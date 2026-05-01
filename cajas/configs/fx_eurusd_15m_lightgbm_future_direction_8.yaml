@@ -404,3 +404,44 @@ run_health_check:
     generated_files:
       - run_health_report.json
       - run_health_issues.csv
+
+registry_cleanup:
+  enabled: true
+  phase: phase31
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/registry_cleanup
+    default_run_name: phase31_registry_cleanup
+
+dashboard_export:
+  enabled: true
+  phase: phase32
+  registry_path: tmp/cajas/run_registry/runs.jsonl
+  output:
+    default_output_dir: tmp/cajas/dashboard_exports
+    default_run_name: phase32_dashboard_export
+
+confidence_analysis:
+  enabled: true
+  phase: phase33
+  default_prediction_csv: tmp/cajas/baseline_runs/phase20_local_baseline/predictions_test.csv
+  bucket_edges:
+    - 0.0
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  output:
+    default_output_dir: tmp/cajas/confidence_analysis
+    default_run_name: phase33_confidence_analysis
+
+research_report_pack:
+  enabled: true
+  phase: phase34
+  title: EURUSD 15m Market Recognition Baseline Research
+  output:
+    default_output_dir: tmp/cajas/research_report_packs
+    default_run_name: phase34_research_report_pack

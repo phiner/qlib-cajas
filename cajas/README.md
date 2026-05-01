@@ -280,6 +280,18 @@ This phase still excludes:
 - Source prepared CSV remains unchanged; sanitation applies only to model input matrices.
 - No trading/backtest/profit analysis is included.
 
+## Phase 31-34: Registry, Dashboard, Confidence, Research Pack
+
+- Added registry cleanup/classification:
+  - `cajas/scripts/classify_run_registry.py`
+- Added dashboard data export:
+  - `cajas/scripts/export_dashboard_data.py`
+- Added prediction confidence analysis:
+  - `cajas/scripts/analyze_prediction_confidence.py`
+- Added consolidated research report pack:
+  - `cajas/scripts/build_research_report_pack.py`
+- All outputs are local under `tmp/` and remain classification/research artifacts only.
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

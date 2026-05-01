@@ -223,3 +223,9 @@ Notes:
 - Numeric sanitation reports are model-input diagnostics only and do not modify source prepared CSV.
 - Markdown exports and run-health outputs are derived local artifacts under `tmp/`.
 - These outputs should not be committed.
+
+## Phase 31-34 Registry and Research Artifacts
+
+- Registry cleanup outputs, dashboard exports, confidence summaries, and research report packs are derived local artifacts under `tmp/`.
+- Confidence buckets are classification QA summaries and are not trading thresholds.
+- These outputs should not be committed.

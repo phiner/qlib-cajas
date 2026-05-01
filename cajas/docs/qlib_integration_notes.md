@@ -336,6 +336,19 @@ Next step needed:
 - Add confidence-focused classification calibration analysis and export.
 - Optionally add dashboard data export for prediction-review and health status timelines.
 
+## Phase 31-34 Update
+
+- Added registry cleanup classification to separate active, temp-test, stale, and missing-artifact records.
+- Added dashboard-ready data exports (JSON/CSV) without introducing UI code.
+- Added confidence-bucket analysis for classification QA from prediction artifacts.
+- Added consolidated research report pack (Markdown + JSON) referencing baseline, confidence, feature, and health summaries.
+- Historical temp registry paths are now explicitly classified instead of being treated as unexplained failures.
+
+## Phase 35 Recommendation
+
+- Add static dashboard rendering from exported dashboard JSON files.
+- Optionally add confidence calibration experiments for classification-only analysis.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:
