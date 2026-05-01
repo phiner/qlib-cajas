@@ -296,3 +296,23 @@ Next step needed:
   - optional train/valid/test features, labels, encoded-label CSV previews
 - This phase still does not build, fit, predict, evaluate, or serialize any model.
 - This phase still does not change Qlib core or introduce trading behavior.
+
+## Phase 15 Update
+
+- Added Qlib import/API compatibility probe:
+  - `cajas.qlib_compat.qlib_probe.probe_qlib_dataset_api`
+- Added DatasetH-shape compatibility probe:
+  - `cajas.qlib_compat.dataset_shape_probe.run_dataset_h_shape_probe`
+- Added local DatasetH-like shim for API-shape comparison:
+  - `cajas.qlib_compat.prepared_dataset_h_like.PreparedDatasetHLike`
+- Added CLI:
+  - `cajas/scripts/probe_qlib_dataset_compat.py`
+- This phase validates compatibility shape only:
+  - no qlib.init()
+  - no model training or predictions
+  - no qlib core modifications
+
+## Phase 16 Recommendation
+
+- If feasible, add a true Qlib `DatasetH` wrapper in `cajas/` while keeping training disabled.
+- Controlled baseline training remains a separate, explicit-approval phase.

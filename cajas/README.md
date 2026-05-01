@@ -312,3 +312,20 @@ This phase still excludes:
 - qlib core modifications
 - model training
 - trading strategy or execution logic
+
+## Phase 15: Qlib Dataset Compatibility Probe (No Training)
+
+- Added Qlib compatibility probe package:
+  - `cajas/qlib_compat/qlib_probe.py`
+  - `cajas/qlib_compat/dataset_shape_probe.py`
+  - `cajas/qlib_compat/prepared_dataset_h_like.py`
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/probe_qlib_dataset_compat.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Probe scope:
+  - checks Qlib import availability and key Dataset API classes
+  - checks whether current prepared segment outputs match DatasetH-like shape expectations
+  - keeps training disabled and does not initialize Qlib
+- Policy remains unchanged:
+  - no model build / fit / predict / evaluate / serialize
+  - no qlib core modifications
+  - no trading scope

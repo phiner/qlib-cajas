@@ -191,3 +191,19 @@ training_input_preview:
       - training_input_materialization_report.json
       - label_encoding_preview.json
       - metric_plan.json
+
+qlib_compatibility:
+  enabled: true
+  phase: phase15
+  require_qlib_import: false
+  initialize_qlib: false
+  modify_qlib_core: false
+  dataset_h_shape_probe:
+    enabled: true
+    compatible_shape_required: true
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_compat
+    default_run_name: phase15_qlib_dataset_compat
+    generated_files:
+      - qlib_dataset_compat_report.json
+      - qlib_import_status.json

@@ -174,3 +174,9 @@ Notes:
 - These are derived preview artifacts for inspection only.
 - Encoded labels are preview artifacts only; source prepared CSV labels remain unchanged.
 - Source prepared CSV remains local data input and should not be modified by preview materialization.
+
+## Phase 15 Compatibility Probe Artifacts
+
+- Dataset compatibility probe consumes the prepared CSV output as local input.
+- Compatibility reports are written under local `tmp/` paths (for example `tmp/cajas/qlib_compat/`).
+- No raw market rows are committed by this probe flow.
