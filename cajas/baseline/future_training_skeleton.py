@@ -128,7 +128,8 @@ def build_future_training_skeleton(
     next_steps = [
         "Keep all training gates disabled until explicit user approval in a future phase.",
         "Resolve strict readiness warnings before requesting any training enablement.",
-        "Finalize label encoding application details and baseline evaluation contract.",
+        "Review Phase 14 label encoding preview and metric plan artifacts before training approval.",
+        "Materialize training input previews under tmp/ for segment-level inspection when needed.",
         "Keep all outputs artifact-only and preserve no-trading scope.",
     ]
 
