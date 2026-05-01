@@ -28,11 +28,39 @@ class PathHygieneTests(unittest.TestCase):
             self.assertFalse(report.passed)
             self.assertTrue(any(i.pattern == "caixas/" for i in report.issues))
 
+    def test_detects_taskdocs_by_default(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tasks").mkdir()
+            (root / "tasks" / "t.md").write_text("python taskDocs/notes.md\n", encoding="utf-8")
+            report = check_path_hygiene(root=root)
+            self.assertFalse(report.passed)
+            self.assertTrue(any(i.pattern == "taskDocs/" for i in report.issues))
+
+    def test_detects_cajas_init_py_path(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cajas" / "example").mkdir(parents=True)
+            (root / "cajas" / "example" / "init.py").write_text("# bad init\n", encoding="utf-8")
+            report = check_path_hygiene(root=root, include_globs=("cajas/**/*.py",))
+            self.assertFalse(report.passed)
+            self.assertTrue(any(i.pattern == "cajas/**/init.py" for i in report.issues))
+
+    def test_allows_dunder_init(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cajas" / "example").mkdir(parents=True)
+            (root / "cajas" / "example" / "__init__.py").write_text("# good init\n", encoding="utf-8")
+            report = check_path_hygiene(root=root, include_globs=("cajas/**/*.py",))
+            self.assertTrue(report.passed)
+
     def test_ignored_dirs_skipped(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "tmp" / "x").mkdir(parents=True)
             (root / "tmp" / "x" / "bad.md").write_text("python caixas/x.py\n", encoding="utf-8")
+            (root / ".venv-qlib313" / "x").mkdir(parents=True)
+            (root / ".venv-qlib313" / "x" / "bad.md").write_text("python caixas/x.py\n", encoding="utf-8")
             report = check_path_hygiene(root=root)
             self.assertTrue(report.passed)
 

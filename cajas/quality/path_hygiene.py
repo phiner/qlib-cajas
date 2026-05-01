@@ -90,6 +90,17 @@ def check_path_hygiene(
         file_path = root_path / rel
         matched_files.add(file_path)
 
+        # Enforce package initializer naming policy under cajas/.
+        if rel_str.startswith("cajas/") and rel.name == "init.py":
+            issues.append(
+                PathHygieneIssue(
+                    path=rel_str,
+                    line=1,
+                    pattern="cajas/**/init.py",
+                    message="Python package initializer must be named __init__.py, not init.py.",
+                )
+            )
+
         ext = file_path.suffix.lower()
         with file_path.open("r", encoding="utf-8", errors="ignore") as f:
             for idx, line in enumerate(f, start=1):

@@ -183,6 +183,26 @@ python cajas/scripts/prepare_fx_dataset.py --help
 
 ## 5. Coding Rules
 
+## Python Package Init Policy
+
+- Python package initializer files must always be named `__init__.py`.
+- Never create package initializer files named `init.py`.
+- If a new Python package directory is added and package imports are needed, create `__init__.py`.
+- Before every local commit, run:
+
+```bash
+find cajas -path "*/init.py" -print
+```
+
+- The command above must produce no output.
+- If any `cajas/**/init.py` file exists, fix it with `git mv`:
+
+```bash
+git mv path/to/init.py path/to/__init__.py
+```
+
+- Do not report package init cleanup as complete while any `cajas/**/init.py` file remains.
+
 ### Python
 
 - Prefer standard library plus existing project dependencies.
