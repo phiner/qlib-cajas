@@ -35,6 +35,12 @@ from .local_baseline_trainer import (
     LocalBaselineTrainingReport,
     train_local_baseline,
 )
+from .baseline_artifact_inspector import (
+    BaselineArtifactIssue,
+    BaselineArtifactInspectionReport,
+    inspect_baseline_run_artifacts,
+)
+from .prediction_review import PredictionReviewReport, build_prediction_review
 
 __all__ = [
     "BaselineModelSpec",
@@ -55,6 +61,9 @@ __all__ = [
     "TrainingGuardResult",
     "LocalBaselineTrainingConfig",
     "LocalBaselineTrainingReport",
+    "BaselineArtifactIssue",
+    "BaselineArtifactInspectionReport",
+    "PredictionReviewReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -68,4 +77,6 @@ __all__ = [
     "compute_classification_metrics",
     "confusion_matrix_to_rows",
     "train_local_baseline",
+    "inspect_baseline_run_artifacts",
+    "build_prediction_review",
 ]
