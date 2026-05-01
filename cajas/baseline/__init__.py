@@ -62,6 +62,11 @@ from .external_holdout_trainer import (
 )
 from .flat_class_diagnosis import FlatClassDiagnosisReport, diagnose_flat_class
 from .feature_group_audit import classify_feature_groups, build_feature_group_audit
+from .label_variant_trainer import LabelVariantTrainingReport, train_label_variant_external_holdout
+from .feature_set_comparison import run_feature_set_comparison
+from .calibration_analysis import analyze_calibration
+from .seed_stability import run_seed_stability_experiment
+from .error_slice_analysis import analyze_error_slices
 
 __all__ = [
     "BaselineModelSpec",
@@ -97,6 +102,7 @@ __all__ = [
     "ConfidenceAnalysisReport",
     "ExternalHoldoutTrainingReport",
     "FlatClassDiagnosisReport",
+    "LabelVariantTrainingReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -123,4 +129,9 @@ __all__ = [
     "diagnose_flat_class",
     "classify_feature_groups",
     "build_feature_group_audit",
+    "train_label_variant_external_holdout",
+    "run_feature_set_comparison",
+    "analyze_calibration",
+    "run_seed_stability_experiment",
+    "analyze_error_slices",
 ]

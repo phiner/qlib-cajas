@@ -15,6 +15,10 @@ from .external_holdout_benchmark import (
     build_external_holdout_benchmark,
 )
 from .research_decision_report import ResearchDecisionReport, build_research_decision_report
+from .label_variant_comparison import compare_label_variant_runs, write_label_variant_comparison_artifacts
+from .label_decision_report import build_label_decision_report
+from .qlib_readiness_report import build_qlib_readiness_report
+from .research_roadmap_report import build_research_roadmap_report
 
 __all__ = [
     "BaselineReportPack",
@@ -32,4 +36,9 @@ __all__ = [
     "build_external_holdout_benchmark",
     "ResearchDecisionReport",
     "build_research_decision_report",
+    "compare_label_variant_runs",
+    "write_label_variant_comparison_artifacts",
+    "build_label_decision_report",
+    "build_qlib_readiness_report",
+    "build_research_roadmap_report",
 ]
