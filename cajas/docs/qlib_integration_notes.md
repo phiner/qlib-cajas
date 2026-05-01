@@ -326,6 +326,29 @@ Artifact interpretation:
 - non-blocking `warning` issues indicate conservative manual follow-up
 - all outputs are dry-run research artifacts only
 
+## Qlib Dataset/Handler Offline Ingestion Workflow
+
+Phase 76-85 adds an offline ingestion layer between adapter handoff and later model bridge:
+
+1. build dataset contract from feature/label CSV artifacts
+2. build normalized handler input package
+3. validate handler input package in dry-run mode
+4. run deterministic smoke command
+
+Commands:
+
+```bash
+python cajas/scripts/build_qlib_dataset_contract.py --input-csv ... --out ... --dataset-id ... --label-col future_direction_8
+python cajas/scripts/build_qlib_handler_input.py --input-csv ... --out-dir ... --label-col future_direction_8
+python cajas/scripts/validate_qlib_handler_input.py --handler-dir ... --out ...
+python cajas/scripts/run_qlib_dataset_handler_smoke.py --out-root tmp/qlib-dataset-handler-smoke
+```
+
+Boundaries remain unchanged:
+- no model training in this phase
+- no Qlib core modifications
+- no trading execution logic
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model

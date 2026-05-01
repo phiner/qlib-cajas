@@ -321,6 +321,23 @@ Issue reading guidance:
 - `error`: blocking issue; handoff should not proceed
 - `warning`: non-blocking issue; review manually before next phase
 
+## Qlib Dataset/Handler Offline Ingestion Workflow
+
+This phase validates offline dataset/handler readiness only. It does not train models.
+
+Run:
+
+```bash
+python cajas/scripts/build_qlib_dataset_contract.py --input-csv ... --out ... --dataset-id ... --label-col future_direction_8
+python cajas/scripts/build_qlib_handler_input.py --input-csv ... --out-dir ... --label-col future_direction_8
+python cajas/scripts/validate_qlib_handler_input.py --handler-dir ... --out ...
+python cajas/scripts/run_qlib_dataset_handler_smoke.py --out-root tmp/qlib-dataset-handler-smoke
+```
+
+Interpretation:
+- warnings: acceptable for offline smoke, require manual review before model bridge
+- blocking issues: must be fixed before Phase 86-95
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:
