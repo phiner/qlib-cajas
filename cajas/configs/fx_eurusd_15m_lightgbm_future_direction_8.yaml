@@ -136,3 +136,26 @@ baseline_disabled_run:
     generated_files:
       - baseline_blocked_run_report.json
       - baseline_run_contract.json
+
+future_training_skeleton:
+  enabled: true
+  phase: phase13
+  user_training_approval: false
+  phase_policy_allows_training: false
+  can_enable_training: false
+  can_train_now: false
+  training_executed: false
+  model_built: false
+  fit_executed: false
+  prediction_executed: false
+  evaluation_executed: false
+  serialization_executed: false
+  note: "Future training skeleton only; Phase 13 intentionally blocks before model construction."
+  cli_enable_training_flag_exposed: false
+  produces_trading_signal: false
+  artifacts:
+    default_output_dir: tmp/cajas/future_training_skeletons
+    default_run_name: phase13_future_training_skeleton
+    generated_files:
+      - future_training_skeleton_report.json
+      - training_enable_contract.json

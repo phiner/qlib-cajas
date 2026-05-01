@@ -257,3 +257,27 @@ Next step needed:
 
 - Option A: add an explicit user-approved training enable switch while preserving no-trading boundaries.
 - Option B: first add a stronger Qlib DatasetH compatibility probe and keep training disabled.
+
+## Phase 13 Update
+
+- Added explicit training enable contract with required gates:
+  - `cajas.baseline.training_enable_contract.build_phase13_training_enable_contract`
+- Added future training skeleton entry:
+  - `cajas.baseline.future_training_skeleton.build_future_training_skeleton`
+  - `cajas/scripts/build_future_training_skeleton.py`
+- The skeleton is intentionally blocked by default gates in this phase:
+  - user approval false
+  - phase policy false
+  - config `training.enabled` false
+- Resulting behavior:
+  - no model construction
+  - no fit
+  - no predict
+  - no evaluate
+  - no model serialization
+  - no trading behavior
+
+## Phase 14 Recommendation
+
+- If explicitly user-approved, add a controlled baseline training implementation with artifact-only output and no trading scope.
+- Otherwise, prioritize a deeper true Qlib `DatasetH` compatibility probe before any training enablement.

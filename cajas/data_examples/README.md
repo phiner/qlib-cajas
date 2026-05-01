@@ -148,3 +148,12 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - `baseline_run_contract.json`
 - No model artifacts are produced in Phase 12.
 - Prepared CSV labels remain string classes (`down`, `flat`, `up`).
+
+## Phase 13 Future Training Skeleton Notes
+
+- Future training skeleton artifacts do not contain raw dataset rows.
+- Future training skeleton artifacts are metadata only:
+  - `future_training_skeleton_report.json`
+  - `training_enable_contract.json`
+- Labels remain string classes until a future explicitly approved training phase.
+- Label encoding plan remains metadata-only in this phase.

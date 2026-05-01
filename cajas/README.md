@@ -143,6 +143,28 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 13: Future Training Skeleton with Explicit Gates
+
+- Added explicit future training enable contract:
+  - `cajas/baseline/training_enable_contract.py`
+- Added future baseline training skeleton:
+  - `cajas/baseline/future_training_skeleton.py`
+  - `cajas/scripts/build_future_training_skeleton.py`
+- Added small baseline artifact helper:
+  - `cajas/baseline/baseline_artifacts.py`
+- CLI command:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_future_training_skeleton.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Optional artifact output:
+  - `--write-artifacts --output-dir tmp/cajas/future_training_skeletons --run-name phase13_future_training_skeleton`
+  - files:
+    - `future_training_skeleton_report.json`
+    - `training_enable_contract.json`
+- Policy remains unchanged:
+  - training is still disabled
+  - no model construction / fit / predict / evaluate / serialize is executed
+  - no qlib core change and no trading scope
+  - manual push workflow remains active (`git push` is not run by Codex)
+
 ## Phase 10: Training-Guarded Baseline Scaffold
 
 - Added baseline training safety guard:
