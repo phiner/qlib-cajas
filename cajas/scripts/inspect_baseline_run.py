@@ -52,29 +52,51 @@ def main() -> int:
             return 1
         run_out.mkdir(parents=True, exist_ok=False)
 
-        valid_review = build_prediction_review(
-            prediction_csv=Path(args.run_dir) / "predictions_valid.csv",
-            output_dir=run_out,
-            split="valid",
-            low_confidence_threshold=args.low_confidence_threshold,
-            high_confidence_error_threshold=args.high_confidence_error_threshold,
-        )
-        test_review = build_prediction_review(
-            prediction_csv=Path(args.run_dir) / "predictions_test.csv",
-            output_dir=run_out,
-            split="test",
-            low_confidence_threshold=args.low_confidence_threshold,
-            high_confidence_error_threshold=args.high_confidence_error_threshold,
-        )
+        valid_pred = Path(args.run_dir) / "predictions_valid.csv"
+        test_pred = Path(args.run_dir) / "predictions_test.csv"
+        holdout_pred = Path(args.run_dir) / "predictions_holdout.csv"
+
+        valid_review = None
+        test_review = None
+        holdout_review = None
+        if valid_pred.exists():
+            valid_review = build_prediction_review(
+                prediction_csv=valid_pred,
+                output_dir=run_out,
+                split="valid",
+                low_confidence_threshold=args.low_confidence_threshold,
+                high_confidence_error_threshold=args.high_confidence_error_threshold,
+            )
+        if test_pred.exists():
+            test_review = build_prediction_review(
+                prediction_csv=test_pred,
+                output_dir=run_out,
+                split="test",
+                low_confidence_threshold=args.low_confidence_threshold,
+                high_confidence_error_threshold=args.high_confidence_error_threshold,
+            )
+        if holdout_pred.exists():
+            holdout_review = build_prediction_review(
+                prediction_csv=holdout_pred,
+                output_dir=run_out,
+                split="holdout",
+                low_confidence_threshold=args.low_confidence_threshold,
+                high_confidence_error_threshold=args.high_confidence_error_threshold,
+            )
 
         _write_json(run_out / "baseline_artifact_inspection_report.json", payload)
-        _write_json(run_out / "valid_prediction_review_report.json", valid_review.to_dict())
-        _write_json(run_out / "test_prediction_review_report.json", test_review.to_dict())
+        if valid_review is not None:
+            _write_json(run_out / "valid_prediction_review_report.json", valid_review.to_dict())
+        if test_review is not None:
+            _write_json(run_out / "test_prediction_review_report.json", test_review.to_dict())
+        if holdout_review is not None:
+            _write_json(run_out / "holdout_prediction_review_report.json", holdout_review.to_dict())
 
         review_payload = {
             "output_dir": str(run_out),
-            "valid": valid_review.to_dict(),
-            "test": test_review.to_dict(),
+            "valid": valid_review.to_dict() if valid_review is not None else None,
+            "test": test_review.to_dict() if test_review is not None else None,
+            "holdout": holdout_review.to_dict() if holdout_review is not None else None,
         }
 
     output = dict(payload)

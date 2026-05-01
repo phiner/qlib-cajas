@@ -22,6 +22,7 @@ class BaselineReportPack:
     feature_count: int | None
     valid_metrics: dict
     test_metrics: dict
+    holdout_metrics: dict
     prediction_review: dict
     feature_importance: dict
     artifact_inspection: dict
@@ -54,16 +55,27 @@ def build_baseline_report_pack(
         out_dir.mkdir(parents=True, exist_ok=False)
 
     inspect = inspect_baseline_run_artifacts(base_run)
-    valid_review = build_prediction_review(
-        prediction_csv=base_run / "predictions_valid.csv",
-        output_dir=out_dir if write_artifacts else Path("/tmp"),
-        split="valid",
-    )
-    test_review = build_prediction_review(
-        prediction_csv=base_run / "predictions_test.csv",
-        output_dir=out_dir if write_artifacts else Path("/tmp"),
-        split="test",
-    )
+    valid_review = None
+    test_review = None
+    holdout_review = None
+    if (base_run / "predictions_valid.csv").exists():
+        valid_review = build_prediction_review(
+            prediction_csv=base_run / "predictions_valid.csv",
+            output_dir=out_dir if write_artifacts else Path("/tmp"),
+            split="valid",
+        )
+    if (base_run / "predictions_test.csv").exists():
+        test_review = build_prediction_review(
+            prediction_csv=base_run / "predictions_test.csv",
+            output_dir=out_dir if write_artifacts else Path("/tmp"),
+            split="test",
+        )
+    if (base_run / "predictions_holdout.csv").exists():
+        holdout_review = build_prediction_review(
+            prediction_csv=base_run / "predictions_holdout.csv",
+            output_dir=out_dir if write_artifacts else Path("/tmp"),
+            split="holdout",
+        )
     fi = inspect_feature_importance(run_dir=base_run, top_k=top_k_features)
 
     pack = BaselineReportPack(
@@ -74,17 +86,33 @@ def build_baseline_report_pack(
         feature_count=inspect.feature_count,
         valid_metrics=inspect.metrics_valid,
         test_metrics=inspect.metrics_test,
-        prediction_review={"valid": valid_review.to_dict(), "test": test_review.to_dict()},
+        holdout_metrics=inspect.metrics_holdout,
+        prediction_review={
+            "valid": valid_review.to_dict() if valid_review is not None else None,
+            "test": test_review.to_dict() if test_review is not None else None,
+            "holdout": holdout_review.to_dict() if holdout_review is not None else None,
+        },
         feature_importance=fi.to_dict(),
         artifact_inspection=inspect.to_dict(),
         trading_metrics_present=False,
-        warnings=list(dict.fromkeys(inspect.warnings + fi.warnings + valid_review.warnings + test_review.warnings)),
+        warnings=list(
+            dict.fromkeys(
+                inspect.warnings
+                + fi.warnings
+                + (valid_review.warnings if valid_review is not None else [])
+                + (test_review.warnings if test_review is not None else [])
+                + (holdout_review.warnings if holdout_review is not None else [])
+            )
+        ),
         blockers=list(dict.fromkeys([i.message for i in inspect.issues if i.severity == "error"] + fi.blockers)),
     )
 
     if write_artifacts:
         _write_json(out_dir / "baseline_report_pack.json", pack.to_dict())
-        _write_json(out_dir / "metrics_summary.json", {"valid": inspect.metrics_valid, "test": inspect.metrics_test})
+        _write_json(
+            out_dir / "metrics_summary.json",
+            {"valid": inspect.metrics_valid, "test": inspect.metrics_test, "holdout": inspect.metrics_holdout},
+        )
         _write_json(out_dir / "feature_importance_summary.json", fi.to_dict())
         _write_json(out_dir / "prediction_review_summary.json", pack.prediction_review)
         _write_json(out_dir / "artifact_inspection_summary.json", inspect.to_dict())

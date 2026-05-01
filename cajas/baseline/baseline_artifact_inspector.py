@@ -49,6 +49,7 @@ class BaselineArtifactInspectionReport:
     test_rows: int | None
     metrics_valid: dict
     metrics_test: dict
+    metrics_holdout: dict
     issues: list[BaselineArtifactIssue]
     warnings: list[str]
     training_executed: bool | None
@@ -68,6 +69,7 @@ class BaselineArtifactInspectionReport:
             "test_rows": self.test_rows,
             "metrics_valid": self.metrics_valid,
             "metrics_test": self.metrics_test,
+            "metrics_holdout": self.metrics_holdout,
             "issues": [item.to_dict() for item in self.issues],
             "warnings": list(self.warnings),
             "training_executed": self.training_executed,
@@ -109,6 +111,7 @@ def inspect_baseline_run_artifacts(run_dir: str | Path) -> BaselineArtifactInspe
     model_meta = _load_json(base / "model_metadata.json") if (base / "model_metadata.json").exists() else {}
     metrics_valid = _load_json(base / "metrics_valid.json") if (base / "metrics_valid.json").exists() else {}
     metrics_test = _load_json(base / "metrics_test.json") if (base / "metrics_test.json").exists() else {}
+    metrics_holdout = _load_json(base / "metrics_holdout.json") if (base / "metrics_holdout.json").exists() else {}
 
     feature_count = model_meta.get("feature_count")
     if feature_count is None and isinstance(feature_cols.get("feature_columns"), list):
@@ -118,6 +121,8 @@ def inspect_baseline_run_artifacts(run_dir: str | Path) -> BaselineArtifactInspe
         warnings.append("metrics_valid.json unavailable or empty")
     if not metrics_test:
         warnings.append("metrics_test.json unavailable or empty")
+    if not metrics_holdout:
+        warnings.append("metrics_holdout.json unavailable or empty")
 
     return BaselineArtifactInspectionReport(
         run_dir=str(base),
@@ -132,6 +137,7 @@ def inspect_baseline_run_artifacts(run_dir: str | Path) -> BaselineArtifactInspe
         test_rows=model_meta.get("test_rows"),
         metrics_valid=metrics_valid,
         metrics_test=metrics_test,
+        metrics_holdout=metrics_holdout,
         issues=issues,
         warnings=warnings,
         training_executed=run_manifest.get("training_executed"),

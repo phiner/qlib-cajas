@@ -445,3 +445,43 @@ research_report_pack:
   output:
     default_output_dir: tmp/cajas/research_report_packs
     default_run_name: phase34_research_report_pack
+
+external_holdout_validation:
+  enabled: true
+  phase: phase35
+  train_period:
+    name: train_2020_2024
+    raw_input: ~/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv
+    prepared_dir: tmp/cajas/eurusd_15m_2020_2024_phase35_train
+  holdout_period:
+    name: holdout_2025
+    raw_input: ~/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv
+    prepared_dir: tmp/cajas/eurusd_15m_2025_phase35_holdout
+  model_family: LightGBM
+  random_state: 42
+  output:
+    default_output_dir: tmp/cajas/external_holdout_runs
+    default_run_name: phase35_train_2020_2024_validate_2025
+  artifacts:
+    generated_files:
+      - run_manifest.json
+      - training_config.json
+      - external_holdout_dataset_summary.json
+      - feature_columns.json
+      - label_encoding.json
+      - label_distribution_train.json
+      - label_distribution_holdout.json
+      - metrics_holdout.json
+      - confusion_matrix_holdout.csv
+      - predictions_holdout.csv
+      - feature_value_audit_train.json
+      - feature_value_audit_holdout.json
+      - numeric_sanitization_train.json
+      - numeric_sanitization_holdout.json
+      - model_metadata.json
+      - model.joblib
+  forbidden_outputs:
+    - trading_signals
+    - backtest_results
+    - profit_metrics
+    - order_recommendations

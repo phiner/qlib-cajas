@@ -229,3 +229,9 @@ Notes:
 - Registry cleanup outputs, dashboard exports, confidence summaries, and research report packs are derived local artifacts under `tmp/`.
 - Confidence buckets are classification QA summaries and are not trading thresholds.
 - These outputs should not be committed.
+
+## Phase 35 External Holdout Layout
+
+- Raw multi-year CSV files remain outside the repo under local data paths.
+- Prepared train (2020-2024) and holdout (2025) outputs are intentionally separated under `tmp/`.
+- External holdout artifacts are derived local files and should not be committed.

@@ -292,6 +292,16 @@ This phase still excludes:
   - `cajas/scripts/build_research_report_pack.py`
 - All outputs are local under `tmp/` and remain classification/research artifacts only.
 
+## Phase 35: External Holdout Validation
+
+- Added external holdout dataset support:
+  - train on 2020-2024 prepared data
+  - validate on 2025 prepared data
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/train_external_holdout_baseline.py --train ... --holdout ... --output-dir tmp/cajas/external_holdout_runs --run-name phase35_train_2020_2024_validate_2025 --model-family LightGBM`
+- This is out-of-sample classification validation only.
+- No trading/backtest/profit analysis is included.
+
 ## Phase 9: Training-Disabled Baseline Plan
 
 - Added dependency probe module:

@@ -40,11 +40,17 @@ def build_research_report_pack(
     out_dir.mkdir(parents=True, exist_ok=False)
 
     base = Path(baseline_run_dir).expanduser().resolve()
-    metrics_test = json.loads((base / "metrics_test.json").read_text(encoding="utf-8"))
-    metrics_valid = json.loads((base / "metrics_valid.json").read_text(encoding="utf-8"))
+    metrics_test = json.loads((base / "metrics_test.json").read_text(encoding="utf-8")) if (base / "metrics_test.json").exists() else {}
+    metrics_valid = json.loads((base / "metrics_valid.json").read_text(encoding="utf-8")) if (base / "metrics_valid.json").exists() else {}
+    metrics_holdout = json.loads((base / "metrics_holdout.json").read_text(encoding="utf-8")) if (base / "metrics_holdout.json").exists() else {}
     meta = json.loads((base / "model_metadata.json").read_text(encoding="utf-8"))
 
-    conf = analyze_prediction_confidence(prediction_csv=base / "predictions_test.csv", split="test")
+    conf_src = base / "predictions_test.csv"
+    conf_split = "test"
+    if not conf_src.exists() and (base / "predictions_holdout.csv").exists():
+        conf_src = base / "predictions_holdout.csv"
+        conf_split = "holdout"
+    conf = analyze_prediction_confidence(prediction_csv=conf_src, split=conf_split)
     fi = summarize_feature_importance_across_runs(run_dirs=[base], top_k=20)
     health = check_run_registry_health(registry_path=registry_path)
 
@@ -64,6 +70,7 @@ def build_research_report_pack(
         f"Target label: `{meta.get('target_label')}`\n\n"
         f"Valid accuracy: `{metrics_valid.get('accuracy')}`\n\n"
         f"Test accuracy: `{metrics_test.get('accuracy')}`\n\n"
+        f"Holdout accuracy: `{metrics_holdout.get('accuracy')}`\n\n"
         f"Confidence buckets: `{len(conf.buckets)}`\n\n"
         f"Feature summary count: `{len(fi.features)}`\n\n"
         f"Registry health errors: `{health.error_count}`\n\n"
@@ -79,7 +86,7 @@ def build_research_report_pack(
     pack_payload = {
         "title": title,
         "sections": sections,
-        "baseline": {"metrics_valid": metrics_valid, "metrics_test": metrics_test, "model_metadata": meta},
+        "baseline": {"metrics_valid": metrics_valid, "metrics_test": metrics_test, "metrics_holdout": metrics_holdout, "model_metadata": meta},
         "feature_importance": fi.to_dict(),
         "confidence": conf.to_dict(),
         "registry_health": health.to_dict(),

@@ -349,6 +349,15 @@ Next step needed:
 - Add static dashboard rendering from exported dashboard JSON files.
 - Optionally add confidence calibration experiments for classification-only analysis.
 
+## Phase 35 Update
+
+- Added external holdout validation workflow:
+  - train period: 2020-2024
+  - holdout period: 2025
+- This replaces single-year internal-only splitting for the main validation path.
+- 2025 results are interpreted as out-of-sample classification validation only.
+- This remains outside trading strategy and backtest/profit interpretation.
+
 ## Phase 13 Update
 
 - Added explicit training enable contract with required gates:
