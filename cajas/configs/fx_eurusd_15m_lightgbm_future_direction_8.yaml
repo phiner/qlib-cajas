@@ -1,7 +1,7 @@
 name: fx_eurusd_15m_lightgbm_future_direction_8
 description: >
   Draft market recognition research config for EURUSD 15m future_direction_8.
-  This config is training-disabled in Phase 11.
+  This config is training-disabled in Phase 12.
 
 research_scope:
   market_recognition_only: true
@@ -40,7 +40,7 @@ model:
 
 training:
   enabled: false
-  reason: "Phase 7 validates config/workflow dry-run and optional local artifacts."
+  reason: "Phase 12 keeps baseline command scaffold blocked before model construction."
 
 artifacts:
   enabled: false
@@ -117,3 +117,22 @@ baseline_preflight:
     generated_files:
       - baseline_preflight_report.json
       - baseline_execution_contract.json
+
+baseline_disabled_run:
+  enabled: true
+  phase: phase12
+  phase_policy_allows_training: false
+  can_train: false
+  training_executed: false
+  model_built: false
+  predictions_generated: false
+  evaluation_executed: false
+  serialized_model: false
+  note: "Future training command skeleton only; blocked before model construction."
+  produces_trading_signal: false
+  artifacts:
+    default_output_dir: tmp/cajas/baseline_disabled_runs
+    default_run_name: phase12_baseline_disabled
+    generated_files:
+      - baseline_blocked_run_report.json
+      - baseline_run_contract.json

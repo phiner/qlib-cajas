@@ -232,3 +232,28 @@ Next step needed:
 
 - Add an explicitly disabled training command skeleton with no model fit path.
 - Or, if explicitly approved, move to a controlled baseline training phase with artifact-only outputs and no trading behaviors.
+
+## Phase 12 Update
+
+- Added Phase 12 baseline run contract:
+  - `cajas.baseline.run_contract.build_phase12_baseline_run_contract`
+- Added training-disabled baseline runner entry point:
+  - `cajas.baseline.baseline_runner.run_training_disabled_baseline`
+  - `cajas/scripts/run_baseline_disabled.py`
+- Runner flow:
+  - runs baseline preflight
+  - builds a Phase 12 run contract
+  - returns blocked-run metadata
+  - stops before model creation
+- Safety boundaries in this phase:
+  - no model build
+  - no fit
+  - no predict
+  - no evaluate
+  - no model serialization
+  - no trading behavior
+
+## Phase 13 Recommendation
+
+- Option A: add an explicit user-approved training enable switch while preserving no-trading boundaries.
+- Option B: first add a stronger Qlib DatasetH compatibility probe and keep training disabled.

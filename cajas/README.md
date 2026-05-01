@@ -116,6 +116,33 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 12: Training-Disabled Baseline Command
+
+- Added future baseline run contract (Phase 12 blocked mode):
+  - `cajas/baseline/run_contract.py`
+- Added training-disabled baseline runner:
+  - `cajas/baseline/baseline_runner.py`
+  - `cajas/scripts/run_baseline_disabled.py`
+- Runner behavior:
+  - runs preflight and run-contract checks
+  - blocks before any model build/fit/predict/evaluate/serialize action
+  - writes blocked-run artifacts only when requested
+- CLI command:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_baseline_disabled.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Optional artifact output:
+  - `--write-artifacts --output-dir tmp/cajas/baseline_disabled_runs --run-name phase12_baseline_disabled`
+  - files:
+    - `baseline_blocked_run_report.json`
+    - `baseline_run_contract.json`
+- Policy note:
+  - Codex communication is English-only unless explicitly requested otherwise by the user.
+  - Codex does not run `git push`; only local commits are produced.
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 10: Training-Guarded Baseline Scaffold
 
 - Added baseline training safety guard:

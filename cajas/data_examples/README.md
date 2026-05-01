@@ -139,3 +139,12 @@ Important: `future_direction_8` is a research label, not a trading signal.
 - Preflight reports do not contain raw rows.
 - Path hygiene checks protect command/path accuracy (`cajas/` vs typo `caixas/`).
 - Prepared CSV labels remain string classes.
+
+## Phase 12 Disabled Baseline Runner Notes
+
+- Blocked-run artifacts do not contain raw dataset rows.
+- Blocked-run artifacts are metadata only:
+  - `baseline_blocked_run_report.json`
+  - `baseline_run_contract.json`
+- No model artifacts are produced in Phase 12.
+- Prepared CSV labels remain string classes (`down`, `flat`, `up`).
