@@ -12,6 +12,9 @@ Required columns:
 - `Close`
 - `Volume` or `Volume `
 
+Header compatibility:
+- the script trims header whitespace, so both `Volume` and `Volume ` are accepted
+
 Input format details:
 - datetime format: `YYYY.MM.DD HH:MM:SS`
 - timeframe: `15m`

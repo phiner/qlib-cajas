@@ -18,13 +18,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", required=True, help="Path to raw CSV input (supports ~ expansion).")
     parser.add_argument("--output-dir", required=True, help="Directory for prepared outputs.")
     parser.add_argument("--symbol", default="EURUSD", help="Symbol name for output rows.")
+    parser.add_argument("--timeframe", default="15m", help="Timeframe label for output rows.")
     parser.add_argument("--horizon", type=int, default=8, help="Future horizon in bars.")
-    parser.add_argument(
-        "--flat-threshold",
-        type=float,
-        default=0.0002,
-        help="Threshold used to map future return into up/down/flat labels.",
-    )
     return parser.parse_args()
 
 
@@ -115,20 +110,22 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_future_direction_label(df: pd.DataFrame, horizon: int, flat_threshold: float) -> tuple[pd.DataFrame, int]:
+def add_future_direction_label(df: pd.DataFrame, horizon: int) -> tuple[pd.DataFrame, int]:
     if horizon <= 0:
         raise ValueError("--horizon must be a positive integer")
 
     df = df.copy()
     future_return_col = f"future_return_{horizon}"
+    future_close_col = f"future_close_{horizon}"
     future_direction_col = f"future_direction_{horizon}"
 
+    df[future_close_col] = df["close"].shift(-horizon)
     df[future_return_col] = df["close"].shift(-horizon) / df["close"] - 1.0
 
     df[future_direction_col] = np.where(
-        df[future_return_col] > flat_threshold,
+        df[future_return_col] > 0.0,
         "up",
-        np.where(df[future_return_col] < -flat_threshold, "down", "flat"),
+        np.where(df[future_return_col] < 0.0, "down", "flat"),
     )
 
     unlabeled_rows = int(df[future_return_col].isna().sum())
@@ -143,25 +140,37 @@ def write_manifest(
     output_dir: Path,
     output_csv: Path,
     symbol: str,
+    timeframe: str,
     horizon: int,
-    flat_threshold: float,
     dataset: pd.DataFrame,
     clean_stats: dict,
     unlabeled_rows_dropped: int,
 ) -> None:
+    label_col = f"future_direction_{horizon}"
+    label_distribution = {
+        k: int(v) for k, v in dataset[label_col].value_counts(dropna=False).sort_index().to_dict().items()
+    }
     manifest = {
         "input_path": str(input_path),
         "output_dir": str(output_dir),
         "prepared_dataset_path": str(output_csv),
         "symbol": symbol,
+        "timeframe": timeframe,
         "horizon": horizon,
-        "flat_threshold": flat_threshold,
+        "label": label_col,
         "row_count": int(len(dataset)),
         "start_datetime": dataset["datetime"].iloc[0] if len(dataset) else None,
         "end_datetime": dataset["datetime"].iloc[-1] if len(dataset) else None,
         "columns": list(dataset.columns),
+        "feature_columns": [
+            c
+            for c in dataset.columns
+            if c not in {"datetime", "symbol", "timeframe", "open", "high", "low", "close", "volume", label_col}
+        ],
+        "label_distribution": label_distribution,
         "cleaning": clean_stats,
         "unlabeled_rows_dropped": unlabeled_rows_dropped,
+        "created_by": "cajas/scripts/prepare_fx_dataset.py",
     }
 
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -182,10 +191,13 @@ def main() -> None:
     cleaned, clean_stats = clean_dataset(standardized)
 
     cleaned["symbol"] = args.symbol
+    cleaned["timeframe"] = args.timeframe
     featured = add_features(cleaned)
-    labeled, unlabeled_rows_dropped = add_future_direction_label(
-        featured, horizon=args.horizon, flat_threshold=args.flat_threshold
-    )
+    labeled, unlabeled_rows_dropped = add_future_direction_label(featured, horizon=args.horizon)
+
+    # Backward-compatible simple aliases for downstream checks.
+    labeled["range"] = labeled["hl_range"]
+    labeled["body"] = labeled["body_size"]
 
     output_csv = output_dir / "prepared_dataset.csv"
     output_manifest = output_dir / "dataset_manifest.json"
@@ -197,8 +209,8 @@ def main() -> None:
         output_dir=output_dir,
         output_csv=output_csv,
         symbol=args.symbol,
+        timeframe=args.timeframe,
         horizon=args.horizon,
-        flat_threshold=args.flat_threshold,
         dataset=labeled,
         clean_stats=clean_stats,
         unlabeled_rows_dropped=unlabeled_rows_dropped,
