@@ -1,5 +1,7 @@
+# Draft only. This config documents the intended Qlib integration shape.
+# It is a research scaffold and may require custom DataHandler code under cajas/.
 meta:
-  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase0
+  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase2_draft
   research_layer: cajas
   note: "Research config draft only; not a trading strategy or production signal."
 
@@ -11,13 +13,17 @@ task:
   name: market_recognition_future_direction_classification
   label_column: future_direction_8
   horizon: 8
-  flat_threshold: 0.0002
+  label_semantics: "up if future_return_8 > 0, down if future_return_8 < 0, flat otherwise"
   classes: [up, flat, down]
 
 dataset:
-  prepared_csv_path: tmp/cajas/fx_eurusd_15m_phase0/prepared_dataset.csv
+  prepared_csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
   datetime_column: datetime
   symbol_column: symbol
+  timeframe_column: timeframe
+  TODO_integration:
+    - add custom DataHandler/DataLoader under cajas/ for Phase 3
+    - map prepared CSV columns into Qlib DatasetH consumable structure
   split:
     train: ["2025-01-01", "2025-08-31"]
     valid: ["2025-09-01", "2025-10-31"]
@@ -58,5 +64,6 @@ features:
 
 disclaimer:
   - this is a research config draft
+  - for market recognition only
   - not a trading strategy
   - not a production signal

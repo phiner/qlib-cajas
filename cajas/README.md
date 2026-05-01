@@ -54,3 +54,14 @@ Notes:
 - generated outputs are written under `tmp/` and should not be committed
 - `future_direction_8` is a market-recognition research label, not a trading signal
 - current phase validates data preparation only (no model training)
+
+## Phase 2: Qlib Integration Mapping
+
+- Phase 1 prepared dataset output is used as the current research input for integration planning:
+  - `tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv`
+  - `tmp/cajas/eurusd_15m_phase1/dataset_manifest.json`
+- Phase 2 focus is mapping how this dataset can connect to Qlib `DatasetH` / `DataHandler` workflows.
+- Integration notes are documented in:
+  - `cajas/docs/qlib_integration_notes.md`
+- Qlib core remains unchanged.
+- This phase does not run formal training or trading workflows.
