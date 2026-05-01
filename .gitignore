@@ -56,11 +56,6 @@ tags
 .codex
 .codex/
 
-# Local task prompts/docs
-taskDocs/
-taskDocs/tmp/
-taskDocs/*.local.md
-taskDocs/*.scratch.md
 
 # Local generated outputs
 tmp/
@@ -84,3 +79,4 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
