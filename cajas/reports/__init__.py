@@ -42,6 +42,10 @@ from .qlib_experiment_artifacts import write_experiment_artifacts
 from .qlib_model_metrics import compute_classification_metrics
 from .qlib_model_run_registry import register_qlib_model_run, load_qlib_model_registry
 from .qlib_model_run_comparison import build_qlib_model_run_comparison
+from .research_gate_builder import build_research_gate_packet
+from .research_gate_schema import ResearchGatePacket, GateCheckResult, ManualReviewItem, BlockedAction
+from .no_broker_dry_run_packet import build_no_broker_dry_run_packet
+from .research_gate_summary import render_research_gate_summary
 
 __all__ = [
     "BaselineReportPack",
@@ -90,4 +94,11 @@ __all__ = [
     "register_qlib_model_run",
     "load_qlib_model_registry",
     "build_qlib_model_run_comparison",
+    "build_research_gate_packet",
+    "ResearchGatePacket",
+    "GateCheckResult",
+    "ManualReviewItem",
+    "BlockedAction",
+    "build_no_broker_dry_run_packet",
+    "render_research_gate_summary",
 ]
