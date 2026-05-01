@@ -105,16 +105,37 @@ def _make_model(model_family: str, random_state: int, warnings: list[str]):
         except Exception as exc:  # noqa: BLE001
             warnings.append(f"LightGBM unavailable or failed to initialize: {exc}")
 
+    if lowered in {"randomforest", "random_forest", "sklearn_random_forest"}:
+        from sklearn.ensemble import RandomForestClassifier
+
+        model = RandomForestClassifier(
+            n_estimators=300,
+            random_state=random_state,
+            n_jobs=-1,
+            min_samples_leaf=2,
+        )
+        return requested, "RandomForest", model
+
+    if lowered in {"histgradientboosting", "hist_gradient_boosting"}:
+        from sklearn.ensemble import HistGradientBoostingClassifier
+
+        model = HistGradientBoostingClassifier(
+            random_state=random_state,
+            max_depth=8,
+            learning_rate=0.08,
+        )
+        return requested, "HistGradientBoosting", model
+
     from sklearn.ensemble import RandomForestClassifier
 
-    warnings.append("Falling back to sklearn RandomForestClassifier.")
+    warnings.append(f"Unsupported model family '{requested}', falling back to RandomForest.")
     model = RandomForestClassifier(
         n_estimators=300,
         random_state=random_state,
         n_jobs=-1,
         min_samples_leaf=2,
     )
-    return requested, "sklearn_random_forest", model
+    return requested, "RandomForest", model
 
 
 def _build_prediction_frame(
@@ -295,6 +316,9 @@ def train_local_baseline(
             "model_family_used": model_family_used,
             "random_state": random_state,
             "feature_count": len(dataset.feature_columns),
+            "train_rows": int(len(train_x)),
+            "valid_rows": int(len(valid_x)),
+            "test_rows": int(len(test_x)),
             "target_label": wf_cfg.label_col,
             "training_executed": True,
             "notes": [

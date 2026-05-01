@@ -41,6 +41,14 @@ from .baseline_artifact_inspector import (
     inspect_baseline_run_artifacts,
 )
 from .prediction_review import PredictionReviewReport, build_prediction_review
+from .baseline_run_comparison import BaselineRunComparisonReport, compare_baseline_runs
+from .feature_importance_inspector import FeatureImportanceInspectionReport, inspect_feature_importance
+from .feature_importance_summary import (
+    AggregatedFeatureImportanceItem,
+    FeatureImportanceSummaryReport,
+    summarize_feature_importance_across_runs,
+)
+from .multi_model_baseline import MultiModelBaselineReport, run_multi_model_baseline
 
 __all__ = [
     "BaselineModelSpec",
@@ -64,6 +72,11 @@ __all__ = [
     "BaselineArtifactIssue",
     "BaselineArtifactInspectionReport",
     "PredictionReviewReport",
+    "BaselineRunComparisonReport",
+    "FeatureImportanceInspectionReport",
+    "AggregatedFeatureImportanceItem",
+    "FeatureImportanceSummaryReport",
+    "MultiModelBaselineReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -79,4 +92,8 @@ __all__ = [
     "train_local_baseline",
     "inspect_baseline_run_artifacts",
     "build_prediction_review",
+    "compare_baseline_runs",
+    "inspect_feature_importance",
+    "summarize_feature_importance_across_runs",
+    "run_multi_model_baseline",
 ]
