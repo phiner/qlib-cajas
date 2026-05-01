@@ -399,6 +399,27 @@ Interpretation:
 
 This phase remains research-only with no broker/live/paper execution integration.
 
+## Final Readiness, Reproducibility, and CI Validation
+
+Phase 106-115 adds a reproducibility and CI-friendly readiness layer:
+
+1. build manifests for completed smoke roots
+2. compare reproducibility across repeated runs
+3. build CI validation tier plan
+4. build final readiness packet and summary
+
+Command:
+
+```bash
+python cajas/scripts/run_final_readiness_smoke.py --out-root tmp/final-readiness-smoke
+```
+
+Interpretation:
+- `reproducible_with_warnings` can be acceptable for path/timestamp differences
+- `not_reproducible` requires artifact review
+- final readiness is for manual review planning only
+- no trading execution capability is added in this phase
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model

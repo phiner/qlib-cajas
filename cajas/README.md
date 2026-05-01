@@ -375,6 +375,22 @@ Notes:
 - blocked status does not mean CLI crash
 - still research-only: no broker, no live data routing, no paper execution
 
+## Final Readiness, Reproducibility, and CI Validation
+
+This phase adds reproducibility checks and a final readiness packet for manual review readiness.
+
+Run:
+
+```bash
+python cajas/scripts/run_final_readiness_smoke.py --out-root tmp/final-readiness-smoke
+```
+
+Key points:
+- final readiness is not trading approval
+- reproducibility warnings highlight drift between repeated runs
+- blocked actions remain explicitly encoded
+- no broker/live/paper execution is introduced
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:
