@@ -225,3 +225,21 @@ qlib_dataset_h_adapter:
     generated_files:
       - qlib_dataset_h_adapter_report.json
       - qlib_dataset_h_adapter_description.json
+
+qlib_workflow_config_probe:
+  enabled: true
+  phase: phase17
+  initialize_qlib: false
+  execute_qlib_workflow: false
+  training_enabled: false
+  training_executed: false
+  dataset_adapter_class: cajas.qlib_compat.prepared_dataset_h_adapter.PreparedQlibDatasetHAdapter
+  model_family: LightGBM
+  model_enabled: false
+  model_constructed: false
+  artifacts:
+    default_output_dir: tmp/cajas/qlib_workflow_config
+    default_run_name: phase17_qlib_workflow_config
+    generated_files:
+      - qlib_workflow_config_probe_report.json
+      - qlib_workflow_config_draft.json

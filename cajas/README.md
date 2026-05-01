@@ -347,3 +347,19 @@ This phase still excludes:
   - training remains disabled
   - no model build / fit / predict / evaluate / serialize
   - no qlib core modifications and no trading scope
+
+## Phase 17: Qlib Workflow Config Probe (No Execution, No Training)
+
+- Added workflow-config probe module:
+  - `cajas/qlib_compat/workflow_config_probe.py`
+- Added CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/probe_qlib_workflow_config.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Probe scope:
+  - builds inspection-only Qlib-style workflow config draft
+  - validates training/model/workflow-off schema constraints
+  - writes optional local JSON artifacts under `tmp/`
+- Boundaries remain unchanged:
+  - Qlib is not initialized
+  - Qlib workflow is not executed
+  - training remains disabled
+  - no qlib core changes and no trading scope

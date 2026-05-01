@@ -20,7 +20,12 @@ from cajas.qlib_compat.prepared_dataset_h_adapter import PreparedQlibDatasetHAda
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Probe Qlib DatasetH adapter compatibility (no training).")
+    p = argparse.ArgumentParser(
+        description=(
+            "Probe Qlib DatasetH adapter compatibility (no training). "
+            "For workflow-config inspection also see probe_qlib_workflow_config.py."
+        )
+    )
     p.add_argument("--config", required=True)
     p.add_argument("--input-override", default=None)
     p.add_argument("--json", action="store_true")

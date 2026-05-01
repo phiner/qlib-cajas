@@ -335,3 +335,20 @@ Next step needed:
 
 - If this adapter probe remains stable, add a controlled no-fit baseline trainer object that emits model-config metadata only.
 - Or add a real Qlib workflow-config probe without training execution.
+
+## Phase 17 Update
+
+- Phase 15 proved import-level compatibility for Qlib Dataset symbols.
+- Phase 16 proved adapter-shape compatibility against current prepared dataset output.
+- Phase 17 adds an inspection-only workflow config probe:
+  - `cajas.qlib_compat.workflow_config_probe`
+  - `cajas/scripts/probe_qlib_workflow_config.py`
+- This phase builds a Qlib-style draft workflow config only:
+  - no qlib.init()
+  - no workflow execution
+  - no training
+
+## Phase 18 Recommendation
+
+- Add a true Qlib workflow dry-run loader without execution.
+- Or, with explicit approval, add controlled baseline training outside Qlib first.

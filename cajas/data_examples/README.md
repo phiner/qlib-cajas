@@ -187,3 +187,9 @@ Notes:
 - Probe artifacts live under local `tmp/` paths (for example `tmp/cajas/qlib_adapter/`).
 - No raw rows are committed by this flow.
 - No model artifacts are produced.
+
+## Phase 17 Workflow Config Probe Artifacts
+
+- Workflow-config probe artifacts are local files under `tmp/` (for example `tmp/cajas/qlib_workflow_config/`).
+- The draft workflow config does not include raw dataset rows.
+- The probe output is compatibility metadata, not a training output.
