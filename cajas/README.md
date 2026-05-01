@@ -276,6 +276,51 @@ Promotion manifest meaning:
 - not a production deployment
 - not a trading execution switch
 
+## Qlib Adapter Handoff Workflow
+
+The research decision packet, adapter contract, and dry-run integration packet serve different handoff layers:
+- research decision packet: summarizes research quality and readiness findings
+- adapter contract: defines strict, testable Qlib-facing candidate metadata and required artifacts
+- dry-run integration packet: summarizes what would be needed for controlled Qlib integration without enabling workflows
+
+This phase does not:
+- modify Qlib core
+- enable live trading or broker execution
+- deploy online services
+
+Example commands:
+
+```bash
+python cajas/scripts/build_qlib_adapter_contract.py \
+  --promotion-manifest ... \
+  --out ... \
+  --candidate-id ... \
+  --feature-set-id ... \
+  --label-variant-id ... \
+  --target-name ... \
+  --frequency 15m
+
+python cajas/scripts/build_qlib_integration_packet.py \
+  --adapter-contract ... \
+  --out-dir ...
+
+python cajas/scripts/build_qlib_compatibility_report.py \
+  --adapter-contract ... \
+  --out-dir ...
+
+python cajas/scripts/run_qlib_adapter_smoke.py --out-root tmp/qlib-adapter-smoke
+```
+
+Expected output files:
+- `qlib_adapter_contract.json`
+- `qlib_adapter_contract.validation.json`
+- `qlib_integration_packet.json` / `.md`
+- `qlib_compatibility_report.json` / `.md`
+
+Issue reading guidance:
+- `error`: blocking issue; handoff should not proceed
+- `warning`: non-blocking issue; review manually before next phase
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:

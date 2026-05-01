@@ -303,6 +303,29 @@ Boundaries:
 - no qlib core modifications
 - `candidate_for_qlib_trial` means candidate for controlled manual review, not production deployment
 
+## Phase 66-75: Adapter Contract and Dry-Run Promotion Boundary
+
+This phase adds a strict handoff boundary from research artifacts to Qlib-facing dry-run packets:
+
+1. build adapter contract from promotion manifest
+2. validate required identifiers and artifact paths
+3. build dry-run integration packet
+4. build compatibility report
+
+Commands:
+
+```bash
+python cajas/scripts/build_qlib_adapter_contract.py --promotion-manifest ... --out ... --candidate-id ... --feature-set-id ... --label-variant-id ... --target-name ... --frequency 15m
+python cajas/scripts/build_qlib_integration_packet.py --adapter-contract ... --out-dir ...
+python cajas/scripts/build_qlib_compatibility_report.py --adapter-contract ... --out-dir ...
+python cajas/scripts/run_qlib_adapter_smoke.py --out-root tmp/qlib-adapter-smoke
+```
+
+Artifact interpretation:
+- blocking `error` issues indicate handoff is not ready
+- non-blocking `warning` issues indicate conservative manual follow-up
+- all outputs are dry-run research artifacts only
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model
