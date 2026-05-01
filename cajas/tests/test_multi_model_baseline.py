@@ -24,6 +24,7 @@ class MultiModelBaselineTests(unittest.TestCase):
             )
             self.assertGreaterEqual(len(rep.model_runs), 1)
             self.assertFalse(rep.trading_metrics_present)
+            self.assertTrue((Path(rep.output_dir) / "model_run_status.csv").exists())
 
 
 if __name__ == "__main__":

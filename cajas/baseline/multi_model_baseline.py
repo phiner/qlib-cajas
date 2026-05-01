@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from cajas.baseline.local_baseline_trainer import train_local_baseline
 
 
@@ -52,6 +54,7 @@ def run_multi_model_baseline(
     warnings: list[str] = []
     blockers: list[str] = []
     model_runs: list[dict] = []
+    model_status_rows: list[dict] = []
 
     supported = {"lightgbm", "randomforest", "histgradientboosting", "random_forest", "hist_gradient_boosting"}
 
@@ -60,6 +63,7 @@ def run_multi_model_baseline(
         key = key.replace("_", "")
         if key not in supported:
             warnings.append(f"Unsupported model family skipped: {family}")
+            model_status_rows.append({"model_family": family, "status": "skipped", "error": "unsupported_model_family", "run_name": ""})
             continue
         sub_name = f"{run_name}_{_slug(family)}"
         try:
@@ -87,8 +91,11 @@ def run_multi_model_baseline(
                     "metrics": metric_map,
                 }
             )
+            model_status_rows.append({"model_family": family, "status": "completed", "error": "", "run_name": sub_name})
         except Exception as exc:  # noqa: BLE001
-            warnings.append(f"Model family {family} failed: {exc}")
+            err = f"{exc}"
+            warnings.append(f"Model family {family} failed: {err}")
+            model_status_rows.append({"model_family": family, "status": "failed", "error": err, "run_name": sub_name})
 
     best = None
     if model_runs:
@@ -99,11 +106,21 @@ def run_multi_model_baseline(
         "primary_metric": primary_metric,
         "rows": model_runs,
         "best_model": best,
+        "model_status": model_status_rows,
     }
     (base_dir / "comparison_summary.json").write_text(
         json.dumps(summary, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    (base_dir / "multi_model_baseline_report.json").write_text(
+        json.dumps(summary, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    pd.DataFrame(model_runs).to_csv(base_dir / "multi_model_metrics.csv", index=False)
+    pd.DataFrame(model_status_rows).to_csv(base_dir / "model_run_status.csv", index=False)
+
+    if not model_runs:
+        raise RuntimeError("No model completed successfully in multi-model baseline run.")
 
     return MultiModelBaselineReport(
         config_path=config_path,

@@ -43,7 +43,12 @@ def main() -> int:
         return 0
     print("Multi-model baseline completed.")
     print("model families requested: " + ", ".join(payload["model_families_requested"]))
-    print("model runs completed: " + str(len(payload["model_runs"])))
+    completed = sum(1 for row in payload["comparison"].get("model_status", []) if row.get("status") == "completed")
+    failed = sum(1 for row in payload["comparison"].get("model_status", []) if row.get("status") == "failed")
+    skipped = sum(1 for row in payload["comparison"].get("model_status", []) if row.get("status") == "skipped")
+    print("model runs completed: " + str(completed))
+    print("model runs failed: " + str(failed))
+    print("model runs skipped: " + str(skipped))
     print("best model: " + str(payload["best_model_by_primary_metric"]))
     print("primary metric: " + payload["primary_metric"])
     print("notice: no trading/backtest/profit analysis performed")
