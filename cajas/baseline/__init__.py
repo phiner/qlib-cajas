@@ -60,6 +60,8 @@ from .external_holdout_trainer import (
     ExternalHoldoutTrainingReport,
     train_external_holdout_baseline,
 )
+from .flat_class_diagnosis import FlatClassDiagnosisReport, diagnose_flat_class
+from .feature_group_audit import classify_feature_groups, build_feature_group_audit
 
 __all__ = [
     "BaselineModelSpec",
@@ -94,6 +96,7 @@ __all__ = [
     "ConfidenceBucketSummary",
     "ConfidenceAnalysisReport",
     "ExternalHoldoutTrainingReport",
+    "FlatClassDiagnosisReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -117,4 +120,7 @@ __all__ = [
     "sanitize_features_for_model",
     "analyze_prediction_confidence",
     "train_external_holdout_baseline",
+    "diagnose_flat_class",
+    "classify_feature_groups",
+    "build_feature_group_audit",
 ]
