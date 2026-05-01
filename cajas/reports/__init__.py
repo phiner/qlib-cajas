@@ -9,6 +9,12 @@ from .markdown_report_exporter import (
 )
 from .dashboard_export import DashboardExportReport, export_dashboard_data
 from .research_report_pack import ResearchReportPack, build_research_report_pack
+from .external_holdout_benchmark import (
+    BenchmarkRunSummary,
+    ExternalHoldoutBenchmarkReport,
+    build_external_holdout_benchmark,
+)
+from .research_decision_report import ResearchDecisionReport, build_research_decision_report
 
 __all__ = [
     "BaselineReportPack",
@@ -21,4 +27,9 @@ __all__ = [
     "export_dashboard_data",
     "ResearchReportPack",
     "build_research_report_pack",
+    "BenchmarkRunSummary",
+    "ExternalHoldoutBenchmarkReport",
+    "build_external_holdout_benchmark",
+    "ResearchDecisionReport",
+    "build_research_decision_report",
 ]
