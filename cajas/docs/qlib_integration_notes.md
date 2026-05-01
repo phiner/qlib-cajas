@@ -420,6 +420,32 @@ Interpretation:
 - final readiness is for manual review planning only
 - no trading execution capability is added in this phase
 
+## Stable Reproducibility and Artifact Normalization
+
+Raw artifact trees can vary by temporary root, timestamp, and local environment paths.
+Normalization and stable fingerprinting absorb expected variability and retain semantic differences.
+
+## Research Governance Audit
+
+Governance audit checks for forbidden capabilities (broker/live/order execution/portfolio/PnL optimization/network/credentials/GPU assumptions) while allowlisting explicit policy statements that forbid those capabilities.
+
+## Artifact Lineage and Offline Review Bundle
+
+Lineage graph, run catalog, offline review packet, and final research bundle provide a structured human-review surface for the complete research stack.
+
+## Full Research Stack Smoke
+
+```bash
+python cajas/scripts/run_full_research_stack_smoke.py --out-root tmp/full-hardening-smoke
+```
+
+Stable reproducibility statuses:
+- `stable_reproducible`
+- `stable_reproducible_with_warnings`
+- `not_stable_reproducible`
+
+None of these statuses permit broker/live/paper execution in this phase.
+
 - Added local run registry support for append-only run tracking under `tmp/cajas/run_registry/`.
 - Added first controlled local baseline training path:
   - classification-only supervised model

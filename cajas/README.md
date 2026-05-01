@@ -391,6 +391,35 @@ Key points:
 - blocked actions remain explicitly encoded
 - no broker/live/paper execution is introduced
 
+## Stable Reproducibility and Artifact Normalization
+
+Raw run directories can differ due to timestamps, temp roots, and host-specific paths.
+Normalization removes expected environment variability while preserving semantic fields such as decisions, metrics, row counts, and blocked actions.
+
+## Research Governance Audit
+
+Run conservative governance scanning to detect forbidden execution capabilities:
+
+```bash
+python cajas/scripts/audit_research_governance.py --root cajas --out tmp/full-hardening-smoke/governance/research_governance_audit.json
+```
+
+Findings are categorized as `pass` / `warn` / `fail`. Documentation phrases that explicitly forbid execution are allowlisted.
+
+## Artifact Lineage and Offline Review Bundle
+
+Use lineage, run catalog, offline review packet, and final research bundle to consolidate manual review inputs without introducing execution semantics.
+
+## Full Research Stack Smoke
+
+Run:
+
+```bash
+python cajas/scripts/run_full_research_stack_smoke.py --out-root tmp/full-hardening-smoke
+```
+
+This remains research-only. It does not enable broker, live, or paper execution.
+
 - Added baseline report pack builder:
   - `cajas/scripts/build_baseline_report_pack.py`
 - Added multi-model local baseline runner:
