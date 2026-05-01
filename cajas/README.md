@@ -96,3 +96,22 @@ This phase still excludes:
 - qlib core modifications
 - model training
 - trading strategy or execution logic
+
+## Phase 5: Workflow Bridge Dry-Run
+
+- Package init naming is standard and confirmed:
+  - `cajas/handlers/__init__.py`
+  - `cajas/datasets/__init__.py`
+- Added Qlib-inspired workflow bridge:
+  - `cajas/workflows/prepared_workflow.py`
+- Added workflow dry-run CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_prepared_workflow_dry_run.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8`
+- JSON output mode:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_prepared_workflow_dry_run.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8 --json`
+- Test command:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests/test_prepared_csv_handler.py cajas/tests/test_prepared_dataset.py cajas/tests/test_prepared_workflow.py`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic

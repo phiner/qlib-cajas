@@ -79,3 +79,12 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - `future_return_8`
 - These audit columns are explicitly excluded from feature sets.
 - Labels remain string classes (`up`, `down`, `flat`) in this phase.
+
+## Phase 5 Workflow Bridge Notes
+
+- Workflow bridge input remains the Phase 1 prepared CSV output.
+- `PreparedWorkflow` validates segment data shapes in dry-run mode only.
+- Leakage audit columns are never used as features:
+  - `future_close_8`
+  - `future_return_8`
+- Labels remain string classes (`up`, `down`, `flat`).

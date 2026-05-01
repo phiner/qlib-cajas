@@ -110,3 +110,23 @@ Next step needed:
 
 - Wire the external adapter contract into a small Qlib-facing runner in `cajas/` to validate DatasetH-style workflow calls.
 - Keep training disabled until the data contract is stable and reproducible.
+
+## Phase 5 Update
+
+- Added a Qlib-inspired external workflow bridge:
+  - `cajas.workflows.prepared_workflow.PreparedWorkflow`
+- Bridge behavior in this phase:
+  - consumes `PreparedDataset`
+  - validates train/valid/test feature-label shapes
+  - checks leakage columns are excluded from features
+  - exposes dry-run summary only
+- Boundary:
+  - still external to `qlib/` core
+  - not a full Qlib workflow execution
+  - no LightGBM training in this phase
+
+## Phase 6 Recommendation
+
+- Add a minimal training-disabled experiment config loader that maps this bridge contract to Qlib-style config semantics.
+- If feasible, add a true Qlib-compatible `DatasetH` wrapper under `cajas/` while keeping qlib core unchanged.
+- Only after contract stability should a controlled baseline training attempt be considered in a later phase.

@@ -1,14 +1,15 @@
 # Draft only. This config documents the intended Qlib integration shape.
-# Phase 4 status: draft contract only; do not run model training yet.
+# Phase 5 status: draft contract only; do not run model training yet.
 # Data source is the Phase 1 prepared CSV.
 # Handler target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
 # Dataset adapter target: cajas.datasets.prepared_dataset.PreparedDataset
+# Workflow bridge target: cajas.workflows.prepared_workflow.PreparedWorkflow
 # Leakage columns future_close_8 and future_return_8 are audit-only (not features).
 # No trading strategy, no live execution.
 meta:
-  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase4_draft
+  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase5_draft
   research_layer: cajas
-  note: "Research config draft only; no training in Phase 4."
+  note: "Research config draft only; dry-run workflow bridge in Phase 5."
 
 market:
   symbol: EURUSD
@@ -49,6 +50,15 @@ data_adapter:
   TODO_runtime:
     - map this external adapter to a concrete Qlib runtime workflow later
     - keep training disabled until dataset contract is stable
+workflow_bridge:
+  class: cajas.workflows.prepared_workflow.PreparedWorkflow
+  config_class: cajas.workflows.prepared_workflow.PreparedWorkflowConfig
+  dataset_class: cajas.datasets.prepared_dataset.PreparedDataset
+  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  dry_run_only: true
+training:
+  enabled: false
+  note: "Training remains disabled in Phase 5."
 
 model:
   family: lightgbm
@@ -88,8 +98,9 @@ features:
 
 disclaimer:
   - this is a research config draft
-  - no training should be run in phase 4
+  - no training should be run in phase 5
   - this is not a full qlib workflow yet
+  - workflow bridge is dry-run only
   - for market recognition only
   - not a trading strategy
   - not a production signal
