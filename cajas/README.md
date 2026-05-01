@@ -97,6 +97,28 @@ This phase still excludes:
 - model training
 - trading strategy or execution logic
 
+## Phase 6: Experiment Config Plan Dry-Run
+
+- Added training-disabled config loader:
+  - `cajas/config/experiment_config.py`
+- Added experiment plan dry-run CLI:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_experiment_plan_dry_run.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Safety gates:
+  - config validation
+  - `training.enabled` must remain `false`
+  - workflow remains dry-run only
+- Optional flags:
+  - `--input-override`
+  - `--json`
+  - `--strict`
+- Test command:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests/test_prepared_csv_handler.py cajas/tests/test_prepared_dataset.py cajas/tests/test_prepared_workflow.py cajas/tests/test_experiment_config.py cajas/tests/test_experiment_plan_dry_run.py`
+
+This phase still excludes:
+- qlib core modifications
+- model training
+- trading strategy or execution logic
+
 ## Phase 5: Workflow Bridge Dry-Run
 
 - Package init naming is standard and confirmed:

@@ -130,3 +130,24 @@ Next step needed:
 - Add a minimal training-disabled experiment config loader that maps this bridge contract to Qlib-style config semantics.
 - If feasible, add a true Qlib-compatible `DatasetH` wrapper under `cajas/` while keeping qlib core unchanged.
 - Only after contract stability should a controlled baseline training attempt be considered in a later phase.
+
+## Phase 6 Update
+
+- Added YAML-driven experiment config loader and validator:
+  - `cajas.config.experiment_config.load_experiment_config`
+  - `cajas.config.experiment_config.validate_experiment_config`
+  - `cajas.config.experiment_config.assert_training_disabled`
+  - `cajas.config.experiment_config.build_workflow_config`
+- Added plan dry-run bridge CLI:
+  - `cajas/scripts/run_experiment_plan_dry_run.py`
+- Bridge flow:
+  - YAML config -> typed config dataclasses -> PreparedWorkflowConfig -> `PreparedWorkflow.dry_run()`
+- Boundaries preserved:
+  - no qlib core changes
+  - no model training
+  - no trading semantics
+
+## Phase 7 Recommendation
+
+- Add a minimal Qlib-style dry-run report/recorder artifact that captures config and segment-shape evidence.
+- Keep training disabled by default until config contract stability is confirmed across repeated datasets.

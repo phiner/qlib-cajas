@@ -88,3 +88,13 @@ Important: `future_direction_8` is a research label, not a trading signal.
   - `future_close_8`
   - `future_return_8`
 - Labels remain string classes (`up`, `down`, `flat`).
+
+## Phase 6 Experiment Config Notes
+
+- Default config path:
+  - `cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
+- Config points to the Phase 1 prepared CSV by default.
+- CSV path can be overridden in local dry-run testing with `--input-override`.
+- Leakage audit columns remain non-feature fields:
+  - `future_close_8`
+  - `future_return_8`

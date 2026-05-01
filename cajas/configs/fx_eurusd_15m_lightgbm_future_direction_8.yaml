@@ -1,106 +1,48 @@
-# Draft only. This config documents the intended Qlib integration shape.
-# Phase 5 status: draft contract only; do not run model training yet.
-# Data source is the Phase 1 prepared CSV.
-# Handler target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
-# Dataset adapter target: cajas.datasets.prepared_dataset.PreparedDataset
-# Workflow bridge target: cajas.workflows.prepared_workflow.PreparedWorkflow
-# Leakage columns future_close_8 and future_return_8 are audit-only (not features).
-# No trading strategy, no live execution.
-meta:
-  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase5_draft
-  research_layer: cajas
-  note: "Research config draft only; dry-run workflow bridge in Phase 5."
+name: fx_eurusd_15m_lightgbm_future_direction_8
+description: >
+  Draft market recognition research config for EURUSD 15m future_direction_8.
+  This config is training-disabled in Phase 6.
 
-market:
-  symbol: EURUSD
-  timeframe: 15m
+research_scope:
+  market_recognition_only: true
+  trading_signal: false
+  live_trading: false
+  backtest_profit_analysis: false
 
-task:
-  name: market_recognition_future_direction_classification
-  label_column: future_direction_8
-  horizon: 8
-  label_semantics: "up if future_return_8 > 0, down if future_return_8 < 0, flat otherwise"
-  classes: [up, flat, down]
-
-dataset:
-  prepared_csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
-  handler_target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
-  data_adapter_target: cajas.datasets.prepared_dataset.PreparedDataset
-  datetime_column: datetime
-  symbol_column: symbol
-  timeframe_column: timeframe
-  TODO_integration:
-    - map this draft to a Qlib-compatible DatasetH wrapper in a later phase
-    - validate DatasetH-like prepare semantics before any training
-  split:
-    train: ["2025-01-01", "2025-08-31"]
-    valid: ["2025-09-01", "2025-10-31"]
-    test: ["2025-11-01", "2025-12-31"]
 data_adapter:
-  class: cajas.datasets.prepared_dataset.PreparedDataset
-  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
   label_col: future_direction_8
+  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+  dataset_class: cajas.datasets.prepared_dataset.PreparedDataset
   leakage_columns:
     - future_close_8
     - future_return_8
   segments:
-    train: ["2025-01-01", "2025-08-31"]
-    valid: ["2025-09-01", "2025-10-31"]
-    test: ["2025-11-01", "2025-12-31"]
-  TODO_runtime:
-    - map this external adapter to a concrete Qlib runtime workflow later
-    - keep training disabled until dataset contract is stable
+    train:
+      start: "2025-01-01"
+      end: "2025-08-31"
+    valid:
+      start: "2025-09-01"
+      end: "2025-10-31"
+    test:
+      start: "2025-11-01"
+      end: "2025-12-31"
+
 workflow_bridge:
   class: cajas.workflows.prepared_workflow.PreparedWorkflow
   config_class: cajas.workflows.prepared_workflow.PreparedWorkflowConfig
-  dataset_class: cajas.datasets.prepared_dataset.PreparedDataset
-  handler_class: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
   dry_run_only: true
-training:
-  enabled: false
-  note: "Training remains disabled in Phase 5."
 
 model:
-  family: lightgbm
-  objective: multiclass
-  num_class: 3
-  metric: multi_logloss
-  params:
-    learning_rate: 0.05
-    num_leaves: 31
-    feature_fraction: 0.9
-    bagging_fraction: 0.9
-    bagging_freq: 5
-    min_data_in_leaf: 50
+  draft_class: LightGBM
+  enabled: false
+  note: "Model training is disabled in Phase 6."
 
-features:
-  leakage_excluded:
-    - future_close_8
-    - future_return_8
-  columns:
-    - return_1
-    - log_return_1
-    - hl_range
-    - body_size
-    - upper_shadow
-    - lower_shadow
-    - body_ratio
-    - close_position_in_range
-    - range_pct
-    - volume_change_1
-    - return_mean_4
-    - return_mean_8
-    - return_mean_16
-    - return_std_8
-    - return_std_16
-    - range_mean_8
-    - range_mean_16
+training:
+  enabled: false
+  reason: "Phase 6 validates config and workflow dry-run only."
 
-disclaimer:
-  - this is a research config draft
-  - no training should be run in phase 5
-  - this is not a full qlib workflow yet
-  - workflow bridge is dry-run only
-  - for market recognition only
-  - not a trading strategy
-  - not a production signal
+qlib:
+  core_modified: false
+  provider_format_enabled: false
+  note: "No Qlib core provider integration is performed in Phase 6."
