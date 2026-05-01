@@ -5,7 +5,13 @@ from .dataset_shape_probe import (
     SegmentShapeProbe,
     run_dataset_h_shape_probe,
 )
+from .adapter_comparison_probe import (
+    AdapterComparisonReport,
+    AdapterSegmentComparison,
+    run_adapter_comparison_probe,
+)
 from .prepared_dataset_h_like import PreparedDatasetHLike
+from .prepared_dataset_h_adapter import PreparedQlibDatasetHAdapter
 from .qlib_probe import QlibDatasetApiStatus, QlibImportStatus, probe_qlib_dataset_api
 
 __all__ = [
@@ -16,4 +22,8 @@ __all__ = [
     "DatasetHShapeProbeReport",
     "run_dataset_h_shape_probe",
     "PreparedDatasetHLike",
+    "PreparedQlibDatasetHAdapter",
+    "AdapterSegmentComparison",
+    "AdapterComparisonReport",
+    "run_adapter_comparison_probe",
 ]
