@@ -1,4 +1,4 @@
-# FX Dataset Schema Notes (Phase 0)
+# FX Dataset Schema Notes (Phase 0-3)
 
 ## Input CSV
 
@@ -27,6 +27,7 @@ Phase 0 output is a plain research dataset CSV (not Qlib binary format).
 Expected fields include at least:
 - `datetime`
 - `symbol`
+- `timeframe`
 - `open`
 - `high`
 - `low`
@@ -49,3 +50,23 @@ Three-class label rule:
 Default `flat_threshold` is `0.0002`.
 
 Important: `future_direction_8` is a research label, not a trading signal.
+
+## Phase 3 Prepared Handler Rules
+
+- Required columns for `PreparedCsvHandler`:
+  - `datetime`
+  - `symbol`
+  - `timeframe`
+  - `open`
+  - `high`
+  - `low`
+  - `close`
+  - `volume`
+  - `future_direction_8`
+- Candidate feature columns are numeric columns excluding:
+  - `datetime`
+  - `symbol`
+  - `timeframe`
+  - label column (`future_direction_8` by default)
+  - leakage columns: `future_close_8`, `future_return_8`
+- `future_close_8` and `future_return_8` may remain in dataset output for auditability, but must not be used as model features.

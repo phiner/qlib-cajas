@@ -65,3 +65,14 @@ Notes:
   - `cajas/docs/qlib_integration_notes.md`
 - Qlib core remains unchanged.
 - This phase does not run formal training or trading workflows.
+
+## Phase 3: Tracked Tasks and Prepared Handler
+
+- `tasks/` is tracked as project task history and should not be ignored.
+- `taskDocs/` is not used in this repository workflow.
+- Added minimal prepared dataset handler:
+  - `cajas/handlers/prepared_csv_handler.py`
+- Added validation CLI:
+  - `python cajas/scripts/validate_prepared_dataset_handler.py --input tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv --label-col future_direction_8`
+- This phase validates dataset access, schema checks, and train/valid/test segment slicing only.
+- No model training, no qlib core changes, no trading logic.

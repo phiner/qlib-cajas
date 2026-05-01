@@ -72,3 +72,22 @@ Next step needed:
 - Recommended Phase 3 route: start with **Path B (minimal external integration layer)**.
 - Keep qlib core untouched; add a small custom handler/loader in `cajas/` and validate that `DatasetH.prepare()` works on train/valid/test segments using Phase 1 CSV.
 - Defer provider-format migration (Path A) until schema and label contracts are stable.
+
+## Phase 3 Update
+
+- Path B implementation has started with:
+  - `cajas.handlers.prepared_csv_handler.PreparedCsvHandler`
+  - `cajas/scripts/validate_prepared_dataset_handler.py`
+- Current status:
+  - This is not a full Qlib provider implementation.
+  - It is a minimal prepared CSV contract validation layer.
+  - It prepares the data shape and segment semantics needed for a later Qlib `DatasetH` wrapper.
+- Feature policy in Phase 3:
+  - `future_close_8` and `future_return_8` are audit columns only.
+  - They are explicitly excluded from candidate feature columns.
+
+## Phase 4 Recommendation
+
+- Add a Qlib-compatible wrapper or experiment runner that validates DatasetH-like prepare semantics end-to-end.
+- Keep qlib core unchanged.
+- Continue to avoid model training until dataset contract and split semantics are stable.

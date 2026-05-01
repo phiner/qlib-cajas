@@ -1,9 +1,13 @@
 # Draft only. This config documents the intended Qlib integration shape.
-# It is a research scaffold and may require custom DataHandler code under cajas/.
+# Phase 3 status: draft contract only; do not run model training yet.
+# Data source is the Phase 1 prepared CSV.
+# Handler target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
+# Leakage columns future_close_8 and future_return_8 are audit-only (not features).
+# No trading strategy, no live execution.
 meta:
-  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase2_draft
+  experiment_name: fx_eurusd_15m_lightgbm_future_direction_8_phase3_draft
   research_layer: cajas
-  note: "Research config draft only; not a trading strategy or production signal."
+  note: "Research config draft only; no training in Phase 3."
 
 market:
   symbol: EURUSD
@@ -18,12 +22,13 @@ task:
 
 dataset:
   prepared_csv_path: tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv
+  handler_target: cajas.handlers.prepared_csv_handler.PreparedCsvHandler
   datetime_column: datetime
   symbol_column: symbol
   timeframe_column: timeframe
   TODO_integration:
-    - add custom DataHandler/DataLoader under cajas/ for Phase 3
-    - map prepared CSV columns into Qlib DatasetH consumable structure
+    - map this draft to a Qlib-compatible DatasetH wrapper in a later phase
+    - validate DatasetH-like prepare semantics before any training
   split:
     train: ["2025-01-01", "2025-08-31"]
     valid: ["2025-09-01", "2025-10-31"]
@@ -43,6 +48,9 @@ model:
     min_data_in_leaf: 50
 
 features:
+  leakage_excluded:
+    - future_close_8
+    - future_return_8
   columns:
     - return_1
     - log_return_1
@@ -64,6 +72,7 @@ features:
 
 disclaimer:
   - this is a research config draft
+  - no training should be run in phase 3
   - for market recognition only
   - not a trading strategy
   - not a production signal
