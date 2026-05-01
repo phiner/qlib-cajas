@@ -51,6 +51,11 @@ from .feature_importance_summary import (
 from .multi_model_baseline import MultiModelBaselineReport, run_multi_model_baseline
 from .feature_value_audit import FeatureValueAuditReport, FeatureValueIssue, audit_feature_values
 from .numeric_sanitizer import NumericSanitizationReport, sanitize_features_for_model
+from .confidence_analysis import (
+    ConfidenceAnalysisReport,
+    ConfidenceBucketSummary,
+    analyze_prediction_confidence,
+)
 
 __all__ = [
     "BaselineModelSpec",
@@ -82,6 +87,8 @@ __all__ = [
     "FeatureValueIssue",
     "FeatureValueAuditReport",
     "NumericSanitizationReport",
+    "ConfidenceBucketSummary",
+    "ConfidenceAnalysisReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -103,4 +110,5 @@ __all__ = [
     "run_multi_model_baseline",
     "audit_feature_values",
     "sanitize_features_for_model",
+    "analyze_prediction_confidence",
 ]
