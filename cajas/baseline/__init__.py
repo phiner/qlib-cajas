@@ -26,6 +26,15 @@ from .training_guard import (
     TrainingGuardResult,
     assert_baseline_training_allowed,
 )
+from .classification_metrics import (
+    compute_classification_metrics,
+    confusion_matrix_to_rows,
+)
+from .local_baseline_trainer import (
+    LocalBaselineTrainingConfig,
+    LocalBaselineTrainingReport,
+    train_local_baseline,
+)
 
 __all__ = [
     "BaselineModelSpec",
@@ -44,6 +53,8 @@ __all__ = [
     "BaselineTrainingScaffoldReport",
     "TrainingDisabledError",
     "TrainingGuardResult",
+    "LocalBaselineTrainingConfig",
+    "LocalBaselineTrainingReport",
     "assert_baseline_training_allowed",
     "build_baseline_plan",
     "build_phase11_execution_contract",
@@ -54,4 +65,7 @@ __all__ = [
     "run_training_disabled_baseline",
     "build_training_disabled_baseline_scaffold",
     "write_baseline_reports",
+    "compute_classification_metrics",
+    "confusion_matrix_to_rows",
+    "train_local_baseline",
 ]
