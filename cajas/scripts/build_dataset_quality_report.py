@@ -14,7 +14,7 @@ from cajas.reports.dataset_quality_research import build_dataset_quality_report,
 from cajas.reports.runtime_io_summary import safe_json_write  # noqa: E402
 
 
-def _parse() -> argparse.Namespace:
+def _parse(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build dataset quality report (offline research only).")
     p.add_argument("--input", required=True)
     p.add_argument("--labels", action="append", default=[])
@@ -27,11 +27,11 @@ def _parse() -> argparse.Namespace:
     p.add_argument("--allow-large-data", action="store_true")
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
-    return p.parse_args()
+    return p.parse_args(argv)
 
 
-def main() -> int:
-    args = _parse()
+def main(argv: list[str] | None = None) -> int:
+    args = _parse(argv)
     row_limit = args.row_limit
     if args.sample_only and (row_limit is None or row_limit > 10000):
         row_limit = 10000
