@@ -52,12 +52,16 @@ from .ci_validation_plan import build_ci_validation_plan
 from .final_readiness_packet import build_final_readiness_packet
 from .final_readiness_summary import render_final_readiness_summary
 from .artifact_normalizer import normalize_json_artifact, normalize_markdown_artifact
+from .normalization_rule_registry import get_normalization_rules, get_normalization_rule_registry
 from .stable_fingerprint import build_stable_fingerprint
 from .stable_reproducibility_check import build_stable_reproducibility_report
+from .stable_reproducibility_explainer import build_stable_reproducibility_explanation, render_stable_reproducibility_explanation_md
+from .normalization_coverage_report import build_normalization_coverage_report, render_normalization_coverage_report_md
 from .artifact_lineage import build_artifact_lineage, render_artifact_lineage_md
 from .research_run_catalog import build_research_run_catalog, render_research_run_catalog_md
 from .offline_review_packet import build_offline_review_packet, render_offline_review_packet_md
 from .final_research_bundle import build_final_research_bundle, render_final_research_bundle_md
+from .reviewer_decision_packet import build_reviewer_decision_packet
 
 __all__ = [
     "BaselineReportPack",
@@ -120,8 +124,14 @@ __all__ = [
     "render_final_readiness_summary",
     "normalize_json_artifact",
     "normalize_markdown_artifact",
+    "get_normalization_rules",
+    "get_normalization_rule_registry",
     "build_stable_fingerprint",
     "build_stable_reproducibility_report",
+    "build_stable_reproducibility_explanation",
+    "render_stable_reproducibility_explanation_md",
+    "build_normalization_coverage_report",
+    "render_normalization_coverage_report_md",
     "build_artifact_lineage",
     "render_artifact_lineage_md",
     "build_research_run_catalog",
@@ -130,4 +140,5 @@ __all__ = [
     "render_offline_review_packet_md",
     "build_final_research_bundle",
     "render_final_research_bundle_md",
+    "build_reviewer_decision_packet",
 ]

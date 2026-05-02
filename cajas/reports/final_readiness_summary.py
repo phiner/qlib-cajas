@@ -11,6 +11,8 @@ def render_final_readiness_summary(*, packet: dict) -> str:
         f"- gate_status: `{packet.get('gate_summary', {}).get('final_status')}`",
         f"- reproducibility_status: `{packet.get('reproducibility_summary', {}).get('final_status')}`",
         f"- stable_reproducibility_status: `{packet.get('stable_reproducibility_summary', {}).get('final_status')}`",
+        f"- reproducibility_explanation_status: `{packet.get('stable_reproducibility_summary', {}).get('explanation_status')}`",
+        f"- governance_remediation_status: `{packet.get('governance_remediation_summary', {}).get('final_suggested_status')}`",
         f"- ci_tiers: `{packet.get('ci_plan_summary', {}).get('tier_count')}`",
         "",
         "## Stable Reproducibility",
@@ -41,6 +43,13 @@ def render_final_readiness_summary(*, packet: dict) -> str:
     lines += ["", "## Manual Checklist"]
     for item in packet.get("manual_review_checklist", []):
         lines.append(f"- {item.get('item')}: {item.get('rationale')}")
+    lines += ["", "## Unresolved True Violations"]
+    violations = packet.get("unresolved_true_violations", [])
+    if not violations:
+        lines.append("- none")
+    else:
+        for item in violations:
+            lines.append(f"- `{item.get('file')}:{item.get('line')}` `{item.get('category')}`")
 
     lines += ["", "## Next Phase Options", "- Continue research-only manual review", "- Improve reproducibility parity", "- Keep no-broker boundary before any future planning"]
     return "\n".join(lines) + "\n"
