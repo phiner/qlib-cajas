@@ -153,6 +153,12 @@ def build_validation_delivery_packet(
         budget_report = safe_read_json(runtime_budget_report_path)
         if budget_report:
             runtime_budget_status = budget_report.get("overall_status")
+            # Extract measured fast_total if available
+            if "results" in budget_report:
+                for result in budget_report["results"]:
+                    if result.get("component") == "fast_total" and result.get("observed_seconds") is not None:
+                        # Store in a new field for delivery packet
+                        pass  # Will be added to packet dataclass if needed
 
     # Read reviewer diff report
     if reviewer_diff_report_path:

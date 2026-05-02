@@ -75,6 +75,8 @@ def check_validation_runtime_budgets(
     results = []
     budgets = budget_config["budgets_seconds"]
     warn_threshold = budget_config.get("warn_threshold_ratio", 1.15)
+    required_components = set(budget_config.get("required_components", []))
+    optional_components = set(budget_config.get("optional_components", []))
 
     # Extract timing from validation results
     timing_map = {}
@@ -95,13 +97,26 @@ def check_validation_runtime_budgets(
         result = check_component_budget(component, observed, budget_seconds, warn_threshold)
         results.append(result)
 
-    # Determine overall status
+    # Determine overall status with required/optional distinction
     statuses = [r.status for r in results]
-    if "fail" in statuses:
+
+    # Check if any required component is missing or failing
+    required_missing = []
+    required_failing = []
+    for result in results:
+        if result.component in required_components:
+            if result.status == "missing":
+                required_missing.append(result.component)
+            elif result.status == "fail":
+                required_failing.append(result.component)
+
+    # Check if any measured component is failing
+    measured_failing = [r for r in results if r.status == "fail" and r.observed_seconds is not None]
+    measured_warning = [r for r in results if r.status == "warn" and r.observed_seconds is not None]
+
+    if required_failing or measured_failing:
         overall_status = "fail"
-    elif "warn" in statuses:
-        overall_status = "warn"
-    elif "missing" in statuses:
+    elif required_missing or measured_warning:
         overall_status = "warn"
     else:
         overall_status = "pass"
@@ -115,6 +130,9 @@ def generate_budget_report_markdown(
     budget_config: dict,
 ) -> str:
     """Generate reviewer-friendly Markdown report."""
+    required_components = set(budget_config.get("required_components", []))
+    optional_components = set(budget_config.get("optional_components", []))
+
     lines = [
         "# Validation Runtime Budget Report",
         "",
@@ -125,8 +143,8 @@ def generate_budget_report_markdown(
         "",
         "## Component Budget Status",
         "",
-        "| Component | Status | Observed (s) | Budget (s) | Delta (s) | Ratio |",
-        "|-----------|--------|--------------|------------|-----------|-------|",
+        "| Component | Status | Observed (s) | Budget (s) | Delta (s) | Ratio | Type |",
+        "|-----------|--------|--------------|------------|-----------|-------|------|",
     ]
 
     for result in results:
@@ -137,8 +155,16 @@ def generate_budget_report_markdown(
 
         status_icon = {"pass": "✅", "warn": "⚠️", "fail": "❌", "missing": "❓"}.get(result.status, "?")
 
+        # Determine component type
+        if result.component in required_components:
+            comp_type = "🔴 required"
+        elif result.component in optional_components:
+            comp_type = "optional"
+        else:
+            comp_type = "unknown"
+
         lines.append(
-            f"| {result.component} | {status_icon} {result.status} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} |"
+            f"| {result.component} | {status_icon} {result.status} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} | {comp_type} |"
         )
 
     lines.extend([
@@ -167,11 +193,11 @@ def generate_budget_report_markdown(
     ])
 
     if overall_status == "fail":
-        lines.append("**Action required**: One or more components significantly exceeded budget. Review slow tests and optimize.")
+        lines.append("**Action required**: One or more required components significantly exceeded budget or failed. Review slow tests and optimize.")
     elif overall_status == "warn":
-        lines.append("**Review recommended**: Some components slightly over budget or missing timing data.")
+        lines.append("**Review recommended**: Some required components missing or measured components slightly over budget.")
     else:
-        lines.append("**No action needed**: All components within budget.")
+        lines.append("**No action needed**: All required components within budget. Optional component timings may be missing (expected).")
 
     lines.append("")
     return "\n".join(lines)
