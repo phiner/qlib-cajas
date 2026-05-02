@@ -62,6 +62,8 @@ from .research_run_catalog import build_research_run_catalog, render_research_ru
 from .offline_review_packet import build_offline_review_packet, render_offline_review_packet_md
 from .final_research_bundle import build_final_research_bundle, render_final_research_bundle_md
 from .reviewer_decision_packet import build_reviewer_decision_packet
+from .normalized_artifact_diff import build_normalized_artifact_diff
+from .research_blocker_localizer import build_research_blocker_localization, render_research_blocker_localization_md
 
 __all__ = [
     "BaselineReportPack",
@@ -141,4 +143,7 @@ __all__ = [
     "build_final_research_bundle",
     "render_final_research_bundle_md",
     "build_reviewer_decision_packet",
+    "build_normalized_artifact_diff",
+    "build_research_blocker_localization",
+    "render_research_blocker_localization_md",
 ]
