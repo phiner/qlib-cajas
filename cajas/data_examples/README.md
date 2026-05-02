@@ -285,3 +285,11 @@ Included fixtures:
 - `final_research_bundle_tiny.json`
 
 These fixtures are minimal schema-compatible research artifacts used to validate orchestration paths quickly without invoking nested full-stack smoke pipelines.
+
+## Data IO Tiny Fixture
+
+Added tiny CSV fixture for chunked reader and metadata tests:
+
+- `cajas/data_examples/validation_fixtures/eurusd_tiny.csv`
+
+This fixture is intentionally small and deterministic for fast data I/O validation tests.

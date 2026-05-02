@@ -93,3 +93,46 @@ Optional dynamic duration probe:
 ## Boundaries
 
 Validation remains offline research-only and does not enable broker/live/paper execution, order generation/routing, position sizing, portfolio optimization, or PnL optimization.
+
+## Fast Validation Profiling Amendment
+
+Default fast pytest expression now excludes integration tests:
+
+- `not smoke and not slow and not closure and not full and not integration`
+
+`run_fast_validation.py` now supports:
+
+- tiers: `quick`, `fast`, `full-pytest`
+- profiling output with per-step timing table
+- JSON timing output: `--timing-json <path>`
+- budget flags: `--max-seconds`, `--fail-on-budget`
+- mode flags: `--skip-compileall`, `--skip-pytest`, `--only-pytest`, `--only-hygiene`
+
+Recommended commands:
+
+- Tight edit loop:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier quick`
+- Before commit:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier fast`
+- Tiny smoke:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+- Integration-only explicit run:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "integration and not slow and not smoke"`
+- Slow-only explicit run:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "slow"`
+
+## Data IO Guardrail Addendum
+
+To avoid I/O wait during development:
+
+- use static audits and fixture-driven checks by default
+- avoid reading `/home/phiner/projects/research/data` in fast validation paths
+- only enable real-data checks with explicit `--include-real-data`
+- for large data roots, require `--allow-large-data` acknowledgement
+
+New helper modules:
+
+- `cajas/reports/runtime_io_summary.py`
+- `cajas/reports/io_runtime_audit.py`
+- `cajas/reports/data_source_audit.py`
+- `cajas/data_io/*`

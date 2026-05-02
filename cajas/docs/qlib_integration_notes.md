@@ -704,3 +704,24 @@ None of these statuses permit broker/live/paper execution in this phase.
 Runtime audit command:
 
 - `./.venv-qlib313/bin/python cajas/scripts/audit_validation_runtime.py --tests-root cajas/tests --out-json tmp/validation-runtime-audit/validation_runtime_audit.json --out-md tmp/validation-runtime-audit/validation_runtime_audit.md`
+
+## Fast Validation Profiling Amendment
+
+- `run_fast_validation.py` supports `--tier quick|fast|full-pytest`.
+- Default fast subset excludes `integration` in addition to smoke/slow/closure/full.
+- Use `--timing-json` to persist per-step runtime diagnostics.
+- Use `--max-seconds` and optional `--fail-on-budget` to detect runtime regressions.
+
+Recommended workflow:
+
+- quick: `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier quick`
+- fast: `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier fast`
+- micro smoke: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+
+## Data IO Optimization (Phase 276-315)
+
+- Added static data-source and IO-runtime audits to reduce repeated full pipeline reruns.
+- Added large CSV metadata scanner and dataset manifest/cache helpers for future multi-GB readiness.
+- Added chunked CSV reader and FX schema inspection helpers.
+- Added explicit validation guardrails so fast validation paths do not read real data by default.
+- Real data use now requires explicit `--include-real-data`, and large-file reads require `--allow-large-data` acknowledgement.

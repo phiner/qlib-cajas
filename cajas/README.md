@@ -761,3 +761,43 @@ Runtime audit:
 - `./.venv-qlib313/bin/python cajas/scripts/audit_validation_runtime.py --tests-root cajas/tests --out-json tmp/validation-runtime-audit/validation_runtime_audit.json --out-md tmp/validation-runtime-audit/validation_runtime_audit.md`
 
 Note: `python -m pytest cajas/tests` can be expensive because closure/full smoke tests invoke nested multi-stage subprocess workflows.
+
+## Fast Validation Profiling Amendment
+
+Daily command tiers:
+
+- Tight edit loop:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier quick`
+- Before commit:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier fast`
+- Tiny smoke:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+
+Fast default expression:
+
+- `not smoke and not slow and not closure and not full and not integration`
+
+Explicit commands:
+
+- Integration checks:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "integration and not slow and not smoke"`
+- Slow checks:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "slow"`
+
+## Data IO Optimization (Phase 276-315)
+
+I/O-focused audit commands:
+
+- `./.venv-qlib313/bin/python cajas/scripts/audit_data_sources.py --project-root cajas --data-root /home/phiner/projects/research/data --out-json tmp/data-io-audit/data_source_audit.json --out-md tmp/data-io-audit/data_source_audit.md`
+- `./.venv-qlib313/bin/python cajas/scripts/audit_io_runtime.py --project-root cajas --tmp-root tmp --out-json tmp/io-runtime-audit/io_runtime_audit.json --out-md tmp/io-runtime-audit/io_runtime_audit.md`
+
+Large CSV metadata/manifest:
+
+- `./.venv-qlib313/bin/python cajas/scripts/inspect_large_csv.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --out tmp/data-io-audit/eurusd_2020_2024_metadata.json --sample-lines 100`
+- `./.venv-qlib313/bin/python cajas/scripts/build_dataset_file_manifest.py --data-root /home/phiner/projects/research/data --pattern "EURUSD_15 Mins_Bid_*.csv" --out tmp/data-io-audit/eurusd_dataset_manifest.json`
+
+Validation guardrails:
+
+- fast validation and micro smoke do not read real data by default
+- enable real-data mode explicitly with `--include-real-data`
+- large real-data scans require explicit `--allow-large-data`
