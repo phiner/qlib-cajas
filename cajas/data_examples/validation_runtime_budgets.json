@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "budgets_seconds": {
+    "fast_total": 105.0,
+    "pytest_fast": 95.0,
+    "compileall": 1.0,
+    "path_hygiene": 5.0,
+    "init_py_find": 1.0,
+    "git_init_py_check": 1.0,
+    "dataset_quality_tests": 15.0,
+    "contract_tests": 5.0,
+    "scenario_tests": 5.0,
+    "manifest_tests": 5.0,
+    "micro_smoke": 15.0,
+    "data_source_audit": 10.0
+  },
+  "warn_threshold_ratio": 1.15,
+  "notes": [
+    "Budgets are guardrails for local/CI validation sustainability.",
+    "They are not performance claims or trading/model performance metrics.",
+    "warn_threshold_ratio: budgets allow up to 15% overage before warning.",
+    "Budgets based on observed Phase 1016 baseline: fast_total ~85s, pytest_fast ~82s."
+  ]
+}
