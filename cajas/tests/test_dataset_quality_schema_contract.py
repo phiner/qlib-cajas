@@ -8,6 +8,8 @@ from tempfile import TemporaryDirectory
 from cajas.reports.dataset_quality_research import build_dataset_quality_research_artifacts
 from cajas.reports.dataset_quality_schema_contract import (
     compare_schema_shapes,
+    compute_drift_summary,
+    detect_drift_against_golden,
     extract_schema_shape,
     validate_bundle_contract,
     validate_report_contract,
@@ -200,6 +202,40 @@ class DatasetQualitySchemaContractTests(unittest.TestCase):
             report_json.write_text(json.dumps(bad_report), encoding="utf-8")
             ret = validate_contract_main(["--report-json", str(report_json), "--report-type", "dataset_quality_report"])
             self.assertNotEqual(ret, 0)
+
+    def test_no_drift_returns_zero_counts(self) -> None:
+        golden = {"a": "str", "b": "number"}
+        current = {"a": "str", "b": "number"}
+        drift_items = detect_drift_against_golden(current, golden, "test.json", set())
+        summary = compute_drift_summary(drift_items, 1)
+        self.assertEqual(summary.breaking_count, 0)
+        self.assertEqual(summary.additive_count, 0)
+        self.assertEqual(summary.type_change_count, 0)
+        self.assertEqual(summary.missing_required_count, 0)
+
+    def test_additive_drift_increments_additive_count(self) -> None:
+        golden = {"a": "str"}
+        current = {"a": "str", "b": "number"}
+        drift_items = detect_drift_against_golden(current, golden, "test.json", set())
+        summary = compute_drift_summary(drift_items, 1)
+        self.assertEqual(summary.additive_count, 1)
+        self.assertEqual(summary.breaking_count, 0)
+
+    def test_missing_required_field_detected(self) -> None:
+        golden = {"a": "str", "b": "number"}
+        current = {"a": "str"}
+        drift_items = detect_drift_against_golden(current, golden, "test.json", {"b"})
+        summary = compute_drift_summary(drift_items, 1)
+        self.assertEqual(summary.missing_required_count, 1)
+        self.assertEqual(summary.breaking_count, 1)
+
+    def test_type_change_detected(self) -> None:
+        golden = {"a": "str"}
+        current = {"a": 123}
+        drift_items = detect_drift_against_golden(current, golden, "test.json", set())
+        summary = compute_drift_summary(drift_items, 1)
+        self.assertEqual(summary.type_change_count, 1)
+        self.assertEqual(summary.breaking_count, 1)
 
 
 if __name__ == "__main__":
