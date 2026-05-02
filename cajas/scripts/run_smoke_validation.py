@@ -101,11 +101,24 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Run explicit smoke validation tiers.")
     p.add_argument("--tier", choices=["micro", "minimal", "closure", "full"], default="micro")
     p.add_argument("--out-root", default="tmp/smoke-validation")
+    p.add_argument("--include-real-data", action="store_true")
+    p.add_argument("--data-root", default="/home/phiner/projects/research/data")
+    p.add_argument("--allow-large-data", action="store_true")
+    p.add_argument("--large-data-threshold-mb", type=int, default=256)
     args = p.parse_args()
 
     py = sys.executable
     out_root = Path(args.out_root).expanduser().resolve()
     out_root.mkdir(parents=True, exist_ok=True)
+    if args.include_real_data:
+        data_root = Path(args.data_root).expanduser().resolve()
+        if data_root.exists():
+            threshold = args.large_data_threshold_mb * 1024 * 1024
+            large = [p for p in data_root.glob("*.csv") if p.is_file() and p.stat().st_size > threshold]
+            if large and not args.allow_large_data:
+                print(f"warning: {len(large)} files exceed {args.large_data_threshold_mb}MB under {data_root}")
+                raise SystemExit("use --allow-large-data to acknowledge large real-data reads")
+        print(f"warning: include-real-data enabled for {data_root}; micro/minimal tiers still prefer fixtures by default.")
 
     total = 0.0
     for cmd in build_tier_commands(py=py, out_root=out_root, tier=args.tier):
