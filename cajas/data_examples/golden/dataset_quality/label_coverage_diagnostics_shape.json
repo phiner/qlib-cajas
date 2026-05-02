@@ -1,0 +1,18 @@
+{
+  "label_diagnostics": [
+    {
+      "distinct_count": "number",
+      "distribution": {
+        "flat": "...",
+        "up": "..."
+      },
+      "imbalance_warning": "number",
+      "label": "str",
+      "non_null_count": "number",
+      "null_count": "number",
+      "top_ratio": "number"
+    }
+  ],
+  "schema_version": "str",
+  "scope": "str"
+}

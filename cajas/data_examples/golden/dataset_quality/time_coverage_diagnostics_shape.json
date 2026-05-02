@@ -1,0 +1,30 @@
+{
+  "instrument_summary": {
+    "instrument_column": "str",
+    "top_instruments": [
+      {
+        "count": "...",
+        "instrument": "..."
+      }
+    ],
+    "unique_instrument_count": "number"
+  },
+  "schema_version": "str",
+  "scope": "str",
+  "time_coverage": {
+    "datetime_column": "str",
+    "datetime_parse_failed_count": "number",
+    "datetime_parse_success_count": "number",
+    "earliest_timestamp": "str",
+    "latest_timestamp": "str",
+    "session_hour_distribution": {
+      "0": "number"
+    },
+    "suspicious_gap_count": "number",
+    "suspicious_gap_examples": [],
+    "time_quality": {
+      "issues": [],
+      "status": "str"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "chunked_feature_dry_run": {
+    "chunk_count": "number",
+    "chunk_size": "number",
+    "feature_columns": [
+      "str"
+    ],
+    "row_count": "number",
+    "row_limit": "number",
+    "rows_per_second": "null",
+    "schema_consistency": {
+      "column_dtype_map": {
+        "Close": "...",
+        "High": "...",
+        "Low": "...",
+        "Open": "...",
+        "Time (UTC)": "...",
+        "Volume": "...",
+        "future_direction_8": "...",
+        "instrument": "..."
+      }
+    },
+    "selected_columns": [
+      "str"
+    ]
+  },
+  "schema_version": "str",
+  "scope": "str"
+}
