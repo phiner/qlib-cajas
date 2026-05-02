@@ -63,3 +63,8 @@ Real-data access rules:
 - Some low-risk full-read candidates may remain as audit false positives.
 - Integration/slow tests are explicit and intentionally excluded from fast tier.
 - Closure/full smoke remains intentionally expensive.
+
+## Release Readiness Docs
+
+- `cajas/docs/pr_readiness_checklist.md`
+- `cajas/docs/final_phase_archive_index.md`
