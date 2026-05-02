@@ -73,3 +73,8 @@ Real-data access rules:
 - `cajas/docs/mainline_handoff_note.md`
 - `cajas/docs/post_merge_checklist.md`
 - `cajas/docs/post_github_merge_sanity_report.md`
+- `cajas/docs/post_merge_next_workstream_plan.md`
+
+## Next Phase Prompt
+
+- `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`

@@ -20,6 +20,9 @@
 - Manual governance review refresh flow.
 - Research-only approval packet refresh cadence.
 - Keep trading execution out of scope unless designed in a separate branch/spec.
+- Prioritize dataset quality loop + chunked feature readiness as the immediate post-merge workstream:
+  - see `cajas/docs/post_merge_next_workstream_plan.md`
+  - execution prompt: `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`
 
 ## Hard Blockers Before Paper/Live Work
 

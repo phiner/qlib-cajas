@@ -836,5 +836,9 @@ Current audit delta:
   - `cajas/docs/pr_readiness_checklist.md`
 - Final phase archive index:
   - `cajas/docs/final_phase_archive_index.md`
+- Post-merge next workstream plan:
+  - `cajas/docs/post_merge_next_workstream_plan.md`
+- Next implementation prompt:
+  - `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`
 - Validation delivery packet builder:
   - `./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py --fast-timing tmp/validation-runtime-audit/fast_validation_phase566.json --data-source-audit tmp/data-io-audit/data_source_audit_phase566.json --runtime-audit tmp/validation-runtime-audit/validation_runtime_phase566.json --out-json tmp/validation-delivery/validation_delivery_packet.json --out-md tmp/validation-delivery/validation_delivery_packet.md --allow-missing-inputs`
