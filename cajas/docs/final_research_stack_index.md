@@ -70,3 +70,5 @@ Real-data access rules:
 - `cajas/docs/final_phase_archive_index.md`
 - `cajas/docs/pr_description_phase_next_mega_logic.md`
 - `cajas/docs/merge_gate_checklist.md`
+- `cajas/docs/mainline_handoff_note.md`
+- `cajas/docs/post_merge_checklist.md`
