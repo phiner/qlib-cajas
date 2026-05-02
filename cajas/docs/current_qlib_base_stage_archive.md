@@ -1137,3 +1137,91 @@ Outputs:
 ---
 
 **End of Addendum**
+
+---
+
+## Addendum: Phase 1046-1075 (Runtime Budget Enforcement and Test Optimization)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Runtime Budget Configuration** (`cajas/data_examples/validation_runtime_budgets.json`)
+   - Component budgets: fast_total (105s), pytest_fast (95s), individual steps
+   - Warn threshold ratio: 1.15 (15% overage allowed)
+   - Based on Phase 1016 baseline: ~85s fast validation
+
+2. **Budget Checking Module** (`cajas/reports/validation_runtime_budget.py`)
+   - `check_component_budget()` - Pass/warn/fail classification
+   - `check_validation_runtime_budgets()` - Validate all components
+   - `generate_budget_report_markdown()` - Reviewer-friendly reports
+
+3. **Budget Checking CLI** (`cajas/scripts/check_validation_runtime_budget.py`)
+   - Compares timing data against budgets
+   - Generates JSON and Markdown reports
+   - Exits non-zero on fail
+   - `--fail-on-warn` flag for strict enforcement
+
+4. **Budget Tests** (`cajas/tests/test_validation_runtime_budget.py`)
+   - 9 tests covering pass/warn/fail, CLI behavior, Markdown generation
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `test_validation_runtime_budget.py` | ✅ 9 passed | 2.05s | All budget tests pass |
+| `pytest -k "dataset_quality or qlib_experiment_manifest or validation_runtime_budget"` | ✅ 57 passed | 7.46s | All related tests (+9 new) |
+| `run_fast_validation.py --tier fast` | ✅ 362 passed | 83.52s | **Continued improvement** |
+| `check_validation_runtime_budget.py` | ⚠️ warn | <1s | Missing component timing (expected) |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### Runtime Trend
+
+| Phase | Fast Validation | Delta | Notes |
+|-------|----------------|-------|-------|
+| 986 | ~99.93s | baseline | After scenario expansion |
+| 1016 | ~85.34s | -14.59s | After manifest addition |
+| 1046 | ~83.52s | -1.82s | After budget enforcement |
+
+**Total improvement**: -16.41s (-16.4%) from Phase 986 baseline
+
+### Budget Status
+
+Current budget check status: **warn**
+
+- All measured components within budget
+- Some components missing timing data (dataset_quality_tests, contract_tests, etc.)
+- Missing components are expected (not measured in fast validation timing JSON)
+
+### Scope and Limitations
+
+**Budget Scope:**
+- Engineering guardrails for validation sustainability
+- Not performance claims or trading/model performance metrics
+- Budgets set with 15% overage tolerance
+- Based on observed Phase 1016 baseline
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+- Budgets are not SLAs or performance guarantees
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 1046-1075 section with budget workflow
+- `cajas/README.md` - Added Phase 1046-1075 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+### Risks and Follow-ups
+
+- Budget configuration may need adjustment as test suite evolves
+- Missing component timing is expected (components not in fast validation)
+- No automatic budget updates (manual review required)
+- Runtime variance may cause occasional false warnings
+
+---
+
+**End of Addendum**

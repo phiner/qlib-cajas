@@ -250,6 +250,38 @@ Manifest validation:
 
 **Scope**: Experiment manifests are for offline Qlib research reproducibility only. They are not trading execution artifacts. Quality scores remain data quality indicators only.
 
+## New in Phase 1046-1075
+
+Runtime budget enforcement and test optimization:
+
+- **Runtime Budgets**: Engineering guardrails for validation sustainability
+  - Budget configuration: `cajas/data_examples/validation_runtime_budgets.json`
+  - Component budgets: fast_total (105s), pytest_fast (95s), individual steps
+  - Warn threshold: 15% overage allowed before warning
+- **Budget Checking**: Automated runtime budget validation
+  - CLI: `check_validation_runtime_budget.py`
+  - Pass/warn/fail classification
+  - Reviewer-friendly reports with component table
+- **Current Performance**: Fast validation ~83.5s (Phase 986: ~100s, Phase 1016: ~85s)
+
+Check runtime budget:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/check_validation_runtime_budget.py \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --timing-json tmp/fast_validation_latest.json \
+  --out-json tmp/validation_runtime_budget_report.json \
+  --out-md tmp/validation_runtime_budget_report.md
+```
+
+Budget status interpretation:
+
+- **pass**: All components within budget
+- **warn**: Some components slightly over budget (≤15% overage) or missing timing data
+- **fail**: One or more components significantly over budget (>15% overage)
+
+**Scope**: Runtime budgets are engineering guardrails for validation sustainability. They are not performance claims or trading/model performance metrics.
+
 ## Combined bundle CLI
 
 ```bash

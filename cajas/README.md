@@ -100,6 +100,15 @@ Dataset quality reports now include:
 - 9 manifest tests (~2s)
 - Manifests clearly marked as offline research only, not trading execution
 
+**Phase 1046-1075 Runtime Budget Enforcement and Test Optimization:**
+
+- Runtime budget configuration for validation sustainability
+- Budget checking CLI with pass/warn/fail classification
+- Reviewer-friendly budget reports with component table
+- 9 runtime budget tests (~2s)
+- Fast validation: ~83.5s (Phase 986: ~100s, Phase 1016: ~85s)
+- Budgets are engineering guardrails, not performance claims
+
 Combined bundle builder:
 
 ```bash
