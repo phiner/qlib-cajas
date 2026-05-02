@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .artifact_normalizer import normalize_json_artifact, normalize_markdown_artifact
+from .artifact_normalizer import normalize_json_artifact, normalize_markdown_artifact, normalize_stable_value
 
 
 def _hash_bytes(data: bytes) -> str:
@@ -25,6 +25,20 @@ def _file_fp(path: Path) -> tuple[str | None, str | None]:
         return _hash_bytes(rep["normalized_text"].encode("utf-8")), "md"
     if path.suffix.lower() in {".csv", ".jsonl"}:
         txt = path.read_text(encoding="utf-8")
+        if path.suffix.lower() == ".jsonl":
+            rows = []
+            for line in txt.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row_obj = json.loads(line)
+                    rows.append(normalize_stable_value(row_obj))
+                except json.JSONDecodeError:
+                    rows.append(line.replace(str(Path.cwd().resolve()), "<CWD>"))
+            rows = sorted(rows, key=lambda x: json.dumps(x, ensure_ascii=True, sort_keys=True) if isinstance(x, (dict, list)) else str(x))
+            content = json.dumps(rows, ensure_ascii=True, sort_keys=True).encode("utf-8")
+            return _hash_bytes(content), "jsonl"
         txt = txt.replace(str(Path.cwd().resolve()), "<CWD>")
         return _hash_bytes(txt.encode("utf-8")), "text"
     return None, None

@@ -9,4 +9,10 @@ class StableFingerprintTests(unittest.TestCase):
             Path(a,"x.json").write_text(json.dumps({"created_at_utc":"2026-01-01T00:00:00+00:00","status":"ok"}),encoding="utf-8")
             Path(b,"x.json").write_text(json.dumps({"created_at_utc":"2027-01-01T00:00:00+00:00","status":"ok"}),encoding="utf-8")
             self.assertEqual(build_stable_fingerprint(root=a)["aggregate_stable_hash"], build_stable_fingerprint(root=b)["aggregate_stable_hash"])
+
+    def test_jsonl_uuid_drift_normalized(self) -> None:
+        with TemporaryDirectory() as a, TemporaryDirectory() as b:
+            Path(a, "x.jsonl").write_text('{"run_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","status":"ok"}\n', encoding="utf-8")
+            Path(b, "x.jsonl").write_text('{"run_id":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","status":"ok"}\n', encoding="utf-8")
+            self.assertEqual(build_stable_fingerprint(root=a)["aggregate_stable_hash"], build_stable_fingerprint(root=b)["aggregate_stable_hash"])
 if __name__ == "__main__": unittest.main()
