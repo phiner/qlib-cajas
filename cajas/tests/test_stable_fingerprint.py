@@ -15,4 +15,16 @@ class StableFingerprintTests(unittest.TestCase):
             Path(a, "x.jsonl").write_text('{"run_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","status":"ok"}\n', encoding="utf-8")
             Path(b, "x.jsonl").write_text('{"run_id":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","status":"ok"}\n', encoding="utf-8")
             self.assertEqual(build_stable_fingerprint(root=a)["aggregate_stable_hash"], build_stable_fingerprint(root=b)["aggregate_stable_hash"])
+
+    def test_metric_difference_remains_semantic(self) -> None:
+        with TemporaryDirectory() as a, TemporaryDirectory() as b:
+            Path(a, "m.json").write_text(json.dumps({"metric": 1.0, "status": "ok"}), encoding="utf-8")
+            Path(b, "m.json").write_text(json.dumps({"metric": 2.0, "status": "ok"}), encoding="utf-8")
+            self.assertNotEqual(build_stable_fingerprint(root=a)["aggregate_stable_hash"], build_stable_fingerprint(root=b)["aggregate_stable_hash"])
+
+    def test_blocked_actions_difference_remains_semantic(self) -> None:
+        with TemporaryDirectory() as a, TemporaryDirectory() as b:
+            Path(a, "f.json").write_text(json.dumps({"blocked_actions": ["no broker"]}), encoding="utf-8")
+            Path(b, "f.json").write_text(json.dumps({"blocked_actions": ["no live trading"]}), encoding="utf-8")
+            self.assertNotEqual(build_stable_fingerprint(root=a)["aggregate_stable_hash"], build_stable_fingerprint(root=b)["aggregate_stable_hash"])
 if __name__ == "__main__": unittest.main()

@@ -14,6 +14,7 @@ _TMP_RE = re.compile(r"/tmp/[A-Za-z0-9_./-]+")
 _RUN_ROOT_RE = re.compile(r"\brun_[ab]\b")
 _UUID_RE = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
 _TS_FRACTION_RE = re.compile(r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\.\d+(?:Z|[+-]\d{2}:\d{2})?")
+_HEX64_RE = re.compile(r"\b[a-f0-9]{64}\b", re.IGNORECASE)
 
 
 def _norm_scalar(value: str) -> str:
@@ -23,6 +24,7 @@ def _norm_scalar(value: str) -> str:
     out = _TMP_RE.sub("<TMP_ROOT>", out)
     out = _RUN_ROOT_RE.sub("<RUN_ROOT>", out)
     out = _UUID_RE.sub("<UUID>", out)
+    out = _HEX64_RE.sub("<HASH64>", out)
     out = out.replace(str(Path.cwd().resolve()), "<CWD>")
     return out
 
@@ -32,7 +34,7 @@ def normalize_stable_value(obj):
         out = {}
         for k in sorted(obj.keys()):
             v = obj[k]
-            if k in {"created_at_utc", "timestamp", "working_directory", "root", "absolute_path", "run_id", "registry_id"}:
+            if k in {"created_at_utc", "timestamp", "working_directory", "root", "absolute_path", "run_id", "registry_id", "sha256"}:
                 out[k] = "<VAR>"
             else:
                 out[k] = normalize_stable_value(v)
