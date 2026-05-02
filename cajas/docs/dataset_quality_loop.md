@@ -17,6 +17,35 @@ Dataset quality reports now include:
 
 All reports include `schema_version` fields for stable parsing.
 
+## New in Phase 866-895
+
+Schema contracts and golden fixture regression:
+
+- **Schema Contracts**: Explicit validation for all report types
+  - Required fields enforced
+  - Type checking
+  - Additive changes allowed, breaking changes detected
+- **Golden Shape Snapshots**: Stable shape fixtures in `cajas/data_examples/golden/dataset_quality/`
+- **Contract Validation CLI**: `validate_dataset_quality_contract.py`
+- **Regression Tests**: Prevent accidental field removal or type changes
+
+Contract validation:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/validate_dataset_quality_contract.py \
+  --bundle-root tmp/dataset-quality-smoke \
+  --out-json tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.json \
+  --out-md tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.md
+```
+
+Build golden shapes:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_golden_shapes.py \
+  --smoke-root tmp/dataset-quality-smoke \
+  --out-dir cajas/data_examples/golden/dataset_quality
+```
+
 ## Combined bundle CLI
 
 ```bash

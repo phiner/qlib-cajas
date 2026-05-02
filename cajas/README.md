@@ -37,7 +37,7 @@ cajas/
   data_examples/ # expected input/output schema notes
 ```
 
-## Dataset Quality Loop (Phase 776-805, Enhanced Phase 836-865)
+## Dataset Quality Loop (Phase 776-805, Enhanced Phase 836-865, Contracts Phase 866-895)
 
 **Phase 836-865 Enhancements:**
 
@@ -48,6 +48,13 @@ Dataset quality reports now include:
 - Ranked review items for offline research queue
 - Feature readiness categories
 - Enhanced time quality with session distribution
+
+**Phase 866-895 Schema Contracts:**
+
+- Explicit schema validation for all report types
+- Golden shape snapshots for regression testing
+- Contract validation CLI
+- Additive vs breaking change detection
 
 Combined bundle builder:
 
