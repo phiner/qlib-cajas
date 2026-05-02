@@ -12,7 +12,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from cajas.reports.dataset_quality_research import build_dataset_quality_research_artifacts, render_dataset_quality_bundle_markdown  # noqa: E402
-from cajas.reports.dataset_quality_schema_contract import validate_bundle_contract  # noqa: E402
+from cajas.reports.dataset_quality_schema_contract import (  # noqa: E402
+    compute_drift_summary,
+    detect_drift_against_golden,
+    extract_schema_shape,
+    validate_bundle_contract,
+)
 from cajas.reports.runtime_io_summary import safe_json_write  # noqa: E402
 
 
@@ -118,6 +123,27 @@ def main() -> int:
     error_count = sum(1 for i in contract_issues if i.severity == "error")
     warning_count = sum(1 for i in contract_issues if i.severity == "warning")
 
+    # Detect drift against golden shapes
+    golden_dir = Path("cajas/data_examples/golden/dataset_quality")
+    drift_items = []
+    files_checked = 0
+
+    if golden_dir.exists():
+        report_golden_map = {
+            "dataset_quality_report": "dataset_quality_report_shape.json",
+            "feature_schema_manifest": "feature_schema_manifest_shape.json",
+            "offline_research_queue_summary": "offline_research_queue_summary_shape.json",
+        }
+        for report_key, golden_file in report_golden_map.items():
+            golden_path = golden_dir / golden_file
+            if golden_path.exists() and report_key in bundle:
+                files_checked += 1
+                golden_shape = json.loads(golden_path.read_text(encoding="utf-8"))
+                current_shape = extract_schema_shape(bundle[report_key], max_depth=4)
+                drift_items.extend(detect_drift_against_golden(current_shape, golden_shape, golden_file, set()))
+
+    drift_summary = compute_drift_summary(drift_items, files_checked)
+
     contract_dir = out_root / "contract"
     contract_dir.mkdir(parents=True, exist_ok=True)
     contract_report = {
@@ -125,8 +151,20 @@ def main() -> int:
         "error_count": error_count,
         "warning_count": warning_count,
         "issues": [{"severity": i.severity, "path": i.path, "message": i.message} for i in contract_issues],
+        "drift_summary": {
+            "breaking_count": drift_summary.breaking_count,
+            "additive_count": drift_summary.additive_count,
+            "type_change_count": drift_summary.type_change_count,
+            "missing_required_count": drift_summary.missing_required_count,
+            "files_checked": drift_summary.files_checked,
+            "files_with_drift": drift_summary.files_with_drift,
+        },
+        "drift_items": [
+            {"file": d.file, "path": d.path, "kind": d.kind, "expected": d.expected, "actual": d.actual} for d in drift_items
+        ],
     }
     safe_json_write(contract_dir / "dataset_quality_contract_report.json", contract_report)
+
     contract_md_lines = [
         "# Dataset Quality Contract Validation",
         "",
@@ -134,9 +172,45 @@ def main() -> int:
         f"- error_count: `{error_count}`",
         f"- warning_count: `{warning_count}`",
         "",
+        "## Drift Summary",
+        "",
+        f"- files_checked: `{drift_summary.files_checked}`",
+        f"- files_with_drift: `{drift_summary.files_with_drift}`",
+        f"- breaking_count: `{drift_summary.breaking_count}`",
+        f"- additive_count: `{drift_summary.additive_count}`",
+        f"- type_change_count: `{drift_summary.type_change_count}`",
+        f"- missing_required_count: `{drift_summary.missing_required_count}`",
+        "",
     ]
+
+    if drift_summary.breaking_count > 0:
+        contract_md_lines.append("## Breaking Drift")
+        contract_md_lines.append("")
+        for d in drift_items:
+            if d.kind in ("missing_required", "removed", "type_change"):
+                contract_md_lines.append(f"- [{d.kind}] {d.file}::{d.path}: expected={d.expected}, actual={d.actual}")
+        contract_md_lines.append("")
+
+    if drift_summary.additive_count > 0:
+        contract_md_lines.append("## Additive Drift")
+        contract_md_lines.append("")
+        for d in drift_items:
+            if d.kind == "additive":
+                contract_md_lines.append(f"- [additive] {d.file}::{d.path}")
+        contract_md_lines.append("")
+
+    contract_md_lines.append("## Reviewer Note")
+    contract_md_lines.append("")
+    if drift_summary.breaking_count > 0:
+        contract_md_lines.append("**Action required**: Breaking drift detected. Review changes and update golden shapes if intentional.")
+    elif drift_summary.additive_count > 0:
+        contract_md_lines.append("**Info**: Additive drift detected. New fields added. Review and update golden shapes if desired.")
+    else:
+        contract_md_lines.append("**No action needed**: No drift detected.")
+    contract_md_lines.append("")
+
     if contract_issues:
-        contract_md_lines.append("## Issues")
+        contract_md_lines.append("## Contract Issues")
         contract_md_lines.append("")
         for issue in contract_issues:
             contract_md_lines.append(f"- [{issue.severity}] {issue.path}: {issue.message}")

@@ -25,6 +25,29 @@ class SchemaDiff:
     is_breaking: bool
 
 
+@dataclass
+class DriftItem:
+    """Schema drift item for reporting."""
+
+    file: str
+    path: str
+    kind: str  # "missing_required", "type_change", "additive", "removed"
+    expected: str
+    actual: str
+
+
+@dataclass
+class DriftSummary:
+    """Summary of schema drift."""
+
+    breaking_count: int
+    additive_count: int
+    type_change_count: int
+    missing_required_count: int
+    files_checked: int
+    files_with_drift: int
+
+
 REQUIRED_REPORT_KEYS = {
     "dataset_quality_report": {
         "schema_version": str,
@@ -162,3 +185,81 @@ def compare_schema_shapes(old: dict, new: dict, path: str = "") -> SchemaDiff:
 
     is_breaking = len(removed) > 0 or len(type_changes) > 0
     return SchemaDiff(added, removed, type_changes, is_breaking)
+
+
+
+def detect_drift_against_golden(
+    current_shape: dict, golden_shape: dict, filename: str, required_keys: set[str] | None = None
+) -> list[DriftItem]:
+    """Detect drift between current and golden shapes."""
+    drift_items = []
+    required_keys = required_keys or set()
+
+    diff = compare_schema_shapes(golden_shape, current_shape)
+
+    # Missing required fields
+    for removed_field in diff.removed_fields:
+        if any(removed_field.startswith(req) or removed_field == req for req in required_keys):
+            drift_items.append(
+                DriftItem(
+                    file=filename,
+                    path=removed_field,
+                    kind="missing_required",
+                    expected="present",
+                    actual="missing",
+                )
+            )
+        else:
+            drift_items.append(
+                DriftItem(
+                    file=filename,
+                    path=removed_field,
+                    kind="removed",
+                    expected="present",
+                    actual="missing",
+                )
+            )
+
+    # Type changes
+    for path, old_type, new_type in diff.type_changes:
+        drift_items.append(
+            DriftItem(
+                file=filename,
+                path=path,
+                kind="type_change",
+                expected=old_type,
+                actual=new_type,
+            )
+        )
+
+    # Additive fields
+    for added_field in diff.added_fields:
+        drift_items.append(
+            DriftItem(
+                file=filename,
+                path=added_field,
+                kind="additive",
+                expected="not present",
+                actual="present",
+            )
+        )
+
+    return drift_items
+
+
+def compute_drift_summary(drift_items: list[DriftItem], files_checked: int) -> DriftSummary:
+    """Compute drift summary from drift items."""
+    breaking_count = sum(1 for d in drift_items if d.kind in ("missing_required", "removed", "type_change"))
+    additive_count = sum(1 for d in drift_items if d.kind == "additive")
+    type_change_count = sum(1 for d in drift_items if d.kind == "type_change")
+    missing_required_count = sum(1 for d in drift_items if d.kind == "missing_required")
+    files_with_drift = len(set(d.file for d in drift_items))
+
+    return DriftSummary(
+        breaking_count=breaking_count,
+        additive_count=additive_count,
+        type_change_count=type_change_count,
+        missing_required_count=missing_required_count,
+        files_checked=files_checked,
+        files_with_drift=files_with_drift,
+    )
