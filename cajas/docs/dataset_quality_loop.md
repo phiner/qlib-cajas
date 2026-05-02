@@ -156,6 +156,63 @@ git add cajas/data_examples/golden/dataset_quality
 git commit -m "test: update dataset quality golden shapes"
 ```
 
+## New in Phase 986-1015
+
+Golden fixture scenario expansion:
+
+- **Scenario Coverage**: Multiple edge-case scenarios for robust regression testing
+  - `tiny_balanced`: Healthy balanced fixture (baseline)
+  - `missing_label_values`: Rows with missing/null labels
+  - `single_class_label`: Label with only one class (imbalance)
+  - `time_gap`: Timestamp series with deliberate gap
+  - `minimal_columns`: Minimal required columns only
+- **Scenario Manifest**: Committed manifest describing each scenario
+- **Scenario Builder**: CLI to regenerate scenario golden shapes
+- **Scenario Tests**: Regression tests for all scenarios (6 tests, ~2s)
+
+Scenario golden shapes location:
+
+```text
+cajas/data_examples/golden/dataset_quality_scenarios/
+  scenario_manifest.json
+  tiny_balanced/
+    dataset_quality_report_shape.json
+    feature_schema_manifest_shape.json
+    offline_research_queue_summary_shape.json
+    bundle_shape.json
+  missing_label_values/
+    ...
+  single_class_label/
+    ...
+  time_gap/
+    ...
+  minimal_columns/
+    ...
+```
+
+Build scenario golden shapes:
+
+```bash
+# Build all scenarios
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_golden_scenarios.py \
+  --out-dir cajas/data_examples/golden/dataset_quality_scenarios
+
+# Build specific scenario
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_golden_scenarios.py \
+  --out-dir cajas/data_examples/golden/dataset_quality_scenarios \
+  --scenario tiny_balanced
+```
+
+**Scenario refresh workflow:**
+
+1. Review scenario manifest: `cajas/data_examples/golden/dataset_quality_scenarios/scenario_manifest.json`
+2. Regenerate scenario shapes (if needed)
+3. Run scenario tests: `pytest cajas/tests/test_dataset_quality_golden_scenarios.py -v`
+4. Review diffs before committing
+5. Commit updated shapes if intentional changes
+
+**Scope**: Scenarios test schema shape stability only, not exact values. Quality scores remain data quality indicators, not trading/model performance metrics.
+
 ## Combined bundle CLI
 
 ```bash

@@ -81,6 +81,15 @@ Dataset quality reports now include:
 - Regression detection: contract failures, semantic errors, quality drops, status degradation
 - Semantic errors fail contract validation separately from shape drift
 
+**Phase 986-1015 Golden Fixture Scenario Expansion:**
+
+- Multiple edge-case scenarios for robust regression testing
+  - `tiny_balanced`, `missing_label_values`, `single_class_label`, `time_gap`, `minimal_columns`
+- Scenario manifest describing each scenario
+- Scenario builder CLI to regenerate golden shapes
+- 6 scenario regression tests (~2s)
+- 21 golden shape files committed across 5 scenarios
+
 Combined bundle builder:
 
 ```bash

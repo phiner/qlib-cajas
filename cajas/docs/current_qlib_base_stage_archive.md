@@ -867,3 +867,118 @@ Use this checklist to verify the current project state:
 ---
 
 **End of Addendum**
+
+---
+
+## Addendum: Phase 986-1015 (Golden Fixture Scenario Expansion)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Scenario Builder Script** (`cajas/scripts/build_dataset_quality_golden_scenarios.py`)
+   - Generates 5 deterministic edge-case scenarios
+   - Extracts golden shapes for each scenario
+   - Produces scenario manifest
+   - Supports building all scenarios or specific scenario
+
+2. **Golden Scenario Fixtures** (21 shape files committed)
+   - `tiny_balanced`: Healthy balanced fixture (baseline)
+   - `missing_label_values`: Rows with missing/null label values
+   - `single_class_label`: Label with only one class (imbalance test)
+   - `time_gap`: Timestamp series with deliberate gap
+   - `minimal_columns`: Minimal required columns only
+   - Each scenario includes: dataset_quality_report, feature_schema_manifest, offline_research_queue_summary, bundle shapes
+
+3. **Scenario Manifest** (`cajas/data_examples/golden/dataset_quality_scenarios/scenario_manifest.json`)
+   - Documents each scenario name, description, generator, feature columns
+   - Lists expected report types for each scenario
+   - Schema version v1
+
+4. **Scenario Regression Tests** (`cajas/tests/test_dataset_quality_golden_scenarios.py`)
+   - 6 tests covering all scenarios
+   - Verifies golden shapes exist for all scenarios
+   - Tests each scenario for breaking drift
+   - Uses in-process generation for speed
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `build_dataset_quality_golden_scenarios.py` | ✅ Pass | ~3s | Generated 21 shape files |
+| `test_dataset_quality_golden_scenarios.py` | ✅ 6 passed | 2.02s | All scenario tests pass |
+| `pytest cajas/tests -k dataset_quality` | ✅ 39 passed | 9.05s | All dataset quality tests (+6 new) |
+| `run_fast_validation.py --tier fast` | ✅ 344 passed | 99.93s | +2s from Phase 956 baseline (~98s) |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### Scenario Coverage
+
+| Scenario | Purpose | Key Test |
+|----------|---------|----------|
+| `tiny_balanced` | Baseline healthy fixture | Balanced labels, complete data |
+| `missing_label_values` | Label coverage diagnostics | Missing/null label values |
+| `single_class_label` | Imbalance detection | Only one label class |
+| `time_gap` | Time coverage diagnostics | Deliberate timestamp gap |
+| `minimal_columns` | Schema flexibility | Only required columns |
+
+### Golden Fixture Paths
+
+```text
+cajas/data_examples/golden/dataset_quality_scenarios/
+  scenario_manifest.json
+  tiny_balanced/
+    dataset_quality_report_shape.json
+    feature_schema_manifest_shape.json
+    offline_research_queue_summary_shape.json
+    bundle_shape.json
+  missing_label_values/
+    (same 4 shape files)
+  single_class_label/
+    (same 4 shape files)
+  time_gap/
+    (same 4 shape files)
+  minimal_columns/
+    (same 4 shape files)
+```
+
+Total: 21 golden shape files (5 scenarios × 4 shapes + 1 manifest)
+
+### Scope and Limitations
+
+**Scenario Scope:**
+- Tests schema shape stability only, not exact values
+- Deterministic tiny fixtures for fast tests
+- No real-data dependencies
+- No network/GPU requirements
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+- Quality scores remain data quality indicators only
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 986-1015 section with scenario refresh workflow
+- `cajas/README.md` - Added Phase 986-1015 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+### Runtime Impact
+
+- Fast validation: 99.93s (Phase 956 baseline: ~98s, +2s for 6 new tests)
+- Scenario tests: 2.02s (6 tests)
+- Data-source audit: stable at 29 read_csv calls
+- Total test count: 344 passed (Phase 956: 338)
+
+### Risks and Follow-ups
+
+- Scenario coverage is conservative; may need expansion for additional edge cases
+- Scenarios test shape only; semantic validation tested separately
+- No scenario for empty/header-only data (could be added if needed)
+- No scenario for duplicate timestamps (could be added if needed)
+
+---
+
+**End of Addendum**
