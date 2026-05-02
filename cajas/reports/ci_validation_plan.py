@@ -17,10 +17,9 @@ def build_ci_validation_plan() -> dict:
         },
         {
             "tier": "Tier 1",
-            "intent": "focused unit tests",
+            "intent": "fast unit validation",
             "commands": [
-                "./.venv-qlib313/bin/python -m pytest cajas/tests/test_run_research_gate_smoke.py",
-                "./.venv-qlib313/bin/python -m pytest cajas/tests/test_run_final_readiness_smoke.py",
+                "./.venv-qlib313/bin/python -m pytest cajas/tests -m \"not slow and not smoke\"",
             ],
         },
         {
@@ -30,17 +29,16 @@ def build_ci_validation_plan() -> dict:
         },
         {
             "tier": "Tier 3",
-            "intent": "bounded smoke flows",
+            "intent": "explicit smoke validation",
             "commands": [
-                "./.venv-qlib313/bin/python cajas/scripts/run_research_gate_smoke.py --out-root tmp/research-gate-smoke",
-                "./.venv-qlib313/bin/python cajas/scripts/run_final_readiness_smoke.py --out-root tmp/final-readiness-smoke",
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation",
             ],
         },
         {
             "tier": "Tier 4",
-            "intent": "optional heavier research runs",
+            "intent": "full historical smoke (optional)",
             "commands": [
-                "./.venv-qlib313/bin/python cajas/scripts/run_qlib_model_bridge_smoke.py --out-root tmp/qlib-model-bridge-smoke",
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier full --out-root tmp/smoke-validation",
             ],
         },
     ]

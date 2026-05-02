@@ -10,7 +10,8 @@ class CiValidationPlanTests(unittest.TestCase):
         plan = build_ci_validation_plan()
         merged = "\n".join(cmd for t in plan["tiers"] for cmd in t["commands"])
         self.assertIn("check_path_hygiene.py", merged)
-        self.assertIn("run_research_gate_smoke.py", merged)
+        self.assertIn("not slow and not smoke", merged)
+        self.assertIn("run_smoke_validation.py --tier minimal", merged)
 
 
 if __name__ == "__main__":
