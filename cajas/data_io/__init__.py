@@ -5,6 +5,7 @@ from .dataset_file_manifest import build_dataset_file_manifest
 from .chunked_csv_reader import iter_csv_chunks
 from .fx_kline_schema import inspect_fx_kline_schema
 from .dataset_cache_index import build_dataset_cache_index
+from .csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 __all__ = [
     "inspect_large_csv_metadata",
@@ -12,4 +13,6 @@ __all__ = [
     "iter_csv_chunks",
     "inspect_fx_kline_schema",
     "build_dataset_cache_index",
+    "CsvLoadingPolicy",
+    "evaluate_loading_decision",
 ]

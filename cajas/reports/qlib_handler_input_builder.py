@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 
 def build_qlib_handler_input(
@@ -16,12 +17,38 @@ def build_qlib_handler_input(
     datetime_col: str = "datetime",
     label_columns: list[str] | None = None,
     sort_rows: bool = True,
+    row_limit: int | None = None,
+    chunk_size: int | None = None,
+    sample_only: bool = False,
+    allow_large_data: bool = False,
 ) -> dict:
     src = Path(input_csv).expanduser().resolve()
     out = Path(out_dir).expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(src)
+    policy = CsvLoadingPolicy(
+        row_limit=row_limit,
+        chunk_size=chunk_size,
+        sample_only=sample_only,
+        allow_large_data=allow_large_data,
+    )
+    decision = evaluate_loading_decision(src, policy)
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; use allow_large_data or row_limit/chunk_size")
+    if decision["mode"] in {"sampled_read", "chunked_read"} and chunk_size:
+        chunks = []
+        consumed = 0
+        for chunk in pd.read_csv(src, chunksize=chunk_size):
+            if row_limit is not None and consumed >= row_limit:
+                break
+            if row_limit is not None and consumed + len(chunk) > row_limit:
+                chunk = chunk.iloc[: row_limit - consumed]
+            chunks.append(chunk)
+            consumed += len(chunk)
+        df = pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
+    else:
+        nrows = row_limit if decision["mode"] == "sampled_read" else None
+        df = pd.read_csv(src, nrows=nrows)
     labels = label_columns or ["future_direction_8"]
     required = [instrument_col, datetime_col] + labels
 
