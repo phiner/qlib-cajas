@@ -738,3 +738,26 @@ This phase still excludes:
   - `./.venv-qlib313/bin/python -m pytest cajas/tests`
 - Tier 3 (explicit smoke minimal):
   - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation`
+
+## Validation Runtime (Phase 236-275)
+
+Recommended daily validation:
+
+- `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py`
+
+Fast pytest-only command:
+
+- `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not smoke and not slow and not closure and not full"`
+
+Smoke tiers:
+
+- micro: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+- minimal: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation-minimal`
+- closure (expensive): `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier closure --out-root tmp/smoke-validation-closure`
+- full (very expensive): `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier full --out-root tmp/smoke-validation-full`
+
+Runtime audit:
+
+- `./.venv-qlib313/bin/python cajas/scripts/audit_validation_runtime.py --tests-root cajas/tests --out-json tmp/validation-runtime-audit/validation_runtime_audit.json --out-md tmp/validation-runtime-audit/validation_runtime_audit.md`
+
+Note: `python -m pytest cajas/tests` can be expensive because closure/full smoke tests invoke nested multi-stage subprocess workflows.

@@ -692,3 +692,15 @@ None of these statuses permit broker/live/paper execution in this phase.
 - Calibration, seed stability, rolling-year planning, and error-slice diagnostics extend classification QA.
 - Leakage/drift auditing and readiness reporting prepare for future controlled Qlib integration decisions.
 - Qlib remains uninitialized and workflow execution remains disabled in this phase range.
+
+## Validation Runtime Tiers (Phase 236-275)
+
+- Daily: `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py`
+- Fast pytest only: `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not smoke and not slow and not closure and not full"`
+- Micro smoke: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+- Minimal smoke: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation-minimal`
+- Closure/full smoke are explicit and expensive; run only when needed.
+
+Runtime audit command:
+
+- `./.venv-qlib313/bin/python cajas/scripts/audit_validation_runtime.py --tests-root cajas/tests --out-json tmp/validation-runtime-audit/validation_runtime_audit.json --out-md tmp/validation-runtime-audit/validation_runtime_audit.md`
