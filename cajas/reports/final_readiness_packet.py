@@ -27,13 +27,15 @@ def build_final_readiness_packet(
     normalization_gap = repro_explain_status in {"normalization_gap", "expected_variability_not_normalized"}
     manual_review_items = (governance_remediation_report or {}).get("manual_review_findings", [])
 
+    gate_hard_block = gate_status == "blocked" and not blocked_actions
+
     if true_violations:
         final = "blocked"
     elif stable_repro_status == "not_stable_reproducible" and semantic_mismatch:
         final = "needs_reproducibility_review"
     elif stable_repro_status == "not_stable_reproducible":
         final = "blocked"
-    elif gate_status == "blocked":
+    elif gate_hard_block:
         final = "blocked"
     elif governance_status == "needs_manual_review":
         final = "needs_manual_governance_review"
