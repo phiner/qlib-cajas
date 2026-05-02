@@ -293,6 +293,22 @@ Next step needed:
 - Safe-to-normalize fields are limited to non-semantic run identity and derived hash metadata.
 - Metrics, statuses, blocked actions, governance finding content, and reviewer decisions remain semantic.
 
+## Manual Governance Review Closure
+
+- Governance closure command:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_governance_review_closure_smoke.py --out-root tmp/governance-review-smoke`
+- Governance review decisions are file-driven and auditable.
+- `offline_research_approved` is limited to offline research scope and requires a separate explicit future phase for any paper-trading design discussion.
+
+## Test Runtime Optimization
+
+- Fast local validation command:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not slow and not smoke"`
+- Explicit smoke runner:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation`
+- Runtime notes:
+  - `cajas/docs/test_runtime_optimization_notes.md`
+
 ## Phase 18 Update
 
 - Added class-path resolution utilities for config-declared classes:

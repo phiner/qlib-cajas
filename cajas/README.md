@@ -707,3 +707,34 @@ This phase still excludes:
 
 - If stable reproducibility closes and governance remains manual-review, readiness can move to `needs_manual_governance_review`.
 - No readiness status enables broker/live/paper execution.
+
+## Manual Governance Review Closure
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_governance_review_closure_smoke.py --out-root tmp/governance-review-smoke`
+
+## Research-Only Approval Packet
+
+- Build decision:
+  - `cajas/scripts/build_governance_review_decision.py`
+- Build approval packet:
+  - `cajas/scripts/build_research_only_approval_packet.py`
+
+## Offline Research Approval Scope
+
+- `offline_research_approved` means offline-research-only continuation.
+- It never authorizes broker/live/paper execution, order routing/generation, position sizing, portfolio optimization, or PnL optimization.
+
+## Validation Tiers
+
+- Tier 0:
+  - `./.venv-qlib313/bin/python -m compileall cajas`
+  - `./.venv-qlib313/bin/python cajas/scripts/check_path_hygiene.py`
+  - `find cajas -path "*/init.py" -print`
+  - `git ls-files | grep -E '(^|/)init\.py$' || true`
+- Tier 1 (fast):
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not slow and not smoke"`
+- Tier 2 (all pytest):
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests`
+- Tier 3 (explicit smoke minimal):
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation`
