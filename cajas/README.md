@@ -37,7 +37,17 @@ cajas/
   data_examples/ # expected input/output schema notes
 ```
 
-## Dataset Quality Loop (Phase 776-805)
+## Dataset Quality Loop (Phase 776-805, Enhanced Phase 836-865)
+
+**Phase 836-865 Enhancements:**
+
+Dataset quality reports now include:
+- Quality score (0-100) with grade (A-D or review_needed)
+- Status levels: pass, warn, review_needed, blocked
+- Label review buckets with priority ranking
+- Ranked review items for offline research queue
+- Feature readiness categories
+- Enhanced time quality with session distribution
 
 Combined bundle builder:
 
@@ -75,6 +85,7 @@ Notes:
 - defaults use tiny local fixtures
 - larger reads require explicit `--allow-large-data`
 - outputs are offline research artifacts only
+- quality scores are data quality indicators, not trading/model performance metrics
 
 ## Phase 1: Run Real EURUSD 15m Preparation
 

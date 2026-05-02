@@ -2,6 +2,21 @@
 
 This workflow is for offline dataset QA and feature research readiness only.
 
+## New in Phase 836-865
+
+Dataset quality reports now include:
+
+- **Quality Score**: Offline data quality score (0-100) with grade (A-D or review_needed)
+  - Components: schema completeness, timestamp availability, row count confidence, label coverage, column completeness, bounded read confidence
+  - Not a trading/model performance indicator
+- **Status Levels**: pass, warn, review_needed, blocked
+- **Label Review Buckets**: Prioritized label issues (missing labels, sparse labels, dominant imbalance, etc.)
+- **Ranked Review Items**: Prioritized offline research queue with recommended actions
+- **Feature Readiness**: Categories for ready/review/blocked feature columns
+- **Time Quality**: Enhanced time coverage with session distribution and gap severity
+
+All reports include `schema_version` fields for stable parsing.
+
 ## Combined bundle CLI
 
 ```bash
