@@ -285,6 +285,14 @@ Next step needed:
 - Final readiness remains conservative and evidence-driven.
 - Even with manual-review readiness, broker/live/paper execution remains forbidden.
 
+## Final Stable Reproducibility Closure
+
+- Final closure command:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_final_reproducibility_closure_smoke.py --out-root tmp/final-repro-closure-smoke`
+- The closure flow rebuilds fingerprints/repro explanation/normalization coverage and then recomputes readiness.
+- Safe-to-normalize fields are limited to non-semantic run identity and derived hash metadata.
+- Metrics, statuses, blocked actions, governance finding content, and reviewer decisions remain semantic.
+
 ## Phase 18 Update
 
 - Added class-path resolution utilities for config-declared classes:

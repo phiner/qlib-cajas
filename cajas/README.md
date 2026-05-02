@@ -687,3 +687,23 @@ This phase still excludes:
   - `needs_reproducibility_review`
   - `needs_manual_governance_review`
 - No readiness status permits broker/live/paper execution.
+
+## Final Stable Reproducibility Closure
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_final_reproducibility_closure_smoke.py --out-root tmp/final-repro-closure-smoke`
+
+## Deterministic Artifact Fingerprints
+
+- Stable fingerprinting normalizes only non-semantic run-identity drift (timestamps, temp roots, run labels, generated IDs, derived hash metadata).
+- Semantic fields remain strict:
+  - metrics
+  - statuses
+  - blocked actions
+  - governance finding content
+  - reviewer decisions
+
+## Readiness After Reproducibility Closure
+
+- If stable reproducibility closes and governance remains manual-review, readiness can move to `needs_manual_governance_review`.
+- No readiness status enables broker/live/paper execution.
