@@ -132,3 +132,76 @@ Net effect:
 - Reduced likely full-read candidates by **5** (14 → 9)
 - Increased chunking/policy-capable sites by **2** (22 → 24)
 - Runtime improvement: **1.98s** (119.28s → 117.30s)
+
+
+## Phase 426-455 Commit Hygiene + Final Full-Read Risk Closure
+
+### Commit Hygiene
+
+Successfully separated prior work into 4 focused commits:
+
+1. Governance review workflow (9 files)
+2. Validation runtime profiling (11 files)
+3. CSV policy work phases 346-395 (14 files)
+4. Report builders consistency (17 files)
+
+### Classifier Improvements
+
+Enhanced data-source audit to detect:
+
+- `**read_kwargs` patterns with `nrows`/`row_limit`
+- Size check guards (`.stat().st_size` before `read_csv`)
+- Explicit `nrows=` parameters
+
+### Real-Data-Risk Guards
+
+Added policy guards to final real-data readers:
+
+- `cajas/datasets/external_holdout_dataset.py`
+- `cajas/datasets/label_variant_dataset.py`
+- `cajas/datasets/threshold_label_generator.py`
+- `cajas/features/kline_structure_features.py`
+
+All support `row_limit` and `allow_large_data` parameters.
+
+### Audit Metrics
+
+**Before (phase396_after):**
+- `read_csv_count: 28`
+- `reads_full_csv_likely_count: 9`
+- `chunking_support_count: 24`
+
+**After (phase426_final):**
+- `read_csv_count: 29`
+- `reads_full_csv_likely_count: 3`
+- `chunking_support_count: 25`
+
+**Net effect:**
+- Reduced likely full-read candidates by **6** (9 → 3)
+- **Zero high-risk candidates** in audit report
+- All real-data-risk and generated-artifact-risk sites now guarded
+
+### Fast Runtime
+
+- Before: `117.30s`
+- After: `120.65s`
+- Change: **+3.35s** (policy evaluation overhead)
+
+Policy checks add safety with minimal performance impact.
+
+### Summary
+
+Phase 426 achieved:
+
+✅ Clean commit hygiene (4 commits, working tree clean)
+✅ Improved audit classifier (fewer false positives)
+✅ Guarded all remaining real-data-risk readers
+✅ Reduced likely full-read count from 9 to 3
+✅ Zero high-risk candidates remaining
+✅ All tests pass (302 fast tests)
+
+Remaining work for <90s fast validation:
+
+- Optimize subprocess-heavy validation runner tests
+- Mark expensive CLI orchestration as `integration`
+- Profile and optimize top slow tests

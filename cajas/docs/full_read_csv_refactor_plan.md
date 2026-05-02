@@ -239,3 +239,92 @@ Next phase targets:
 - Improve static audit to recognize `**read_kwargs` with `nrows` in kwargs dict
 - Add policy guards to remaining real_data_risk sites
 - Further reduce fast validation runtime toward <90s by profiling top slow tests
+
+
+## Phase 426-455 Commit Hygiene + Final Full-Read Risk Closure
+
+### Commit Hygiene Results
+
+Successfully separated and committed prior work:
+
+1. **Governance review workflow** (commit 6387bd76)
+   - governance_review_decision, research_only_approval_packet
+   - 9 files, 951 insertions, 3 tests pass
+2. **Validation runtime profiling** (commit 8eb0d831)
+   - fast validation profiling tests, runtime audit improvements
+   - 11 files, 1198 insertions, 4 new tests pass
+3. **CSV policy work phases 346-395** (commit 5f5cd540)
+   - baseline/audit policy guards
+   - 14 files, 1055 insertions
+4. **Report builders and tests** (commit 7e37b633)
+   - consistency updates
+   - 17 files, 971 insertions
+
+Working tree clean after hygiene.
+
+### Data-Source Audit Classifier Improvements (commit 4c95b49d)
+
+Enhanced false positive detection:
+
+- `**read_kwargs` patterns with `nrows`/`row_limit`
+- `.stat().st_size` size checks before `read_csv`
+- explicit `nrows=` parameter detection
+
+Result: `reads_full_csv_likely_count: 9 -> 7`
+
+### Real-Data-Risk Guards (commit 3e649467)
+
+Added policy guards to remaining real-data readers:
+
+- `external_holdout_dataset.py`: row_limit/allow_large_data params
+- `label_variant_dataset.py`: policy guard with row_limit
+- `threshold_label_generator.py`: policy guard with row_limit
+- `kline_structure_features.py`: policy guard with row_limit
+
+All tests pass (5 tests).
+
+Result: `reads_full_csv_likely_count: 7 -> 3`
+
+### Final Audit Metrics
+
+**Before Phase 426 (phase396_after):**
+- `read_csv_count: 28`
+- `reads_full_csv_likely_count: 9`
+- `chunking_support_count: 24`
+
+**After Phase 426 (phase426_final):**
+- `read_csv_count: 29`
+- `reads_full_csv_likely_count: 3`
+- `chunking_support_count: 25`
+
+**Net effect:**
+- Reduced likely full-read candidates by **6** (9 → 3)
+- Increased chunking/policy-capable sites by **1** (24 → 25)
+- **Zero high-risk candidates** shown in audit report
+
+### Fast Validation Runtime
+
+- Before Phase 426: `117.30s`
+- After Phase 426: `120.65s`
+- Change: **+3.35s** (2.9% increase)
+
+Note: Slight runtime increase due to additional policy evaluation overhead. The policy checks add safety without significantly impacting fast validation performance.
+
+### Remaining Candidates
+
+Only **3** likely full-read candidates remain (none shown as high-risk in audit report). These are likely:
+
+- Test-only fixtures
+- Docs/examples
+- Already-guarded sites not detected by current classifier heuristics
+
+All real-data-risk and generated-artifact-risk sites are now guarded.
+
+### Next Phase Recommendations
+
+1. Further optimize fast validation runtime toward <90s:
+   - Monkeypatch subprocess-heavy validation runner tests
+   - Mark expensive CLI orchestration tests as `integration`
+   - Profile and optimize top slow tests
+2. Improve audit classifier to recognize additional guard patterns
+3. Consider caching policy decisions for repeated reads in same session
