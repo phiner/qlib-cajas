@@ -48,6 +48,17 @@ class DriftSummary:
     files_with_drift: int
 
 
+@dataclass
+class SemanticIssue:
+    """Semantic validation issue."""
+
+    severity: str  # "error", "warning"
+    path: str
+    message: str
+    expected: str
+    actual: str
+
+
 REQUIRED_REPORT_KEYS = {
     "dataset_quality_report": {
         "schema_version": str,
@@ -263,3 +274,81 @@ def compute_drift_summary(drift_items: list[DriftItem], files_checked: int) -> D
         files_checked=files_checked,
         files_with_drift=files_with_drift,
     )
+
+
+def validate_semantic_constraints(report: dict, report_type: str) -> list[SemanticIssue]:
+    """Validate semantic constraints for report fields."""
+    issues = []
+
+    if report_type == "dataset_quality_report":
+        # Validate quality_score
+        if "quality_score" in report:
+            qs = report["quality_score"]
+            if "score" in qs:
+                score = qs["score"]
+                if not isinstance(score, (int, float)):
+                    issues.append(
+                        SemanticIssue("error", "quality_score.score", "score must be numeric", "number", str(type(score).__name__))
+                    )
+                elif score < 0 or score > 100:
+                    issues.append(
+                        SemanticIssue("error", "quality_score.score", "score must be in [0, 100]", "[0, 100]", str(score))
+                    )
+
+            if "max_score" in qs:
+                max_score = qs["max_score"]
+                if not isinstance(max_score, (int, float)):
+                    issues.append(
+                        SemanticIssue("error", "quality_score.max_score", "max_score must be numeric", "number", str(type(max_score).__name__))
+                    )
+                elif max_score < 0:
+                    issues.append(
+                        SemanticIssue("error", "quality_score.max_score", "max_score must be non-negative", ">=0", str(max_score))
+                    )
+
+            if "grade" in qs:
+                grade = qs["grade"]
+                valid_grades = {"A", "B", "C", "D", "review_needed"}
+                if grade not in valid_grades:
+                    issues.append(
+                        SemanticIssue("warning", "quality_score.grade", "unknown grade value", str(valid_grades), str(grade))
+                    )
+
+        # Validate status
+        if "status" in report:
+            status = report["status"]
+            valid_statuses = {"pass", "warn", "review_needed", "blocked"}
+            if status not in valid_statuses:
+                issues.append(
+                    SemanticIssue("warning", "status", "unknown status value", str(valid_statuses), str(status))
+                )
+
+        # Validate severity_counts
+        if "severity_counts" in report:
+            sc = report["severity_counts"]
+            for key in ["error", "warning", "info"]:
+                if key in sc:
+                    count = sc[key]
+                    if not isinstance(count, int):
+                        issues.append(
+                            SemanticIssue("error", f"severity_counts.{key}", "count must be integer", "int", str(type(count).__name__))
+                        )
+                    elif count < 0:
+                        issues.append(
+                            SemanticIssue("error", f"severity_counts.{key}", "count must be non-negative", ">=0", str(count))
+                        )
+
+        # Validate row_count and column_count
+        for field in ["row_count", "column_count"]:
+            if field in report:
+                count = report[field]
+                if not isinstance(count, int):
+                    issues.append(
+                        SemanticIssue("error", field, f"{field} must be integer", "int", str(type(count).__name__))
+                    )
+                elif count < 0:
+                    issues.append(
+                        SemanticIssue("error", field, f"{field} must be non-negative", ">=0", str(count))
+                    )
+
+    return issues

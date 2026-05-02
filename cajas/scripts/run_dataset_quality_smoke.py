@@ -123,6 +123,17 @@ def main() -> int:
     error_count = sum(1 for i in contract_issues if i.severity == "error")
     warning_count = sum(1 for i in contract_issues if i.severity == "warning")
 
+    # Validate semantic constraints
+    from cajas.reports.dataset_quality_schema_contract import validate_semantic_constraints
+
+    semantic_issues = []
+    for report_key in ["dataset_quality_report"]:
+        if report_key in bundle:
+            semantic_issues.extend(validate_semantic_constraints(bundle[report_key], report_key))
+
+    semantic_error_count = sum(1 for i in semantic_issues if i.severity == "error")
+    semantic_warning_count = sum(1 for i in semantic_issues if i.severity == "warning")
+
     # Detect drift against golden shapes
     golden_dir = Path("cajas/data_examples/golden/dataset_quality")
     drift_items = []
@@ -147,10 +158,16 @@ def main() -> int:
     contract_dir = out_root / "contract"
     contract_dir.mkdir(parents=True, exist_ok=True)
     contract_report = {
-        "status": "pass" if error_count == 0 else "fail",
+        "status": "pass" if (error_count == 0 and semantic_error_count == 0) else "fail",
         "error_count": error_count,
         "warning_count": warning_count,
+        "semantic_error_count": semantic_error_count,
+        "semantic_warning_count": semantic_warning_count,
         "issues": [{"severity": i.severity, "path": i.path, "message": i.message} for i in contract_issues],
+        "semantic_issues": [
+            {"severity": i.severity, "path": i.path, "message": i.message, "expected": i.expected, "actual": i.actual}
+            for i in semantic_issues
+        ],
         "drift_summary": {
             "breaking_count": drift_summary.breaking_count,
             "additive_count": drift_summary.additive_count,
@@ -171,6 +188,8 @@ def main() -> int:
         f"- status: `{contract_report['status']}`",
         f"- error_count: `{error_count}`",
         f"- warning_count: `{warning_count}`",
+        f"- semantic_error_count: `{semantic_error_count}`",
+        f"- semantic_warning_count: `{semantic_warning_count}`",
         "",
         "## Drift Summary",
         "",
@@ -201,7 +220,9 @@ def main() -> int:
 
     contract_md_lines.append("## Reviewer Note")
     contract_md_lines.append("")
-    if drift_summary.breaking_count > 0:
+    if semantic_error_count > 0:
+        contract_md_lines.append("**Action required**: Semantic validation errors detected. Review and fix invalid field values.")
+    elif drift_summary.breaking_count > 0:
         contract_md_lines.append("**Action required**: Breaking drift detected. Review changes and update golden shapes if intentional.")
     elif drift_summary.additive_count > 0:
         contract_md_lines.append("**Info**: Additive drift detected. New fields added. Review and update golden shapes if desired.")
@@ -209,17 +230,88 @@ def main() -> int:
         contract_md_lines.append("**No action needed**: No drift detected.")
     contract_md_lines.append("")
 
+    if semantic_issues:
+        contract_md_lines.append("## Semantic Issues")
+        contract_md_lines.append("")
+        for issue in semantic_issues:
+            contract_md_lines.append(f"- [{issue.severity}] {issue.path}: {issue.message} (expected={issue.expected}, actual={issue.actual})")
+        contract_md_lines.append("")
+
     if contract_issues:
         contract_md_lines.append("## Contract Issues")
         contract_md_lines.append("")
         for issue in contract_issues:
             contract_md_lines.append(f"- [{issue.severity}] {issue.path}: {issue.message}")
+        contract_md_lines.append("")
     else:
-        contract_md_lines.append("No issues found.")
+        contract_md_lines.append("No contract issues found.")
+        contract_md_lines.append("")
     (contract_dir / "dataset_quality_contract_report.md").write_text("\n".join(contract_md_lines) + "\n", encoding="utf-8")
 
-    if error_count > 0:
-        print(json.dumps({"status": "fail", "error_count": error_count, "out_root": str(out_root)}, ensure_ascii=True), file=sys.stderr)
+    # Generate trend snapshot
+    import datetime
+
+    trend_snapshot = {
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "quality_score": bundle["dataset_quality_report"]["quality_score"]["score"],
+        "quality_grade": bundle["dataset_quality_report"]["quality_score"]["grade"],
+        "status": bundle["dataset_quality_report"]["status"],
+        "contract_status": contract_report["status"],
+        "error_count": error_count,
+        "warning_count": warning_count,
+        "semantic_error_count": semantic_error_count,
+        "semantic_warning_count": semantic_warning_count,
+        "drift_breaking_count": drift_summary.breaking_count,
+        "drift_additive_count": drift_summary.additive_count,
+        "files_checked": drift_summary.files_checked,
+        "row_count": bundle["dataset_quality_report"]["row_count"],
+        "column_count": bundle["dataset_quality_report"]["column_count"],
+    }
+    safe_json_write(contract_dir / "dataset_quality_trend_snapshot.json", trend_snapshot)
+
+    trend_md_lines = [
+        "# Dataset Quality Trend Snapshot",
+        "",
+        f"- generated_at: `{trend_snapshot['generated_at']}`",
+        f"- quality_score: `{trend_snapshot['quality_score']}`",
+        f"- quality_grade: `{trend_snapshot['quality_grade']}`",
+        f"- status: `{trend_snapshot['status']}`",
+        f"- contract_status: `{trend_snapshot['contract_status']}`",
+        "",
+        "## Validation Counts",
+        "",
+        f"- error_count: `{trend_snapshot['error_count']}`",
+        f"- warning_count: `{trend_snapshot['warning_count']}`",
+        f"- semantic_error_count: `{trend_snapshot['semantic_error_count']}`",
+        f"- semantic_warning_count: `{trend_snapshot['semantic_warning_count']}`",
+        "",
+        "## Drift Counts",
+        "",
+        f"- drift_breaking_count: `{trend_snapshot['drift_breaking_count']}`",
+        f"- drift_additive_count: `{trend_snapshot['drift_additive_count']}`",
+        f"- files_checked: `{trend_snapshot['files_checked']}`",
+        "",
+        "## Dataset Metrics",
+        "",
+        f"- row_count: `{trend_snapshot['row_count']}`",
+        f"- column_count: `{trend_snapshot['column_count']}`",
+        "",
+    ]
+    (contract_dir / "dataset_quality_trend_snapshot.md").write_text("\n".join(trend_md_lines) + "\n", encoding="utf-8")
+
+    if error_count > 0 or semantic_error_count > 0:
+        print(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "error_count": error_count,
+                    "semantic_error_count": semantic_error_count,
+                    "out_root": str(out_root),
+                },
+                ensure_ascii=True,
+            ),
+            file=sys.stderr,
+        )
         return 1
 
     print(json.dumps({"status": "ok", "out_root": str(out_root)}, ensure_ascii=True))
