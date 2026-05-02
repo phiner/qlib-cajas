@@ -32,7 +32,7 @@ def build_stable_reproducibility_explanation(
         recommended = "Ensure both runs emit the same artifact set before readiness promotion."
     elif mismatch_items:
         mismatch_paths = [m.get("relative_path", "") for m in mismatch_items]
-        variable_only = all(any(tok in p.lower() for tok in ("manifest", "catalog", "lineage", "review", "bundle")) for p in mismatch_paths if p)
+        variable_only = all(any(tok in p.lower() for tok in ("manifest", "catalog", "lineage", "review", "bundle", "reproducibility_report")) for p in mismatch_paths if p)
         if variable_only:
             classification = "normalization_gap"
             recommended = "Add conservative normalization rules for non-semantic variable fields only."
@@ -71,6 +71,13 @@ def build_stable_reproducibility_explanation(
         "mismatching_after_normalization": mismatch_items,
         "likely_responsible_fields": fields,
         "recommended_remediation": recommended,
+        "remaining_blockers": [
+            {
+                "relative_path": m.get("relative_path"),
+                "reason": "non-semantic drift suspected" if classification == "normalization_gap" else "semantic drift suspected",
+            }
+            for m in mismatch_items
+        ],
         "manifest_context": {
             "left_root": (left_manifest or {}).get("root"),
             "right_root": (right_manifest or {}).get("root"),

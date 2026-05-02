@@ -10,7 +10,7 @@ def _classify_repro_path(path: str) -> str:
     if "manifest" in p:
         return "run_metadata_drift"
     if "reproducibility_report" in p:
-        return "governance-induced_readiness_block"
+        return "normalizer_coverage_gap"
     return "unknown_semantic_drift"
 
 
@@ -89,4 +89,3 @@ def render_research_blocker_localization_md(*, report: dict) -> str:
         for row in gov:
             lines.append(f"- `{row.get('file')}:{row.get('line')}` `{row.get('category')}` `{row.get('source_type')}`")
     return "\n".join(lines) + "\n"
-
