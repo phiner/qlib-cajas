@@ -63,6 +63,13 @@ Dataset quality reports now include:
 - CLI failure tests for missing fields and type mismatches
 - Contract workflow documentation
 
+**Phase 926-955 Contract Drift Detection:**
+
+- Drift detection against golden shapes
+- Reviewer-friendly drift summaries
+- Breaking vs additive drift classification
+- Drift items with specific change details
+
 Combined bundle builder:
 
 ```bash

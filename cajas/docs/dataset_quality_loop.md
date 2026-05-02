@@ -77,13 +77,46 @@ Golden shapes enforce required fields but allow additive changes.
 
 1. Check contract report: `tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.md`
 2. Review error/warning messages
-3. If intentional schema change:
+3. Review drift summary:
+   - **Breaking drift**: Missing required fields, type changes, removed fields
+   - **Additive drift**: New optional fields added
+4. If intentional schema change:
    - Update schema contract in `cajas/reports/dataset_quality_schema_contract.py`
    - Rebuild golden shapes
    - Update tests
-4. If unintentional:
+5. If unintentional:
    - Fix report generation code
    - Rerun smoke validation
+
+**Reading drift reports:**
+
+Drift summary shows:
+- `files_checked`: Number of golden shapes compared
+- `files_with_drift`: Number of files with any drift
+- `breaking_count`: Breaking changes (requires action)
+- `additive_count`: New fields (informational)
+- `type_change_count`: Type mismatches (breaking)
+- `missing_required_count`: Missing required fields (breaking)
+
+Drift items list specific changes with:
+- `file`: Golden shape filename
+- `path`: JSON path to changed field
+- `kind`: `missing_required`, `type_change`, `additive`, `removed`
+- `expected`: Expected value/type
+- `actual`: Actual value/type
+
+**Refreshing golden shapes:**
+
+When schema changes are intentional:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/run_dataset_quality_smoke.py --out-root tmp/dataset-quality-smoke
+./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_golden_shapes.py \
+  --smoke-root tmp/dataset-quality-smoke \
+  --out-dir cajas/data_examples/golden/dataset_quality
+git add cajas/data_examples/golden/dataset_quality
+git commit -m "test: update dataset quality golden shapes"
+```
 
 ## Combined bundle CLI
 
