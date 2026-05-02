@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class ThresholdLabelSpec:
@@ -49,9 +51,23 @@ def generate_threshold_labels(
     thresholds: list[float],
     output_path: str | Path | None = None,
     close_col: str = "close",
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> ThresholdLabelGenerationReport:
     src = Path(input_path).expanduser().resolve()
-    df = pd.read_csv(src)
+    
+    # Policy guard for large data reads
+    policy = CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data)
+    decision = evaluate_loading_decision(src, policy)
+    
+    if not decision["can_full_read"] and row_limit is None:
+        raise ValueError(f"CSV requires row_limit or allow_large_data: {decision['warnings']}")
+    
+    read_kwargs = {}
+    if row_limit is not None:
+        read_kwargs["nrows"] = row_limit
+    
+    df = pd.read_csv(src, **read_kwargs)
     if close_col not in df.columns:
         raise ValueError(f"missing close column: {close_col}")
     close = pd.to_numeric(df[close_col], errors="coerce")

@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class KlineFeatureBuildReport:
@@ -27,9 +29,23 @@ def add_kline_structure_features(
     input_path: str | Path,
     output_path: str | Path | None = None,
     windows: list[int] | None = None,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> tuple[pd.DataFrame, KlineFeatureBuildReport]:
     src = Path(input_path).expanduser().resolve()
-    df = pd.read_csv(src).copy()
+    
+    # Policy guard for large data reads
+    policy = CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data)
+    decision = evaluate_loading_decision(src, policy)
+    
+    if not decision["can_full_read"] and row_limit is None:
+        raise ValueError(f"CSV requires row_limit or allow_large_data: {decision['warnings']}")
+    
+    read_kwargs = {}
+    if row_limit is not None:
+        read_kwargs["nrows"] = row_limit
+    
+    df = pd.read_csv(src, **read_kwargs).copy()
     windows = windows or [4, 8, 16, 32]
     required = {"open", "high", "low", "close"}
     missing = required - set(df.columns)
