@@ -626,3 +626,12 @@ Do not push from Codex unless explicitly instructed.
 - Added tiny deterministic fixtures under `cajas/data_examples/validation_fixtures/`.
 - Updated CI validation plan to explicit Tier 0-6 structure.
 - Added fast policy/runtime tests without invoking heavy nested smoke inside default pytest.
+
+---
+
+## Amendment Notes: Fast Validation Profiling
+
+- Fast validation now supports tiered profiling (`quick`, `fast`, `full-pytest`).
+- Default fast pytest expression excludes integration tests.
+- Timing table and optional timing JSON are used to identify bottleneck steps.
+- Runtime audit supports timing JSON ingestion and suspicious unmarked candidate reporting.

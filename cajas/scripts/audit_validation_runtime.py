@@ -14,14 +14,14 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.validation_runtime_audit import build_validation_runtime_audit, render_validation_runtime_audit_md
 
 
-def _run_duration_probe(*, tests_root: str, durations: int) -> str:
+def _run_duration_probe(*, tests_root: str, expression: str, durations: int) -> str:
     cmd = [
         sys.executable,
         "-m",
         "pytest",
         tests_root,
         "-m",
-        "smoke or slow or closure or full",
+        expression,
         f"--durations={durations}",
         "-q",
     ]
@@ -33,16 +33,26 @@ def _run_duration_probe(*, tests_root: str, durations: int) -> str:
 def main() -> int:
     p = argparse.ArgumentParser(description="Audit validation runtime architecture.")
     p.add_argument("--tests-root", default="cajas/tests")
+    p.add_argument("--fast-expression", default="not smoke and not slow and not closure and not full and not integration")
+    p.add_argument("--timing-json", default=None)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
     p.add_argument("--run-durations", action="store_true")
     p.add_argument("--durations", type=int, default=30)
     args = p.parse_args()
 
-    report = build_validation_runtime_audit(tests_root=args.tests_root)
+    report = build_validation_runtime_audit(
+        tests_root=args.tests_root,
+        fast_expression=args.fast_expression,
+        timing_json=args.timing_json,
+    )
     if args.run_durations:
         try:
-            report["duration_probe"] = _run_duration_probe(tests_root=args.tests_root, durations=args.durations)
+            report["duration_probe"] = _run_duration_probe(
+                tests_root=args.tests_root,
+                expression=args.fast_expression,
+                durations=args.durations,
+            )
         except subprocess.CalledProcessError as exc:
             report["duration_probe_error"] = exc.stdout or str(exc)
 
@@ -57,6 +67,7 @@ def main() -> int:
     print(f"output json: {out_json}")
     print(f"output md: {out_md}")
     print(f"pytest_collection_count: {report['pytest_collection_count']}")
+    print(f"fast_subset_test_count: {report['fast_subset_test_count']}")
     return 0
 
 

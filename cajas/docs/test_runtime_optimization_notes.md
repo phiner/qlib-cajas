@@ -143,3 +143,22 @@ New helper modules:
 - Latest fast subset run: `129.34s`.
 - `run_fast_validation --tier fast` total: `133.69s` (failed due unrelated `test_multi_model_baseline` runtime environment issue).
 - Recommendation: isolate/mark expensive baseline tests that depend on local prepared dataset/model environment as integration.
+
+## Phase 346-365 Baseline Runtime Closure
+
+- Root cause of fast-tier failure:
+  - `cajas/tests/test_multi_model_baseline.py::test_runs_sklearn_models` used the large local prepared dataset path (`tmp/cajas/eurusd_15m_phase1/prepared_dataset.csv`).
+  - CSV loading policy correctly blocked unbounded full reads, so model runs failed with:
+    - `large CSV full read blocked; set allow_large_data or use row_limit/chunk_size`
+- Fix applied:
+  - converted `test_multi_model_baseline` to a deterministic tiny temporary fixture dataset + config.
+  - marked `test_multi_model_baseline` as `integration` so default fast tier excludes training-heavy baseline execution.
+- Validation:
+  - targeted test: `1 passed`.
+  - integration marker run: `1 passed`.
+  - fast subset (`not smoke and not slow and not closure and not full and not integration`): `300 passed, 14 deselected`.
+  - `run_fast_validation.py --tier fast`: pass.
+- Updated recommendation:
+  - keep schema/logic checks in fast tier.
+  - run baseline model execution via explicit integration command:
+    - `./.venv-qlib313/bin/python -m pytest cajas/tests/test_multi_model_baseline.py -m "integration"`

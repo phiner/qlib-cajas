@@ -32,7 +32,12 @@ class ValidationMarkerPolicyTests(unittest.TestCase):
 
     def test_fast_validation_excludes_heavy_markers(self) -> None:
         txt = Path("cajas/scripts/run_fast_validation.py").read_text(encoding="utf-8")
-        self.assertIn("not smoke and not slow and not closure and not full", txt)
+        self.assertIn("not smoke and not slow and not closure and not full and not integration", txt)
+
+    def test_future_training_skeleton_is_not_fast_default(self) -> None:
+        text = Path("cajas/tests/test_future_training_skeleton.py").read_text(encoding="utf-8")
+        self.assertIn("pytest.mark.slow", text)
+        self.assertIn("pytest.mark.integration", text)
 
     def test_docs_mention_fast_command(self) -> None:
         txt = Path("cajas/README.md").read_text(encoding="utf-8")
