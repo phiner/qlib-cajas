@@ -5,6 +5,9 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import pytest
+
+pytestmark = [pytest.mark.smoke, pytest.mark.slow]
 
 
 class RunResearchPacketSmokeTests(unittest.TestCase):
@@ -19,4 +22,3 @@ class RunResearchPacketSmokeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

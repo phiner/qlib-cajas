@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import pytest
 
-pytestmark = [pytest.mark.smoke, pytest.mark.slow]
+pytestmark = [pytest.mark.smoke, pytest.mark.slow, pytest.mark.full]
 
 class RunFullResearchStackSmokeTests(unittest.TestCase):
     def test_smoke_outputs(self):
