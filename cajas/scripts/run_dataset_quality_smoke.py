@@ -12,6 +12,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from cajas.reports.dataset_quality_research import build_dataset_quality_research_artifacts, render_dataset_quality_bundle_markdown  # noqa: E402
+from cajas.reports.dataset_quality_schema_contract import validate_bundle_contract  # noqa: E402
 from cajas.reports.runtime_io_summary import safe_json_write  # noqa: E402
 
 
@@ -111,6 +112,41 @@ def main() -> int:
     queue.mkdir(parents=True, exist_ok=True)
     safe_json_write(queue / "offline_research_queue_summary.json", bundle["offline_research_queue_summary"])
     (queue / "offline_research_queue_summary.md").write_text(md["offline_research_queue_summary_md"], encoding="utf-8")
+
+    # Validate schema contracts
+    contract_issues = validate_bundle_contract(bundle)
+    error_count = sum(1 for i in contract_issues if i.severity == "error")
+    warning_count = sum(1 for i in contract_issues if i.severity == "warning")
+
+    contract_dir = out_root / "contract"
+    contract_dir.mkdir(parents=True, exist_ok=True)
+    contract_report = {
+        "status": "pass" if error_count == 0 else "fail",
+        "error_count": error_count,
+        "warning_count": warning_count,
+        "issues": [{"severity": i.severity, "path": i.path, "message": i.message} for i in contract_issues],
+    }
+    safe_json_write(contract_dir / "dataset_quality_contract_report.json", contract_report)
+    contract_md_lines = [
+        "# Dataset Quality Contract Validation",
+        "",
+        f"- status: `{contract_report['status']}`",
+        f"- error_count: `{error_count}`",
+        f"- warning_count: `{warning_count}`",
+        "",
+    ]
+    if contract_issues:
+        contract_md_lines.append("## Issues")
+        contract_md_lines.append("")
+        for issue in contract_issues:
+            contract_md_lines.append(f"- [{issue.severity}] {issue.path}: {issue.message}")
+    else:
+        contract_md_lines.append("No issues found.")
+    (contract_dir / "dataset_quality_contract_report.md").write_text("\n".join(contract_md_lines) + "\n", encoding="utf-8")
+
+    if error_count > 0:
+        print(json.dumps({"status": "fail", "error_count": error_count, "out_root": str(out_root)}, ensure_ascii=True), file=sys.stderr)
+        return 1
 
     print(json.dumps({"status": "ok", "out_root": str(out_root)}, ensure_ascii=True))
     return 0
