@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 from .qlib_model_training_contract import ModelContractIssue, QlibModelTrainingContract, utc_now_iso
 
@@ -20,6 +21,8 @@ def build_qlib_model_training_contract(
     run_id: str = "phase086_model_bridge",
     label_col: str | None = None,
     split_ratios: dict | None = None,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> dict:
     hp = Path(handler_input_path).expanduser().resolve()
     hm = Path(handler_manifest_path).expanduser().resolve()
@@ -29,7 +32,10 @@ def build_qlib_model_training_contract(
     warnings: list[ModelContractIssue] = []
     blocking: list[ModelContractIssue] = []
 
-    df = pd.read_csv(hp)
+    decision = evaluate_loading_decision(hp, CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data))
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit")
+    df = pd.read_csv(hp, nrows=row_limit if row_limit is not None else None)
     manifest = json.loads(hm.read_text(encoding="utf-8"))
     dataset_contract = json.loads(dc.read_text(encoding="utf-8"))
     smoke = json.loads(hs.read_text(encoding="utf-8"))

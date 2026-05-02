@@ -21,6 +21,13 @@ def main() -> int:
     p.add_argument("--label-col", required=True)
     p.add_argument("--output-dir", default="tmp/cajas/leakage_drift_audits")
     p.add_argument("--run-name", default="phase53_leakage_drift_audit")
+    p.add_argument("--row-limit", type=int, default=None)
+    p.add_argument("--chunk-size", type=int, default=None)
+    p.add_argument("--sample-only", action="store_true")
+    p.add_argument("--allow-large-data", action="store_true")
+    p.add_argument("--selected-columns", default=None, help="comma-separated column list")
+    p.add_argument("--use-cache", action="store_true")
+    p.add_argument("--manifest", default=None)
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
     rep = run_leakage_drift_audit(
@@ -30,6 +37,13 @@ def main() -> int:
         label_col=args.label_col,
         output_dir=args.output_dir,
         run_name=args.run_name,
+        row_limit=args.row_limit,
+        chunk_size=args.chunk_size,
+        sample_only=args.sample_only,
+        allow_large_data=args.allow_large_data,
+        selected_columns=[c.strip() for c in args.selected_columns.split(",") if c.strip()] if args.selected_columns else None,
+        use_cache=args.use_cache,
+        manifest=args.manifest,
     )
     if args.json:
         print(json.dumps(rep, ensure_ascii=True, indent=2))

@@ -7,7 +7,7 @@ def build_ci_validation_plan() -> dict:
     tiers = [
         {
             "tier": "Tier 0",
-            "intent": "path hygiene and compilation",
+            "intent": "hygiene",
             "commands": [
                 "./.venv-qlib313/bin/python -m compileall cajas",
                 "./.venv-qlib313/bin/python cajas/scripts/check_path_hygiene.py",
@@ -17,30 +17,44 @@ def build_ci_validation_plan() -> dict:
         },
         {
             "tier": "Tier 1",
-            "intent": "focused unit tests",
+            "intent": "fast local validation",
             "commands": [
-                "./.venv-qlib313/bin/python -m pytest cajas/tests/test_run_research_gate_smoke.py",
-                "./.venv-qlib313/bin/python -m pytest cajas/tests/test_run_final_readiness_smoke.py",
+                "./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py",
             ],
         },
         {
             "tier": "Tier 2",
-            "intent": "full suite",
-            "commands": ["./.venv-qlib313/bin/python -m pytest cajas/tests"],
+            "intent": "fast pytest only",
+            "commands": [
+                "./.venv-qlib313/bin/python -m pytest cajas/tests -m \"not smoke and not slow and not closure and not full and not integration\"",
+            ],
         },
         {
             "tier": "Tier 3",
-            "intent": "bounded smoke flows",
+            "intent": "micro smoke",
             "commands": [
-                "./.venv-qlib313/bin/python cajas/scripts/run_research_gate_smoke.py --out-root tmp/research-gate-smoke",
-                "./.venv-qlib313/bin/python cajas/scripts/run_final_readiness_smoke.py --out-root tmp/final-readiness-smoke",
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro",
             ],
         },
         {
             "tier": "Tier 4",
-            "intent": "optional heavier research runs",
+            "intent": "minimal smoke",
             "commands": [
-                "./.venv-qlib313/bin/python cajas/scripts/run_qlib_model_bridge_smoke.py --out-root tmp/qlib-model-bridge-smoke",
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation-minimal",
+            ],
+        },
+        {
+            "tier": "Tier 5",
+            "intent": "closure smoke (expensive)",
+            "commands": [
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier closure --out-root tmp/smoke-validation-closure",
+            ],
+        },
+        {
+            "tier": "Tier 6",
+            "intent": "full smoke (very expensive)",
+            "commands": [
+                "./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier full --out-root tmp/smoke-validation-full",
             ],
         },
     ]

@@ -8,6 +8,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.chunked_csv_reader import iter_csv_chunks
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class PredictionReviewReport:
@@ -33,6 +36,13 @@ def build_prediction_review(
     split: str,
     low_confidence_threshold: float = 0.45,
     high_confidence_error_threshold: float = 0.70,
+    row_limit: int | None = None,
+    chunk_size: int | None = None,
+    sample_only: bool = False,
+    allow_large_data: bool = False,
+    selected_columns: list[str] | None = None,
+    use_cache: bool = False,
+    manifest: str | None = None,
 ) -> PredictionReviewReport:
     src = Path(prediction_csv).expanduser().resolve()
     if not src.exists():
@@ -41,7 +51,28 @@ def build_prediction_review(
     out_dir = Path(output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(src)
+    default_cols = ["datetime", "symbol", "timeframe", "label", "predicted_label"]
+    effective_row_limit = 1000 if sample_only and row_limit is None else row_limit
+    policy = CsvLoadingPolicy(
+        row_limit=effective_row_limit,
+        chunk_size=chunk_size,
+        sample_only=sample_only,
+        allow_large_data=allow_large_data,
+        selected_columns=selected_columns,
+        use_cache=use_cache,
+        manifest=manifest,
+    )
+    decision = evaluate_loading_decision(src, policy)
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit/chunk_size")
+    usecols = selected_columns if selected_columns is not None else None
+    if chunk_size:
+        chunks = list(iter_csv_chunks(src, columns=usecols, chunk_size=chunk_size, row_limit=effective_row_limit))
+        if not chunks:
+            raise ValueError("prediction CSV has no readable rows")
+        df = pd.concat(chunks, ignore_index=True)
+    else:
+        df = pd.read_csv(src, usecols=usecols, nrows=effective_row_limit if effective_row_limit is not None else None)
     for col in ("label", "predicted_label"):
         if col not in df.columns:
             raise ValueError(f"Prediction CSV missing required column: {col}")
@@ -58,6 +89,8 @@ def build_prediction_review(
 
     proba_cols = [c for c in df.columns if c.startswith("proba_")]
     warnings: list[str] = []
+    if selected_columns is not None and all(col not in df.columns for col in default_cols):
+        warnings.append("selected_columns omitted common metadata columns; review output may be reduced.")
 
     if proba_cols:
         df["max_confidence"] = df[proba_cols].max(axis=1)

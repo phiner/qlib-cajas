@@ -6,9 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np
 import pandas as pd
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,10 +26,38 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--symbol", default="EURUSD", help="Symbol name for output rows.")
     parser.add_argument("--timeframe", default="15m", help="Timeframe label for output rows.")
     parser.add_argument("--horizon", type=int, default=8, help="Future horizon in bars.")
+    parser.add_argument("--row-limit", type=int, default=None, help="Optional row limit for sampled reads.")
+    parser.add_argument("--chunk-size", type=int, default=None, help="Optional chunk size; enables chunked read path.")
+    parser.add_argument("--sample-only", action="store_true", help="Prefer sampled/chunked reads instead of full read.")
+    parser.add_argument("--allow-large-data", action="store_true", help="Allow full reads for large CSV files.")
     return parser.parse_args()
 
 
-def load_raw_csv(input_path: Path) -> pd.DataFrame:
+def load_raw_csv(input_path: Path, policy: CsvLoadingPolicy) -> pd.DataFrame:
+    decision = evaluate_loading_decision(input_path, policy)
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; use --allow-large-data or --row-limit/--chunk-size")
+    if decision["warnings"]:
+        print("warning:", "; ".join(decision["warnings"]))
+    if decision["mode"] in {"sampled_read", "chunked_read"}:
+        kwargs = {}
+        if policy.selected_columns:
+            kwargs["usecols"] = policy.selected_columns
+        if policy.chunk_size:
+            chunks = []
+            consumed = 0
+            for chunk in pd.read_csv(input_path, chunksize=policy.chunk_size, **kwargs):
+                if policy.row_limit is not None and consumed >= policy.row_limit:
+                    break
+                if policy.row_limit is not None and consumed + len(chunk) > policy.row_limit:
+                    chunk = chunk.iloc[: policy.row_limit - consumed]
+                chunks.append(chunk)
+                consumed += len(chunk)
+            if not chunks:
+                return pd.DataFrame()
+            return pd.concat(chunks, ignore_index=True)
+        nrows = policy.row_limit if policy.row_limit is not None else None
+        return pd.read_csv(input_path, nrows=nrows, **kwargs)
     return pd.read_csv(input_path)
 
 
@@ -186,7 +220,13 @@ def main() -> None:
     if not input_path.exists():
         raise FileNotFoundError(f"Input CSV not found: {input_path}")
 
-    raw_df = load_raw_csv(input_path)
+    policy = CsvLoadingPolicy(
+        row_limit=args.row_limit,
+        chunk_size=args.chunk_size,
+        sample_only=args.sample_only,
+        allow_large_data=args.allow_large_data,
+    )
+    raw_df = load_raw_csv(input_path, policy)
     standardized = standardize_columns(raw_df)
     cleaned, clean_stats = clean_dataset(standardized)
 

@@ -37,9 +37,13 @@ def preview_horizon_labels(
     input_path: str | Path,
     horizons: list[int],
     close_col: str = "close",
+    row_limit: int | None = None,
 ) -> HorizonLabelPreviewReport:
     path = Path(input_path).expanduser().resolve()
-    df = pd.read_csv(path)
+    read_kwargs = {}
+    if row_limit is not None:
+        read_kwargs["nrows"] = row_limit
+    df = pd.read_csv(path, **read_kwargs)
     if close_col not in df.columns:
         raise ValueError(f"missing required close column: {close_col}")
     close = pd.to_numeric(df[close_col], errors="coerce")

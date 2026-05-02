@@ -7,14 +7,22 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 def analyze_calibration(
     *,
     prediction_csv: str | Path,
     split: str,
     bucket_count: int = 10,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> dict:
-    df = pd.read_csv(Path(prediction_csv).expanduser().resolve())
+    path = Path(prediction_csv).expanduser().resolve()
+    decision = evaluate_loading_decision(path, CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data))
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit")
+    df = pd.read_csv(path, nrows=row_limit if row_limit is not None else None)
     proba_cols = [c for c in df.columns if c.startswith("proba_")]
     if not proba_cols:
         raise ValueError("prediction file does not include probability columns")

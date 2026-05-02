@@ -24,6 +24,8 @@ def main() -> int:
     p.add_argument("--governance-audit", required=True)
     p.add_argument("--artifact-lineage", required=True)
     p.add_argument("--run-catalog", required=True)
+    p.add_argument("--governance-review-decision", default=None)
+    p.add_argument("--research-only-approval-packet", default=None)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
     args = p.parse_args()
@@ -34,6 +36,8 @@ def main() -> int:
         governance_audit=_load(args.governance_audit),
         artifact_lineage=_load(args.artifact_lineage),
         run_catalog=_load(args.run_catalog),
+        governance_review_decision=None if args.governance_review_decision is None else _load(args.governance_review_decision),
+        research_only_approval_packet=None if args.research_only_approval_packet is None else _load(args.research_only_approval_packet),
     )
     out_j = Path(args.out_json).expanduser().resolve()
     out_m = Path(args.out_md).expanduser().resolve()

@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class ExternalHoldoutDatasetSummary:
@@ -35,11 +37,15 @@ class ExternalHoldoutDataset:
         holdout_path: str | Path,
         label_col: str = "future_direction_8",
         leakage_columns: tuple[str, ...] = ("future_close_8", "future_return_8"),
+        row_limit: int | None = None,
+        allow_large_data: bool = False,
     ) -> None:
         self._train_path = Path(train_path).expanduser().resolve()
         self._holdout_path = Path(holdout_path).expanduser().resolve()
         self._label_col = label_col
         self._leakage = tuple(leakage_columns)
+        self._row_limit = row_limit
+        self._allow_large_data = allow_large_data
 
         self._train_df = self._load(self._train_path)
         self._holdout_df = self._load(self._holdout_path)
@@ -49,7 +55,19 @@ class ExternalHoldoutDataset:
     def _load(self, path: Path) -> pd.DataFrame:
         if not path.exists():
             raise FileNotFoundError(f"Prepared dataset not found: {path}")
-        df = pd.read_csv(path)
+        
+        # Policy guard for large data reads
+        policy = CsvLoadingPolicy(row_limit=self._row_limit, allow_large_data=self._allow_large_data)
+        decision = evaluate_loading_decision(path, policy)
+        
+        if not decision["can_full_read"] and self._row_limit is None:
+            raise ValueError(f"CSV requires row_limit or allow_large_data: {decision['warnings']}")
+        
+        read_kwargs = {}
+        if self._row_limit is not None:
+            read_kwargs["nrows"] = self._row_limit
+        
+        df = pd.read_csv(path, **read_kwargs)
         if self._label_col not in df.columns:
             raise ValueError(f"Label column not found: {self._label_col}")
         if "datetime" not in df.columns:

@@ -3,12 +3,26 @@
 from __future__ import annotations
 
 
-def build_offline_review_packet(*, final_readiness_packet: dict, stable_reproducibility_report: dict, governance_audit: dict, artifact_lineage: dict, run_catalog: dict) -> dict:
+def build_offline_review_packet(
+    *,
+    final_readiness_packet: dict,
+    stable_reproducibility_report: dict,
+    governance_audit: dict,
+    artifact_lineage: dict,
+    run_catalog: dict,
+    governance_review_decision: dict | None = None,
+    research_only_approval_packet: dict | None = None,
+) -> dict:
     fr = final_readiness_packet.get("final_status")
     sr = stable_reproducibility_report.get("final_status")
     gv = governance_audit.get("status")
 
-    if gv == "fail":
+    gov_review_status = (governance_review_decision or {}).get("governance_review_status")
+    approval_status = (research_only_approval_packet or {}).get("approval_status")
+
+    if approval_status == "offline_research_approved":
+        state = "offline_research_approved"
+    elif gv == "fail":
         state = "needs_governance_review"
     elif sr == "not_stable_reproducible":
         state = "needs_reproducibility_review"
@@ -45,6 +59,8 @@ def build_offline_review_packet(*, final_readiness_packet: dict, stable_reproduc
             "stable_repro_status": sr,
             "governance_status": gv,
             "final_readiness_status": fr,
+            "governance_review_status": gov_review_status,
+            "approval_status": approval_status,
         },
     }
 

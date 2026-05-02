@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 from cajas.reports.qlib_model_metrics import compute_classification_metrics
 
 
@@ -46,20 +47,46 @@ def _split_by_ratio(df: pd.DataFrame, split_ratios: dict) -> tuple[pd.DataFrame,
     return train, valid, test
 
 
-def train_qlib_model_bridge_baseline(*, contract: dict, out_dir: str | Path, seed: int = 42, max_rows: int = 5000) -> dict:
+def train_qlib_model_bridge_baseline(
+    *,
+    contract: dict,
+    out_dir: str | Path,
+    seed: int = 42,
+    max_rows: int = 5000,
+    row_limit: int | None = None,
+    sample_only: bool = False,
+    allow_large_data: bool = False,
+    selected_columns: list[str] | None = None,
+    use_cache: bool = False,
+    manifest: str | None = None,
+) -> dict:
     if contract.get("readiness_status") == "blocked":
         raise ValueError("training contract is blocked")
 
     hp = Path(contract["handler_input_path"]).expanduser().resolve()
-    df = pd.read_csv(hp)
-    if max_rows > 0 and len(df) > max_rows:
-        df = df.iloc[:max_rows].copy()
+    label_col = contract["label_col"]
+    feature_cols = [c for c in contract["feature_columns"]]
+    allowed_cols = selected_columns if selected_columns is not None else [contract["datetime_col"], label_col, *feature_cols]
+    effective_row_limit = row_limit if row_limit is not None else max_rows
+    if sample_only and row_limit is None:
+        effective_row_limit = min(max_rows, 1000) if max_rows > 0 else 1000
+    policy = CsvLoadingPolicy(
+        row_limit=effective_row_limit,
+        sample_only=sample_only,
+        allow_large_data=allow_large_data,
+        selected_columns=allowed_cols,
+        use_cache=use_cache,
+        manifest=manifest,
+    )
+    decision = evaluate_loading_decision(hp, policy)
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit/max_rows")
+    df = pd.read_csv(hp, usecols=allowed_cols, nrows=effective_row_limit if effective_row_limit is not None else None)
 
     dt_col = contract["datetime_col"]
     if dt_col in df.columns:
         df = df.sort_values(dt_col, kind="stable")
 
-    label_col = contract["label_col"]
     feature_cols = [c for c in contract["feature_columns"] if c in df.columns]
     if not feature_cols:
         raise ValueError("no feature columns available for training")
@@ -106,4 +133,5 @@ def train_qlib_model_bridge_baseline(*, contract: dict, out_dir: str | Path, see
         "predictions_path": str(pred_path),
         "model_family": "RandomForestClassifier",
         "seed": seed,
+        "loading_decision": decision,
     }

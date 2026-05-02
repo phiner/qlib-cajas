@@ -253,3 +253,43 @@ Notes:
 - Feature-engineering outputs, calibration summaries, seed stability reports, and drift audits are all derived local artifacts under `tmp/`.
 - Rolling-year validation output is a planning/report artifact by default.
 - Qlib readiness and roadmap reports are research governance artifacts, not trading guidance.
+
+## Research Quality Loop Closure
+
+- Reviewer decision input example:
+  - `cajas/data_examples/reviewer_decision_example.json`
+- Governance review decision input example:
+  - `cajas/data_examples/governance_review_decision_example.json`
+- Allowed decision values:
+  - `research_review_approved`
+  - `needs_changes`
+  - `rejected`
+- Reviewer approval remains research-only and does not permit:
+  - broker integration
+  - live trading
+  - paper trading execution
+
+## Validation Runtime Fixtures (Phase 236-275)
+
+Tiny deterministic fixture files for micro smoke and runtime-audit workflows are under:
+
+- `cajas/data_examples/validation_fixtures/`
+
+Included fixtures:
+
+- `stable_reproducibility_report_pass.json`
+- `governance_remediation_needs_manual_review.json`
+- `final_readiness_needs_manual_governance_review.json`
+- `governance_review_decision_approve_offline_only.json`
+- `offline_review_packet_tiny.json`
+- `final_research_bundle_tiny.json`
+
+These fixtures are minimal schema-compatible research artifacts used to validate orchestration paths quickly without invoking nested full-stack smoke pipelines.
+
+## Data IO Tiny Fixture
+
+Added tiny CSV fixture for chunked reader and metadata tests:
+
+- `cajas/data_examples/validation_fixtures/eurusd_tiny.csv`
+
+This fixture is intentionally small and deterministic for fast data I/O validation tests.

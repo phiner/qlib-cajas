@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class LabelVariantDatasetSummary:
@@ -36,13 +38,32 @@ class LabelVariantExternalHoldoutDataset:
         holdout_path: str | Path,
         label_col: str,
         leakage_columns: tuple[str, ...] = ("future_close_8", "future_return_8"),
+        row_limit: int | None = None,
+        allow_large_data: bool = False,
     ) -> None:
         self.train_path = Path(train_path).expanduser().resolve()
         self.holdout_path = Path(holdout_path).expanduser().resolve()
         self.label_col = label_col
         self.leakage_columns = set(leakage_columns)
-        self.train_frame = pd.read_csv(self.train_path)
-        self.holdout_frame = pd.read_csv(self.holdout_path)
+        self._row_limit = row_limit
+        self._allow_large_data = allow_large_data
+        
+        # Policy guard for large data reads
+        policy = CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data)
+        train_decision = evaluate_loading_decision(self.train_path, policy)
+        holdout_decision = evaluate_loading_decision(self.holdout_path, policy)
+        
+        if not train_decision["can_full_read"] and row_limit is None:
+            raise ValueError(f"train CSV requires row_limit or allow_large_data: {train_decision['warnings']}")
+        if not holdout_decision["can_full_read"] and row_limit is None:
+            raise ValueError(f"holdout CSV requires row_limit or allow_large_data: {holdout_decision['warnings']}")
+        
+        read_kwargs = {}
+        if row_limit is not None:
+            read_kwargs["nrows"] = row_limit
+        
+        self.train_frame = pd.read_csv(self.train_path, **read_kwargs)
+        self.holdout_frame = pd.read_csv(self.holdout_path, **read_kwargs)
         if label_col not in self.train_frame.columns or label_col not in self.holdout_frame.columns:
             raise ValueError(f"label column missing: {label_col}")
         self._features = self._build_feature_columns()

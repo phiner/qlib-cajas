@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 from .qlib_dataset_contract import DatasetContractIssue, QlibDatasetContract, utc_now_iso
 
@@ -21,9 +22,14 @@ def build_qlib_dataset_contract(
     datetime_col: str = "datetime",
     label_columns: list[str] | None = None,
     split_metadata: dict | None = None,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> dict:
     path = Path(input_csv).expanduser().resolve()
-    df = pd.read_csv(path)
+    decision = evaluate_loading_decision(path, CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data))
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit")
+    df = pd.read_csv(path, nrows=row_limit if row_limit is not None else None)
     labels = label_columns or ["future_direction_8"]
     required_columns = [instrument_col, datetime_col] + labels
     issues: list[DatasetContractIssue] = []

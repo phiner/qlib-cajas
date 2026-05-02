@@ -1,0 +1,14 @@
+{
+  "reviewer": "manual",
+  "decision": "research_review_approved",
+  "notes": "Approved for continued offline research only.",
+  "accepted_risks": [
+    "Governance documentation findings reviewed as boundary statements."
+  ],
+  "rejected_actions": [
+    "broker integration",
+    "live trading",
+    "paper trading execution"
+  ]
+}
+

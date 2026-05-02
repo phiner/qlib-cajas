@@ -33,6 +33,7 @@ class QlibModelBridgeTrainerTests(unittest.TestCase):
             }
             rep = train_qlib_model_bridge_baseline(contract=contract, out_dir=d / "exp", seed=42, max_rows=100)
             self.assertIn("metrics_valid", rep)
+            self.assertIn("loading_decision", rep)
 
 
 if __name__ == "__main__":

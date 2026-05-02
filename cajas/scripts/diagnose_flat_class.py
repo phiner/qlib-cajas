@@ -24,13 +24,20 @@ def main() -> int:
     p.add_argument("--prediction-csv", required=True)
     p.add_argument("--split", required=True)
     p.add_argument("--flat-label", default="flat")
+    p.add_argument("--chunk-size", type=int, default=50000, help="chunk size for counting")
     p.add_argument("--output-dir", default="tmp/cajas/flat_class_diagnosis")
     p.add_argument("--run-name", default="phase37_flat_class_diagnosis")
     p.add_argument("--write-artifacts", action="store_true")
+    p.add_argument("--artifact-row-limit", type=int, default=10000, help="max rows for artifact examples")
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
 
-    report = diagnose_flat_class(prediction_csv=args.prediction_csv, split=args.split, flat_label=args.flat_label)
+    report = diagnose_flat_class(
+        prediction_csv=args.prediction_csv,
+        split=args.split,
+        flat_label=args.flat_label,
+        chunk_size=args.chunk_size,
+    )
     payload = report.to_dict()
 
     if args.write_artifacts:
@@ -40,10 +47,13 @@ def main() -> int:
             return 1
         out_dir.mkdir(parents=True, exist_ok=False)
         _write_json(out_dir / "flat_class_diagnosis_report.json", payload)
-        df = pd.read_csv(Path(args.prediction_csv).expanduser().resolve())
+        
+        # Bounded read for artifact examples
+        df = pd.read_csv(Path(args.prediction_csv).expanduser().resolve(), nrows=args.artifact_row_limit)
         m = (df["label"].astype(str) == args.flat_label) | (df["predicted_label"].astype(str) == args.flat_label)
         df[m].to_csv(out_dir / "flat_class_examples.csv", index=False)
         payload["artifact_output_dir"] = str(out_dir)
+        payload["artifact_row_limit"] = args.artifact_row_limit
 
     if args.json:
         print(json.dumps(payload, ensure_ascii=True, indent=2))

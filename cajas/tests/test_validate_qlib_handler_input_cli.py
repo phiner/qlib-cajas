@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-import subprocess
 import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
+
+from cajas.reports.qlib_handler_input_builder import build_qlib_handler_input
+from cajas.scripts import validate_qlib_handler_input as validate_cli
 
 
 class ValidateQlibHandlerInputCliTests(unittest.TestCase):
@@ -15,14 +18,17 @@ class ValidateQlibHandlerInputCliTests(unittest.TestCase):
             pkg = root / "pkg"
             rep = root / "report.json"
             csv.write_text("instrument,datetime,close,future_direction_8\nEURUSD,2025-01-01 00:00:00,1.1,up\n", encoding="utf-8")
-            subprocess.run(
-                [sys.executable, "cajas/scripts/build_qlib_handler_input.py", "--input-csv", str(csv), "--out-dir", str(pkg), "--label-col", "future_direction_8"],
-                check=True,
-            )
-            subprocess.run(
-                [sys.executable, "cajas/scripts/validate_qlib_handler_input.py", "--handler-dir", str(pkg), "--out", str(rep)],
-                check=True,
-            )
+            build_qlib_handler_input(input_csv=str(csv), out_dir=str(pkg), label_columns=["future_direction_8"])
+            argv = [
+                "validate_qlib_handler_input.py",
+                "--handler-dir",
+                str(pkg),
+                "--out",
+                str(rep),
+            ]
+            with mock.patch.object(sys, "argv", argv):
+                rc = validate_cli.main()
+            self.assertEqual(rc, 0)
             self.assertTrue(rep.exists())
 
 

@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
 
 REQUIRED_COLUMNS = [
@@ -27,9 +28,23 @@ LEAKAGE_COLUMNS = {"future_close_8", "future_return_8"}
 class PreparedCsvHandler:
     """Load and validate a prepared CSV dataset for market-recognition research."""
 
-    def __init__(self, csv_path: str, label_col: str = "future_direction_8") -> None:
+    def __init__(
+        self,
+        csv_path: str,
+        label_col: str = "future_direction_8",
+        row_limit: int | None = None,
+        chunk_size: int | None = None,
+        sample_only: bool = False,
+        allow_large_data: bool = False,
+    ) -> None:
         self._csv_path = Path(csv_path)
         self._label_col = label_col
+        self._policy = CsvLoadingPolicy(
+            row_limit=row_limit,
+            chunk_size=chunk_size,
+            sample_only=sample_only,
+            allow_large_data=allow_large_data,
+        )
         self._df = self._load_and_validate()
         self._feature_columns = self._resolve_feature_columns()
 
@@ -77,7 +92,26 @@ class PreparedCsvHandler:
         if not self._csv_path.exists():
             raise FileNotFoundError(f"Input CSV not found: {self._csv_path}")
 
-        df = pd.read_csv(self._csv_path)
+        decision = evaluate_loading_decision(self._csv_path, self._policy)
+        if decision["mode"] == "blocked_full_read":
+            raise ValueError("large CSV full read blocked; set allow_large_data or use row_limit/chunk_size")
+        if decision["mode"] in {"sampled_read", "chunked_read"}:
+            if self._policy.chunk_size:
+                chunks = []
+                consumed = 0
+                for chunk in pd.read_csv(self._csv_path, chunksize=self._policy.chunk_size):
+                    if self._policy.row_limit is not None and consumed >= self._policy.row_limit:
+                        break
+                    if self._policy.row_limit is not None and consumed + len(chunk) > self._policy.row_limit:
+                        chunk = chunk.iloc[: self._policy.row_limit - consumed]
+                    chunks.append(chunk)
+                    consumed += len(chunk)
+                df = pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
+            else:
+                nrows = self._policy.row_limit if self._policy.row_limit is not None else None
+                df = pd.read_csv(self._csv_path, nrows=nrows)
+        else:
+            df = pd.read_csv(self._csv_path)
         missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {', '.join(missing)}")

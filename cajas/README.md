@@ -645,3 +645,196 @@ This phase still excludes:
 - Added error-slice analysis and leakage/drift audit v2.
 - Added Qlib readiness report v2 and research roadmap report.
 - Qlib workflow remains unexecuted; all outputs stay classification research artifacts under `tmp/`.
+
+## Research Quality Loop Closure
+
+- End-to-end smoke command:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_research_quality_loop_smoke.py --out-root tmp/research-quality-loop-smoke`
+- Reproducibility inspection tools:
+  - `cajas/scripts/explain_stable_reproducibility.py`
+  - `cajas/scripts/build_normalization_coverage_report.py`
+- Governance remediation tool:
+  - `cajas/scripts/build_governance_remediation_report.py`
+- Refined readiness and reviewer tools:
+  - `cajas/scripts/build_final_readiness_packet.py`
+  - `cajas/scripts/build_final_readiness_summary.py`
+  - `cajas/scripts/build_reviewer_decision_packet.py`
+- Blocked/fail statuses are expected governance signals and must remain visible for manual review.
+- Reviewer approval is offline-research-only and does not permit broker integration, live trading, or paper trading execution.
+
+## Research Remediation Workflow
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_research_remediation_smoke.py --out-root tmp/research-remediation-smoke`
+- This workflow localizes blocker evidence, rebuilds governance remediation, and prints before/after top-level statuses.
+
+## Semantic Reproducibility Blockers
+
+- Use:
+  - `cajas/scripts/localize_research_blockers.py`
+  - `cajas/scripts/diff_normalized_artifacts.py`
+- Reproducibility remediation is conservative: normalize only non-semantic run metadata/paths/ids and keep metrics/status semantics intact.
+
+## Governance True Violation Remediation
+
+- Governance findings are remediated without weakening forbidden-execution boundaries.
+- Self-audit implementation tokens are treated as audit internals, not runtime execution behavior.
+
+## Readiness Status After Remediation
+
+- Acceptable non-blocked outcomes remain:
+  - `research_stack_ready_for_manual_review`
+  - `needs_reproducibility_review`
+  - `needs_manual_governance_review`
+- No readiness status permits broker/live/paper execution.
+
+## Final Stable Reproducibility Closure
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_final_reproducibility_closure_smoke.py --out-root tmp/final-repro-closure-smoke`
+
+## Deterministic Artifact Fingerprints
+
+- Stable fingerprinting normalizes only non-semantic run-identity drift (timestamps, temp roots, run labels, generated IDs, derived hash metadata).
+- Semantic fields remain strict:
+  - metrics
+  - statuses
+  - blocked actions
+  - governance finding content
+  - reviewer decisions
+
+## Readiness After Reproducibility Closure
+
+- If stable reproducibility closes and governance remains manual-review, readiness can move to `needs_manual_governance_review`.
+- No readiness status enables broker/live/paper execution.
+
+## Manual Governance Review Closure
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_governance_review_closure_smoke.py --out-root tmp/governance-review-smoke`
+
+## Research-Only Approval Packet
+
+- Build decision:
+  - `cajas/scripts/build_governance_review_decision.py`
+- Build approval packet:
+  - `cajas/scripts/build_research_only_approval_packet.py`
+
+## Offline Research Approval Scope
+
+- `offline_research_approved` means offline-research-only continuation.
+- It never authorizes broker/live/paper execution, order routing/generation, position sizing, portfolio optimization, or PnL optimization.
+
+## Validation Tiers
+
+- Tier 0:
+  - `./.venv-qlib313/bin/python -m compileall cajas`
+  - `./.venv-qlib313/bin/python cajas/scripts/check_path_hygiene.py`
+  - `find cajas -path "*/init.py" -print`
+  - `git ls-files | grep -E '(^|/)init\.py$' || true`
+- Tier 1 (fast):
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not slow and not smoke"`
+- Tier 2 (all pytest):
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests`
+- Tier 3 (explicit smoke minimal):
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation`
+
+## Validation Runtime (Phase 236-275)
+
+Recommended daily validation:
+
+- `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py`
+
+Fast pytest-only command:
+
+- `./.venv-qlib313/bin/python -m pytest cajas/tests -m "not smoke and not slow and not closure and not full"`
+
+Smoke tiers:
+
+- micro: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+- minimal: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier minimal --out-root tmp/smoke-validation-minimal`
+- closure (expensive): `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier closure --out-root tmp/smoke-validation-closure`
+- full (very expensive): `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier full --out-root tmp/smoke-validation-full`
+
+Runtime audit:
+
+- `./.venv-qlib313/bin/python cajas/scripts/audit_validation_runtime.py --tests-root cajas/tests --out-json tmp/validation-runtime-audit/validation_runtime_audit.json --out-md tmp/validation-runtime-audit/validation_runtime_audit.md`
+
+Note: `python -m pytest cajas/tests` can be expensive because closure/full smoke tests invoke nested multi-stage subprocess workflows.
+
+## Fast Validation Profiling Amendment
+
+Daily command tiers:
+
+- Tight edit loop:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier quick`
+- Before commit:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier fast`
+- Tiny smoke:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
+
+Fast default expression:
+
+- `not smoke and not slow and not closure and not full and not integration`
+
+Explicit commands:
+
+- Integration checks:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "integration and not slow and not smoke"`
+- Slow checks:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "slow"`
+
+Phase 456-485 subprocess hotspot closure:
+
+- `run_fast_validation.py` budget, timing, and command-plan behavior is testable with injected runners and deterministic timers.
+- Fast-tier tests should not spawn nested `run_fast_validation.py` subprocesses.
+- Keep true CLI subprocess smoke tests marked `integration` so they run only by explicit command.
+
+## Data IO Optimization (Phase 276-315)
+
+I/O-focused audit commands:
+
+- `./.venv-qlib313/bin/python cajas/scripts/audit_data_sources.py --project-root cajas --data-root /home/phiner/projects/research/data --out-json tmp/data-io-audit/data_source_audit.json --out-md tmp/data-io-audit/data_source_audit.md`
+- `./.venv-qlib313/bin/python cajas/scripts/audit_io_runtime.py --project-root cajas --tmp-root tmp --out-json tmp/io-runtime-audit/io_runtime_audit.json --out-md tmp/io-runtime-audit/io_runtime_audit.md`
+
+Large CSV metadata/manifest:
+
+- `./.venv-qlib313/bin/python cajas/scripts/inspect_large_csv.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --out tmp/data-io-audit/eurusd_2020_2024_metadata.json --sample-lines 100`
+- `./.venv-qlib313/bin/python cajas/scripts/build_dataset_file_manifest.py --data-root /home/phiner/projects/research/data --pattern "EURUSD_15 Mins_Bid_*.csv" --out tmp/data-io-audit/eurusd_dataset_manifest.json`
+
+Validation guardrails:
+
+- fast validation and micro smoke do not read real data by default
+- enable real-data mode explicitly with `--include-real-data`
+- large real-data scans require explicit `--allow-large-data`
+
+## Full-Read CSV Refactor (Phase 316-345)
+
+Key updates:
+
+- Added CSV loading policy guardrails: `cajas/data_io/csv_loading_policy.py`.
+- High-risk CSV entrypoints now support policy controls:
+  - `--row-limit`
+  - `--chunk-size`
+  - `--sample-only`
+  - `--allow-large-data`
+- Updated refactor plan:
+  - `cajas/docs/full_read_csv_refactor_plan.md`
+
+Current audit delta:
+
+- `reads_full_csv_likely_count`: `25 -> 20`
+- `chunking_support_count`: `7 -> 13`
+
+## Final Delivery References
+
+- Final validation/data-I/O workflow index:
+  - `cajas/docs/final_research_stack_index.md`
+- Future work checklist:
+  - `cajas/docs/future_work_checklist.md`
+- PR readiness checklist:
+  - `cajas/docs/pr_readiness_checklist.md`
+- Final phase archive index:
+  - `cajas/docs/final_phase_archive_index.md`
+- Validation delivery packet builder:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py --fast-timing tmp/validation-runtime-audit/fast_validation_phase566.json --data-source-audit tmp/data-io-audit/data_source_audit_phase566.json --runtime-audit tmp/validation-runtime-audit/validation_runtime_phase566.json --out-json tmp/validation-delivery/validation_delivery_packet.json --out-md tmp/validation-delivery/validation_delivery_packet.md --allow-missing-inputs`

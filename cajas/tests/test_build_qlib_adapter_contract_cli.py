@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
+
+from cajas.scripts import build_qlib_adapter_contract as qlib_adapter_cli
 
 
 class BuildQlibAdapterContractCliTests(unittest.TestCase):
@@ -18,27 +20,26 @@ class BuildQlibAdapterContractCliTests(unittest.TestCase):
                 encoding="utf-8",
             )
             out = root / "qlib_adapter_contract.json"
-            subprocess.run(
-                [
-                    sys.executable,
-                    "cajas/scripts/build_qlib_adapter_contract.py",
-                    "--promotion-manifest",
-                    str(manifest),
-                    "--out",
-                    str(out),
-                    "--candidate-id",
-                    "candidate2",
-                    "--feature-set-id",
-                    "fs2",
-                    "--label-variant-id",
-                    "lv2",
-                    "--target-name",
-                    "future_direction_8",
-                    "--frequency",
-                    "15m",
-                ],
-                check=True,
-            )
+            argv = [
+                "build_qlib_adapter_contract.py",
+                "--promotion-manifest",
+                str(manifest),
+                "--out",
+                str(out),
+                "--candidate-id",
+                "candidate2",
+                "--feature-set-id",
+                "fs2",
+                "--label-variant-id",
+                "lv2",
+                "--target-name",
+                "future_direction_8",
+                "--frequency",
+                "15m",
+            ]
+            with mock.patch.object(sys, "argv", argv):
+                rc = qlib_adapter_cli.main()
+            self.assertEqual(rc, 0)
             self.assertTrue(out.exists())
             self.assertTrue((root / "qlib_adapter_contract.validation.json").exists())
 

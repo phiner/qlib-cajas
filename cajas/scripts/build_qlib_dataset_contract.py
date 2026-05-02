@@ -21,6 +21,8 @@ def main() -> int:
     p.add_argument("--instrument-col", default="instrument")
     p.add_argument("--datetime-col", default="datetime")
     p.add_argument("--label-col", action="append", dest="label_cols")
+    p.add_argument("--row-limit", type=int, default=None)
+    p.add_argument("--allow-large-data", action="store_true")
     args = p.parse_args()
 
     contract = build_qlib_dataset_contract(
@@ -30,6 +32,8 @@ def main() -> int:
         instrument_col=args.instrument_col,
         datetime_col=args.datetime_col,
         label_columns=args.label_cols,
+        row_limit=args.row_limit,
+        allow_large_data=args.allow_large_data,
     )
     print("Qlib dataset contract completed.")
     print(f"output: {Path(args.out).expanduser().resolve()}")

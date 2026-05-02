@@ -20,6 +20,10 @@ def main() -> int:
     p.add_argument("--datetime-col", default="datetime")
     p.add_argument("--label-col", action="append", dest="label_cols")
     p.add_argument("--no-sort", action="store_true")
+    p.add_argument("--row-limit", type=int, default=None)
+    p.add_argument("--chunk-size", type=int, default=None)
+    p.add_argument("--sample-only", action="store_true")
+    p.add_argument("--allow-large-data", action="store_true")
     args = p.parse_args()
 
     manifest = build_qlib_handler_input(
@@ -29,6 +33,10 @@ def main() -> int:
         datetime_col=args.datetime_col,
         label_columns=args.label_cols,
         sort_rows=not args.no_sort,
+        row_limit=args.row_limit,
+        chunk_size=args.chunk_size,
+        sample_only=args.sample_only,
+        allow_large_data=args.allow_large_data,
     )
     print("Qlib handler input build completed.")
     print(f"output dir: {Path(args.out_dir).expanduser().resolve()}")

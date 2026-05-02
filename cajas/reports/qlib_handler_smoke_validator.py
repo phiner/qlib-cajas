@@ -39,7 +39,30 @@ def validate_qlib_handler_input(*, handler_dir: str | Path) -> dict:
     manifest = json.loads((d / "handler_input_manifest.json").read_text(encoding="utf-8"))
     columns = json.loads((d / "columns.json").read_text(encoding="utf-8"))
     splits = json.loads((d / "splits.json").read_text(encoding="utf-8"))
-    df = pd.read_csv(d / "handler_input.csv")
+    
+    # Fixture-only size check: avoid full read of large artifacts
+    csv_path = d / "handler_input.csv"
+    csv_size_mb = csv_path.stat().st_size / (1024 * 1024)
+    if csv_size_mb > 50:
+        blocking.append({
+            "severity": "error",
+            "code": "oversized_fixture",
+            "message": f"handler_input.csv is too large for smoke validation ({csv_size_mb:.1f} MB > 50 MB)",
+            "field": "handler_input.csv",
+        })
+        return {
+            "schema_version": "v1",
+            "status": "fail",
+            "checked_paths": checked_paths,
+            "row_count": 0,
+            "feature_count": 0,
+            "label_count": 0,
+            "warnings": warnings,
+            "blocking_issues": blocking,
+            "next_phase_recommendation": "reduce fixture size or use bounded validation",
+        }
+    
+    df = pd.read_csv(csv_path)
 
     req_cols = columns.get("required_columns", [])
     for col in req_cols:

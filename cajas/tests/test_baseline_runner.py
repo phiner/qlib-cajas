@@ -9,6 +9,7 @@ import pandas as pd
 import yaml
 
 from cajas.scripts.run_baseline_disabled import run_baseline_disabled
+from cajas.scripts.run_baseline_disabled import write_baseline_disabled_artifacts
 
 
 class BaselineRunnerTests(unittest.TestCase):
@@ -102,9 +103,24 @@ class BaselineRunnerTests(unittest.TestCase):
 
     def test_artifact_writing(self) -> None:
         with TemporaryDirectory() as tmp_dir:
-            cfg = self._write_cfg(tmp_dir, self._write_csv(tmp_dir))
-            payload = run_baseline_disabled(
-                config_path=str(cfg),
+            payload = {
+                "config_name": "baseline_runner_test",
+                "can_train": False,
+                "training_executed": False,
+                "model_built": False,
+                "predictions_generated": False,
+                "evaluation_executed": False,
+                "serialized_model": False,
+                "run_contract": {
+                    "config_name": "baseline_runner_test",
+                    "phase": "phase12",
+                    "can_train": False,
+                    "steps": [],
+                },
+                "blockers": ["Training disabled by Phase 12 policy."],
+            }
+            payload = write_baseline_disabled_artifacts(
+                payload=payload,
                 write_artifacts=True,
                 output_dir=tmp_dir,
                 run_name="phase12_baseline_disabled",

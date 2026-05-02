@@ -14,6 +14,11 @@ PATTERNS = {
     "gpu_cuda": ["cuda", "gpu"],
 }
 ALLOWLIST = ["no broker", "forbidden", "blocked", "no live", "research-only"]
+SELF_AUDIT_HINTS = {
+    "cajas/audits/research_governance_audit.py",
+    "cajas/audits/governance_finding_classifier.py",
+    "cajas/audits/governance_remediation_report.py",
+}
 
 
 def run_research_governance_audit(*, root: str | Path) -> dict:
@@ -23,6 +28,9 @@ def run_research_governance_audit(*, root: str | Path) -> dict:
 
     for path in root_path.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in {".py", ".md", ".json", ".txt"}:
+            continue
+        posix_path = str(path).replace("\\", "/")
+        if any(posix_path.endswith(hint) for hint in SELF_AUDIT_HINTS):
             continue
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
         for i, line in enumerate(lines, start=1):

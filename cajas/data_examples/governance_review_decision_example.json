@@ -1,0 +1,28 @@
+{
+  "reviewer": "manual",
+  "decision": "approve_offline_research_only",
+  "scope": "offline_research_only",
+  "notes": "Reviewed governance findings as boundary documentation and non-execution research tooling.",
+  "accepted_findings": [
+    {
+      "category": "boundary_documentation",
+      "reason": "Statements explicitly forbid execution behavior."
+    }
+  ],
+  "rejected_capabilities": [
+    "broker integration",
+    "live trading",
+    "paper trading execution",
+    "order generation",
+    "order routing",
+    "position sizing",
+    "portfolio optimization",
+    "PnL optimization",
+    "execution simulation"
+  ],
+  "required_next_controls": [
+    "Keep execution boundaries visible in all readiness outputs.",
+    "Require a separate future phase before any paper-trading design discussion."
+  ]
+}
+

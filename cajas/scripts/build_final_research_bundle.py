@@ -28,6 +28,8 @@ def main() -> int:
     p.add_argument("--run-catalog", required=True)
     p.add_argument("--offline-review-packet", required=True)
     p.add_argument("--ci-validation-plan", required=True)
+    p.add_argument("--governance-review-decision", default=None)
+    p.add_argument("--research-only-approval-packet", default=None)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
     args = p.parse_args()
@@ -42,6 +44,8 @@ def main() -> int:
         run_catalog=_load(args.run_catalog),
         offline_review_packet=_load(args.offline_review_packet),
         ci_validation_plan=_load(args.ci_validation_plan),
+        governance_review_decision=None if args.governance_review_decision is None else _load(args.governance_review_decision),
+        research_only_approval_packet=None if args.research_only_approval_packet is None else _load(args.research_only_approval_packet),
     )
 
     out_j = Path(args.out_json).expanduser().resolve()

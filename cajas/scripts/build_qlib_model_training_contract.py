@@ -21,6 +21,8 @@ def main() -> int:
     p.add_argument("--out", required=True)
     p.add_argument("--run-id", default="phase086_model_bridge")
     p.add_argument("--label-col", default=None)
+    p.add_argument("--row-limit", type=int, default=None)
+    p.add_argument("--allow-large-data", action="store_true")
     args = p.parse_args()
 
     contract = build_qlib_model_training_contract(
@@ -31,6 +33,8 @@ def main() -> int:
         out_path=args.out,
         run_id=args.run_id,
         label_col=args.label_col,
+        row_limit=args.row_limit,
+        allow_large_data=args.allow_large_data,
     )
     print("Qlib model training contract completed.")
     print(f"output: {Path(args.out).expanduser().resolve()}")
