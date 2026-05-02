@@ -25,6 +25,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-name", default="phase21_baseline_review")
     parser.add_argument("--low-confidence-threshold", type=float, default=0.45)
     parser.add_argument("--high-confidence-error-threshold", type=float, default=0.70)
+    parser.add_argument("--row-limit", type=int, default=None)
+    parser.add_argument("--chunk-size", type=int, default=None)
+    parser.add_argument("--sample-only", action="store_true")
+    parser.add_argument("--allow-large-data", action="store_true")
+    parser.add_argument("--selected-columns", default=None, help="comma-separated column list")
+    parser.add_argument("--use-cache", action="store_true")
+    parser.add_argument("--manifest", default=None)
     return parser.parse_args()
 
 
@@ -66,6 +73,13 @@ def main() -> int:
                 split="valid",
                 low_confidence_threshold=args.low_confidence_threshold,
                 high_confidence_error_threshold=args.high_confidence_error_threshold,
+                row_limit=args.row_limit,
+                chunk_size=args.chunk_size,
+                sample_only=args.sample_only,
+                allow_large_data=args.allow_large_data,
+                selected_columns=[c.strip() for c in args.selected_columns.split(",") if c.strip()] if args.selected_columns else None,
+                use_cache=args.use_cache,
+                manifest=args.manifest,
             )
         if test_pred.exists():
             test_review = build_prediction_review(
@@ -74,6 +88,13 @@ def main() -> int:
                 split="test",
                 low_confidence_threshold=args.low_confidence_threshold,
                 high_confidence_error_threshold=args.high_confidence_error_threshold,
+                row_limit=args.row_limit,
+                chunk_size=args.chunk_size,
+                sample_only=args.sample_only,
+                allow_large_data=args.allow_large_data,
+                selected_columns=[c.strip() for c in args.selected_columns.split(",") if c.strip()] if args.selected_columns else None,
+                use_cache=args.use_cache,
+                manifest=args.manifest,
             )
         if holdout_pred.exists():
             holdout_review = build_prediction_review(
@@ -82,6 +103,13 @@ def main() -> int:
                 split="holdout",
                 low_confidence_threshold=args.low_confidence_threshold,
                 high_confidence_error_threshold=args.high_confidence_error_threshold,
+                row_limit=args.row_limit,
+                chunk_size=args.chunk_size,
+                sample_only=args.sample_only,
+                allow_large_data=args.allow_large_data,
+                selected_columns=[c.strip() for c in args.selected_columns.split(",") if c.strip()] if args.selected_columns else None,
+                use_cache=args.use_cache,
+                manifest=args.manifest,
             )
 
         _write_json(run_out / "baseline_artifact_inspection_report.json", payload)

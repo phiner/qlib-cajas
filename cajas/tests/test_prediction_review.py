@@ -92,6 +92,14 @@ class PredictionReviewTests(unittest.TestCase):
             forbidden = {"profit", "return", "sharpe", "drawdown", "pnl", "win_rate"}
             self.assertTrue(forbidden.isdisjoint(payload.keys()))
 
+    def test_row_limit_reduces_review_rows(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            pred = Path(tmp_dir) / "pred.csv"
+            out = Path(tmp_dir) / "out"
+            self._write_prediction_csv(pred, with_proba=True)
+            report = build_prediction_review(prediction_csv=pred, output_dir=out, split="valid", row_limit=2)
+            self.assertEqual(report.total_rows, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

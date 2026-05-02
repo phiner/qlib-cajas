@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
+
 
 @dataclass(frozen=True)
 class ConfidenceBucketSummary:
@@ -45,9 +47,15 @@ def analyze_prediction_confidence(
     prediction_csv: str | Path,
     split: str,
     bucket_edges: list[float] | None = None,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
 ) -> ConfidenceAnalysisReport:
     edges = bucket_edges or [0.0, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    df = pd.read_csv(Path(prediction_csv).expanduser().resolve())
+    path = Path(prediction_csv).expanduser().resolve()
+    decision = evaluate_loading_decision(path, CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data))
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit")
+    df = pd.read_csv(path, nrows=row_limit if row_limit is not None else None)
     warnings: list[str] = []
 
     total_rows = int(len(df))

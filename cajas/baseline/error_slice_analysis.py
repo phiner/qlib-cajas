@@ -7,9 +7,22 @@ from pathlib import Path
 
 import pandas as pd
 
+from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision
 
-def analyze_error_slices(*, prediction_csv: str | Path, output_dir: str | Path, run_name: str) -> dict:
-    df = pd.read_csv(Path(prediction_csv).expanduser().resolve())
+
+def analyze_error_slices(
+    *,
+    prediction_csv: str | Path,
+    output_dir: str | Path,
+    run_name: str,
+    row_limit: int | None = None,
+    allow_large_data: bool = False,
+) -> dict:
+    path = Path(prediction_csv).expanduser().resolve()
+    decision = evaluate_loading_decision(path, CsvLoadingPolicy(row_limit=row_limit, allow_large_data=allow_large_data))
+    if decision["mode"] == "blocked_full_read":
+        raise ValueError("large CSV full read blocked; pass allow_large_data or row_limit")
+    df = pd.read_csv(path, nrows=row_limit if row_limit is not None else None)
     out = Path(output_dir).expanduser().resolve() / run_name
     if out.exists():
         raise FileExistsError(f"Refusing to overwrite existing run directory: {out}")

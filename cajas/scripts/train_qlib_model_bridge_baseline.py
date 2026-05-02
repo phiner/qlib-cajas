@@ -20,10 +20,27 @@ def main() -> int:
     p.add_argument("--out-dir", required=True)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max-rows", type=int, default=5000)
+    p.add_argument("--row-limit", type=int, default=None)
+    p.add_argument("--sample-only", action="store_true")
+    p.add_argument("--allow-large-data", action="store_true")
+    p.add_argument("--selected-columns", default=None, help="comma-separated column list")
+    p.add_argument("--use-cache", action="store_true")
+    p.add_argument("--manifest", default=None)
     args = p.parse_args()
 
     contract = json.loads(Path(args.training_contract).expanduser().read_text(encoding="utf-8"))
-    result = train_qlib_model_bridge_baseline(contract=contract, out_dir=args.out_dir, seed=args.seed, max_rows=args.max_rows)
+    result = train_qlib_model_bridge_baseline(
+        contract=contract,
+        out_dir=args.out_dir,
+        seed=args.seed,
+        max_rows=args.max_rows,
+        row_limit=args.row_limit,
+        sample_only=args.sample_only,
+        allow_large_data=args.allow_large_data,
+        selected_columns=[c.strip() for c in args.selected_columns.split(",") if c.strip()] if args.selected_columns else None,
+        use_cache=args.use_cache,
+        manifest=args.manifest,
+    )
 
     out = Path(args.out_dir).expanduser().resolve()
     artifacts = {
