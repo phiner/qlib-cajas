@@ -38,6 +38,29 @@ class DatasetQualityResearchBundleTests(unittest.TestCase):
             self.assertTrue(label_row["imbalance_warning"])
             self.assertEqual(bundle["feature_schema_manifest"]["features"][0]["name"], "feature_a")
 
+            # New fields
+            self.assertIn("schema_version", rep)
+            self.assertIn("status", rep)
+            self.assertIn("quality_score", rep)
+            self.assertIn("label_review_buckets", rep)
+            self.assertIn("feature_readiness", rep)
+            self.assertIn("ranked_review_items", bundle["offline_research_queue_summary"])
+
+            # Quality score structure
+            qs = rep["quality_score"]
+            self.assertIn("score", qs)
+            self.assertIn("max_score", qs)
+            self.assertIn("grade", qs)
+            self.assertIn("components", qs)
+            self.assertGreater(len(qs["components"]), 0)
+
+            # Label review buckets
+            self.assertGreater(len(rep["label_review_buckets"]), 0)
+            bucket = rep["label_review_buckets"][0]
+            self.assertIn("priority", bucket)
+            self.assertIn("bucket", bucket)
+            self.assertIn("recommended_action", bucket)
+
     def test_cli_writes_bundle_files(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
