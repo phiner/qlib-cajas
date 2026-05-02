@@ -90,6 +90,16 @@ Dataset quality reports now include:
 - 6 scenario regression tests (~2s)
 - 21 golden shape files committed across 5 scenarios
 
+**Phase 1016-1045 Qlib Experiment Reproducibility Strengthening:**
+
+- Experiment manifest for offline Qlib research reproducibility
+- Links dataset quality reports, contract reports, trend snapshots, golden scenarios
+- Captures git branch/commit, Python version, platform info
+- Manifest builder CLI with validation
+- Reviewer-friendly Markdown with artifact table and reproducibility status
+- 9 manifest tests (~2s)
+- Manifests clearly marked as offline research only, not trading execution
+
 Combined bundle builder:
 
 ```bash

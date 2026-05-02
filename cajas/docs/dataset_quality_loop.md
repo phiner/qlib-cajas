@@ -213,6 +213,43 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_gold
 
 **Scope**: Scenarios test schema shape stability only, not exact values. Quality scores remain data quality indicators, not trading/model performance metrics.
 
+## New in Phase 1016-1045
+
+Qlib experiment reproducibility strengthening:
+
+- **Experiment Manifest**: Lightweight reproducibility metadata for offline Qlib research
+  - Links dataset quality reports, contract reports, trend snapshots, golden scenarios
+  - Captures git branch/commit, Python version, platform info
+  - Reviewer-friendly Markdown summary
+  - Validation of referenced artifact paths
+- **Manifest Builder CLI**: Generate experiment manifests from smoke outputs
+- **Reproducibility Status**: Aggregates dataset quality, contract, semantic, drift status
+- **Artifact Table**: Shows which reproducibility artifacts are present
+
+Build experiment manifest:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_qlib_experiment_manifest.py \
+  --experiment-name dataset_quality_smoke_baseline \
+  --dataset-path cajas/data_examples/validation_fixtures/eurusd_tiny.csv \
+  --dataset-quality-report tmp/dataset-quality-smoke/dataset_quality/dataset_quality_report.json \
+  --contract-report tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.json \
+  --trend-snapshot tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json \
+  --golden-scenario-manifest cajas/data_examples/golden/dataset_quality_scenarios/scenario_manifest.json \
+  --out-json tmp/qlib-experiment-manifest/experiment_manifest.json \
+  --out-md tmp/qlib-experiment-manifest/experiment_manifest.md
+```
+
+Manifest validation:
+
+- Checks required fields exist
+- Validates referenced paths exist
+- Parses referenced JSON files
+- Reads dataset quality status, contract status, semantic counts, drift summary
+- Generates reviewer-friendly Markdown with artifact table
+
+**Scope**: Experiment manifests are for offline Qlib research reproducibility only. They are not trading execution artifacts. Quality scores remain data quality indicators only.
+
 ## Combined bundle CLI
 
 ```bash

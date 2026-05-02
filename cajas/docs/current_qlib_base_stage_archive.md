@@ -982,3 +982,158 @@ Total: 21 golden shape files (5 scenarios × 4 shapes + 1 manifest)
 ---
 
 **End of Addendum**
+
+---
+
+## Addendum: Phase 1016-1045 (Qlib Experiment Reproducibility Strengthening)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Experiment Manifest Module** (`cajas/reports/qlib_experiment_manifest.py`)
+   - `QlibExperimentManifest` dataclass with reproducibility metadata
+   - `build_qlib_experiment_manifest()` function
+   - `validate_qlib_experiment_manifest()` function
+   - `manifest_to_dict()` and `generate_manifest_markdown()` functions
+   - Git info extraction (branch/commit)
+   - Platform info capture (Python version, OS)
+
+2. **Manifest Builder CLI** (`cajas/scripts/build_qlib_experiment_manifest.py`)
+   - Generates experiment manifest JSON and Markdown
+   - Validates referenced artifact paths
+   - Parses referenced JSON files
+   - Exits non-zero on validation errors
+   - `--allow-missing-optional` flag for partial manifests
+
+3. **Manifest Fields**
+   - Required: manifest_version, created_at, experiment_name, python_version, platform_info
+   - Optional: dataset_path, dataset_quality_report_path, contract_report_path, trend_snapshot_path, golden_scenario_manifest_path, qlib_config_path, git_branch, git_commit, notes
+
+4. **Reviewer-Friendly Markdown**
+   - Reproducibility status section (dataset quality, contract, semantic, drift)
+   - Source information (dataset, git, platform)
+   - Referenced artifacts table with existence checks
+   - Reviewer notes with action guidance
+   - Clear disclaimer: "offline Qlib research reproducibility only, not trading execution"
+
+5. **Manifest Tests** (`cajas/tests/test_qlib_experiment_manifest.py`)
+   - 9 tests covering manifest building, validation, CLI behavior
+   - Tests required fields, path validation, Markdown generation
+   - Tests CLI exit codes and error handling
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `build_qlib_experiment_manifest.py` | ✅ Pass | <1s | Generated manifest JSON and Markdown |
+| `test_qlib_experiment_manifest.py` | ✅ 9 passed | 1.82s | All manifest tests pass |
+| `pytest cajas/tests -k "dataset_quality or qlib_experiment_manifest"` | ✅ 48 passed | 9.38s | All related tests (+9 new) |
+| `run_dataset_quality_smoke.py` | ✅ Pass | ~2-3s | Smoke validation passing |
+| `run_fast_validation.py --tier fast` | ✅ 353 passed | 85.34s | Faster than Phase 986 baseline (~100s) |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### Manifest Output Paths
+
+Example manifest generation:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_qlib_experiment_manifest.py \
+  --experiment-name dataset_quality_smoke_baseline \
+  --dataset-path cajas/data_examples/validation_fixtures/eurusd_tiny.csv \
+  --dataset-quality-report tmp/dataset-quality-smoke/dataset_quality/dataset_quality_report.json \
+  --contract-report tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.json \
+  --trend-snapshot tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json \
+  --golden-scenario-manifest cajas/data_examples/golden/dataset_quality_scenarios/scenario_manifest.json \
+  --out-json tmp/qlib-experiment-manifest/experiment_manifest.json \
+  --out-md tmp/qlib-experiment-manifest/experiment_manifest.md
+```
+
+Outputs:
+- `tmp/qlib-experiment-manifest/experiment_manifest.json` - Machine-readable manifest
+- `tmp/qlib-experiment-manifest/experiment_manifest.md` - Reviewer-friendly report
+
+### Scope and Limitations
+
+**Manifest Scope:**
+- Links existing dataset quality, contract, trend, scenario artifacts
+- Captures reproducibility metadata (git, platform, timestamps)
+- Validates artifact paths and JSON parseability
+- Does not perform heavy data reads or model training
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+- No network/GPU requirements
+- Manifests are offline research only, not trading artifacts
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 1016-1045 section with manifest workflow
+- `cajas/README.md` - Added Phase 1016-1045 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+### Runtime Impact
+
+- Fast validation: 85.34s (Phase 986 baseline: ~100s, **-14.66s improvement**)
+  - Likely due to test optimization or caching effects
+- Manifest tests: 1.82s (9 tests)
+- Data-source audit: stable at 29 read_csv calls
+- Total test count: 353 passed (Phase 986: 344, +9 new)
+
+### Risks and Follow-ups
+
+- Manifest validation is path-based only; does not verify semantic correctness of artifact contents
+- No automatic manifest generation integrated into smoke workflow (kept as standalone CLI for simplicity)
+- No manifest diff/comparison tool (could be added if needed)
+- Git info extraction may fail in non-git environments (handled gracefully with None values)
+
+---
+
+**End of Addendum**
+
+---
+
+## Addendum: Phase 1016-1045 (Qlib Experiment Reproducibility Strengthening)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Experiment Manifest Module** (`cajas/reports/qlib_experiment_manifest.py`)
+   - Captures reproducibility metadata: git branch/commit, Python version, platform
+   - Links dataset quality reports, contract reports, trend snapshots, golden scenarios
+   - Validates referenced artifact paths and JSON parseability
+
+2. **Manifest Builder CLI** (`cajas/scripts/build_qlib_experiment_manifest.py`)
+   - Generates manifest JSON and reviewer-friendly Markdown
+   - Validates paths and exits non-zero on errors
+   - `--allow-missing-optional` flag for partial manifests
+
+3. **Manifest Tests** (`cajas/tests/test_qlib_experiment_manifest.py`)
+   - 9 tests covering building, validation, CLI behavior
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime |
+|---------|--------|---------|
+| `test_qlib_experiment_manifest.py` | ✅ 9 passed | 1.82s |
+| `pytest -k "dataset_quality or qlib_experiment_manifest"` | ✅ 48 passed | 9.38s |
+| `run_fast_validation.py --tier fast` | ✅ 353 passed | 85.34s |
+| `audit_data_sources.py` | ✅ Pass | read_csv_count: 29 |
+
+### Scope
+
+- Manifests link existing artifacts for reproducibility
+- Clearly marked as offline research only, not trading execution
+- No model training, no Qlib core changes
+- Quality scores remain data quality indicators only
+
+---
+
+**End of Addendum**
