@@ -1225,3 +1225,66 @@ Current budget check status: **warn**
 ---
 
 **End of Addendum**
+
+---
+
+## Addendum: Phase 1076-1105 (Reviewer Report Enhancements — Diffs and Trends)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Reviewer Diff Module** (`cajas/reports/reviewer_report_diff.py`)
+   - Compare baseline vs current research infrastructure artifacts
+   - Detect quality score deltas, status changes, error increases
+   - Pass/warn/fail classification for reviewer action
+
+2. **Reviewer Diff CLI** (`cajas/scripts/build_reviewer_diff_report.py`)
+   - Generates JSON and Markdown diff reports
+   - `--warn-only` flag to avoid failing CI
+   - Compares dataset quality, contract, semantic, drift, runtime budget
+
+3. **Reviewer Diff Tests** (`cajas/tests/test_reviewer_report_diff.py`)
+   - 7 tests covering identical reports, quality decreases, contract failures
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `test_reviewer_report_diff.py` | ✅ 7 passed | 1.99s | All diff tests pass |
+| `pytest -k "dataset_quality or qlib_experiment_manifest or validation_runtime_budget or reviewer_report_diff"` | ✅ 64 passed | 8.74s | All related tests (+7 new) |
+| `run_fast_validation.py --tier fast` | ✅ 369 passed | 89.62s | Slight increase due to 7 new tests |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### Runtime Trend
+
+| Phase | Fast Validation | Delta | Notes |
+|-------|----------------|-------|-------|
+| 986 | ~99.93s | baseline | After scenario expansion |
+| 1016 | ~85.34s | -14.59s | After manifest addition |
+| 1046 | ~83.52s | -1.82s | After budget enforcement |
+| 1076 | ~89.62s | +6.10s | After reviewer diff (+7 tests) |
+
+### Scope and Limitations
+
+**Diff Scope:**
+- Compares offline Qlib research infrastructure artifacts only
+- Not trading, execution, alpha, or model performance reports
+- Lightweight schema-tolerant comparison
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 1076-1105 section
+- `cajas/README.md` - Added Phase 1076-1105 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+---
+
+**End of Addendum**

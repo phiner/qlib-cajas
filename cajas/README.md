@@ -109,6 +109,15 @@ Dataset quality reports now include:
 - Fast validation: ~83.5s (Phase 986: ~100s, Phase 1016: ~85s)
 - Budgets are engineering guardrails, not performance claims
 
+**Phase 1076-1105 Reviewer Report Enhancements — Diffs and Trends:**
+
+- Reviewer diff report generation comparing baseline vs current artifacts
+- Compares dataset quality, contract, semantic, drift, runtime budget status
+- Detects quality score deltas, status changes, error increases
+- 7 reviewer diff tests (~2s)
+- Reviewer-friendly Markdown with executive summary and artifact table
+- Clearly marked as offline research infrastructure comparison only
+
 Combined bundle builder:
 
 ```bash

@@ -360,3 +360,38 @@ Programmatic usage:
   from cajas.scripts.build_dataset_quality_report import main
   ret = main(["--input", "data.csv", "--labels", "label", "--out-json", "out.json", "--out-md", "out.md"])
   ```
+
+## New in Phase 1076-1105
+
+Reviewer report enhancements — diffs and trends:
+
+- **Reviewer Diff Reports**: Compare baseline vs current research infrastructure artifacts
+  - CLI: `build_reviewer_diff_report.py`
+  - Compares dataset quality, contract, semantic, drift, runtime budget status
+  - Detects quality score deltas, status changes, error increases
+  - Pass/warn/fail classification for reviewer action
+- **Artifact Comparison**: Structured diff of research infrastructure reports
+  - Quality score delta
+  - Contract status changes
+  - Semantic error delta
+  - Breaking drift delta
+  - Runtime budget status changes
+
+Build reviewer diff report:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_reviewer_diff_report.py \
+  --baseline-root tmp/dataset-quality-smoke-baseline \
+  --current-root tmp/dataset-quality-smoke \
+  --out-json tmp/reviewer-diff/reviewer_diff_report.json \
+  --out-md tmp/reviewer-diff/reviewer_diff_report.md \
+  --warn-only
+```
+
+Diff status interpretation:
+
+- **pass**: No material changes or improvements only
+- **warn**: Quality score decreased, missing artifacts, or minor regressions
+- **fail**: Contract status changed to fail, semantic errors increased
+
+**Scope**: Reviewer diff reports compare offline Qlib research infrastructure artifacts only. They are not trading, execution, alpha, or model performance reports.
