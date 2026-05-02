@@ -70,3 +70,65 @@ These audits are static/metadata-only and avoid heavy pipeline execution.
 - Refactored high-risk CSV entrypoints to support row-limit/chunk/sample policy controls.
 - `reads_full_csv_likely_count` reduced from `25` to `20`.
 - `chunking_support_count` increased from `7` to `13`.
+
+## Phase 366-395 Runtime + Remaining Full-Read Closure
+
+- Added consistent policy arguments to remaining high-priority readers:
+  - `row_limit`
+  - `chunk_size`
+  - `sample_only`
+  - `allow_large_data`
+  - `selected_columns`
+  - `use_cache`
+  - `manifest`
+- Refactored:
+  - `cajas/audits/leakage_drift_audit.py`
+  - `cajas/baseline/prediction_review.py`
+  - `cajas/baseline/qlib_model_bridge_trainer.py`
+- Updated CLI wrappers to expose these controls:
+  - `cajas/scripts/audit_leakage_and_drift.py`
+  - `cajas/scripts/inspect_baseline_run.py`
+  - `cajas/scripts/train_qlib_model_bridge_baseline.py`
+- Improved static audit signal quality:
+  - policy-guarded `read_csv` callsites are no longer classified as likely unbounded full-read sites.
+
+Audit metrics:
+
+- before (`phase366_before`): `read_csv_count=28`, `reads_full_csv_likely_count=17`, `chunking_support_count=16`
+- after (`phase366_after`): `read_csv_count=29`, `reads_full_csv_likely_count=14`, `chunking_support_count=20`
+
+Fast runtime:
+
+- previous fast validation total: `136.67s`
+- current fast validation total: `119.28s`
+- key driver: subprocess-heavy smoke-tier orchestration test moved out of default fast subset via integration marker.
+
+
+## Phase 396-425 Generated Artifact Reader Closure
+
+- Refactored generated-artifact report readers to avoid full CSV reads:
+  - `cajas/reports/research_gate_builder.py`: line-counting instead of `pd.read_csv()` for row count
+  - `cajas/baseline/flat_class_diagnosis.py`: chunked counting with `chunksize` parameter
+  - `cajas/scripts/diagnose_flat_class.py`: added `--chunk-size` and `--artifact-row-limit`
+  - `cajas/baseline/feature_set_comparison.py`: added policy guard with `row_limit`/`allow_large_data`
+  - `cajas/datasets/horizon_label_preview.py`: added `row_limit` for preview-only reads
+  - `cajas/reports/qlib_handler_smoke_validator.py`: added 50 MB fixture size check
+- Improved static audit classifier:
+  - detects false positives: `chunked_csv_reader.py` (internal impl), `io_runtime_audit.py` (string pattern)
+
+Audit metrics:
+
+- before (`phase396_before`): `read_csv_count=29`, `reads_full_csv_likely_count=14`, `chunking_support_count=22`
+- after (`phase396_after`): `read_csv_count=28`, `reads_full_csv_likely_count=9`, `chunking_support_count=24`
+
+Fast runtime:
+
+- previous fast validation total: `119.28s`
+- current fast validation total: `117.30s`
+- fast pytest runtime: `117.44s`
+
+Net effect:
+
+- Reduced likely full-read candidates by **5** (14 → 9)
+- Increased chunking/policy-capable sites by **2** (22 → 24)
+- Runtime improvement: **1.98s** (119.28s → 117.30s)
