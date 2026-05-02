@@ -258,6 +258,19 @@ Next step needed:
 - Option A: add an explicit user-approved training enable switch while preserving no-trading boundaries.
 - Option B: first add a stronger Qlib DatasetH compatibility probe and keep training disabled.
 
+## Research Quality Loop Closure
+
+- Stable reproducibility failures should be inspected using:
+  - `cajas/scripts/explain_stable_reproducibility.py`
+  - `cajas/scripts/build_normalization_coverage_report.py`
+- Governance `fail` can contain conservative false positives and should be reviewed with:
+  - `cajas/scripts/build_governance_remediation_report.py`
+- Final readiness should be interpreted with remediation context, not only raw statuses:
+  - reproducibility explanation classification
+  - governance remediation suggested status
+  - unresolved true violations and manual review items
+- Human reviewer approval is explicitly offline-research-only and does not permit trading execution.
+
 ## Phase 18 Update
 
 - Added class-path resolution utilities for config-declared classes:

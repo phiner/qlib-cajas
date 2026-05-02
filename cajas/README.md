@@ -645,3 +645,19 @@ This phase still excludes:
 - Added error-slice analysis and leakage/drift audit v2.
 - Added Qlib readiness report v2 and research roadmap report.
 - Qlib workflow remains unexecuted; all outputs stay classification research artifacts under `tmp/`.
+
+## Research Quality Loop Closure
+
+- End-to-end smoke command:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_research_quality_loop_smoke.py --out-root tmp/research-quality-loop-smoke`
+- Reproducibility inspection tools:
+  - `cajas/scripts/explain_stable_reproducibility.py`
+  - `cajas/scripts/build_normalization_coverage_report.py`
+- Governance remediation tool:
+  - `cajas/scripts/build_governance_remediation_report.py`
+- Refined readiness and reviewer tools:
+  - `cajas/scripts/build_final_readiness_packet.py`
+  - `cajas/scripts/build_final_readiness_summary.py`
+  - `cajas/scripts/build_reviewer_decision_packet.py`
+- Blocked/fail statuses are expected governance signals and must remain visible for manual review.
+- Reviewer approval is offline-research-only and does not permit broker integration, live trading, or paper trading execution.

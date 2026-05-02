@@ -253,3 +253,16 @@ Notes:
 - Feature-engineering outputs, calibration summaries, seed stability reports, and drift audits are all derived local artifacts under `tmp/`.
 - Rolling-year validation output is a planning/report artifact by default.
 - Qlib readiness and roadmap reports are research governance artifacts, not trading guidance.
+
+## Research Quality Loop Closure
+
+- Reviewer decision input example:
+  - `cajas/data_examples/reviewer_decision_example.json`
+- Allowed decision values:
+  - `research_review_approved`
+  - `needs_changes`
+  - `rejected`
+- Reviewer approval remains research-only and does not permit:
+  - broker integration
+  - live trading
+  - paper trading execution
