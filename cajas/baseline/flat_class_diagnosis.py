@@ -30,15 +30,23 @@ def diagnose_flat_class(
     prediction_csv: str | Path,
     split: str,
     flat_label: str = "flat",
+    chunk_size: int = 50000,
 ) -> FlatClassDiagnosisReport:
     path = Path(prediction_csv).expanduser().resolve()
-    df = pd.read_csv(path)
-    if "label" not in df.columns or "predicted_label" not in df.columns:
-        raise ValueError("prediction csv must include 'label' and 'predicted_label' columns")
-
-    total_rows = int(len(df))
-    flat_support = int((df["label"].astype(str) == flat_label).sum())
-    flat_predictions = int((df["predicted_label"].astype(str) == flat_label).sum())
+    
+    # Chunked counting to avoid full read of large prediction artifacts
+    total_rows = 0
+    flat_support = 0
+    flat_predictions = 0
+    
+    for chunk in pd.read_csv(path, chunksize=chunk_size):
+        if "label" not in chunk.columns or "predicted_label" not in chunk.columns:
+            raise ValueError("prediction csv must include 'label' and 'predicted_label' columns")
+        
+        total_rows += len(chunk)
+        flat_support += int((chunk["label"].astype(str) == flat_label).sum())
+        flat_predictions += int((chunk["predicted_label"].astype(str) == flat_label).sum())
+    
     support_ratio = (flat_support / total_rows) if total_rows else 0.0
     prediction_ratio = (flat_predictions / total_rows) if total_rows else 0.0
 

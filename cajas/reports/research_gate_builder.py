@@ -91,7 +91,8 @@ def build_research_gate_packet(
         checks.append(GateCheckResult("metrics_presence", "fail", "metrics.json missing", "error"))
 
     if (exp / "predictions.csv").exists():
-        pred_rows = int(len(pd.read_csv(exp / "predictions.csv")))
+        # Count-only: avoid full read for large prediction artifacts
+        pred_rows = sum(1 for _ in open(exp / "predictions.csv", encoding="utf-8")) - 1  # subtract header
         if pred_rows <= 0:
             checks.append(GateCheckResult("prediction_rows", "fail", "predictions are empty", "error"))
         else:

@@ -51,7 +51,22 @@ def _scan_file(path: Path, data_root: str | None) -> dict:
     eurusd_refs = sorted(set(EURUSD_RE.findall(text)))
     uses_read_csv = "read_csv(" in text
     supports_chunking = "chunksize=" in text or "chunk_size" in text
-    reads_full_csv_likely = uses_read_csv and "chunksize=" not in text and "nrows=" not in text
+    policy_guarded = "evaluate_loading_decision(" in text and "CsvLoadingPolicy(" in text
+    
+    # False positive detection
+    p = path.as_posix()
+    is_chunked_csv_reader_impl = "chunked_csv_reader.py" in p
+    is_string_pattern_only = "READ_PATTERNS" in text or "WRITE_PATTERNS" in text
+    
+    reads_full_csv_likely = (
+        uses_read_csv
+        and "chunksize=" not in text
+        and "nrows=" not in text
+        and not policy_guarded
+        and not is_chunked_csv_reader_impl
+        and not is_string_pattern_only
+    )
+    
     category = _classify(path, uses_read_csv, hardcoded_data_root, csv_refs)
     remediation = _remediation(category, supports_chunking)
     return {
@@ -63,6 +78,7 @@ def _scan_file(path: Path, data_root: str | None) -> dict:
         "uses_open_csv": bool(re.search(r"open\([^\)]*\.csv", text)),
         "has_cli_input_arg": "--input" in text or ("argparse" in text and "input" in text),
         "supports_chunking": supports_chunking,
+        "policy_guarded": policy_guarded,
         "reads_full_csv_likely": reads_full_csv_likely,
         "category": category,
         "suggested_remediation": remediation,
