@@ -775,3 +775,95 @@ Use this checklist to verify the current project state:
 ---
 
 **End of Stage Archive Report**
+
+---
+
+## Addendum: Phase 956-985 (Enhanced Drift Semantics and Trend Tracking)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Semantic Validation** (`cajas/reports/dataset_quality_schema_contract.py`)
+   - Added `SemanticIssue` dataclass for semantic validation issues
+   - Added `validate_semantic_constraints()` function
+   - Validates `quality_score` range [0, 100]
+   - Validates count fields are non-negative integers
+   - Validates grade/status fields against known enum values
+   - Semantic errors fail contract validation separately from shape drift
+
+2. **Trend Snapshots** (`cajas/scripts/run_dataset_quality_smoke.py`)
+   - Generates `dataset_quality_trend_snapshot.json` after each smoke run
+   - Captures: quality_score, grade, status, contract_status, validation counts, drift counts, dataset metrics
+   - Includes timestamp for tracking
+   - Deterministic for tests
+
+3. **Trend Comparison CLI** (`cajas/scripts/compare_dataset_quality_trends.py`)
+   - Compares current vs previous trend snapshots
+   - Detects changes in numeric and status fields
+   - Automatic regression detection:
+     - Contract status pass → fail
+     - Semantic errors increase
+     - Breaking drift count increase
+     - Quality score drops > 5 points
+     - Status degradation
+   - Optional `--fail-on-regression` flag for CI gates
+
+4. **Tests** (28 tests total, +11 new)
+   - `test_dataset_quality_schema_contract.py`: 23 tests (+6 semantic validation tests)
+   - `test_dataset_quality_trend_comparison.py`: 5 tests (new file)
+   - All tests pass in ~2.2s (contract) + ~0.08s (trend)
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `run_dataset_quality_smoke.py` | ✅ Pass | ~2-3s | Semantic validation integrated |
+| `test_dataset_quality_schema_contract.py` | ✅ 23 passed | 2.16s | +6 semantic tests |
+| `test_dataset_quality_trend_comparison.py` | ✅ 5 passed | 0.08s | New trend tests |
+| `pytest cajas/tests -k dataset_quality` | ✅ 33 passed | 7.78s | All dataset quality tests |
+| `run_fast_validation.py --tier fast` | ✅ 338 passed | 97.88s | +13s from baseline (~85s) |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### New Artifacts
+
+- `tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json` - Trend snapshot
+- `tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.md` - Readable snapshot
+- Contract reports now include `semantic_error_count`, `semantic_warning_count`, `semantic_issues`
+
+### Scope and Limitations
+
+**Semantic Validation Scope:**
+- Only validates clearly established field semantics
+- Conservative approach: only fails on definitively invalid states
+- Quality scores remain data quality indicators only, not trading/model performance
+
+**Trend Tracking Scope:**
+- Lightweight snapshot comparison
+- No historical trend database
+- No trend visualization
+- Regression detection based on simple thresholds
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+- No network/GPU requirements
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 956-985 section
+- `cajas/README.md` - Added Phase 956-985 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+### Risks and Follow-ups
+
+- Fast validation runtime increased by ~13s (85s → 98s) due to 11 new tests
+- Semantic validation is conservative; may need expansion for edge cases
+- Trend comparison is snapshot-based only; no historical trend analysis
+- No automatic golden shape updates for semantic constraints
+
+---
+
+**End of Addendum**

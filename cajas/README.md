@@ -70,6 +70,17 @@ Dataset quality reports now include:
 - Breaking vs additive drift classification
 - Drift items with specific change details
 
+**Phase 956-985 Enhanced Drift Semantics and Trend Tracking:**
+
+- Semantic validation for critical field constraints
+  - `quality_score` must be in [0, 100]
+  - Count fields must be non-negative
+  - Grade/status fields validated against known values
+- Trend snapshots generated after each smoke run
+- Trend comparison CLI for detecting regressions
+- Regression detection: contract failures, semantic errors, quality drops, status degradation
+- Semantic errors fail contract validation separately from shape drift
+
 Combined bundle builder:
 
 ```bash

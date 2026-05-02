@@ -46,6 +46,44 @@ Build golden shapes:
   --out-dir cajas/data_examples/golden/dataset_quality
 ```
 
+## New in Phase 956-985
+
+Enhanced drift semantics and trend tracking:
+
+- **Semantic Validation**: Validates critical field semantics beyond shape
+  - `quality_score` must be in [0, 100]
+  - Count fields must be non-negative integers
+  - Grade/status fields must be known enum values
+  - Semantic errors fail contract validation
+  - Semantic warnings flag suspicious values
+- **Trend Snapshots**: Compact metrics from each smoke run
+  - Generated at `tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json`
+  - Captures quality score, status, validation counts, drift counts
+  - Deterministic for tests, includes timestamp
+- **Trend Comparison**: Compare snapshots across runs
+  - CLI: `compare_dataset_quality_trends.py`
+  - Detects quality score deltas, status changes, regression patterns
+  - Optional `--fail-on-regression` for CI gates
+- **Regression Detection**: Automatic detection of clear regressions
+  - Contract status pass → fail
+  - Semantic errors increase
+  - Breaking drift count increase
+  - Quality score drops > 5 points
+  - Status degradation (pass → warn → review_needed → blocked)
+
+Trend comparison:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/compare_dataset_quality_trends.py \
+  --current tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json \
+  --previous path/to/previous_snapshot.json \
+  --out-json tmp/trend_compare.json \
+  --out-md tmp/trend_compare.md \
+  --fail-on-regression
+```
+
+**Scope**: Semantic validation covers only clearly established field semantics. Quality scores remain data quality indicators only, not trading/model performance metrics.
+
 ## Contract Workflow
 
 **Running contract validation manually:**
