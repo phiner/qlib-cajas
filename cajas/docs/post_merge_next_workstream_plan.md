@@ -93,6 +93,20 @@ Reason:
 - better dataset quality confidence should precede heavier model work
 - remains clearly offline and non-execution
 
+## Phase 776-805 Execution Update
+
+Delivered:
+
+- modular dataset quality CLIs
+- dedicated dataset quality smoke workflow
+- tiny label fixture for default smoke inputs
+- docs for combined and modular workflow usage
+
+Reference:
+
+- prompt: `tasks/phase_776_805_dataset_quality_modular_cli_smoke_prompt.md`
+- details: `cajas/docs/dataset_quality_loop.md`
+
 ## Explicit Non-Goals
 
 - broker integration

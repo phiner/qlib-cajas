@@ -37,6 +37,45 @@ cajas/
   data_examples/ # expected input/output schema notes
 ```
 
+## Dataset Quality Loop (Phase 776-805)
+
+Combined bundle builder:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_research_bundle.py \
+  --input-csv cajas/data_examples/validation_fixtures/eurusd_tiny.csv \
+  --out-dir tmp/dataset-quality-bundle \
+  --label-col future_direction_8 \
+  --feature-col Open \
+  --feature-col High \
+  --feature-col Low \
+  --feature-col Close \
+  --feature-col Volume \
+  --datetime-col "Time (UTC)"
+```
+
+Modular CLIs:
+
+- `build_dataset_quality_report.py`
+- `build_label_coverage_diagnostics.py`
+- `build_time_coverage_diagnostics.py`
+- `run_chunked_feature_dry_run.py`
+- `build_feature_schema_manifest.py`
+- `build_offline_research_queue_summary.py`
+
+Smoke workflow:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/run_dataset_quality_smoke.py \
+  --out-root tmp/dataset-quality-smoke
+```
+
+Notes:
+
+- defaults use tiny local fixtures
+- larger reads require explicit `--allow-large-data`
+- outputs are offline research artifacts only
+
 ## Phase 1: Run Real EURUSD 15m Preparation
 
 Run:
