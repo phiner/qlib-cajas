@@ -8,6 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cajas.reports.validation_runtime_audit import build_validation_runtime_audit
+from cajas.reports.validation_runtime_audit import find_unmarked_validation_runner_subprocess_tests
 
 
 class ValidationRuntimeAuditTests(unittest.TestCase):
@@ -18,6 +19,11 @@ class ValidationRuntimeAuditTests(unittest.TestCase):
         self.assertIn("smoke", report["tests_by_marker"])
         self.assertIn("fast_subset_test_count", report)
         self.assertIn("subprocess_findings", report)
+        self.assertIn("unmarked_validation_runner_subprocess_findings", report)
+
+    def test_fast_validation_runner_tests_do_not_use_real_subprocesses(self) -> None:
+        findings = find_unmarked_validation_runner_subprocess_tests(tests_root="cajas/tests")
+        self.assertEqual(findings, [])
 
     def test_audit_cli_writes_json_and_markdown(self) -> None:
         with TemporaryDirectory() as tmp:

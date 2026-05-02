@@ -58,6 +58,31 @@ def _subprocess_findings(text: str, path: Path) -> list[dict]:
     return out
 
 
+def find_unmarked_validation_runner_subprocess_tests(*, tests_root: str | Path) -> list[dict]:
+    root = Path(tests_root).expanduser().resolve()
+    findings: list[dict] = []
+    for path in sorted(root.glob("test_*.py")):
+        rec = _load_test_file(path)
+        if rec["markers"]:
+            continue
+        if path.name != "test_validation_runners.py":
+            continue
+        if not rec["uses_subprocess"]:
+            continue
+        for item in rec["subprocess_findings"]:
+            if "subprocess." not in item["snippet"] and "os.system(" not in item["snippet"]:
+                continue
+            findings.append(
+                {
+                    "test_file": item["test_file"],
+                    "line": item["line"],
+                    "snippet": item["snippet"],
+                    "suggested_action": "use_injected_validation_runner_or_mark_integration",
+                }
+            )
+    return findings
+
+
 def _calls_main(tree: ast.AST) -> bool:
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
@@ -193,6 +218,7 @@ def build_validation_runtime_audit(*, tests_root: str | Path, fast_expression: s
         "unmarked_runner_call_files": unmarked_runner_call_files,
         "recommended_actions": [{"path": p, "action": a} for p, a in dedup_recs],
         "subprocess_findings": subprocess_findings,
+        "unmarked_validation_runner_subprocess_findings": find_unmarked_validation_runner_subprocess_tests(tests_root=root),
         "timing_summary": timing_payload,
     }
 

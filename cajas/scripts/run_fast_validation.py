@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict, dataclass
 import json
 import shlex
 import subprocess
@@ -14,18 +15,63 @@ DEFAULT_FAST_EXPRESSION = "not smoke and not slow and not closure and not full a
 DEFAULT_INTEGRATION_EXPRESSION = "integration and not slow and not smoke"
 
 
-def _run_step(name: str, cmd: list[str]) -> dict:
-    start = time.time()
-    print("$ " + " ".join(cmd))
+@dataclass(frozen=True)
+class ValidationStep:
+    name: str
+    command: list[str]
+    enabled: bool = True
+
+
+@dataclass(frozen=True)
+class ValidationStepResult:
+    name: str
+    command: list[str]
+    returncode: int
+    elapsed_seconds: float
+    stdout: str = ""
+    stderr: str = ""
+
+    @property
+    def status(self) -> str:
+        return "pass" if self.returncode == 0 else "fail"
+
+    def to_json_dict(self) -> dict:
+        payload = asdict(self)
+        payload["status"] = self.status
+        payload["seconds"] = round(self.elapsed_seconds, 3)
+        return payload
+
+
+def run_validation_step(
+    step: ValidationStep,
+    *,
+    runner=subprocess.run,
+    timer=time.perf_counter,
+    echo: bool = True,
+) -> ValidationStepResult:
+    start = timer()
+    if echo:
+        print("$ " + " ".join(step.command))
     try:
-        subprocess.run(cmd, check=True)
-        status = "pass"
-    except subprocess.CalledProcessError:
-        status = "fail"
+        completed = runner(step.command, check=True)
+        returncode = int(getattr(completed, "returncode", 0))
+        stdout = str(getattr(completed, "stdout", "") or "")
+        stderr = str(getattr(completed, "stderr", "") or "")
+    except subprocess.CalledProcessError as exc:
+        returncode = int(exc.returncode)
+        stdout = str(getattr(exc, "stdout", "") or "")
+        stderr = str(getattr(exc, "stderr", "") or "")
         raise
     finally:
-        elapsed = time.time() - start
-    return {"step": name, "status": status, "seconds": round(elapsed, 3), "command": cmd}
+        elapsed = timer() - start
+    return ValidationStepResult(
+        name=step.name,
+        command=step.command,
+        returncode=returncode,
+        elapsed_seconds=elapsed,
+        stdout=stdout,
+        stderr=stderr,
+    )
 
 
 def _build_pytest_cmd(py: str, expression: str, durations: int | None, extra_args: str | None) -> list[str]:
@@ -37,27 +83,28 @@ def _build_pytest_cmd(py: str, expression: str, durations: int | None, extra_arg
     return cmd
 
 
-def _build_steps(args: argparse.Namespace, py: str) -> list[tuple[str, list[str]]]:
+def build_validation_plan(args: argparse.Namespace, py: str | None = None) -> list[ValidationStep]:
+    py = py or sys.executable
     tier = args.tier
     if args.only_pytest:
-        return [("pytest_fast", _build_pytest_cmd(py, args.pytest_expression, args.durations, args.pytest_extra_args))]
+        return [ValidationStep("pytest_fast", _build_pytest_cmd(py, args.pytest_expression, args.durations, args.pytest_extra_args))]
 
     if args.only_hygiene:
         return [
-            ("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
-            ("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
-            ("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
+            ValidationStep("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
+            ValidationStep("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
+            ValidationStep("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
         ]
 
-    steps: list[tuple[str, list[str]]] = []
+    steps: list[ValidationStep] = []
 
     if tier == "quick":
         steps.extend(
             [
-                ("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
-                ("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
-                ("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
-                (
+                ValidationStep("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
+                ValidationStep("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
+                ValidationStep("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
+                ValidationStep(
                     "pytest_quick_policy",
                     [
                         py,
@@ -73,40 +120,84 @@ def _build_steps(args: argparse.Namespace, py: str) -> list[tuple[str, list[str]
 
     if tier == "full-pytest":
         if not args.skip_compileall:
-            steps.append(("compileall", [py, "-m", "compileall", "cajas"]))
+            steps.append(ValidationStep("compileall", [py, "-m", "compileall", "cajas"]))
         steps.extend(
             [
-                ("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
-                ("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
-                ("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
-                ("pytest_full", [py, "-m", "pytest", "cajas/tests"]),
+                ValidationStep("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
+                ValidationStep("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
+                ValidationStep("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
+                ValidationStep("pytest_full", [py, "-m", "pytest", "cajas/tests"]),
             ]
         )
         return steps
 
     # tier == fast
     if not args.skip_compileall:
-        steps.append(("compileall", [py, "-m", "compileall", "cajas"]))
+        steps.append(ValidationStep("compileall", [py, "-m", "compileall", "cajas"]))
     steps.extend(
         [
-            ("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
-            ("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
-            ("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
+            ValidationStep("path_hygiene", [py, "cajas/scripts/check_path_hygiene.py"]),
+            ValidationStep("init_py_find", ["find", "cajas", "-path", "*/init.py", "-print"]),
+            ValidationStep("git_init_py_check", ["bash", "-lc", "git ls-files | grep -E '(^|/)init\\.py$' || true"]),
         ]
     )
     if not args.skip_pytest:
-        steps.append(("pytest_fast", _build_pytest_cmd(py, args.pytest_expression, args.durations, args.pytest_extra_args)))
+        steps.append(ValidationStep("pytest_fast", _build_pytest_cmd(py, args.pytest_expression, args.durations, args.pytest_extra_args)))
     return steps
 
 
-def _print_timing_table(results: list[dict], total_seconds: float, status: str) -> None:
+def _build_steps(args: argparse.Namespace, py: str) -> list[tuple[str, list[str]]]:
+    return [(step.name, step.command) for step in build_validation_plan(args, py)]
+
+
+def evaluate_budget(results: list[ValidationStepResult], max_seconds: float | None, fail_on_budget: bool) -> tuple[bool, list[str]]:
+    total_seconds = sum(result.elapsed_seconds for result in results)
+    if max_seconds is None or total_seconds <= max_seconds:
+        return False, []
+    message = f"runtime budget exceeded ({total_seconds:.2f}s > {max_seconds:.2f}s)"
+    if fail_on_budget:
+        message += "; failing because --fail-on-budget is set"
+    return True, [message]
+
+
+def build_timing_payload(
+    *,
+    args: argparse.Namespace,
+    results: list[ValidationStepResult],
+    total_seconds: float,
+    overall_status: str,
+    budget_exceeded: bool,
+) -> dict:
+    return {
+        "schema_version": "v1",
+        "tier": args.tier,
+        "pytest_expression": args.pytest_expression,
+        "results": [result.to_json_dict() for result in results],
+        "total_seconds": round(total_seconds, 3),
+        "overall_status": overall_status,
+        "budget": {
+            "max_seconds": args.max_seconds,
+            "exceeded": budget_exceeded,
+            "fail_on_budget": args.fail_on_budget,
+        },
+    }
+
+
+def write_timing_json(path: str | Path, payload: dict) -> Path:
+    out = Path(path).expanduser().resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return out
+
+
+def _print_timing_table(results: list[ValidationStepResult], total_seconds: float, status: str) -> None:
     print("step                                      status   seconds")
     for item in results:
-        print(f"{item['step']:<41} {item['status']:<7} {item['seconds']:.2f}")
+        print(f"{item.name:<41} {item.status:<7} {item.elapsed_seconds:.2f}")
     print(f"{'total':<41} {status:<7} {total_seconds:.2f}")
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run fast validation tiers with runtime profiling.")
     p.add_argument("--tier", choices=["quick", "fast", "full-pytest"], default="fast")
     p.add_argument("--skip-compileall", action="store_true")
@@ -122,60 +213,78 @@ def main() -> int:
     p.add_argument("--include-real-data", action="store_true")
     p.add_argument("--data-root", default="/home/phiner/projects/research/data")
     p.add_argument("--allow-large-data", action="store_true")
-    args = p.parse_args()
+    return p.parse_args(argv)
 
+
+def run_validation(
+    args: argparse.Namespace,
+    *,
+    runner=subprocess.run,
+    timer=time.perf_counter,
+    echo: bool = True,
+) -> tuple[int, dict]:
     if args.only_pytest and args.only_hygiene:
-        raise SystemExit("--only-pytest and --only-hygiene are mutually exclusive")
+        raise ValueError("--only-pytest and --only-hygiene are mutually exclusive")
+
     if args.include_real_data:
         print(f"warning: --include-real-data is set for data root {args.data_root}; fast validation does not read real data by default.")
     if args.allow_large_data:
         print("warning: --allow-large-data is acknowledged but not used by default fast validation steps.")
 
-    py = sys.executable
-    steps = _build_steps(args, py)
-    results: list[dict] = []
-    start = time.time()
+    steps = [step for step in build_validation_plan(args, sys.executable) if step.enabled]
+    results: list[ValidationStepResult] = []
+    start = timer()
     overall_status = "pass"
 
     try:
-        for name, cmd in steps:
-            results.append(_run_step(name, cmd))
-    except subprocess.CalledProcessError:
+        for step in steps:
+            results.append(run_validation_step(step, runner=runner, timer=timer, echo=echo))
+    except subprocess.CalledProcessError as exc:
+        failed_step = next(step for step in steps if step.name not in {r.name for r in results})
+        results.append(
+            ValidationStepResult(
+                name=failed_step.name,
+                command=failed_step.command,
+                returncode=int(exc.returncode),
+                elapsed_seconds=0.0,
+                stdout=str(getattr(exc, "stdout", "") or ""),
+                stderr=str(getattr(exc, "stderr", "") or ""),
+            )
+        )
         overall_status = "fail"
-    total_seconds = round(time.time() - start, 3)
+    total_seconds = timer() - start
 
-    budget_exceeded = False
-    if args.max_seconds is not None and total_seconds > args.max_seconds:
-        budget_exceeded = True
-        print(f"warning: runtime budget exceeded ({total_seconds:.2f}s > {args.max_seconds:.2f}s)")
+    budget_exceeded, budget_messages = evaluate_budget(results, args.max_seconds, args.fail_on_budget)
+    for message in budget_messages:
+        print(f"warning: {message}")
 
     _print_timing_table(results, total_seconds, overall_status)
-
-    payload = {
-        "schema_version": "v1",
-        "tier": args.tier,
-        "pytest_expression": args.pytest_expression,
-        "results": results,
-        "total_seconds": total_seconds,
-        "overall_status": overall_status,
-        "budget": {
-            "max_seconds": args.max_seconds,
-            "exceeded": budget_exceeded,
-            "fail_on_budget": args.fail_on_budget,
-        },
-    }
+    payload = build_timing_payload(
+        args=args,
+        results=results,
+        total_seconds=total_seconds,
+        overall_status=overall_status,
+        budget_exceeded=budget_exceeded,
+    )
 
     if args.timing_json:
-        out = Path(args.timing_json).expanduser().resolve()
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        out = write_timing_json(args.timing_json, payload)
         print(f"timing_json: {out}")
 
     if overall_status == "fail":
-        return 1
+        return 1, payload
     if budget_exceeded and args.fail_on_budget:
-        return 2
-    return 0
+        return 2, payload
+    return 0, payload
+
+
+def main(argv: list[str] | None = None, *, runner=subprocess.run, timer=time.perf_counter, echo: bool = True) -> int:
+    try:
+        args = parse_args(argv)
+        code, _payload = run_validation(args, runner=runner, timer=timer, echo=echo)
+        return code
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 if __name__ == "__main__":

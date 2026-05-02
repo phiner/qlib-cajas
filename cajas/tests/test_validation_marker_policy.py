@@ -34,6 +34,11 @@ class ValidationMarkerPolicyTests(unittest.TestCase):
         txt = Path("cajas/scripts/run_fast_validation.py").read_text(encoding="utf-8")
         self.assertIn("not smoke and not slow and not closure and not full and not integration", txt)
 
+    def test_validation_runner_subprocess_tests_must_be_integration(self) -> None:
+        text = Path("cajas/tests/test_validation_runners.py").read_text(encoding="utf-8")
+        token = "subprocess" + ".run("
+        self.assertNotIn(token, text)
+
     def test_future_training_skeleton_is_not_fast_default(self) -> None:
         text = Path("cajas/tests/test_future_training_skeleton.py").read_text(encoding="utf-8")
         self.assertIn("pytest.mark.slow", text)
