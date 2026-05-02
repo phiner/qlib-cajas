@@ -72,3 +72,4 @@ Real-data access rules:
 - `cajas/docs/merge_gate_checklist.md`
 - `cajas/docs/mainline_handoff_note.md`
 - `cajas/docs/post_merge_checklist.md`
+- `cajas/docs/post_github_merge_sanity_report.md`

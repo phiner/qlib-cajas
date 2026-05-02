@@ -18,3 +18,7 @@ git status
 git log --oneline -5
 git merge --abort
 ```
+
+## Baseline Reference
+
+- `cajas/docs/post_github_merge_sanity_report.md`

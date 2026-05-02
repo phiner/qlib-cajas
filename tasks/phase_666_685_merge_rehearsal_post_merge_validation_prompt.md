@@ -329,3 +329,8 @@ Return compact summary:
 - Manual push command
 
 Do not push from Codex unless explicitly instructed.
+
+Completion reference:
+
+- expected sanity baseline doc from this phase:
+  - `cajas/docs/post_github_merge_sanity_report.md`
