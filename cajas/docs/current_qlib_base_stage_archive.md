@@ -1352,3 +1352,125 @@ Current budget check status: **warn**
 ---
 
 **End of Addendum**
+
+
+---
+
+## Phase 1136–1165 Addendum: Validation Timing Granularity and Delivery Packet Integration
+
+**Date**: 2026-05-02
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Improve runtime budget reporting by distinguishing required vs optional components and integrating runtime status into delivery packets.
+
+### Problem Statement
+
+Previous runtime budget checks warned when optional component timings were missing, creating noise in validation reports. The delivery packet didn't clearly surface runtime budget status, making it harder for reviewers to assess validation health.
+
+### Solution Implemented
+
+1. **Required vs Optional Component Classification**:
+   - Extended `validation_runtime_budgets.json` with `required_components` and `optional_components` lists
+   - Required components: `fast_total`, `pytest_fast` (must be measured)
+   - Optional components: all others (nice to have, missing is OK)
+
+2. **Enhanced Budget Status Logic**:
+   - Updated `check_validation_runtime_budgets()` to distinguish required vs optional
+   - Missing required components: warn/fail
+   - Missing optional components: no overall warn
+   - Measured components over budget: warn/fail as before
+
+3. **Improved Budget Reports**:
+   - Added "Type" column showing 🔴 required vs optional
+   - Updated reviewer recommendations to clarify required vs optional missing timings
+   - Better guidance on when action is needed
+
+4. **Delivery Packet Integration**:
+   - Delivery packet summary now includes `runtime_budget_status`
+   - Shows measured fast validation runtime when available
+   - Links to runtime budget report artifact
+   - Clearer reviewer guidance based on runtime status
+
+### Key Changes
+
+**Modified Files**:
+- `cajas/data_examples/validation_runtime_budgets.json` - added required/optional classification
+- `cajas/reports/validation_runtime_budget.py` - updated status logic and report generation
+- `cajas/reports/validation_delivery_packet.py` - integrated runtime budget details
+- `cajas/tests/test_validation_runtime_budget.py` - updated tests, added optional component test
+
+**Test Coverage**:
+- 10 runtime budget tests (was 9, +1 for optional components)
+- All tests pass
+- Backward compatible with old budget configs (defaults to all required if not specified)
+
+### Validation Results
+
+**Fast Validation**:
+- Runtime: ~84.03s (376 tests passed, +1 from Phase 1106)
+- Trend: Phase 1106 ~98.56s → Phase 1136 ~84.03s (-14.53s improvement)
+- Status: **pass** (previously warn)
+
+**Runtime Budget Status**:
+- Overall: **pass** (previously warn due to missing optional timings)
+- Required components: all measured and within budget
+  - `fast_total`: 84.03s / 105.0s budget (0.80x)
+  - `pytest_fast`: measured and within budget
+- Optional components: missing as expected (not measured in fast validation)
+
+**Data-Source Audit**:
+- read_csv_count: 29 (stable)
+
+**Hygiene**:
+- No trailing whitespace
+- No `init.py` files
+- All imports clean
+
+### Impact
+
+**Positive**:
+- Reduced noise in runtime budget reports
+- Clearer distinction between critical and nice-to-have timings
+- Better reviewer guidance on when action is needed
+- Delivery packets now surface runtime status prominently
+- Runtime budget status changed from warn to pass (correct classification)
+
+**Limitations**:
+- Optional component timings still not captured by fast validation (by design)
+- No automated timing summary report yet (can be added if needed)
+- No convenience bundle script (manual commands still required)
+
+### Scope Confirmation
+
+This phase focused on **validation infrastructure observability only**. No changes to:
+- Data quality semantics
+- Contract validation logic
+- Golden fixture scenarios
+- Experiment manifest structure
+- Qlib core
+
+All work in `cajas/` layer as required.
+
+### Next Steps
+
+Potential future enhancements:
+1. Add timing capture for optional components in smoke validation
+2. Create automated timing summary report
+3. Build convenience bundle script for full validation workflow
+4. Add historical timing trend tracking
+5. Optimize test runtime to stay well under 100s budget
+
+### Commits
+
+1. `feat: add validation timing granularity with required/optional classification`
+2. `test: cover optional components not causing warnings`
+3. `docs: document validation timing and packet integration`
+
+### Manual Push Command
+
+```bash
+git push origin phase-post-merge-research-next
+```
+
+---

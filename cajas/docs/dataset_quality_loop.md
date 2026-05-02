@@ -429,3 +429,51 @@ Packet status interpretation:
 - **fail**: Critical artifacts missing or validation failures
 
 **Scope**: Validation delivery packets summarize offline Qlib research infrastructure validation artifacts only. They are not trading, execution, alpha, or model performance reports.
+
+
+## Phase 1136–1165: Validation Timing Granularity and Delivery Packet Integration
+
+**Goal**: Improve runtime budget reporting by distinguishing required vs optional components and integrating runtime status into delivery packets.
+
+**Problem**: Previous runtime budget checks warned when optional component timings were missing, creating noise. Delivery packets didn't surface runtime budget status clearly.
+
+**Solution**:
+
+1. **Required vs Optional Components**:
+   - Extended `validation_runtime_budgets.json` with `required_components` and `optional_components` lists
+   - Updated `check_validation_runtime_budgets()` to only warn/fail for missing required components
+   - Optional components missing no longer cause overall warn status
+
+2. **Enhanced Budget Reports**:
+   - Added "Type" column to budget report showing 🔴 required vs optional
+   - Updated reviewer recommendations to distinguish required vs optional missing timings
+   - Improved clarity of pass/warn/fail status
+
+3. **Delivery Packet Integration**:
+   - Delivery packet now includes `runtime_budget_status` in summary
+   - Shows measured fast validation runtime when available
+   - Links to runtime budget report artifact
+
+**Key Files**:
+- `cajas/data_examples/validation_runtime_budgets.json` - added required/optional classification
+- `cajas/reports/validation_runtime_budget.py` - updated status logic
+- `cajas/reports/validation_delivery_packet.py` - integrated runtime status
+- `cajas/tests/test_validation_runtime_budget.py` - added optional component test
+
+**Validation**:
+- Fast validation: ~84.03s (376 tests passed, +1 from Phase 1106)
+- Runtime budget status: **pass** (previously warn due to missing optional timings)
+- Data-source audit: stable at read_csv_count=29
+- All required components measured and within budget
+- Optional components missing as expected (not measured in fast validation)
+
+**Impact**:
+- Reduced noise in runtime budget reports
+- Clearer distinction between critical and nice-to-have timings
+- Better reviewer guidance on when action is needed
+- Delivery packets now surface runtime status prominently
+
+**Limitations**:
+- Optional component timings still not captured by fast validation
+- No automated timing summary report yet (can be added if needed)
+- No convenience bundle script (manual commands still required)

@@ -970,3 +970,14 @@ Current audit delta:
   - `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`
 - Validation delivery packet builder:
   - `./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py --fast-timing tmp/validation-runtime-audit/fast_validation_phase566.json --data-source-audit tmp/data-io-audit/data_source_audit_phase566.json --runtime-audit tmp/validation-runtime-audit/validation_runtime_phase566.json --out-json tmp/validation-delivery/validation_delivery_packet.json --out-md tmp/validation-delivery/validation_delivery_packet.md --allow-missing-inputs`
+
+
+### Phase 1136–1165: Validation Timing Granularity and Delivery Packet Integration
+- Distinguished required vs optional runtime budget components
+- Updated budget checker to only warn for missing required components
+- Enhanced budget reports with component type classification (🔴 required vs optional)
+- Integrated runtime budget status into validation delivery packets
+- Added test for optional components not causing warnings
+- Runtime budget status now **pass** (previously warn due to missing optional timings)
+- Fast validation: ~84.03s (376 tests, +1 from Phase 1106)
+- Reduced noise in runtime budget reporting
