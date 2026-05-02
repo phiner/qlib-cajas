@@ -268,9 +268,98 @@ def build_dataset_quality_research_artifacts(
     }
 
 
+def build_dataset_quality_report(**kwargs: Any) -> dict:
+    return build_dataset_quality_research_artifacts(**kwargs)["dataset_quality_report"]
+
+
+def build_label_coverage_diagnostics(**kwargs: Any) -> dict:
+    report = build_dataset_quality_research_artifacts(**kwargs)["dataset_quality_report"]
+    return {
+        "schema_version": report["schema_version"],
+        "scope": report["scope"],
+        "label_diagnostics": report["label_diagnostics"],
+    }
+
+
+def build_time_coverage_diagnostics(**kwargs: Any) -> dict:
+    report = build_dataset_quality_research_artifacts(**kwargs)["dataset_quality_report"]
+    return {
+        "schema_version": report["schema_version"],
+        "scope": report["scope"],
+        "time_coverage": report["time_coverage"],
+        "instrument_summary": report["instrument_summary"],
+    }
+
+
+def build_chunked_feature_dry_run(**kwargs: Any) -> dict:
+    report = build_dataset_quality_research_artifacts(**kwargs)["dataset_quality_report"]
+    return {
+        "schema_version": report["schema_version"],
+        "scope": report["scope"],
+        "chunked_feature_dry_run": report["chunked_feature_dry_run"],
+    }
+
+
+def build_feature_schema_manifest(**kwargs: Any) -> dict:
+    return build_dataset_quality_research_artifacts(**kwargs)["feature_schema_manifest"]
+
+
+def build_offline_research_queue_summary(**kwargs: Any) -> dict:
+    return build_dataset_quality_research_artifacts(**kwargs)["offline_research_queue_summary"]
+
+
 def render_dataset_quality_bundle_markdown(*, bundle: dict) -> dict[str, str]:
     return {
         "dataset_quality_report_md": _to_md(bundle["dataset_quality_report"]),
         "feature_schema_manifest_md": _feature_manifest_md(bundle["feature_schema_manifest"]),
         "offline_research_queue_summary_md": _queue_md(bundle["offline_research_queue_summary"]),
     }
+
+
+def render_dataset_quality_report_markdown(*, report: dict) -> str:
+    return _to_md(report)
+
+
+def render_label_coverage_markdown(*, diagnostics: dict) -> str:
+    lines = ["# Label Coverage Diagnostics", ""]
+    for row in diagnostics.get("label_diagnostics", []):
+        lines.append(
+            f"- `{row['label']}` null=`{row['null_count']}` non_null=`{row['non_null_count']}` top_ratio=`{row['top_ratio']}` warning=`{row['imbalance_warning']}`"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_time_coverage_markdown(*, diagnostics: dict) -> str:
+    coverage = diagnostics.get("time_coverage", {})
+    lines = [
+        "# Time Coverage Diagnostics",
+        "",
+        f"- earliest: `{coverage.get('earliest_timestamp')}`",
+        f"- latest: `{coverage.get('latest_timestamp')}`",
+        f"- datetime_parse_success_count: `{coverage.get('datetime_parse_success_count')}`",
+        f"- datetime_parse_failed_count: `{coverage.get('datetime_parse_failed_count')}`",
+        f"- suspicious_gap_count: `{coverage.get('suspicious_gap_count')}`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_chunked_feature_dry_run_markdown(*, dry_run: dict) -> str:
+    node = dry_run.get("chunked_feature_dry_run", {})
+    lines = [
+        "# Chunked Feature Dry Run",
+        "",
+        f"- chunk_size: `{node.get('chunk_size')}`",
+        f"- row_limit: `{node.get('row_limit')}`",
+        f"- chunk_count: `{node.get('chunk_count')}`",
+        f"- row_count: `{node.get('row_count')}`",
+        f"- rows_per_second: `{node.get('rows_per_second')}`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_feature_schema_manifest_markdown(*, manifest: dict) -> str:
+    return _feature_manifest_md(manifest)
+
+
+def render_offline_research_queue_summary_markdown(*, queue: dict) -> str:
+    return _queue_md(queue)
