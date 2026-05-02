@@ -64,7 +64,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
     def test_check_validation_runtime_budgets_warn(self) -> None:
-        """Test validation runtime budget check warns on missing data."""
+        """Test validation runtime budget check warns on missing required component."""
         timing_data = {
             "results": [
                 {"name": "compileall", "seconds": 0.5},
@@ -78,8 +78,11 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
                 "pytest_fast": 90.0,
             },
             "warn_threshold_ratio": 1.15,
+            "required_components": ["fast_total", "pytest_fast"],
+            "optional_components": ["compileall"],
         }
         results, overall_status = check_validation_runtime_budgets(timing_data, budget_config)
+        # pytest_fast is required but missing, should warn
         self.assertEqual(overall_status, "warn")
 
     def test_markdown_includes_key_sections(self) -> None:
@@ -142,12 +145,15 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
 
             budget_config = {
                 "version": 1,
-                "budgets_seconds": {"fast_total": 100.0, "missing_component": 10.0},
+                "budgets_seconds": {"fast_total": 100.0, "pytest_fast": 10.0},
                 "warn_threshold_ratio": 1.15,
+                "required_components": ["fast_total", "pytest_fast"],
+                "optional_components": [],
             }
             budget_path = tmp_path / "budgets.json"
             budget_path.write_text(json.dumps(budget_config), encoding="utf-8")
 
+            # pytest_fast is required but missing
             timing_data = {"results": [], "total_seconds": 85.0}
             timing_path = tmp_path / "timing.json"
             timing_path.write_text(json.dumps(timing_data), encoding="utf-8")
@@ -163,6 +169,25 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
                 "--fail-on-warn",
             ])
             self.assertNotEqual(ret, 0)
+
+    def test_optional_components_missing_does_not_warn(self) -> None:
+        """Test missing optional components do not cause overall warn."""
+        timing_data = {
+            "results": [],
+            "total_seconds": 85.0,
+        }
+        budget_config = {
+            "budgets_seconds": {
+                "fast_total": 100.0,
+                "optional_component": 10.0,
+            },
+            "warn_threshold_ratio": 1.15,
+            "required_components": ["fast_total"],
+            "optional_components": ["optional_component"],
+        }
+        results, overall_status = check_validation_runtime_budgets(timing_data, budget_config)
+        # fast_total is measured and within budget, optional_component missing is OK
+        self.assertEqual(overall_status, "pass")
 
 
 if __name__ == "__main__":
