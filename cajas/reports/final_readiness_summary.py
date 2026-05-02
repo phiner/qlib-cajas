@@ -13,6 +13,8 @@ def render_final_readiness_summary(*, packet: dict) -> str:
         f"- stable_reproducibility_status: `{packet.get('stable_reproducibility_summary', {}).get('final_status')}`",
         f"- reproducibility_explanation_status: `{packet.get('stable_reproducibility_summary', {}).get('explanation_status')}`",
         f"- governance_remediation_status: `{packet.get('governance_remediation_summary', {}).get('final_suggested_status')}`",
+        f"- governance_review_status: `{packet.get('governance_review_summary', {}).get('governance_review_status')}`",
+        f"- approval_status: `{packet.get('governance_review_summary', {}).get('approval_status')}`",
         f"- ci_tiers: `{packet.get('ci_plan_summary', {}).get('tier_count')}`",
         "",
         "## Stable Reproducibility",

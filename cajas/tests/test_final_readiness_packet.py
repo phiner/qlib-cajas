@@ -44,6 +44,22 @@ class FinalReadinessPacketTests(unittest.TestCase):
         )
         self.assertEqual(packet["final_status"], "needs_manual_governance_review")
 
+    def test_offline_research_approval_status(self) -> None:
+        packet = build_final_readiness_packet(
+            gate_packet={"final_status": "blocked", "metric_summary": {}, "manual_review_checklist": []},
+            no_broker_packet={"disabled_capabilities": ["no_broker"], "next_blocked_actions": ["no_broker"]},
+            manifest={"missing_artifact_paths": [], "artifact_inventory": []},
+            reproducibility_report={"final_status": "not_reproducible", "warnings": []},
+            stable_reproducibility_report={"final_status": "stable_reproducible", "changed_normalized_hashes": []},
+            stable_reproducibility_explanation={"classification": "unknown"},
+            governance_remediation_report={"final_suggested_status": "needs_manual_review", "true_violations": [], "manual_review_findings": []},
+            normalization_coverage_report={"supported_file_types": [".json"], "candidate_new_normalization_rules": []},
+            governance_review_decision={"governance_review_status": "offline_research_governance_approved"},
+            research_only_approval_packet={"approval_status": "offline_research_approved"},
+            ci_plan={"tiers": []},
+        )
+        self.assertEqual(packet["final_status"], "offline_research_approved")
+
 
 if __name__ == "__main__":
     unittest.main()

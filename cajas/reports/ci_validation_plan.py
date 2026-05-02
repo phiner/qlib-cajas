@@ -26,7 +26,7 @@ def build_ci_validation_plan() -> dict:
             "tier": "Tier 2",
             "intent": "fast pytest only",
             "commands": [
-                "./.venv-qlib313/bin/python -m pytest cajas/tests -m \"not smoke and not slow and not closure and not full\"",
+                "./.venv-qlib313/bin/python -m pytest cajas/tests -m \"not smoke and not slow and not closure and not full and not integration\"",
             ],
         },
         {

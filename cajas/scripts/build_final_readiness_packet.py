@@ -27,6 +27,8 @@ def main() -> int:
     p.add_argument("--stable-reproducibility-explanation", default=None)
     p.add_argument("--governance-remediation-report", default=None)
     p.add_argument("--normalization-coverage-report", default=None)
+    p.add_argument("--governance-review-decision", default=None)
+    p.add_argument("--research-only-approval-packet", default=None)
     p.add_argument("--ci-plan", required=True)
     p.add_argument("--out", required=True)
     args = p.parse_args()
@@ -40,6 +42,8 @@ def main() -> int:
         stable_reproducibility_explanation=None if args.stable_reproducibility_explanation is None else _load(args.stable_reproducibility_explanation),
         governance_remediation_report=None if args.governance_remediation_report is None else _load(args.governance_remediation_report),
         normalization_coverage_report=None if args.normalization_coverage_report is None else _load(args.normalization_coverage_report),
+        governance_review_decision=None if args.governance_review_decision is None else _load(args.governance_review_decision),
+        research_only_approval_packet=None if args.research_only_approval_packet is None else _load(args.research_only_approval_packet),
         ci_plan=_load(args.ci_plan),
     )
     out = Path(args.out).expanduser().resolve()

@@ -6,9 +6,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pandas as pd
+import pytest
 import yaml
 
 from cajas.scripts.build_future_training_skeleton import run_future_training_skeleton
+
+pytestmark = [pytest.mark.slow, pytest.mark.integration]
 
 
 class FutureTrainingSkeletonTests(unittest.TestCase):

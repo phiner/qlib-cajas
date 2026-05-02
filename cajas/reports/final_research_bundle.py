@@ -3,7 +3,20 @@
 from __future__ import annotations
 
 
-def build_final_research_bundle(*, root: str, final_readiness_packet: dict, final_readiness_summary_path: str, stable_repro_report: dict, governance_audit: dict, artifact_lineage: dict, run_catalog: dict, offline_review_packet: dict, ci_validation_plan: dict) -> dict:
+def build_final_research_bundle(
+    *,
+    root: str,
+    final_readiness_packet: dict,
+    final_readiness_summary_path: str,
+    stable_repro_report: dict,
+    governance_audit: dict,
+    artifact_lineage: dict,
+    run_catalog: dict,
+    offline_review_packet: dict,
+    ci_validation_plan: dict,
+    governance_review_decision: dict | None = None,
+    research_only_approval_packet: dict | None = None,
+) -> dict:
     return {
         "schema_version": "v1",
         "bundle_status": offline_review_packet.get("overall_review_state", "blocked"),
@@ -16,6 +29,8 @@ def build_final_research_bundle(*, root: str, final_readiness_packet: dict, fina
             "stable_reproducibility": stable_repro_report.get("final_status"),
             "governance": governance_audit.get("status"),
             "offline_review": offline_review_packet.get("overall_review_state"),
+            "governance_review": (governance_review_decision or {}).get("governance_review_status"),
+            "research_only_approval": (research_only_approval_packet or {}).get("approval_status"),
         },
         "known_risks": [
             "research-only stack; no execution semantics",

@@ -6,8 +6,11 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 
 class RunSmokeValidationTiersTests(unittest.TestCase):
+    @pytest.mark.integration
     def test_micro_tier_creates_outputs(self) -> None:
         with TemporaryDirectory() as tmp:
             out_root = Path(tmp) / "smoke"

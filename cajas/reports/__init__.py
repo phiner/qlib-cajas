@@ -64,6 +64,8 @@ from .final_research_bundle import build_final_research_bundle, render_final_res
 from .reviewer_decision_packet import build_reviewer_decision_packet
 from .normalized_artifact_diff import build_normalized_artifact_diff
 from .research_blocker_localizer import build_research_blocker_localization, render_research_blocker_localization_md
+from .governance_review_decision import build_governance_review_decision, render_governance_review_decision_md
+from .research_only_approval_packet import build_research_only_approval_packet, render_research_only_approval_packet_md
 
 __all__ = [
     "BaselineReportPack",
@@ -146,4 +148,8 @@ __all__ = [
     "build_normalized_artifact_diff",
     "build_research_blocker_localization",
     "render_research_blocker_localization_md",
+    "build_governance_review_decision",
+    "render_governance_review_decision_md",
+    "build_research_only_approval_packet",
+    "render_research_only_approval_packet_md",
 ]

@@ -40,6 +40,22 @@ class DataSourceAuditTests(unittest.TestCase):
             payload = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertIn("summary", payload)
 
+    def test_policy_guarded_read_csv_not_counted_as_full_read_likely(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            f = root / "guarded.py"
+            f.write_text(
+                "from cajas.data_io.csv_loading_policy import CsvLoadingPolicy, evaluate_loading_decision\n"
+                "import pandas as pd\n"
+                "d = evaluate_loading_decision('x.csv', CsvLoadingPolicy())\n"
+                "pd.read_csv('x.csv')\n",
+                encoding="utf-8",
+            )
+            rep = build_data_source_audit(project_root=root, include_tasks=False)
+            rec = rep["records"][0]
+            self.assertTrue(rec["policy_guarded"])
+            self.assertFalse(rec["reads_full_csv_likely"])
+
 
 if __name__ == "__main__":
     unittest.main()
