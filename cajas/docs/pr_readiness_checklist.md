@@ -43,3 +43,8 @@
 - CLI/report tests still dominate slow duration slots
 - closure/full smoke tiers remain intentionally expensive
 - real-data full reads require explicit flags
+
+## Reference Docs
+
+- `cajas/docs/pr_description_phase_next_mega_logic.md`
+- `cajas/docs/merge_gate_checklist.md`
