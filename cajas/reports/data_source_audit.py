@@ -57,14 +57,19 @@ def _scan_file(path: Path, data_root: str | None) -> dict:
     p = path.as_posix()
     is_chunked_csv_reader_impl = "chunked_csv_reader.py" in p
     is_string_pattern_only = "READ_PATTERNS" in text or "WRITE_PATTERNS" in text
+    has_read_kwargs_pattern = "**read_kwargs" in text and ("nrows" in text or "row_limit" in text)
+    has_size_check_guard = ".stat().st_size" in text and "read_csv(" in text
+    has_explicit_nrows = "nrows=" in text
     
     reads_full_csv_likely = (
         uses_read_csv
         and "chunksize=" not in text
-        and "nrows=" not in text
+        and not has_explicit_nrows
         and not policy_guarded
         and not is_chunked_csv_reader_impl
         and not is_string_pattern_only
+        and not has_read_kwargs_pattern
+        and not has_size_check_guard
     )
     
     category = _classify(path, uses_read_csv, hardcoded_data_root, csv_refs)
