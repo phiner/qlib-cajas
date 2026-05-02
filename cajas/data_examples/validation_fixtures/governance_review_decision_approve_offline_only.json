@@ -1,0 +1,8 @@
+{
+  "decision": "approve_offline_research_only",
+  "reviewer": "runtime-micro-smoke",
+  "scope": "offline_research_only",
+  "notes": "fixture decision for deterministic validation",
+  "accepted_findings": ["research-only boundary acknowledged"],
+  "required_next_controls": ["manual phase gate before any execution semantics"]
+}

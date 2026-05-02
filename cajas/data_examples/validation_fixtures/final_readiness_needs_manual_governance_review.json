@@ -1,0 +1,23 @@
+{
+  "schema_version": "v1",
+  "final_status": "ready_for_manual_governance_review",
+  "gate_summary": {"final_status": "pass"},
+  "reproducibility_summary": {"final_status": "pass"},
+  "stable_reproducibility_summary": {
+    "final_status": "stable_reproducible",
+    "explanation_status": "available",
+    "normalized_artifact_count": 2,
+    "true_mismatch_count": 0,
+    "expected_variability_count": 0
+  },
+  "governance_remediation_summary": {"final_suggested_status": "needs_manual_governance_review"},
+  "governance_review_summary": {
+    "governance_review_status": "needs_manual_governance_review",
+    "approval_status": "needs_manual_governance_review"
+  },
+  "ci_plan_summary": {"tier_count": 7},
+  "manifest_summary": {"missing_artifacts": []},
+  "blocked_actions": [{"action": "live execution", "reason": "research-only boundary"}],
+  "manual_review_checklist": [{"item": "manual governance review", "rationale": "ensure offline-only scope"}],
+  "unresolved_true_violations": []
+}
