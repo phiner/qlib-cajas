@@ -5,6 +5,9 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import pytest
+
+pytestmark = [pytest.mark.smoke, pytest.mark.slow]
 
 
 class RunResearchQualityLoopSmokeTests(unittest.TestCase):
@@ -22,4 +25,3 @@ class RunResearchQualityLoopSmokeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

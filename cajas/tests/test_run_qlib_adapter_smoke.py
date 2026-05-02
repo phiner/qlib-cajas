@@ -5,6 +5,9 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import pytest
+
+pytestmark = [pytest.mark.smoke, pytest.mark.slow]
 
 
 class RunQlibAdapterSmokeTests(unittest.TestCase):

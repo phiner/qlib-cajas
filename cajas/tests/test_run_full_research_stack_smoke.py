@@ -2,6 +2,10 @@ from __future__ import annotations
 import subprocess,sys,unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import pytest
+
+pytestmark = [pytest.mark.smoke, pytest.mark.slow]
+
 class RunFullResearchStackSmokeTests(unittest.TestCase):
     def test_smoke_outputs(self):
         with TemporaryDirectory() as tmp:

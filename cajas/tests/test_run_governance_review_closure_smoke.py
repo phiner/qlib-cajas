@@ -10,13 +10,13 @@ import pytest
 pytestmark = [pytest.mark.smoke, pytest.mark.slow]
 
 
-class RunResearchRemediationSmokeTests(unittest.TestCase):
+class RunGovernanceReviewClosureSmokeTests(unittest.TestCase):
     def test_smoke_outputs(self) -> None:
         with TemporaryDirectory() as tmp:
-            out = Path(tmp) / "remediation"
-            subprocess.run([sys.executable, "cajas/scripts/run_research_remediation_smoke.py", "--out-root", str(out)], check=True)
-            self.assertTrue((out / "blockers" / "research_blocker_localization.json").exists())
-            self.assertTrue((out / "governance" / "governance_remediation_report.json").exists())
+            out = Path(tmp) / "gov"
+            subprocess.run([sys.executable, "cajas/scripts/run_governance_review_closure_smoke.py", "--out-root", str(out)], check=True)
+            self.assertTrue((out / "governance_review" / "governance_review_decision.json").exists())
+            self.assertTrue((out / "approval" / "research_only_approval_packet.json").exists())
             self.assertTrue((out / "final" / "final_readiness_packet.json").exists())
             self.assertTrue((out / "bundle" / "final_research_bundle.json").exists())
 
