@@ -303,3 +303,24 @@ Data-source audit (Phase 516):
 
 - `reads_full_csv_likely_count = 2` (stable, no regression)
 - no new high-risk data-source regression introduced
+
+## Phase 566-585 Final Delivery Baseline
+
+- final fast subset runtime: `306 passed, 15 deselected in 80.06s`
+- final `run_fast_validation.py --tier fast`:
+  - `pytest_fast`: `80.88s`
+  - total: `83.77s`
+- final micro smoke runtime: `10.33s`
+- data-source audit remains stable:
+  - `reads_full_csv_likely_count = 2`
+
+Delivery artifacts:
+
+- packet builder: `cajas/scripts/build_validation_delivery_packet.py`
+- packet module: `cajas/reports/validation_delivery_packet.py`
+- delivery outputs:
+  - `tmp/validation-delivery/validation_delivery_packet.json`
+  - `tmp/validation-delivery/validation_delivery_packet.md`
+- final workflow docs:
+  - `cajas/docs/final_research_stack_index.md`
+  - `cajas/docs/future_work_checklist.md`

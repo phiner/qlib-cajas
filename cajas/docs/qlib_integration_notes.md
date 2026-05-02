@@ -738,3 +738,12 @@ Phase 456-485 update:
 - Added central CSV loading policy helpers and applied them to high-risk ingestion/report builder paths.
 - Real-data large full reads now require explicit allowance (`allow_large_data`) where policy wrappers are used.
 - Fast validation remains real-data opt-in and fixture-first.
+
+## Final Delivery References
+
+- Validation/data-I/O workflow index:
+  - `cajas/docs/final_research_stack_index.md`
+- Future work checklist:
+  - `cajas/docs/future_work_checklist.md`
+- Validation delivery packet command:
+  - `./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py --fast-timing tmp/validation-runtime-audit/fast_validation_phase566.json --data-source-audit tmp/data-io-audit/data_source_audit_phase566.json --runtime-audit tmp/validation-runtime-audit/validation_runtime_phase566.json --out-json tmp/validation-delivery/validation_delivery_packet.json --out-md tmp/validation-delivery/validation_delivery_packet.md --allow-missing-inputs`
