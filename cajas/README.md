@@ -784,6 +784,12 @@ Explicit commands:
 - Slow checks:
   - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "slow"`
 
+Phase 456-485 subprocess hotspot closure:
+
+- `run_fast_validation.py` budget, timing, and command-plan behavior is testable with injected runners and deterministic timers.
+- Fast-tier tests should not spawn nested `run_fast_validation.py` subprocesses.
+- Keep true CLI subprocess smoke tests marked `integration` so they run only by explicit command.
+
 ## Data IO Optimization (Phase 276-315)
 
 I/O-focused audit commands:

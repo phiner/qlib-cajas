@@ -44,28 +44,46 @@ def run_baseline_disabled(
         phase_policy_allows_training=False,
     )
     payload = report.to_dict()
+    return write_baseline_disabled_artifacts(
+        payload=payload,
+        write_artifacts=write_artifacts,
+        output_dir=output_dir,
+        run_name=run_name,
+    )
+
+
+def write_baseline_disabled_artifacts(
+    *,
+    payload: dict,
+    write_artifacts: bool,
+    output_dir: str | None = None,
+    run_name: str | None = None,
+) -> dict:
+    payload = dict(payload)
     payload["artifacts_written"] = False
-    if write_artifacts:
-        recorder = DryRunRecorder(
-            output_dir=output_dir or "tmp/cajas/baseline_disabled_runs",
-            run_name=run_name,
-        )
-        blocked = recorder.paths.run_dir / "baseline_blocked_run_report.json"
-        contract = recorder.paths.run_dir / "baseline_run_contract.json"
-        blocked.write_text(
-            json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        contract.write_text(
-            json.dumps(payload["run_contract"], ensure_ascii=True, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        payload["artifacts_written"] = True
-        payload["artifact_paths"] = {
-            "run_dir": str(recorder.paths.run_dir),
-            "baseline_blocked_run_report": str(blocked),
-            "baseline_run_contract": str(contract),
-        }
+    if not write_artifacts:
+        return payload
+
+    recorder = DryRunRecorder(
+        output_dir=output_dir or "tmp/cajas/baseline_disabled_runs",
+        run_name=run_name,
+    )
+    blocked = recorder.paths.run_dir / "baseline_blocked_run_report.json"
+    contract = recorder.paths.run_dir / "baseline_run_contract.json"
+    blocked.write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    contract.write_text(
+        json.dumps(payload["run_contract"], ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    payload["artifacts_written"] = True
+    payload["artifact_paths"] = {
+        "run_dir": str(recorder.paths.run_dir),
+        "baseline_blocked_run_report": str(blocked),
+        "baseline_run_contract": str(contract),
+    }
     return payload
 
 

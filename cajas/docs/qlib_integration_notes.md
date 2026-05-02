@@ -718,6 +718,13 @@ Recommended workflow:
 - fast: `./.venv-qlib313/bin/python cajas/scripts/run_fast_validation.py --tier fast`
 - micro smoke: `./.venv-qlib313/bin/python cajas/scripts/run_smoke_validation.py --tier micro --out-root tmp/smoke-validation-micro`
 
+Phase 456-485 update:
+
+- `run_fast_validation.py` now supports injected runner/timer testing for command planning, budget handling, and timing JSON output.
+- Fast validation runner tests should stay pure/injected; real nested CLI subprocess coverage belongs in explicit `integration`.
+- Integration-only validation remains explicit:
+  - `./.venv-qlib313/bin/python -m pytest cajas/tests -m "integration and not slow and not smoke"`
+
 ## Data IO Optimization (Phase 276-315)
 
 - Added static data-source and IO-runtime audits to reduce repeated full pipeline reruns.
