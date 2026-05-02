@@ -136,3 +136,10 @@ New helper modules:
 - `cajas/reports/io_runtime_audit.py`
 - `cajas/reports/data_source_audit.py`
 - `cajas/data_io/*`
+
+## Phase 316-345 Runtime Update
+
+- Fast subset runtime before: `136.15s`.
+- Latest fast subset run: `129.34s`.
+- `run_fast_validation --tier fast` total: `133.69s` (failed due unrelated `test_multi_model_baseline` runtime environment issue).
+- Recommendation: isolate/mark expensive baseline tests that depend on local prepared dataset/model environment as integration.

@@ -801,3 +801,21 @@ Validation guardrails:
 - fast validation and micro smoke do not read real data by default
 - enable real-data mode explicitly with `--include-real-data`
 - large real-data scans require explicit `--allow-large-data`
+
+## Full-Read CSV Refactor (Phase 316-345)
+
+Key updates:
+
+- Added CSV loading policy guardrails: `cajas/data_io/csv_loading_policy.py`.
+- High-risk CSV entrypoints now support policy controls:
+  - `--row-limit`
+  - `--chunk-size`
+  - `--sample-only`
+  - `--allow-large-data`
+- Updated refactor plan:
+  - `cajas/docs/full_read_csv_refactor_plan.md`
+
+Current audit delta:
+
+- `reads_full_csv_likely_count`: `25 -> 20`
+- `chunking_support_count`: `7 -> 13`

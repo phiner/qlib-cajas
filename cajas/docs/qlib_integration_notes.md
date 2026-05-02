@@ -725,3 +725,9 @@ Recommended workflow:
 - Added chunked CSV reader and FX schema inspection helpers.
 - Added explicit validation guardrails so fast validation paths do not read real data by default.
 - Real data use now requires explicit `--include-real-data`, and large-file reads require `--allow-large-data` acknowledgement.
+
+## Full-Read CSV Refactor (Phase 316-345)
+
+- Added central CSV loading policy helpers and applied them to high-risk ingestion/report builder paths.
+- Real-data large full reads now require explicit allowance (`allow_large_data`) where policy wrappers are used.
+- Fast validation remains real-data opt-in and fixture-first.

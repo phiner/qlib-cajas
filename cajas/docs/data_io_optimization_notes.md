@@ -63,3 +63,10 @@ Use chunk iteration for large inputs and selected columns:
 - io runtime audit: `cajas/scripts/audit_io_runtime.py`
 
 These audits are static/metadata-only and avoid heavy pipeline execution.
+
+## Phase 316-345 Follow-up
+
+- Added `cajas/data_io/csv_loading_policy.py`.
+- Refactored high-risk CSV entrypoints to support row-limit/chunk/sample policy controls.
+- `reads_full_csv_likely_count` reduced from `25` to `20`.
+- `chunking_support_count` increased from `7` to `13`.
