@@ -118,6 +118,15 @@ Dataset quality reports now include:
 - Reviewer-friendly Markdown with executive summary and artifact table
 - Clearly marked as offline research infrastructure comparison only
 
+**Phase 1106-1135 Validation Delivery Packet and Artifact Index:**
+
+- Validation delivery packet bundling all validation artifacts
+- Artifact index with presence/missing status and role classification
+- Status aggregation: pass/warn/fail based on critical artifacts
+- 6 delivery packet tests (~2s)
+- Reviewer-friendly packet index with recommended actions
+- Optional artifact copying into packet directory
+
 Combined bundle builder:
 
 ```bash

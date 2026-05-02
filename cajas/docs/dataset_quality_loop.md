@@ -395,3 +395,37 @@ Diff status interpretation:
 - **fail**: Contract status changed to fail, semantic errors increased
 
 **Scope**: Reviewer diff reports compare offline Qlib research infrastructure artifacts only. They are not trading, execution, alpha, or model performance reports.
+
+## New in Phase 1106-1135
+
+Validation delivery packet and artifact index:
+
+- **Validation Delivery Packet**: Bundle all validation artifacts into one reviewer-friendly package
+  - CLI: `build_validation_delivery_packet.py`
+  - Indexes dataset quality, contract, trend, budget, diff, manifest, audit artifacts
+  - Status aggregation: pass/warn/fail based on critical artifacts
+  - Artifact presence table with critical/optional classification
+- **Packet Index**: Reviewer-friendly Markdown summary
+  - Executive summary with overall status
+  - Artifact index table
+  - Reviewer notes and recommended actions
+  - Scope note: offline research infrastructure only
+
+Build validation delivery packet:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py \
+  --packet-name dataset_quality_validation_packet \
+  --smoke-root tmp/dataset-quality-smoke \
+  --contract-report tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.json \
+  --trend-snapshot tmp/dataset-quality-smoke/contract/dataset_quality_trend_snapshot.json \
+  --out-dir tmp/validation-delivery-packet
+```
+
+Packet status interpretation:
+
+- **pass**: All critical artifacts present and passing
+- **warn**: Optional artifacts missing or warnings detected
+- **fail**: Critical artifacts missing or validation failures
+
+**Scope**: Validation delivery packets summarize offline Qlib research infrastructure validation artifacts only. They are not trading, execution, alpha, or model performance reports.

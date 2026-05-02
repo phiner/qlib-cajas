@@ -1288,3 +1288,67 @@ Current budget check status: **warn**
 ---
 
 **End of Addendum**
+
+---
+
+## Addendum: Phase 1106-1135 (Validation Delivery Packet and Artifact Index)
+
+**Date:** 2026-05-02
+**Status:** Completed
+
+### Changes Implemented
+
+1. **Validation Delivery Packet Module** (`cajas/reports/validation_delivery_packet.py`)
+   - Bundle all validation artifacts into one reviewer-friendly package
+   - Status aggregation: pass/warn/fail based on critical artifacts
+   - Artifact presence tracking with critical/optional classification
+
+2. **Delivery Packet CLI** (`cajas/scripts/build_validation_delivery_packet.py`)
+   - Generates packet manifest JSON and index Markdown
+   - Optional artifact copying with `--copy-artifacts`
+   - `--allow-missing-critical` flag for partial packets
+
+3. **Delivery Packet Tests** (`cajas/tests/test_validation_delivery_packet.py`)
+   - 6 tests covering manifest, index, missing artifacts, status aggregation
+   - All tests pass in ~2s
+
+### Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `test_validation_delivery_packet.py` | ✅ 6 passed | 2.05s | All packet tests pass |
+| `pytest -k "dataset_quality or qlib_experiment_manifest or validation_runtime_budget or reviewer_report_diff or validation_delivery_packet"` | ✅ 70 passed | 7.39s | All related tests (+6 new) |
+| `run_fast_validation.py --tier fast` | ✅ 375 passed | 98.56s | +8.94s from Phase 1076 |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+
+### Runtime Trend
+
+| Phase | Fast Validation | Delta | Notes |
+|-------|----------------|-------|-------|
+| 986 | ~99.93s | baseline | After scenario expansion |
+| 1016 | ~85.34s | -14.59s | After manifest addition |
+| 1046 | ~83.52s | -1.82s | After budget enforcement |
+| 1076 | ~89.62s | +6.10s | After reviewer diff (+7 tests) |
+| 1106 | ~98.56s | +8.94s | After delivery packet (+6 tests) |
+
+### Scope and Limitations
+
+**Packet Scope:**
+- Bundles offline Qlib research infrastructure validation artifacts
+- Not trading, execution, alpha, or model performance reports
+- Status aggregation based on critical artifact presence
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+
+### Documentation Updated
+
+- `cajas/docs/dataset_quality_loop.md` - Added Phase 1106-1135 section
+- `cajas/README.md` - Added Phase 1106-1135 summary
+- `cajas/docs/current_qlib_base_stage_archive.md` - This addendum
+
+---
+
+**End of Addendum**
