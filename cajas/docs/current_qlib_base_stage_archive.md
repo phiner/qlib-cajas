@@ -1,0 +1,777 @@
+# Current Qlib Base Stage Archive
+
+**Document Version:** 1.0  
+**Date:** 2026-05-02  
+**Branch:** `phase-post-merge-research-next`  
+**Last Commit:** `782ce674` docs: document dataset quality contract drift workflow
+
+---
+
+## 1. Executive Summary
+
+- **Current Mainline:** Qlib-based research platform engineering focused on dataset quality, schema contracts, and reproducible research workflows
+- **Core Achievement:** Comprehensive dataset quality validation pipeline with schema contracts, golden fixture regression, and drift detection
+- **Validation Status:** Fast validation ~85s, contract validation passing, data-source audit stable at 29 read_csv calls
+- **Engineering Maturity:** Research infrastructure layer with CI guardrails, not a trading execution system
+- **Historical Routes Excluded:** Manual K-line annotation, old Rust trading system, broker adapters, live trading execution
+- **Next Focus:** Enhanced drift semantics, richer golden scenarios, Qlib experiment reproducibility strengthening
+
+---
+
+## 2. Current Active Mainline
+
+The active mainline is a **Microsoft Qlib-based research platform** with the following characteristics:
+
+### Core Identity
+- **Platform:** Microsoft Qlib fork (`qlib-cajas`)
+- **Research Layer:** `cajas/` independent research directory
+- **Focus:** FX K-line market recognition research (EURUSD 15m)
+- **Scope:** Offline research only, explicitly not a trading system
+
+### Primary Workflows
+1. **Dataset Quality Pipeline** (Phases 776-805, 836-865)
+   - Quality scoring (0-100 with grades A-D)
+   - Status levels (pass/warn/review_needed/blocked)
+   - Label review buckets with priority ranking
+   - Feature readiness categories
+   - Time quality with session distribution
+
+2. **Schema Contract Validation** (Phases 866-895)
+   - Explicit schema contracts for all report types
+   - Required field validation
+   - Type checking
+   - Additive vs breaking change detection
+
+3. **Golden Fixture Regression** (Phase 866-895)
+   - Golden shape snapshots in `cajas/data_examples/golden/dataset_quality/`
+   - 7 golden shape files covering all report types
+   - Automated regression testing
+
+4. **Contract Drift Detection** (Phase 926-955)
+   - Drift detection against golden shapes
+   - Breaking vs additive drift classification
+   - Reviewer-friendly drift summaries
+   - Drift items with specific change details
+
+5. **Integrated Validation** (Phase 896-925)
+   - Contract validation integrated into smoke workflow
+   - Automatic validation after report generation
+   - Fast validation tier (~85s)
+   - Micro smoke validation (~10s)
+
+### Engineering Boundaries
+- **No trading execution:** No broker adapters, order generation, position sizing, or live trading
+- **No model performance claims:** Quality scores are data quality indicators only
+- **No production deployment:** Research infrastructure only
+- **Qlib core unchanged:** All work in `cajas/` layer
+
+---
+
+## 3. Historical Routes Explicitly Excluded from the Current Mainline
+
+The following historical development routes are **not part of the current active mainline**:
+
+### 3.1 Manual K-line Annotation System
+- **Status:** Historical, not active
+- **Components:** kline-labeler, human-in-the-loop annotation workflow
+- **Reason for Exclusion:** Replaced by automated dataset quality pipeline
+
+### 3.2 Old Rust Trading System
+- **Status:** Historical, not active
+- **Components:** cajasTrading / cajasTradingSystem
+- **Reason for Exclusion:** Project pivoted to Qlib-based research platform
+
+### 3.3 Trading Execution Infrastructure
+- **Status:** Explicitly out of scope
+- **Components:** Broker adapters, live trader, order routing, position sizing
+- **Reason for Exclusion:** Current mainline is research-only, not execution
+
+### 3.4 ML Label Learning Loop
+- **Status:** Historical, not active
+- **Components:** Label suggestion review loop, annotation feedback
+- **Reason for Exclusion:** Replaced by deterministic label generation and quality validation
+
+**Important:** Historical files may still exist in the repository but should not be treated as part of the current active development mainline.
+
+---
+
+## 4. Implemented System Components
+
+### 4.1 Dataset Quality Workflow
+
+**Files:**
+- `cajas/reports/dataset_quality_research.py` - Core report generation
+- `cajas/scripts/build_dataset_quality_research_bundle.py` - Combined bundle builder
+- `cajas/scripts/build_dataset_quality_report.py` - Modular report CLI
+- `cajas/scripts/build_label_coverage_diagnostics.py` - Label diagnostics CLI
+- `cajas/scripts/build_time_coverage_diagnostics.py` - Time diagnostics CLI
+- `cajas/scripts/run_chunked_feature_dry_run.py` - Feature dry-run CLI
+- `cajas/scripts/build_feature_schema_manifest.py` - Feature manifest CLI
+- `cajas/scripts/build_offline_research_queue_summary.py` - Queue summary CLI
+- `cajas/scripts/run_dataset_quality_smoke.py` - Integrated smoke workflow
+
+**Functionality:**
+- Reads CSV datasets with bounded row limits
+- Generates quality scores (0-100) with grades
+- Classifies status: pass/warn/review_needed/blocked
+- Identifies label issues (missing, sparse, imbalanced)
+- Detects time coverage gaps and session distribution
+- Evaluates feature readiness
+- Produces ranked review items for offline research
+
+**Inputs:**
+- CSV files with OHLCV + label columns
+- Configurable datetime/instrument columns
+- Row limits and chunk sizes
+
+**Outputs:**
+- JSON reports with structured data
+- Markdown reports for human review
+- Quality scores and component breakdowns
+- Label review buckets
+- Time coverage diagnostics
+- Feature readiness categories
+- Offline research queue with priorities
+
+**Testing:**
+- `cajas/tests/test_dataset_quality_research_bundle.py`
+- `cajas/tests/test_dataset_quality_modular_clis.py`
+- All tests use in-process `main(argv)` calls for speed
+- Tests pass in ~4-8s
+
+**Validation:**
+- Smoke workflow completes in ~2-3s with tiny fixtures
+- Contract validation integrated
+- Fast validation includes dataset quality tests
+
+**Limitations:**
+- Quality scores are data quality indicators only, not trading/model performance
+- Default row limit 10,000 unless `--allow-large-data` specified
+- Requires explicit column mapping for non-standard schemas
+
+### 4.2 Schema Contract Validation
+
+**Files:**
+- `cajas/reports/dataset_quality_schema_contract.py` - Contract definitions and validation
+- `cajas/scripts/validate_dataset_quality_contract.py` - Validation CLI
+- `cajas/scripts/build_dataset_quality_golden_shapes.py` - Golden shape builder
+
+**Functionality:**
+- Defines required fields for each report type
+- Validates report structure against contracts
+- Detects missing required fields
+- Detects type mismatches
+- Allows additive fields (non-breaking changes)
+- Classifies breaking vs additive changes
+
+**Contract Coverage:**
+- `dataset_quality_report`
+- `label_coverage_diagnostics`
+- `time_coverage_diagnostics`
+- `chunked_feature_dry_run`
+- `feature_schema_manifest`
+- `offline_research_queue_summary`
+
+**Validation Modes:**
+- Single report validation
+- Bundle validation (multiple reports)
+- Golden shape comparison
+- Drift detection
+
+**Outputs:**
+- JSON contract reports with status/errors/warnings
+- Markdown reports with reviewer notes
+- Issue lists with severity and path
+- Exit codes for CI integration
+
+**Testing:**
+- `cajas/tests/test_dataset_quality_schema_contract.py`
+- 17 tests covering validation, drift, CLI failures
+- Tests pass in ~2s
+
+**Limitations:**
+- Shape-based validation only (depth 4)
+- Does not validate semantic correctness of values
+- Golden shapes may need scenario expansion
+
+### 4.3 Golden Fixtures and Shape Regression
+
+**Files:**
+- `cajas/data_examples/golden/dataset_quality/dataset_quality_report_shape.json`
+- `cajas/data_examples/golden/dataset_quality/label_coverage_diagnostics_shape.json`
+- `cajas/data_examples/golden/dataset_quality/time_coverage_diagnostics_shape.json`
+- `cajas/data_examples/golden/dataset_quality/chunked_feature_dry_run_shape.json`
+- `cajas/data_examples/golden/dataset_quality/feature_schema_manifest_shape.json`
+- `cajas/data_examples/golden/dataset_quality/offline_research_queue_summary_shape.json`
+- `cajas/data_examples/golden/dataset_quality/bundle_shape.json`
+
+**Functionality:**
+- Stores expected schema shapes for regression testing
+- Extracted from smoke outputs at depth 4
+- Used for drift detection
+- Prevents accidental breaking changes
+
+**Generation:**
+```bash
+python cajas/scripts/build_dataset_quality_golden_shapes.py \
+  --smoke-root tmp/dataset-quality-smoke \
+  --out-dir cajas/data_examples/golden/dataset_quality
+```
+
+**Testing:**
+- Golden shapes tested in contract tests
+- Smoke outputs compared against golden shapes
+- Breaking changes detected automatically
+
+**Limitations:**
+- Shape-only comparison (not value comparison)
+- May need richer scenario coverage
+- Depth limited to 4 levels
+
+### 4.4 Manifest / Bundle / Drift-Related Logic
+
+**Drift Detection:**
+- `detect_drift_against_golden()` - Compares current vs golden shapes
+- `compute_drift_summary()` - Aggregates drift statistics
+- `DriftItem` dataclass - Structured drift records
+- `DriftSummary` dataclass - Summary statistics
+
+**Drift Classification:**
+- **Breaking:** missing_required, removed, type_change
+- **Additive:** new optional fields
+- **Counts:** breaking_count, additive_count, type_change_count, missing_required_count
+
+**Drift Reporting:**
+- Integrated into smoke workflow
+- JSON reports with drift_summary and drift_items
+- Markdown reports with breaking/additive sections
+- Reviewer notes with action recommendations
+
+**Bundle Logic:**
+- Combined bundle builder generates all reports in one pass
+- Modular CLIs allow individual report generation
+- Bundle validation checks all reports together
+
+**Limitations:**
+- Drift detection is shape-based only
+- No semantic drift detection
+- No trend analysis across multiple runs
+
+### 4.5 Smoke, Fast Validation, and CI Guardrails
+
+**Smoke Validation:**
+- `cajas/scripts/run_dataset_quality_smoke.py` - Dataset quality smoke
+- `cajas/scripts/run_smoke_validation.py` - Multi-tier smoke runner
+- Tiers: micro (~10s), minimal, closure, full
+
+**Fast Validation:**
+- `cajas/scripts/run_fast_validation.py` - Fast tier validation
+- Excludes: smoke, slow, closure, full, integration markers
+- Runtime: ~85s total, ~82s pytest
+- 327 tests pass, 16 deselected
+
+**CI Guardrails:**
+- Contract validation integrated into smoke
+- Smoke fails on contract errors
+- Fast validation includes contract tests
+- Data-source audit monitors read patterns
+- Path hygiene checks
+- Init.py detection
+
+**Validation Tiers:**
+- **Quick:** Minimal hygiene + compileall
+- **Fast:** Full fast-tier pytest (~85s)
+- **Micro smoke:** Tiny smoke workflows (~10s)
+- **Full pytest:** All tests except smoke/slow
+
+**Outputs:**
+- Timing JSON for runtime tracking
+- Contract reports
+- Data-source audit reports
+- Validation delivery packets
+
+**Limitations:**
+- Fast validation runtime increased from ~80s to ~85s
+- No runtime budget enforcement yet
+- No automatic golden shape updates
+
+### 4.6 Reviewer-Friendly Reports
+
+**Markdown Reports:**
+- Dataset quality report with quality score breakdown
+- Contract validation report with drift summary
+- Label review buckets with priorities
+- Time coverage diagnostics
+- Feature readiness categories
+- Offline research queue with ranked items
+
+**Reviewer Notes:**
+- Automatic action recommendations
+- Breaking vs additive drift classification
+- Clear status indicators (pass/warn/review_needed/blocked)
+- Severity counts (error/warning/info)
+
+**Report Structure:**
+- Executive summary at top
+- Drift summary table
+- Breaking drift section (if any)
+- Additive drift section (if any)
+- Reviewer note with action guidance
+- Detailed issue lists
+
+**Limitations:**
+- No trend analysis across runs
+- No diff summaries between versions
+- No visual charts or graphs
+
+### 4.7 Data-Source Audit and Read Boundary Controls
+
+**Files:**
+- `cajas/reports/data_source_audit.py` - Audit logic
+- `cajas/scripts/audit_data_sources.py` - Audit CLI
+- `cajas/data_io/chunked_csv_reader.py` - Bounded CSV reader
+
+**Functionality:**
+- Static code analysis for CSV read patterns
+- Detects `read_csv` calls
+- Identifies unbounded reads
+- Monitors real-data access patterns
+- Enforces row limits by default
+
+**Current Baseline:**
+- `read_csv_count: 29` (stable)
+- No high-risk unbounded reads in fast tier
+- Real data access requires explicit flags
+
+**Boundary Controls:**
+- Default row_limit: 10,000
+- `--allow-large-data` required for unbounded reads
+- `--include-real-data` required for non-fixture data
+- Chunked reading with configurable chunk_size
+
+**Testing:**
+- Data-source audit runs in validation
+- Audit reports generated as JSON/Markdown
+- Regression detection for new read patterns
+
+**Limitations:**
+- Static analysis only (no runtime monitoring)
+- May miss dynamic read patterns
+- No memory usage tracking
+
+---
+
+## 5. Current Workflow Map
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    Qlib-Compatible Inputs                        │
+│  (CSV with OHLCV + labels, configurable columns, row limits)    │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Dataset Quality Smoke Workflow                      │
+│  • Reads bounded CSV chunks                                      │
+│  • Generates quality scores and diagnostics                      │
+│  • Produces reports/manifests/bundles                            │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│           Generated Reports and Artifacts                        │
+│  • dataset_quality_report.json/.md                               │
+│  • label_coverage_diagnostics.json/.md                           │
+│  • time_coverage_diagnostics.json/.md                            │
+│  • chunked_feature_dry_run.json/.md                              │
+│  • feature_schema_manifest.json/.md                              │
+│  • offline_research_queue_summary.json/.md                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│          Schema Contract Validation (Integrated)                 │
+│  • Validates required fields                                     │
+│  • Checks types                                                  │
+│  • Detects drift vs golden shapes                                │
+│  • Classifies breaking vs additive changes                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Contract Validation Report                          │
+│  • status: pass/fail                                             │
+│  • error_count, warning_count                                    │
+│  • drift_summary (breaking/additive counts)                      │
+│  • drift_items (specific changes)                                │
+│  • reviewer note with action guidance                            │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│         Fast Validation / CI Gate (85s)                          │
+│  • Contract tests (17 tests, ~2s)                                │
+│  • Dataset quality tests (22 tests, ~8s)                         │
+│  • Full fast tier (327 tests, ~82s)                              │
+│  • Data-source audit (read_csv_count: 29)                        │
+│  • Path hygiene, init.py checks                                  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│        Reviewer-Friendly Report Artifacts                        │
+│  • Markdown reports with drift summaries                         │
+│  • JSON reports for automation                                   │
+│  • Action recommendations                                        │
+│  • Breaking vs additive classification                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Generated Artifacts and Their Purposes
+
+| Artifact | Producer | Consumer | Purpose | Git Status |
+|----------|----------|----------|---------|------------|
+| `dataset_quality_report.json` | `run_dataset_quality_smoke.py` | Contract validation, tests | Structured quality data | Generated (`tmp/`) |
+| `dataset_quality_report.md` | `run_dataset_quality_smoke.py` | Human review | Readable quality report | Generated (`tmp/`) |
+| `label_coverage_diagnostics.json` | `run_dataset_quality_smoke.py` | Contract validation | Label issue data | Generated (`tmp/`) |
+| `time_coverage_diagnostics.json` | `run_dataset_quality_smoke.py` | Contract validation | Time coverage data | Generated (`tmp/`) |
+| `chunked_feature_dry_run.json` | `run_dataset_quality_smoke.py` | Contract validation | Feature readiness data | Generated (`tmp/`) |
+| `feature_schema_manifest.json` | `run_dataset_quality_smoke.py` | Contract validation | Feature schema data | Generated (`tmp/`) |
+| `offline_research_queue_summary.json` | `run_dataset_quality_smoke.py` | Contract validation | Review queue data | Generated (`tmp/`) |
+| `dataset_quality_contract_report.json` | `run_dataset_quality_smoke.py` | CI gates, tests | Contract validation results | Generated (`tmp/`) |
+| `dataset_quality_contract_report.md` | `run_dataset_quality_smoke.py` | Human review | Readable contract report | Generated (`tmp/`) |
+| `*_shape.json` (7 files) | `build_dataset_quality_golden_shapes.py` | Contract validation, tests | Golden shape fixtures | Committed (`cajas/data_examples/golden/`) |
+| `fast_validation_*.json` | `run_fast_validation.py` | Runtime tracking | Validation timing data | Generated (`tmp/`) |
+| `data_source_audit_*.json` | `audit_data_sources.py` | Regression detection | Read pattern audit | Generated (`tmp/`) |
+
+**Key Directories:**
+- `tmp/dataset-quality-smoke/` - Smoke output root
+- `tmp/dataset-quality-smoke/contract/` - Contract reports
+- `cajas/data_examples/golden/dataset_quality/` - Golden shapes (committed)
+- `cajas/data_examples/validation_fixtures/` - Tiny test fixtures (committed)
+
+---
+
+## 7. Validation Results
+
+| Command | Status | Runtime | Notes |
+|---------|--------|---------|-------|
+| `run_dataset_quality_smoke.py` | ✅ Pass | ~2-3s | Contract validation integrated |
+| `test_dataset_quality_schema_contract.py` | ✅ 17 passed | 1.90s | All contract tests pass |
+| `pytest cajas/tests -k dataset_quality` | ✅ 22 passed | 8.09s | All dataset quality tests pass |
+| `run_fast_validation.py --tier fast` | ✅ 327 passed | 85.39s | 16 deselected, total 85.39s |
+| `run_smoke_validation.py --tier micro` | ✅ Pass | 10.21s | Micro smoke stable |
+| `audit_data_sources.py` | ✅ Pass | <5s | read_csv_count: 29 (stable) |
+| `git diff --check` | ✅ Pass | <1s | No whitespace issues |
+| `find cajas -path "*/init.py"` | ✅ Pass | <1s | No init.py files found |
+
+**Contract Validation Report (Latest):**
+```json
+{
+  "status": "pass",
+  "error_count": 0,
+  "warning_count": 0,
+  "drift_summary": {
+    "files_checked": 3,
+    "files_with_drift": 0,
+    "breaking_count": 0,
+    "additive_count": 0,
+    "type_change_count": 0,
+    "missing_required_count": 0
+  }
+}
+```
+
+**Fast Validation Trend:**
+- Phase 866: 86.52s
+- Phase 896: 82.04s (improved)
+- Phase 926: 85.39s (slight increase due to drift detection)
+
+---
+
+## 8. Current Engineering Boundaries and Non-Goals
+
+### Explicit Non-Goals
+
+**Trading Execution:**
+- ❌ No broker adapters
+- ❌ No live trading
+- ❌ No paper trading execution
+- ❌ No order generation or routing
+- ❌ No position sizing
+- ❌ No portfolio optimization
+- ❌ No PnL optimization
+- ❌ No execution simulation
+
+**Model Performance Claims:**
+- ❌ Quality scores are data quality indicators only
+- ❌ No trading strategy claims
+- ❌ No alpha/Sharpe/profitability claims
+- ❌ No model performance guarantees
+
+**Production Deployment:**
+- ❌ Not a production trading system
+- ❌ Not financial advice
+- ❌ Research infrastructure only
+
+**Historical Routes:**
+- ❌ No manual K-line annotation expansion
+- ❌ No old Rust trading system integration
+- ❌ No ML label learning loop
+- ❌ No human-in-the-loop annotation workflow
+
+### Current Boundaries
+
+**Qlib Core:**
+- ✅ All work in `cajas/` layer
+- ✅ Qlib core unchanged
+- ✅ Compatible with Qlib workflows
+
+**Data Access:**
+- ✅ Bounded reads by default (row_limit: 10,000)
+- ✅ Explicit flags for large data
+- ✅ Chunked reading
+- ✅ No unbounded full-file reads in fast tier
+
+**Validation:**
+- ✅ CPU-only
+- ✅ Local
+- ✅ Deterministic where feasible
+- ✅ No network calls
+- ✅ No GPU/CUDA requirements
+
+**Schema Evolution:**
+- ✅ Additive changes allowed
+- ✅ Breaking changes detected
+- ✅ Golden shapes prevent accidental regressions
+
+---
+
+## 9. Current Risks and Gaps
+
+### Schema Contract Risks
+
+**Risk:** Schema contracts are shape-only (depth 4)
+- **Evidence:** `extract_schema_shape()` limited to depth 4, type markers only
+- **Impact:** May miss semantic issues in deeply nested structures
+- **Mitigation:** Consider semantic validation for critical fields
+
+**Risk:** Golden fixtures may need scenario expansion
+- **Evidence:** Only 7 golden shapes, generated from tiny fixtures
+- **Impact:** May not cover edge cases or richer scenarios
+- **Mitigation:** Add golden shapes for edge cases (empty data, missing columns, etc.)
+
+### Drift Detection Risks
+
+**Risk:** Drift detection is shape-based only
+- **Evidence:** No semantic drift detection, no value range checks
+- **Impact:** May miss semantic changes that preserve shape
+- **Mitigation:** Consider semantic drift detection for critical fields
+
+**Risk:** No trend analysis across multiple runs
+- **Evidence:** Each run compared to golden only, no historical tracking
+- **Impact:** Cannot detect gradual drift or trends
+- **Mitigation:** Consider drift history tracking
+
+### Validation Risks
+
+**Risk:** Fast validation runtime increased
+- **Evidence:** 82.04s → 85.39s (+3.35s)
+- **Impact:** May continue to grow with new features
+- **Mitigation:** Consider runtime budget enforcement, test optimization
+
+**Risk:** No automatic golden shape updates
+- **Evidence:** Manual process to rebuild golden shapes
+- **Impact:** Golden shapes may become stale
+- **Mitigation:** Document golden shape refresh workflow clearly
+
+### Qlib Integration Risks
+
+**Risk:** Qlib experiment reproducibility may need stronger run manifests
+- **Evidence:** Dataset quality manifests exist, but Qlib experiment tracking is separate
+- **Impact:** May be difficult to reproduce Qlib experiments exactly
+- **Mitigation:** Consider Qlib experiment manifest integration
+
+### Documentation Risks
+
+**Risk:** Reviewer reports may need diff summaries
+- **Evidence:** Current reports show current state only, no diffs
+- **Impact:** Difficult to see what changed between runs
+- **Mitigation:** Consider diff reports between runs
+
+---
+
+## 10. Recommended Next Phases
+
+### Phase 956-985: Enhanced Drift Semantics and Trend Tracking
+
+**Goal:** Add semantic drift detection and historical trend tracking
+
+**Main Changes:**
+- Add semantic validators for critical fields (e.g., quality_score range 0-100)
+- Track drift history across multiple runs
+- Generate trend reports showing drift over time
+- Add drift severity classification beyond breaking/additive
+
+**Validation:**
+- Semantic validation tests
+- Trend tracking tests
+- Historical drift report generation
+
+**Non-Goals:**
+- No trading execution
+- No model training
+- No Qlib core changes
+
+### Phase 986-1015: Golden Fixture Scenario Expansion
+
+**Goal:** Expand golden fixture coverage for edge cases and richer scenarios
+
+**Main Changes:**
+- Add golden shapes for edge cases (empty data, missing columns, single row, etc.)
+- Add golden shapes for different data scales (10 rows, 100 rows, 1000 rows)
+- Add golden shapes for different label distributions (balanced, imbalanced, single-class)
+- Document golden shape refresh workflow
+
+**Validation:**
+- Edge case tests
+- Scenario coverage tests
+- Golden shape refresh smoke test
+
+**Non-Goals:**
+- No trading execution
+- No model training
+
+### Phase 1016-1045: Qlib Experiment Reproducibility Strengthening
+
+**Goal:** Integrate dataset quality manifests with Qlib experiment tracking
+
+**Main Changes:**
+- Add Qlib experiment manifest generation
+- Link dataset quality reports to Qlib experiments
+- Add experiment reproducibility validation
+- Add experiment diff reports
+
+**Validation:**
+- Experiment manifest tests
+- Reproducibility validation tests
+- Experiment diff report tests
+
+**Non-Goals:**
+- No trading execution
+- No model training beyond Qlib research workflows
+
+### Phase 1046-1075: Runtime Budget Enforcement and Test Optimization
+
+**Goal:** Enforce fast validation runtime budget and optimize slow tests
+
+**Main Changes:**
+- Add runtime budget enforcement to fast validation
+- Profile and optimize slow tests
+- Consider test parallelization
+- Add runtime regression detection
+
+**Validation:**
+- Runtime budget tests
+- Optimization validation
+- Regression detection tests
+
+**Non-Goals:**
+- No trading execution
+- No model training
+
+### Phase 1076-1105: Reviewer Report Enhancements (Diffs and Trends)
+
+**Goal:** Add diff reports and trend analysis for reviewer-friendly reports
+
+**Main Changes:**
+- Add diff reports between runs
+- Add trend charts for quality scores over time
+- Add drift trend visualization
+- Add summary dashboards
+
+**Validation:**
+- Diff report tests
+- Trend analysis tests
+- Dashboard generation tests
+
+**Non-Goals:**
+- No trading execution
+- No model training
+
+---
+
+## 11. Reviewer Checklist
+
+Use this checklist to verify the current project state:
+
+### Core Functionality
+- [x] Dataset quality smoke produces expected reports
+- [x] Contract validation report status is pass
+- [x] Golden shapes are present and tested (7 files)
+- [x] Fast validation passes within expected runtime (~85s)
+- [x] Data-source audit count is stable (29 read_csv calls)
+- [x] Historical routes are not described as current mainline
+
+### Validation Health
+- [x] Contract tests pass (17 tests, ~2s)
+- [x] Dataset quality tests pass (22 tests, ~8s)
+- [x] Fast tier tests pass (327 tests, ~85s)
+- [x] Micro smoke passes (~10s)
+- [x] No whitespace issues (`git diff --check`)
+- [x] No init.py files (`find cajas -path "*/init.py"`)
+
+### Drift Detection
+- [x] Drift summary shows zero drift for current smoke
+- [x] Breaking drift detection works (tested)
+- [x] Additive drift detection works (tested)
+- [x] Type change detection works (tested)
+- [x] Missing required field detection works (tested)
+
+### Documentation
+- [x] README describes current mainline accurately
+- [x] Dataset quality loop documented
+- [x] Contract workflow documented
+- [x] Drift workflow documented
+- [x] Historical routes explicitly excluded
+
+### Boundaries
+- [x] No trading execution code in active mainline
+- [x] No broker adapters in active mainline
+- [x] Quality scores clearly marked as data quality only
+- [x] Qlib core unchanged
+- [x] All work in `cajas/` layer
+
+---
+
+## 12. Appendix: Evidence Map
+
+| Claim | Evidence |
+|-------|----------|
+| Contract validation exists | `cajas/reports/dataset_quality_schema_contract.py`, `cajas/scripts/validate_dataset_quality_contract.py` |
+| Golden shape regression exists | `cajas/data_examples/golden/dataset_quality/` (7 files), `cajas/tests/test_dataset_quality_schema_contract.py` |
+| Drift detection exists | `detect_drift_against_golden()`, `compute_drift_summary()` in schema_contract.py |
+| Smoke integration exists | `run_dataset_quality_smoke.py` lines 115-180 (contract validation section) |
+| Fast validation ~85s | `run_fast_validation.py --tier fast` output: total 85.39s |
+| Data-source audit stable | `audit_data_sources.py` output: read_csv_count: 29 |
+| 17 contract tests pass | `pytest test_dataset_quality_schema_contract.py -q` output: 17 passed in 1.90s |
+| Quality scoring exists | `_compute_quality_score()` in dataset_quality_research.py |
+| Label review buckets exist | `_build_label_review_buckets()` in dataset_quality_research.py |
+| Ranked review items exist | `_build_ranked_review_items()` in dataset_quality_research.py |
+| Modular CLIs exist | 6 modular CLI scripts in `cajas/scripts/` |
+| Combined bundle builder exists | `build_dataset_quality_research_bundle.py` |
+| Schema contracts defined | `REQUIRED_REPORT_KEYS` dict in schema_contract.py |
+| Drift classification exists | `DriftItem.kind` enum: missing_required, type_change, additive, removed |
+| Reviewer notes exist | Markdown generation in `run_dataset_quality_smoke.py` lines 160-170 |
+| Historical routes excluded | README.md "Out of Scope" section, this document section 3 |
+| Qlib core unchanged | No modifications in `qlib/` directory, all work in `cajas/` |
+| No trading execution | No broker/order/execution files in recent commits (last 30) |
+| Fast validation trend | Phase 866: 86.52s, Phase 896: 82.04s, Phase 926: 85.39s |
+| Contract validation integrated | `run_dataset_quality_smoke.py` calls `validate_bundle_contract()` |
+| CLI failure tests exist | `test_cli_fails_on_missing_required_field()`, `test_cli_fails_on_wrong_type()` |
+
+---
+
+**End of Stage Archive Report**
