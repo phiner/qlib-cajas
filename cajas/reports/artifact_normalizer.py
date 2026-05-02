@@ -6,15 +6,19 @@ import json
 import re
 from pathlib import Path
 
+from cajas.reports.normalization_rule_registry import get_normalization_rules
+
 
 _TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})?")
 _TMP_RE = re.compile(r"/tmp/[A-Za-z0-9_./-]+")
+_RUN_ROOT_RE = re.compile(r"\brun_[ab]\b")
 
 
 def _norm_scalar(value: str) -> str:
     out = value
     out = _TS_RE.sub("<TS>", out)
     out = _TMP_RE.sub("<TMP_ROOT>", out)
+    out = _RUN_ROOT_RE.sub("<RUN_ROOT>", out)
     out = out.replace(str(Path.cwd().resolve()), "<CWD>")
     return out
 
@@ -44,8 +48,9 @@ def normalize_json_artifact(*, input_path: str | Path, output_path: str | Path |
         "schema_version": "v1",
         "input_path": str(src),
         "output_path": "" if output_path is None else str(Path(output_path).expanduser().resolve()),
-        "normalized_fields": ["timestamps", "tmp_paths", "cwd_paths", "absolute_paths"],
+        "normalized_fields": ["timestamps", "tmp_paths", "cwd_paths", "absolute_paths", "run_root_labels"],
         "preserved_fields": ["status", "metrics", "row_count", "blocked_actions", "decisions"],
+        "normalization_rules": [r.rule_id for r in get_normalization_rules() if r.enabled_by_default],
         "warnings": [],
         "normalized_payload": normalized,
     }
@@ -61,13 +66,15 @@ def normalize_markdown_artifact(*, input_path: str | Path, output_path: str | Pa
     txt = src.read_text(encoding="utf-8")
     txt = _TS_RE.sub("<TS>", txt)
     txt = _TMP_RE.sub("<TMP_ROOT>", txt)
+    txt = _RUN_ROOT_RE.sub("<RUN_ROOT>", txt)
     txt = txt.replace(str(Path.cwd().resolve()), "<CWD>")
     rep = {
         "schema_version": "v1",
         "input_path": str(src),
         "output_path": "" if output_path is None else str(Path(output_path).expanduser().resolve()),
-        "normalized_fields": ["timestamps", "tmp_paths", "cwd_paths"],
+        "normalized_fields": ["timestamps", "tmp_paths", "cwd_paths", "run_root_labels"],
         "preserved_fields": ["headers", "status_lines", "checklists", "blocked_actions"],
+        "normalization_rules": [r.rule_id for r in get_normalization_rules() if r.enabled_by_default],
         "warnings": [],
         "normalized_text": txt,
     }
