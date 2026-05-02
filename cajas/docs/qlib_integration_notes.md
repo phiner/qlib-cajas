@@ -271,6 +271,20 @@ Next step needed:
   - unresolved true violations and manual review items
 - Human reviewer approval is explicitly offline-research-only and does not permit trading execution.
 
+## Research Remediation Workflow
+
+- Run remediation smoke:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_research_remediation_smoke.py --out-root tmp/research-remediation-smoke`
+- Use blocker localization output to separate:
+  - non-semantic drift candidates (normalization/remediation)
+  - semantic drift candidates (manual reproducibility review)
+  - governance true violations vs manual-review findings
+
+## Readiness Status After Remediation
+
+- Final readiness remains conservative and evidence-driven.
+- Even with manual-review readiness, broker/live/paper execution remains forbidden.
+
 ## Phase 18 Update
 
 - Added class-path resolution utilities for config-declared classes:

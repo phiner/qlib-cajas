@@ -661,3 +661,29 @@ This phase still excludes:
   - `cajas/scripts/build_reviewer_decision_packet.py`
 - Blocked/fail statuses are expected governance signals and must remain visible for manual review.
 - Reviewer approval is offline-research-only and does not permit broker integration, live trading, or paper trading execution.
+
+## Research Remediation Workflow
+
+- Run:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_research_remediation_smoke.py --out-root tmp/research-remediation-smoke`
+- This workflow localizes blocker evidence, rebuilds governance remediation, and prints before/after top-level statuses.
+
+## Semantic Reproducibility Blockers
+
+- Use:
+  - `cajas/scripts/localize_research_blockers.py`
+  - `cajas/scripts/diff_normalized_artifacts.py`
+- Reproducibility remediation is conservative: normalize only non-semantic run metadata/paths/ids and keep metrics/status semantics intact.
+
+## Governance True Violation Remediation
+
+- Governance findings are remediated without weakening forbidden-execution boundaries.
+- Self-audit implementation tokens are treated as audit internals, not runtime execution behavior.
+
+## Readiness Status After Remediation
+
+- Acceptable non-blocked outcomes remain:
+  - `research_stack_ready_for_manual_review`
+  - `needs_reproducibility_review`
+  - `needs_manual_governance_review`
+- No readiness status permits broker/live/paper execution.
