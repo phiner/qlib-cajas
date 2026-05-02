@@ -12,6 +12,7 @@ from cajas.reports.dataset_quality_schema_contract import (
     validate_bundle_contract,
     validate_report_contract,
 )
+from cajas.scripts.validate_dataset_quality_contract import main as validate_contract_main
 
 
 class DatasetQualitySchemaContractTests(unittest.TestCase):
@@ -169,6 +170,36 @@ class DatasetQualitySchemaContractTests(unittest.TestCase):
             if isinstance(golden_shape, dict) and isinstance(current_shape, dict):
                 for key in ["schema_version", "report_type", "status", "quality_score", "label_diagnostics"]:
                     self.assertIn(key, current_shape, f"required key missing: {key}")
+
+    def test_cli_fails_on_missing_required_field(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report_json = root / "report.json"
+            report_json.write_text(json.dumps({"schema_version": "v1"}), encoding="utf-8")
+            ret = validate_contract_main(["--report-json", str(report_json), "--report-type", "dataset_quality_report"])
+            self.assertNotEqual(ret, 0)
+
+    def test_cli_fails_on_wrong_type(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report_json = root / "report.json"
+            bad_report = {
+                "schema_version": "v1",
+                "report_type": "dataset_quality_report",
+                "status": "pass",
+                "severity_counts": {},
+                "scope": "offline_research_only",
+                "row_count": "not_a_number",
+                "column_count": 5,
+                "quality_score": {},
+                "label_diagnostics": [],
+                "label_review_buckets": [],
+                "time_coverage": {},
+                "feature_readiness": {},
+            }
+            report_json.write_text(json.dumps(bad_report), encoding="utf-8")
+            ret = validate_contract_main(["--report-json", str(report_json), "--report-type", "dataset_quality_report"])
+            self.assertNotEqual(ret, 0)
 
 
 if __name__ == "__main__":
