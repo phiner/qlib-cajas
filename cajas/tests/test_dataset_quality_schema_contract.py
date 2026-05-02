@@ -13,6 +13,7 @@ from cajas.reports.dataset_quality_schema_contract import (
     extract_schema_shape,
     validate_bundle_contract,
     validate_report_contract,
+    validate_semantic_constraints,
 )
 from cajas.scripts.validate_dataset_quality_contract import main as validate_contract_main
 
@@ -236,6 +237,54 @@ class DatasetQualitySchemaContractTests(unittest.TestCase):
         summary = compute_drift_summary(drift_items, 1)
         self.assertEqual(summary.type_change_count, 1)
         self.assertEqual(summary.breaking_count, 1)
+
+    def test_semantic_valid_quality_score_passes(self) -> None:
+        report = {
+            "quality_score": {"score": 85.5, "max_score": 100, "grade": "A", "components": {}},
+            "status": "pass",
+            "severity_counts": {"error": 0, "warning": 1, "info": 2},
+            "row_count": 100,
+            "column_count": 5,
+        }
+        issues = validate_semantic_constraints(report, "dataset_quality_report")
+        errors = [i for i in issues if i.severity == "error"]
+        self.assertEqual(len(errors), 0)
+
+    def test_semantic_quality_score_out_of_range_fails(self) -> None:
+        report = {"quality_score": {"score": 150, "max_score": 100, "grade": "A", "components": {}}}
+        issues = validate_semantic_constraints(report, "dataset_quality_report")
+        errors = [i for i in issues if i.severity == "error"]
+        self.assertGreater(len(errors), 0)
+        self.assertTrue(any("score must be in [0, 100]" in i.message for i in errors))
+
+    def test_semantic_negative_count_fails(self) -> None:
+        report = {"severity_counts": {"error": -1, "warning": 0, "info": 0}}
+        issues = validate_semantic_constraints(report, "dataset_quality_report")
+        errors = [i for i in issues if i.severity == "error"]
+        self.assertGreater(len(errors), 0)
+        self.assertTrue(any("must be non-negative" in i.message for i in errors))
+
+    def test_semantic_unknown_grade_warns(self) -> None:
+        report = {"quality_score": {"score": 85, "max_score": 100, "grade": "Z", "components": {}}}
+        issues = validate_semantic_constraints(report, "dataset_quality_report")
+        warnings = [i for i in issues if i.severity == "warning"]
+        self.assertGreater(len(warnings), 0)
+        self.assertTrue(any("unknown grade value" in i.message for i in warnings))
+
+    def test_semantic_unknown_status_warns(self) -> None:
+        report = {"status": "unknown_status"}
+        issues = validate_semantic_constraints(report, "dataset_quality_report")
+        warnings = [i for i in issues if i.severity == "warning"]
+        self.assertGreater(len(warnings), 0)
+        self.assertTrue(any("unknown status value" in i.message for i in warnings))
+
+    def test_additive_drift_not_semantic_error(self) -> None:
+        # Additive drift should remain shape drift, not become semantic error
+        golden = {"a": "str"}
+        current = {"a": "str", "b": "number"}
+        drift_items = detect_drift_against_golden(current, golden, "test.json", set())
+        self.assertEqual(len(drift_items), 1)
+        self.assertEqual(drift_items[0].kind, "additive")
 
 
 if __name__ == "__main__":
