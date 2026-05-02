@@ -56,6 +56,13 @@ Dataset quality reports now include:
 - Contract validation CLI
 - Additive vs breaking change detection
 
+**Phase 896-925 Contract Adoption:**
+
+- Integrated contract validation in smoke workflow
+- Automatic schema validation after report generation
+- CLI failure tests for missing fields and type mismatches
+- Contract workflow documentation
+
 Combined bundle builder:
 
 ```bash

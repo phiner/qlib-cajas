@@ -46,6 +46,45 @@ Build golden shapes:
   --out-dir cajas/data_examples/golden/dataset_quality
 ```
 
+## Contract Workflow
+
+**Running contract validation manually:**
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/validate_dataset_quality_contract.py \
+  --bundle-root tmp/dataset-quality-smoke \
+  --out-json tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.json \
+  --out-md tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.md
+```
+
+**Integrated validation:**
+
+Dataset quality smoke now automatically validates schema contracts after generating outputs. Contract validation results are written to:
+- `<smoke-root>/contract/dataset_quality_contract_report.json`
+- `<smoke-root>/contract/dataset_quality_contract_report.md`
+
+Smoke exits with error if contract validation fails.
+
+**Breaking vs additive changes:**
+
+- **Breaking**: Removing required fields, changing field types
+- **Additive**: Adding new optional fields, adding new report sections
+- **Allowed**: Extra fields beyond required schema
+
+Golden shapes enforce required fields but allow additive changes.
+
+**Reviewing contract failures:**
+
+1. Check contract report: `tmp/dataset-quality-smoke/contract/dataset_quality_contract_report.md`
+2. Review error/warning messages
+3. If intentional schema change:
+   - Update schema contract in `cajas/reports/dataset_quality_schema_contract.py`
+   - Rebuild golden shapes
+   - Update tests
+4. If unintentional:
+   - Fix report generation code
+   - Rerun smoke validation
+
 ## Combined bundle CLI
 
 ```bash
