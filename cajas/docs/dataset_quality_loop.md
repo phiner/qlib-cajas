@@ -1353,6 +1353,68 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2846-2905 Addendum: Owner Response Candidate Review Workflow
+
+### Confirmed-Clear Example
+
+- Added:
+  - `cajas/data_examples/history_alias_consumer_owner_response.confirmed_clear.example.json`
+- Purpose:
+  - provide a reviewer-friendly simulated `confirmed_clear` response.
+  - keep example clearly non-production by note text and usage guidance.
+
+### Owner Response Apply-to-Out Hardening
+
+- `validate_consumer_owner_response.py` + report module now expose:
+  - `candidate_written`
+  - `candidate_output_path`
+  - `manual_approval_required`
+  - `do_not_auto_apply`
+- Candidate write rules:
+  - only when response is valid for application (`valid_ready_to_apply`).
+  - invalid/incomplete payloads do not write candidate evidence output.
+
+### Candidate Readiness Simulation
+
+- New report:
+  - `cajas/reports/validation_consumer_evidence_candidate.py`
+  - `cajas/scripts/build_consumer_evidence_candidate_report.py`
+- Simulated outputs under:
+  - `tmp/simulated-confirmed-clear/`
+- Decision framing:
+  - `status=ready_candidate|blocked|invalid`
+  - manual approval remains required.
+  - report is explicit `do_not_auto_apply=true`.
+
+### Readiness/Milestone Optional Candidate Note
+
+- Release readiness optional input:
+  - `--consumer-evidence-candidate-report`
+- Milestone packet optional input:
+  - `--consumer-evidence-candidate-report`
+- Current behavior:
+  - real readiness remains tied to real evidence (`watch`).
+  - candidate projection can show potential `ready` if manually approved and applied.
+
+### Validation Snapshot
+
+- Focused tests:
+  - owner response + candidate + readiness + milestone: pass
+- Related phase suite:
+  - `199 passed, 319 deselected`
+- Fast validation:
+  - `56.757s`, `overall_status=pass`
+- Runtime budget:
+  - `overall_status=pass`
+- Data source audit:
+  - `read_csv_count=29`
+
+### Non-Goals
+
+- No automatic overwrite of `cajas/data_examples/history_alias_external_consumers.json`.
+- No automatic alias fallback removal.
+- No trading execution expansion.
+
 ## Phase 2546-2605 Addendum: Pytest Runtime Profile and Fast Timing Reliability
 
 **Date**: 2026-05-03

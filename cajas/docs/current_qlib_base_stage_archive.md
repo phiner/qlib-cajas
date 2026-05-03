@@ -2246,6 +2246,66 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2846-2905 Addendum: Owner Response Confirmed-Clear Candidate Review
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Provide a non-destructive confirmed-clear review flow that generates candidate evidence, simulates projected readiness, and preserves manual approval control.
+
+### Implemented Changes
+
+1. Added confirmed-clear example payload:
+   - `cajas/data_examples/history_alias_consumer_owner_response.confirmed_clear.example.json`
+2. Hardened owner response validation/apply-to-out output:
+   - candidate write only when response is valid and safe.
+   - report fields now include `candidate_written`, `candidate_output_path`, `manual_approval_required`, `do_not_auto_apply`.
+3. Added candidate simulation report:
+   - `cajas/reports/validation_consumer_evidence_candidate.py`
+   - `cajas/scripts/build_consumer_evidence_candidate_report.py`
+4. Added optional candidate-summary integration into:
+   - release readiness (`--consumer-evidence-candidate-report`)
+   - milestone packet (`--consumer-evidence-candidate-report`)
+5. Added tests:
+   - `cajas/tests/test_validation_consumer_evidence_candidate.py`
+   - extended owner response/readiness/milestone tests for candidate behavior.
+
+### Real vs Candidate Simulation Snapshot
+
+- Real owner response validation (`example.json`):
+  - `status=incomplete`
+  - `safe_to_update_evidence=false`
+- Simulated confirmed-clear validation:
+  - `status=valid_ready_to_apply`
+  - `candidate_written=true`
+- Candidate summary:
+  - `status=ready_candidate`
+  - `release_readiness_projected_status=ready`
+  - `manual_approval_required=true`
+- Real release readiness remains:
+  - `status=watch`
+- Real milestone packet remains:
+  - `overall_status=watch`
+
+### Runtime / Validation Snapshot
+
+- Fast validation: `56.757s` (`overall_status=pass`)
+- Runtime budget: `pass`
+- Related validation suite: `199 passed, 319 deselected`
+- Data source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Manual Approval Contract
+
+- Candidate artifacts are reviewer-facing only.
+- Real evidence file is not overwritten by default.
+- Alias fallback removal remains blocked until explicit external owner approval is accepted and applied.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 
 ## Phase 1586–1645 Addendum: CI Profile Policy Externalization, Runtime Budget Variance Handling, and Final Reasoning
 

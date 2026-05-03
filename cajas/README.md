@@ -1348,6 +1348,39 @@ Current status snapshot:
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2846-2905 Addendum: Confirmed-Clear Candidate Review and Evidence Apply Dry-Run
+
+- Added confirmed-clear simulation owner response example:
+  - `cajas/data_examples/history_alias_consumer_owner_response.confirmed_clear.example.json`
+  - explicitly marked as example-only, not production evidence.
+- Hardened owner response apply-dry-run metadata:
+  - validator now reports `candidate_written`, `candidate_output_path`, `manual_approval_required`, `do_not_auto_apply`.
+  - `--apply-to-out` writes a candidate only for valid responses.
+  - candidate keeps untouched consumers and adds candidate provenance metadata.
+- Added candidate-readiness simulation report:
+  - `cajas/reports/validation_consumer_evidence_candidate.py`
+  - `cajas/scripts/build_consumer_evidence_candidate_report.py`
+  - output: `tmp/simulated-confirmed-clear/history-alias-consumer-evidence-candidate.json|md`
+- Added optional candidate summary integration:
+  - release readiness supports `--consumer-evidence-candidate-report`
+  - milestone packet supports `--consumer-evidence-candidate-report`
+  - real readiness remains based on real evidence (`watch`) while surfacing candidate projection.
+
+Current real vs simulated status snapshot:
+- real owner response validation: `incomplete`, `safe_to_update_evidence=false`
+- simulated confirmed-clear validation: `valid_ready_to_apply`, `candidate_written=true`
+- candidate simulation status: `ready_candidate`, `release_readiness_projected_status=ready`
+- real release readiness: `watch`
+- real milestone packet overall: `watch`
+
+Runtime snapshot:
+- fast validation total: `56.757s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2306-2365 Addendum: Alias Sunset Decision Gate and Release Readiness Dashboard
 
 - Added external consumer confirmation template:
