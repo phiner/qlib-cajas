@@ -2868,3 +2868,53 @@ Top profile contributors before optimization were mostly single-test CLI subproc
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2666-2725 Addendum: Runtime Optimization Round 2 and Consumer Evidence Closure Path
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Perform a second safe hotspot optimization pass and strengthen the remaining external consumer closure workflow.
+
+### Implemented Changes
+
+1. Runtime optimization round 2:
+   - `audit_data_sources.py` and `audit_validation_runtime.py` now accept `main(argv)`.
+   - corresponding tests moved from subprocess launches to direct `main(argv)` calls.
+2. Consumer closure clarity:
+   - added `closure_checklist` to `validation_consumer_evidence_closure` JSON/Markdown.
+   - markdown now renders a dedicated closure checklist section for reviewer actioning.
+
+### Runtime Profile Findings
+
+Current top slow tests include:
+- `test_baseline_runner` (still dominant single hotspot)
+- multiple remaining CLI wrapper tests around 2.2s–2.6s
+
+Interpretation:
+- subprocess-heavy hotspots are gradually reduced; remaining dominant tests are genuine heavier logic or not yet migrated wrappers.
+
+### Validation Snapshot
+
+- Modified tests: pass
+- Required focused suites: pass
+- Related suite: pass (`189 passed`, `319 deselected`)
+- Fast validation: `79.427s`, `pytest_fast=70.796s`
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Readiness / Evidence Outcome
+
+- Consumer evidence closure remains `incomplete` with one unresolved blocking external consumer.
+- Alias sunset review remains `watch` with `collect_consumer_evidence`.
+- Release readiness remains `watch` for alias/evidence reasons, not runtime reasons.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

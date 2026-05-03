@@ -1464,6 +1464,76 @@ Pattern:
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2666-2725 Addendum: Runtime Optimization Round 2 and External Consumer Closure Path
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Preserve runtime edge pass-state with a second safe hotspot pass and make the remaining external consumer blocker operationally explicit.
+
+### Round-2 Slowest-Test Findings
+
+Current top profile hotspots after prior rounds:
+- `test_baseline_runner.py::...::test_training_and_model_actions_are_disabled`
+- several remaining single-test CLI wrappers (`build_artifact_lineage`, `build_final_readiness_packet`, `build_final_research_bundle`, etc.)
+- runtime/data audit tests remained in the top set before round-2 optimization.
+
+### Optimization Applied
+
+1. Updated audit CLIs to support direct call testing:
+   - `cajas/scripts/audit_data_sources.py` -> `main(argv)`
+   - `cajas/scripts/audit_validation_runtime.py` -> `main(argv)`
+2. Converted audit CLI tests from subprocess to direct `main(argv)`:
+   - `cajas/tests/test_data_source_audit.py`
+   - `cajas/tests/test_validation_runtime_audit.py`
+3. Preserved output assertions and status checks; no assertion weakening.
+
+### Consumer Evidence Closure Path Improvement
+
+Updated `validation_consumer_evidence_closure` report surface:
+- added `closure_checklist` in JSON and Markdown.
+- markdown now contains `## Closure Checklist` with explicit required actions:
+  - identify owner for unresolved consumer
+  - confirm `manifest.history` dependency
+  - keep fallback + migration item if alias required
+  - update evidence fields when confirmed clear
+
+### Validation Snapshot
+
+- Focused modified suites: pass
+- Required phase focused suites: pass
+- Related suite: pass (`189 passed`, `319 deselected`)
+- Fast validation: pass (`79.427s total`, `pytest_fast=70.796s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Comparison
+
+- Phase 2546 baseline: `96.83s`
+- Phase 2606 baseline: `78.623s`
+- Current: `79.427s`
+
+Result:
+- runtime remains healthy (`edge=pass`) with substantial margin vs Phase 2546.
+- small variance vs Phase 2606 is within pass-state triage (`runtime_variance=pass`).
+
+### Consumer Closure / Readiness State
+
+- consumer evidence closure: `incomplete` (`unresolved_count=1`, `blocking_consumer_count=1`)
+- alias sunset review: `watch`, action `collect_consumer_evidence`
+- release readiness: `watch` (evidence/alias reasons)
+- milestone packet: `watch`
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
 
 **Date**: 2026-05-03

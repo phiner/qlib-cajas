@@ -1584,3 +1584,37 @@ Status impact:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2666-2725 Addendum: Runtime Optimization Round 2 and Consumer Closure Path
+
+- Second-round profile findings (`tmp/validation-pytest-runtime-profile.json|md`):
+  - top hotspot remains `test_baseline_runner`.
+  - next hotspots are still mostly single-test CLI wrappers.
+  - runtime/data-audit CLI tests remained meaningful contributors before this round.
+- Applied safe round-2 optimization:
+  - `cajas/scripts/audit_data_sources.py` and `cajas/scripts/audit_validation_runtime.py` now support `main(argv)`.
+  - corresponding tests switched from subprocess launches to direct `main(argv)` invocation:
+    - `cajas/tests/test_data_source_audit.py`
+    - `cajas/tests/test_validation_runtime_audit.py`
+  - validation assertions preserved; no test skip/tier downgrade.
+- Consumer evidence closure path tightened:
+  - `cajas/reports/validation_consumer_evidence_closure.py` now includes explicit `closure_checklist` in JSON and Markdown.
+  - checklist covers owner identification, `manifest.history` dependency confirmation, alias-required migration handling, and evidence update requirements.
+
+Current runtime snapshot:
+- fast validation total: `79.427s`
+- pytest_fast: `70.796s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Consumer closure/readiness snapshot:
+- consumer evidence closure: `incomplete` (`unresolved_count=1`, `blocking_consumer_count=1`)
+- alias sunset review: `watch` (`recommended_action=collect_consumer_evidence`)
+- release readiness: `watch` (evidence/alias reasons, runtime healthy)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
