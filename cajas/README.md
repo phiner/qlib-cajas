@@ -1849,3 +1849,12 @@ Owner/evidence snapshot:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3206-3325 Alias Fallback Removal Readiness
+
+- Active `history_update` alias emission was removed from review bundle generation.
+- `--include-history-update-alias` is sunset and fails fast with a migration message.
+- Canonical-only manifest output (`history`) is now enforced.
+- Legacy archived manifests remain readable via `normalize_history_metadata` compatibility normalization.
+- Release readiness and milestone packet now include post-removal alias status and rollback planning.
+- This remains offline validation infrastructure work; not trading logic.
