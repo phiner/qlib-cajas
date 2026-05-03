@@ -86,6 +86,7 @@ def build_validation_milestone_packet(
     alias_fallback_removal_readiness: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
+    alias_post_removal_closure: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -154,6 +155,11 @@ def build_validation_milestone_packet(
         else None
     )
     runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else None
+    post_removal_closure = (
+        _load_json(alias_post_removal_closure)
+        if alias_post_removal_closure and alias_post_removal_closure.exists()
+        else None
+    )
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -177,6 +183,10 @@ def build_validation_milestone_packet(
         overall_status = runtime_variance_status
     elif release_readiness_status in {"watch", "blocked"}:
         overall_status = "watch" if release_readiness_status == "watch" else "fail"
+    elif (post_removal_closure or {}).get("status") == "blocked":
+        overall_status = "fail"
+    elif (post_removal_closure or {}).get("status") == "watch":
+        overall_status = "watch"
     elif runtime_edge_status == "watch":
         overall_status = "watch"
     elif runtime_edge_status == "fail":
@@ -270,6 +280,7 @@ def build_validation_milestone_packet(
         "alias_fallback_removal_readiness_summary": fallback_removal_readiness,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
+        "alias_post_removal_closure_summary": post_removal_closure,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -354,6 +365,13 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('release_readiness_summary') or {}).get('status', 'not_included')}`",
             f"- reason: `{(payload.get('release_readiness_summary') or {}).get('release_readiness_reason', 'n/a')}`",
             f"- next_actions: `{(payload.get('release_readiness_summary') or {}).get('next_actions', [])}`",
+            "",
+            "## Alias Post-Removal Closure",
+            "",
+            f"- `{(payload.get('alias_post_removal_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- canonical_only_manifest_confirmed: `{(payload.get('alias_post_removal_closure_summary') or {}).get('canonical_only_manifest_confirmed', 'n/a')}`",
+            f"- history_update_absent: `{(payload.get('alias_post_removal_closure_summary') or {}).get('history_update_absent', 'n/a')}`",
+            f"- remaining_followups: `{(payload.get('alias_post_removal_closure_summary') or {}).get('remaining_followups', [])}`",
             "",
             "## Alias Removal Plan",
             "",
