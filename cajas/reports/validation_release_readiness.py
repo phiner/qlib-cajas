@@ -35,6 +35,7 @@ def build_validation_release_readiness_report(
     alias_post_removal_closure: Path | None = None,
     release_ready_closure: Path | None = None,
     final_reviewer_packet: Path | None = None,
+    maintenance_cadence: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -58,6 +59,7 @@ def build_validation_release_readiness_report(
     post_removal_closure = _load_json(alias_post_removal_closure) if alias_post_removal_closure and alias_post_removal_closure.exists() else {}
     final_release_closure = _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else {}
     reviewer_packet = _load_json(final_reviewer_packet) if final_reviewer_packet and final_reviewer_packet.exists() else {}
+    cadence_packet = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -285,6 +287,10 @@ def build_validation_release_readiness_report(
         "final_reviewer_packet_status": reviewer_packet.get("status"),
         "final_reviewer_packet_primary_artifacts": reviewer_packet.get("primary_artifacts", []),
         "final_reviewer_packet_remaining_followups": reviewer_packet.get("remaining_followups", []),
+        "maintenance_cadence_status": cadence_packet.get("status"),
+        "maintenance_cadence_recommended_cadence": cadence_packet.get("recommended_cadence"),
+        "maintenance_cadence_routine_commands": cadence_packet.get("routine_commands", []),
+        "maintenance_cadence_watch_items": cadence_packet.get("watch_items", []),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -321,6 +327,8 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Alias post-removal closure status: `{payload.get('alias_post_removal_closure_status')}`",
             f"- Final release-ready closure status: `{payload.get('release_ready_closure_status')}`",
             f"- Final reviewer packet status: `{payload.get('final_reviewer_packet_status')}`",
+            f"- Maintenance cadence status: `{payload.get('maintenance_cadence_status', 'not_included')}`",
+            f"- Maintenance cadence recommended: `{payload.get('maintenance_cadence_recommended_cadence', 'n/a')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",
