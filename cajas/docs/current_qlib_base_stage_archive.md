@@ -2166,3 +2166,20 @@ Readability polish only. No new workflow semantics, no Qlib core changes, and no
 - Canonical `history` remains source of truth.
 - Deprecated `history_update` remains available during migration window.
 - Compatibility report makes migration state visible without changing core validation semantics.
+
+
+## Phase 1406–1435 Addendum: Manifest Compatibility Severity and Bundle Gating
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Strengthen compatibility semantics with explicit severity levels and predictable gating behavior in CLI and bundle workflows.
+
+### Highlights
+
+1. Compatibility issues now include structured severity (`error|warning|info`).
+2. Compatibility report now emits `status`, counts, and issue list.
+3. CLI exit behavior now supports fail-level gating and `--fail-on-warn`.
+4. Review bundle compatibility integration now honors fail-level gating unless `--warn-only`.
+5. Canonical `history` remains source of truth; `history_update` remains deprecated during compatibility window.

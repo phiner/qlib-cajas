@@ -1057,3 +1057,11 @@ Current audit delta:
 - Added manifest compatibility metadata section to bundle manifest and index
 - Preserved default behavior when compatibility check flag is not used
 - Reused existing canonical/compatibility helpers directly without subprocess overhead
+
+
+### Phase 1406–1435: Manifest Compatibility Severity and Bundle Gating
+- Added explicit compatibility severities and status model: `pass|warn|fail`
+- Added severity counts and issue list to compatibility report
+- Updated compatibility CLI exit behavior and added `--fail-on-warn`
+- Added review bundle compatibility gating: fail status raises unless `--warn-only`
+- Kept canonical `history` contract and deprecated `history_update` compatibility window

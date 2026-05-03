@@ -867,3 +867,31 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Validation note**:
 - Workflow visibility integration only; no new validation semantics beyond existing compatibility guard.
+
+
+## Phase 1406–1435: Manifest Compatibility Severity and Bundle Gating
+
+**Goal**: Upgrade manifest compatibility checks to explicit severity model (`pass|warn|fail`) and wire status into bundle/CLI gating behavior.
+
+**What changed**:
+- Compatibility issues now include severity and code:
+  - `error`, `warning`, `info`
+- Compatibility report now includes:
+  - `status`
+  - `error_count`
+  - `warning_count`
+  - `info_count`
+  - `issues`
+- Standalone CLI behavior:
+  - exit `0` for `pass`
+  - exit `0` for `warn` by default
+  - exit non-zero for `fail`
+  - `--fail-on-warn` supported
+- Review bundle integration behavior:
+  - compatibility `fail` raises unless `--warn-only` is used
+  - compatibility `warn` records warning and continues
+  - manifest/index include severity counts and status
+
+**Compatibility window**:
+- Canonical source remains `history`.
+- `history_update` remains deprecated alias during migration window.
