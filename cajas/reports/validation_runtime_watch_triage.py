@@ -16,11 +16,13 @@ def build_validation_runtime_watch_triage_report(
     fast_timing_json: Path,
     runtime_edge_report: Path,
     runtime_variance_report: Path,
+    pytest_runtime_profile: Path | None,
     baselines: list[dict[str, Any]],
 ) -> dict[str, Any]:
     timing = _load_json(fast_timing_json)
     edge = _load_json(runtime_edge_report)
     variance = _load_json(runtime_variance_report)
+    profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else {}
 
     current = timing.get("total_seconds")
     results = timing.get("results", [])
@@ -61,13 +63,24 @@ def build_validation_runtime_watch_triage_report(
     if isinstance(test_count, int) and test_count > 0 and isinstance(current, (int, float)):
         seconds_per_test = float(current) / float(test_count)
 
+    profile_slowest_tests = profile.get("slowest_tests") if isinstance(profile.get("slowest_tests"), list) else []
+    profile_slowest_files = profile.get("slowest_files") if isinstance(profile.get("slowest_files"), list) else []
+    profile_recommendation = profile.get("recommendation")
+
     if edge_status in {"warn", "fail"}:
         status = edge_status
-        likely_cause = "utility_step" if largest_step and largest_step != "pytest_fast" else "test_count_growth"
-        recommendation = "optimize"
+        if profile_slowest_tests:
+            likely_cause = "slow_tests"
+            recommendation = "optimize_slow_tests"
+        else:
+            likely_cause = "utility_step" if largest_step and largest_step != "pytest_fast" else "test_count_growth"
+            recommendation = "optimize"
     elif edge_status == "watch":
         status = "watch"
-        if largest_step == "pytest_fast":
+        if profile_slowest_tests:
+            likely_cause = "slow_tests"
+            recommendation = "optimize_slow_tests"
+        elif largest_step == "pytest_fast":
             likely_cause = "test_count_growth"
             recommendation = "profile_slow_tests"
         else:
@@ -90,6 +103,10 @@ def build_validation_runtime_watch_triage_report(
         "tests_deselected": tests_deselected,
         "seconds_per_test": seconds_per_test,
         "test_count_source": "fast_timing_json.test_summary" if test_count is not None else "missing",
+        "pytest_runtime_profile_status": profile.get("status"),
+        "pytest_runtime_profile_recommendation": profile_recommendation,
+        "slowest_tests": profile_slowest_tests,
+        "slowest_files": profile_slowest_files,
         "baseline_comparisons": baseline_comparisons,
         "likely_cause": likely_cause,
         "recommendation": recommendation,
@@ -112,8 +129,31 @@ def render_validation_runtime_watch_triage_markdown(payload: dict[str, Any]) -> 
             f"- test_count: `{payload.get('test_count')}`",
             f"- tests_deselected: `{payload.get('tests_deselected')}`",
             f"- seconds_per_test: `{payload.get('seconds_per_test')}`",
+            f"- pytest_runtime_profile_status: `{payload.get('pytest_runtime_profile_status')}`",
             f"- Likely cause: `{payload.get('likely_cause')}`",
             f"- Recommendation: `{payload.get('recommendation')}`",
+            "",
+            "## Slowest Tests (Profile)",
+            "",
+            *(
+                [
+                    f"- `{row.get('seconds')}s` `{row.get('nodeid')}`"
+                    for row in (payload.get("slowest_tests") or [])[:10]
+                ]
+                if payload.get("slowest_tests")
+                else ["- none"]
+            ),
+            "",
+            "## Slowest Files (Profile)",
+            "",
+            *(
+                [
+                    f"- `{row.get('file')}` total=`{row.get('total_seconds')}s` tests=`{row.get('test_count')}`"
+                    for row in (payload.get("slowest_files") or [])[:10]
+                ]
+                if payload.get("slowest_files")
+                else ["- none"]
+            ),
             "",
             "## Scope Boundary",
             "",

@@ -19,6 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fast-timing-json", required=True, type=Path)
     parser.add_argument("--runtime-edge-report", required=True, type=Path)
     parser.add_argument("--runtime-variance-report", required=True, type=Path)
+    parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--baseline-label", action="append", default=[])
     parser.add_argument("--baseline-fast-total", action="append", type=float, default=[])
     parser.add_argument("--out-json", required=True, type=Path)
@@ -33,6 +34,7 @@ def main(argv: list[str] | None = None) -> int:
         fast_timing_json=args.fast_timing_json,
         runtime_edge_report=args.runtime_edge_report,
         runtime_variance_report=args.runtime_variance_report,
+        pytest_runtime_profile=args.pytest_runtime_profile,
         baselines=baselines,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
