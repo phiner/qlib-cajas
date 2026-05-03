@@ -31,6 +31,7 @@ def build_validation_final_reviewer_packet(
     external_consumer_evidence_closure_report: Path | None = None,
     final_maintenance_archive_closure_report: Path | None = None,
     post_freeze_handoff_seal_report: Path | None = None,
+    routine_release_cycle_stability_report: Path | None = None,
 ) -> dict[str, Any]:
     final_closure = _load_json(release_ready_closure)
     alias_closure = _load_json(alias_post_removal_closure)
@@ -50,6 +51,7 @@ def build_validation_final_reviewer_packet(
     external_evidence_closure = _load_json(external_consumer_evidence_closure_report) if external_consumer_evidence_closure_report and external_consumer_evidence_closure_report.exists() else {}
     final_archive_closure = _load_json(final_maintenance_archive_closure_report) if final_maintenance_archive_closure_report and final_maintenance_archive_closure_report.exists() else {}
     post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else {}
+    routine_stability = _load_json(routine_release_cycle_stability_report) if routine_release_cycle_stability_report and routine_release_cycle_stability_report.exists() else {}
 
     canonical_only = isinstance(manifest.get("history"), dict) and "history_update" not in manifest
     legacy_kept = readiness.get("legacy_read_normalization_kept") is True
@@ -87,6 +89,12 @@ def build_validation_final_reviewer_packet(
     followups.extend(final_closure.get("remaining_followups", []))
     followups = sorted(set(followups))
 
+    routine_stability_status = routine_stability.get("status")
+    routine_stability_blocking = routine_stability.get("blocking")
+    routine_stability_review_state = routine_stability.get("review_state")
+    if routine_stability_status == "blocked" or routine_stability_blocking is True or routine_stability_review_state == "blocked":
+        blockers.append("routine_release_cycle_stability_blocked")
+
     if blockers:
         status = "blocked"
     elif final_closure.get("ready_for_review") is True:
@@ -119,6 +127,9 @@ def build_validation_final_reviewer_packet(
         "final_maintenance_archive_closure_blocking": final_archive_closure.get("blocking"),
         "post_freeze_handoff_seal_status": post_freeze_handoff.get("status"),
         "post_freeze_handoff_seal_blocking": post_freeze_handoff.get("blocking"),
+        "routine_release_cycle_stability_status": routine_stability_status,
+        "routine_release_cycle_stability_review_state": routine_stability_review_state,
+        "routine_release_cycle_stability_blocking": routine_stability_blocking,
         "remaining_followups": followups,
         "primary_artifacts": [
             str(release_ready_closure),
@@ -201,6 +212,12 @@ def render_validation_final_reviewer_packet_markdown(payload: dict[str, Any]) ->
             "",
             f"- status: `{payload.get('post_freeze_handoff_seal_status', 'not_included')}`",
             f"- blocking: `{payload.get('post_freeze_handoff_seal_blocking', False)}`",
+            "",
+            "## Routine Release-Cycle Stability",
+            "",
+            f"- status: `{payload.get('routine_release_cycle_stability_status', 'not_included')}`",
+            f"- review_state: `{payload.get('routine_release_cycle_stability_review_state', 'n/a')}`",
+            f"- blocking: `{payload.get('routine_release_cycle_stability_blocking', False)}`",
             "",
             "## Reviewer Handoff",
             "",

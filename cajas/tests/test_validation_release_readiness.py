@@ -223,6 +223,36 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["fallback_removed"] is False
 
 
+def test_release_readiness_blocked_when_routine_stability_blocked(tmp_path: Path) -> None:
+    report = _build_report(tmp_path, alias_gate="ready")
+    _write_json(tmp_path / "routine_stability.json", {"status": "blocked", "review_state": "blocked", "blocking": True})
+    blocked = build_validation_release_readiness_report(
+        milestone_packet=tmp_path / "milestone.json",
+        alias_sunset_review=tmp_path / "alias.json",
+        runtime_release_cycle_report=tmp_path / "cycle.json",
+        runtime_variance_report=tmp_path / "variance.json",
+        runtime_edge_report=tmp_path / "edge.json",
+        runtime_budget_report=tmp_path / "budget.json",
+        alias_removal_plan=tmp_path / "removal.json",
+        consumer_evidence_closure_report=tmp_path / "evidence_closure.json",
+        consumer_owner_handoff=tmp_path / "owner_handoff.json",
+        consumer_owner_response_validation=tmp_path / "owner_response.json",
+        consumer_evidence_candidate_report=tmp_path / "candidate.json",
+        evidence_candidate_approval_report=tmp_path / "approval_gate.json",
+        alias_sunset_schedule=tmp_path / "schedule.json",
+        canonical_evidence_update_plan=tmp_path / "update_plan.json",
+        canonical_evidence_apply_report=tmp_path / "apply_report.json",
+        applied_evidence_readiness=tmp_path / "applied_readiness.json",
+        alias_fallback_removal_readiness=tmp_path / "fallback_removal.json",
+        runtime_watch_triage_report=tmp_path / "runtime_triage.json",
+        pytest_runtime_profile=tmp_path / "pytest_profile.json",
+        routine_release_cycle_stability_report=tmp_path / "routine_stability.json",
+    )
+    assert report["status"] in {"watch", "ready", "blocked"}
+    assert blocked["status"] == "blocked"
+    assert blocked["routine_release_cycle_stability_status"] == "blocked"
+
+
 def test_post_removal_mode_supersedes_pre_removal_watch_items(tmp_path: Path) -> None:
     milestone = _write_json(tmp_path / "milestone.json", {"overall_status": "watch", "alias_migration_summary": {"status": "pass"}})
     alias = _write_json(tmp_path / "alias.json", {"status": "watch", "decision_gate": {"status": "watch", "next_actions": ["collect_consumer_evidence"]}})

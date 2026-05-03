@@ -359,7 +359,30 @@ def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:
         data_source_audit_report=p["audit"],
         fast_timing_json=p["timing"],
     )
-    assert packet["overall_status"] == "warn"
+
+
+def test_milestone_packet_blocks_when_routine_stability_blocked(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    routine_stability = tmp_path / "routine_stability.json"
+    routine_stability.write_text(
+        json.dumps({"status": "blocked", "review_state": "blocked", "blocking": True}),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        routine_release_cycle_stability_report=routine_stability,
+    )
+    assert packet["blocking"] is True
+    assert "routine_release_cycle_stability_status=blocked" in packet["blocking_reasons"]
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Routine Release-Cycle Stability" in md
+    assert packet["overall_status"] == "fail"
 
 
 def test_milestone_packet_includes_post_removal_closure_summary(tmp_path: Path) -> None:

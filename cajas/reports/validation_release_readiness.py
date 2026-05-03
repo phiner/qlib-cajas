@@ -43,6 +43,7 @@ def build_validation_release_readiness_report(
     external_consumer_evidence_closure_report: Path | None = None,
     final_maintenance_archive_closure_report: Path | None = None,
     post_freeze_handoff_seal_report: Path | None = None,
+    routine_release_cycle_stability_report: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -74,6 +75,7 @@ def build_validation_release_readiness_report(
     external_evidence_closure = _load_json(external_consumer_evidence_closure_report) if external_consumer_evidence_closure_report and external_consumer_evidence_closure_report.exists() else {}
     final_archive_closure = _load_json(final_maintenance_archive_closure_report) if final_maintenance_archive_closure_report and final_maintenance_archive_closure_report.exists() else {}
     post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else {}
+    routine_stability = _load_json(routine_release_cycle_stability_report) if routine_release_cycle_stability_report and routine_release_cycle_stability_report.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -244,6 +246,12 @@ def build_validation_release_readiness_report(
         status = "blocked"
         release_readiness_reason = "post_freeze_handoff_seal_status=fail"
         next_actions = ["resolve_blocking_gates"]
+    if routine_stability.get("status") == "blocked" and status != "blocked":
+        status = "blocked"
+        release_readiness_reason = "routine_release_cycle_stability_status=blocked"
+        next_actions = ["resolve_blocking_gates"]
+    if routine_stability.get("status") == "watch" and status == "ready" and routine_stability.get("blocking") is False:
+        release_readiness_reason = "routine_release_cycle_stability_status=watch_non_blocking"
 
     primary_artifacts = [
         str(milestone_packet),
@@ -334,6 +342,9 @@ def build_validation_release_readiness_report(
         "final_maintenance_archive_closure_blocking": final_archive_closure.get("blocking"),
         "post_freeze_handoff_seal_status": post_freeze_handoff.get("status"),
         "post_freeze_handoff_seal_blocking": post_freeze_handoff.get("blocking"),
+        "routine_release_cycle_stability_status": routine_stability.get("status"),
+        "routine_release_cycle_stability_review_state": routine_stability.get("review_state"),
+        "routine_release_cycle_stability_blocking": routine_stability.get("blocking"),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -381,6 +392,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- External consumer evidence closure status: `{payload.get('external_consumer_evidence_closure_status', 'not_included')}`",
             f"- Final maintenance archive closure status: `{payload.get('final_maintenance_archive_closure_status', 'not_included')}`",
             f"- Post-freeze handoff seal status: `{payload.get('post_freeze_handoff_seal_status', 'not_included')}`",
+            f"- Routine release-cycle stability status: `{payload.get('routine_release_cycle_stability_status', 'not_included')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",
