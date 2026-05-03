@@ -1618,3 +1618,44 @@ Consumer closure/readiness snapshot:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2726-2785 Addendum: Remaining CLI Hotspots and Consumer Owner Handoff
+
+- Converted remaining safe CLI wrapper hotspots to direct `main(argv)` tests:
+  - `build_artifact_lineage.py`
+  - `build_final_readiness_packet.py`
+  - `build_final_research_bundle.py`
+  - `build_candidate_promotion_manifest.py`
+  - corresponding CLI tests now call `main([...])` directly.
+- Baseline runner review:
+  - `test_baseline_runner` still a top hotspot.
+  - safe fixture optimization applied by writing compact CSV text directly (removed `pandas` fixture dependency in test setup).
+  - disabled-training assertions were preserved.
+- Added consumer owner handoff packet:
+  - `cajas/reports/validation_consumer_owner_handoff.py`
+  - `cajas/scripts/build_consumer_owner_handoff.py`
+  - outputs:
+    - `tmp/history-alias-consumer-owner-handoff.json`
+    - `tmp/history-alias-consumer-owner-handoff.md`
+- Integrated owner handoff into readiness/milestone reports:
+  - release readiness optional arg `--consumer-owner-handoff`
+  - milestone packet optional arg `--consumer-owner-handoff`
+
+Current runtime snapshot:
+- fast validation total: `66.579s`
+- pytest_fast: `59.935s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Consumer/readiness snapshot:
+- owner handoff: `open` with one blocking unresolved consumer
+- consumer evidence closure: `incomplete`
+- alias sunset review: `watch`
+- release readiness: `watch` (evidence/owner handoff reasons, not runtime)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

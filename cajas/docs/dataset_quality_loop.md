@@ -1534,6 +1534,97 @@ Result:
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2726-2785 Addendum: Remaining CLI Hotspot Optimization and Consumer Owner Handoff
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Convert remaining safe CLI wrapper hotspots, review baseline runner hotspot behavior, and introduce an owner-facing handoff packet for unresolved external consumer closure.
+
+### Remaining Hotspot Findings
+
+Pre-change hotspot candidates included:
+- `test_build_artifact_lineage_cli`
+- `test_build_final_readiness_packet_cli`
+- `test_build_final_research_bundle_cli`
+- `test_build_candidate_promotion_manifest_cli`
+- `test_baseline_runner`
+
+After this phase profile:
+- top hotspot remains `test_baseline_runner` (~3.64s)
+- several next hotspots moved to other CLI tests not yet converted
+- converted wrapper tests dropped out of the top list
+
+### Runtime Optimization Applied
+
+1. Added `main(argv)` support for:
+   - `build_artifact_lineage.py`
+   - `build_final_readiness_packet.py`
+   - `build_final_research_bundle.py`
+   - `build_candidate_promotion_manifest.py`
+2. Converted corresponding CLI tests to direct function invocation.
+3. Baseline runner test fixture optimization:
+   - replaced pandas-generated CSV fixture with direct compact CSV text write.
+   - preserved disabled-training behavioral assertions.
+
+### Consumer Owner Handoff Packet
+
+Added owner-facing unresolved-consumer handoff artifacts:
+- module: `cajas/reports/validation_consumer_owner_handoff.py`
+- CLI: `cajas/scripts/build_consumer_owner_handoff.py`
+- outputs:
+  - `tmp/history-alias-consumer-owner-handoff.json`
+  - `tmp/history-alias-consumer-owner-handoff.md`
+
+Behavior:
+- status is `open` when unresolved consumers remain.
+- status is `blocked` when a consumer still requires alias.
+- status is `ready` when no unresolved blockers remain.
+- markdown includes a copyable owner message with required evidence checklist.
+
+### Readiness/Milestone Integration
+
+Added optional owner handoff integration:
+- release readiness: `--consumer-owner-handoff`
+- milestone packet: `--consumer-owner-handoff`
+
+Summaries now surface:
+- owner handoff status
+- blocking consumer count
+- handoff items
+
+### Validation Snapshot
+
+- Converted CLI test set: pass
+- Required focused suites: pass
+- Related suite: pass (`192 passed`, `319 deselected`)
+- Fast validation: pass (`66.579s total`, `pytest_fast=59.935s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Comparison
+
+- Phase 2606 baseline: `78.623s`
+- Phase 2666 baseline: `79.427s`
+- Current: `66.579s`
+
+### Consumer Closure State
+
+- consumer evidence closure: `incomplete`
+- consumer owner handoff: `open` (one blocking unresolved external consumer)
+- release readiness: `watch` (evidence/owner handoff reasons)
+- milestone packet: `watch`
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
 
 **Date**: 2026-05-03

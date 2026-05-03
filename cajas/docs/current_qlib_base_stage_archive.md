@@ -2918,3 +2918,64 @@ Interpretation:
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2726-2785 Addendum: Remaining CLI Wrapper Optimization and Owner Handoff Packet
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Reduce remaining CLI-wrapper runtime overhead, review baseline runner hotspot constraints, and add a copyable owner handoff packet for unresolved external consumer closure.
+
+### Implemented Changes
+
+1. Remaining safe CLI wrapper conversions:
+   - `build_artifact_lineage.py` -> `main(argv)`
+   - `build_final_readiness_packet.py` -> `main(argv)`
+   - `build_final_research_bundle.py` -> `main(argv)`
+   - `build_candidate_promotion_manifest.py` -> `main(argv)`
+   - updated corresponding CLI tests to direct `main([...])`.
+2. Baseline runner hotspot review:
+   - `test_baseline_runner` still dominant.
+   - optimized fixture setup by replacing pandas CSV construction with direct minimal CSV text write.
+3. New consumer owner handoff packet:
+   - `cajas/reports/validation_consumer_owner_handoff.py`
+   - `cajas/scripts/build_consumer_owner_handoff.py`
+   - `tmp/history-alias-consumer-owner-handoff.json|md`
+4. Readiness/milestone integration:
+   - release readiness now supports `--consumer-owner-handoff`.
+   - milestone packet now supports `--consumer-owner-handoff`.
+   - tests updated for both integrations.
+
+### Validation Snapshot
+
+- Converted CLI + baseline tests: pass
+- Focused suites: pass
+- Related suite: pass (`192 passed`, `319 deselected`)
+- Fast validation: `66.579s`, `pytest_fast=59.935s`
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Result
+
+- Phase 2606 baseline: `78.623s`
+- Phase 2666 baseline: `79.427s`
+- Current: `66.579s`
+- Significant runtime headroom gained while keeping validation gates intact.
+
+### Evidence/Readiness Result
+
+- Owner handoff packet status: `open` (blocking unresolved consumer remains).
+- Consumer closure: `incomplete`.
+- Alias sunset review: `watch`.
+- Release readiness: `watch` (owner/evidence reasons).
+- Milestone packet: `watch`.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
