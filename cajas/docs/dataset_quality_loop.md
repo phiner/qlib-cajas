@@ -1387,3 +1387,31 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2006-2065 Addendum: Controlled Default No-Alias Trial and Compatibility Fallback
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Flip generated manifest default to canonical-only `history` while keeping explicit alias fallback for legacy consumers.
+
+### Highlights
+
+1. Default generation changed to canonical-only (`history_update` omitted by default).
+2. Added explicit fallback emission flag: `--include-history-update-alias`.
+3. Kept `--omit-history-update-alias` accepted as transition compatibility/no-op.
+4. Confirmed compatibility guard behavior remains stable (pass/warn/fail semantics unchanged).
+5. Ran consumer final check (`history_update`, `normalize_history_metadata`, `history` references) and found no blocking internal consumer requirement for default alias emission.
+6. Revalidated default and alias-fallback bundles plus profile matrix equivalence.
+
+### Current Trial Result
+
+- Default no-alias bundle: `manifest_compatibility=pass`, `final_status=pass`
+- Alias fallback bundle: `manifest_compatibility=pass`, `final_status=pass`
+- Profile matrix statuses match in both bundles: `local=pass`, `ci=pass`, `strict=warn`
+- Migration readiness report: `pass`, recommendation `ready_for_default_no_alias_trial`
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

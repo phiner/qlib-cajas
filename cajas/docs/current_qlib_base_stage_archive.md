@@ -2423,3 +2423,24 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2006-2065 Addendum: Controlled Default No-Alias Trial and Compatibility Fallback
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Switch default review-bundle manifest emission to canonical-only `history` while preserving explicit compatibility fallback for deprecated alias consumers.
+
+### Highlights
+
+1. Default emission now omits `history_update`.
+2. Added explicit fallback flag: `--include-history-update-alias`.
+3. Kept transition compatibility flag: `--omit-history-update-alias` (accepted, no-op under new default unless alias fallback is requested).
+4. Kept compatibility checker semantics unchanged for canonical-only, canonical+alias, legacy-only, and mismatch/malformed cases.
+5. Added readiness CLI compatibility naming support for alias-fallback comparison input.
+6. Revalidated default-vs-fallback equivalence for profile matrix and required-gate outcomes.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

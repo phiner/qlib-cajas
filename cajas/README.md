@@ -1250,3 +1250,16 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 
 Known limitation:
 - Recommendation is for a controlled future default-flip phase; this phase does not flip default alias behavior.
+
+## Phase 2006-2065 Addendum: Controlled Default No-Alias Trial and Compatibility Fallback
+
+- Default generated review-bundle manifests now emit canonical `history` only.
+- Added explicit fallback flag `--include-history-update-alias` to emit deprecated alias metadata when needed.
+- Retained `--omit-history-update-alias` as compatibility/no-op transition flag.
+- Compatibility checker semantics unchanged:
+  - canonical-only: pass
+  - canonical + alias synced: pass
+  - legacy-only: warn
+  - mismatch/malformed alias: fail
+- Consumer final check (`tmp/history_alias_consumer_scan.txt`) shows active internal consumers already rely on canonical path or compatibility normalization (`normalize_history_metadata`).
+- Current trial readiness remains `pass` with recommendation `ready_for_default_no_alias_trial`.
