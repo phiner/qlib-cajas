@@ -83,3 +83,25 @@ def test_build_profile_matrix_required_fail():
     assert matrix["profiles"]["local"]["overall_status"] == "fail"
     assert matrix["profiles"]["ci"]["overall_status"] == "fail"
     assert matrix["profiles"]["strict"]["overall_status"] == "fail"
+
+def test_strict_warning_reason_and_markdown_note():
+    from cajas.reports.validation_profile_matrix import render_profile_matrix_markdown
+
+    base_payload = {
+        "gates": [
+            {
+                "name": "optional_missing",
+                "required": False,
+                "status": "not_run",
+                "reason_code": "missing",
+                "action": "none",
+                "summary": "missing"
+            }
+        ],
+        "profile": "local"
+    }
+    matrix = build_profile_matrix(base_payload=base_payload)
+    assert matrix["profiles"]["strict"]["overall_status"] == "warn"
+    assert matrix["profiles"]["strict"]["strict_warning_reason"] is not None
+    md = render_profile_matrix_markdown(matrix)
+    assert "Strict Warning Note" in md

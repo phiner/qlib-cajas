@@ -124,6 +124,19 @@ class ReviewBundleManifestCompatibilityTests(unittest.TestCase):
         self.assertEqual(report["status"], "fail")
         self.assertGreater(report["error_count"], 0)
 
+    def test_canonical_only_manifest_passes(self) -> None:
+        manifest = {
+            "history": {
+                "enabled": True,
+                "status": "pass",
+                "history_jsonl": "a.jsonl",
+                "summary_json": "a.json",
+                "summary_md": "a.md",
+            }
+        }
+        report = build_compatibility_report(manifest, "dummy.json")
+        self.assertEqual(report["status"], "pass")
+
     def test_cli_nonzero_on_fail_and_fail_on_warn(self) -> None:
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

@@ -1137,6 +1137,50 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertIn("Manifest Compatibility", index_text)
             self.assertIn("Report JSON", index_text)
 
+    def test_omit_history_update_alias_emits_canonical_only_manifest(self) -> None:
+        """When requested, manifest should emit canonical history without deprecated alias."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
+                    history_last_n=10,
+                    check_manifest_compatibility=True,
+                    warn_only=True,
+                    ci=True,
+                    omit_history_update_alias=True,
+                )
+
+            self.assertIn("history", manifest)
+            self.assertNotIn("history_update", manifest)
+            self.assertEqual(manifest["manifest_compatibility"]["status"], "pass")
+
     def test_manifest_compatibility_not_requested_note(self) -> None:
         """Index should contain clean note when compatibility check is not requested."""
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
