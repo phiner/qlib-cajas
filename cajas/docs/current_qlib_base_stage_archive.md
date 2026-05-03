@@ -3547,3 +3547,21 @@ Validation snapshot:
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 4526-4645 Routine Release-Cycle Stability Validation
+
+- Added routine release-cycle stability report:
+  - `tmp/validation-routine-release-cycle-stability.json`
+  - `tmp/validation-routine-release-cycle-stability.md`
+- Integrated stability summary into:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Stability semantics:
+  - `stable`: readiness/reviewer/milestone/runtime/closure gates are healthy and non-blocking
+  - `watch`: only non-blocking optional followups remain
+  - `blocked`: any required readiness/closure/runtime gate is blocking
+- Current maintenance posture remains review-ready with non-blocking followup visibility only.
+
+Routine maintenance command additions (next release cycle):
+- `PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_routine_release_cycle_stability.py --release-readiness-report tmp/validation-release-readiness.json --final-reviewer-packet tmp/validation-final-reviewer-packet.json --milestone-packet tmp/validation-milestone-packet.json --runtime-budget-report tmp/validation_runtime_budget_report.json --runtime-edge-report tmp/validation-runtime-edge-report.json --runtime-release-cycle-report tmp/validation-runtime-release-cycle-report.json --runtime-variance-closure-report tmp/validation-runtime-variance-closure.json --data-source-audit-report tmp/data_source_audit.json --maintenance-checklist tmp/validation-maintenance-checklist.json --maintenance-governance-closure tmp/validation-maintenance-governance-closure.json --final-maintenance-archive-closure-report tmp/validation-final-maintenance-archive-closure.json --external-consumer-evidence-closure-report tmp/validation-external-consumer-evidence-closure.json --post-freeze-handoff-seal-report tmp/validation-post-freeze-handoff-seal.json --optional-followups tmp/validation-optional-followups.json --out-json tmp/validation-routine-release-cycle-stability.json --out-md tmp/validation-routine-release-cycle-stability.md`
