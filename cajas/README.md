@@ -1263,3 +1263,17 @@ Known limitation:
   - mismatch/malformed alias: fail
 - Consumer final check (`tmp/history_alias_consumer_scan.txt`) shows active internal consumers already rely on canonical path or compatibility normalization (`normalize_history_metadata`).
 - Current trial readiness remains `pass` with recommendation `ready_for_default_no_alias_trial`.
+
+## Phase 2066-2125 Addendum: Alias Fallback Sunset Guard and Runtime Edge Stabilization
+
+- Added hard no-alias regression guard coverage in review-bundle tests:
+  - default manifest remains canonical-only (`history`)
+  - fallback alias requires `--include-history-update-alias`
+  - transition `--omit-history-update-alias` remains accepted/no-op
+- Extended migration readiness output with `alias_fallback` block:
+  - fallback flag, alias presence checks, deprecation metadata visibility, sunset recommendation
+- Added runtime edge risk report:
+  - `cajas/reports/validation_runtime_edge.py`
+  - `cajas/scripts/build_validation_runtime_edge_report.py`
+  - outputs `tmp/validation-runtime-edge-report.json|md`
+- Runtime edge report is reviewer-facing and does not replace runtime budget pass/fail gate.

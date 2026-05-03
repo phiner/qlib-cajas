@@ -1415,3 +1415,31 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2066-2125 Addendum: Alias Fallback Sunset Guard and Runtime Edge Stabilization
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Protect canonical-only default manifest behavior, keep alias fallback explicit and reviewable, and expose runtime budget edge risk in a compact reviewer report.
+
+### Highlights
+
+1. Added no-alias regression guards (default/fallback/no-op flag paths).
+2. Extended alias migration readiness report with explicit alias fallback usage and sunset recommendation metadata.
+3. Added runtime edge report artifacts (`json` + `md`) with remaining-budget metrics and watch/pass/warn/fail status.
+4. Reconfirmed profile/preset stability after default no-alias flip:
+   - default bundle: local=pass, ci=pass, strict=warn
+   - alias fallback bundle: local=pass, ci=pass, strict=warn
+
+### Current Runtime Edge Result
+
+- `status=pass`
+- `fast_total_seconds=84.861`
+- `remaining_budget_seconds=20.139`
+- `remaining_budget_ratio=0.1918`
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
