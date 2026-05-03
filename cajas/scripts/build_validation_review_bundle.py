@@ -762,6 +762,7 @@ def build_review_bundle(
         "run_id": final_status_payload["run_id"],
         "profile": final_status_payload["profile"],
         "overall_status": final_status_payload["overall_status"],
+        "overall_reason_code": final_status_payload["overall_reason_code"],
         "overall_reason": final_status_payload["overall_reason"],
         "reviewer_next_action": final_status_payload["reviewer_next_action"],
         "primary_artifact": final_status_payload["primary_artifact"],

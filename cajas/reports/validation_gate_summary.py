@@ -154,20 +154,31 @@ def build_final_status_payload(
     blocking = [g for g in gate_dicts if g["status"] == "fail" and g["escalated"]]
     warning = [g for g in gate_dicts if g["status"] == "warn"]
     optional_or_not_run = [g for g in gate_dicts if (not g["required"]) and g["status"] in {"warn", "not_run"}]
+    escalated = [g for g in gate_dicts if g["status"] in {"warn", "fail", "not_run"} and g["escalated"]]
+    non_escalated = [g for g in gate_dicts if g["status"] in {"warn", "not_run"} and not g["escalated"]]
 
     reason_candidates = (
         [g for g in gate_dicts if g["required"] and g["status"] == "fail"]
         + [g for g in gate_dicts if g["required"] and g["status"] == "warn" and g["escalated"]]
         + [g for g in gate_dicts if (not g["required"]) and g["status"] == "warn" and g["escalated"]]
         + [g for g in gate_dicts if (not g["required"]) and g["status"] == "not_run" and g["escalated"]]
-        + [g for g in gate_dicts if (not g["required"]) and g["status"] == "warn" and (not g["escalated"])]
     )
-    primary_gate = reason_candidates[0] if reason_candidates else gate_dicts[0] if gate_dicts else None
-    primary_reason = primary_gate["summary"] if primary_gate else "all configured gates passed"
-    overall_reason_code = primary_gate["reason_code"] if primary_gate else "all_gates_pass"
-    primary_artifact = None
-    if primary_gate:
-        primary_artifact = primary_gate.get("artifact_md") or primary_gate.get("artifact_json")
+    primary_gate = reason_candidates[0] if reason_candidates else None
+    if overall == "pass":
+        if non_escalated:
+            primary_reason = "all required gates passed; non-escalated optional warnings are listed below"
+            overall_reason_code = "pass_with_non_escalated_warnings"
+            primary_artifact = "review_bundle_index.md"
+        else:
+            primary_reason = "all configured gates passed"
+            overall_reason_code = "all_required_gates_passed"
+            primary_artifact = "final_status.md"
+    else:
+        primary_reason = primary_gate["summary"] if primary_gate else "configured gates require reviewer attention"
+        overall_reason_code = primary_gate["reason_code"] if primary_gate else "gates_require_review"
+        primary_artifact = None
+        if primary_gate:
+            primary_artifact = primary_gate.get("artifact_md") or primary_gate.get("artifact_json")
     reviewer_next_action = "none"
     if overall == "fail":
         reviewer_next_action = "fix"
@@ -190,6 +201,8 @@ def build_final_status_payload(
         "overall_reason": primary_reason,
         "blocking_gates": blocking,
         "warning_gates": warning,
+        "escalated_gates": escalated,
+        "non_escalated_gates": non_escalated,
         "optional_or_not_run_gates": optional_or_not_run,
         "reviewer_next_action": reviewer_next_action,
         "primary_artifact": primary_artifact,
@@ -231,6 +244,8 @@ def render_final_status_markdown(payload: dict[str, Any]) -> str:
         f"Primary reason: {payload.get('overall_reason', 'unknown')}",
         f"Reviewer next action: `{payload.get('reviewer_next_action', 'review')}`",
         f"Primary artifact: `{payload.get('primary_artifact')}`",
+        f"Escalated gates: `{len(payload.get('escalated_gates', []))}`",
+        f"Non-escalated gates: `{len(payload.get('non_escalated_gates', []))}`",
         "",
         "## CI Gate Summary",
         "",

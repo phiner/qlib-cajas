@@ -21,6 +21,11 @@ class ValidationDeliveryPacket:
     source_roots: list[str]
     included_artifacts: list[dict]
     missing_artifacts: list[dict]
+    required_present_count: int
+    required_missing_count: int
+    optional_present_count: int
+    optional_missing_count: int
+    optional_note_count: int
     overall_status: str
     dataset_quality_status: str | None
     dataset_quality_score: float | None
@@ -102,16 +107,32 @@ def build_validation_delivery_packet(
     # Check critical artifacts
     for name, path, description in critical_artifacts:
         if path and path.exists():
-            included_artifacts.append({"name": name, "path": str(path), "description": description, "critical": True})
+            included_artifacts.append({"name": name, "path": str(path), "description": description, "critical": True, "specified": True})
         else:
-            missing_artifacts.append({"name": name, "path": str(path) if path else "not specified", "description": description, "critical": True})
+            missing_artifacts.append(
+                {
+                    "name": name,
+                    "path": str(path) if path else "not specified",
+                    "description": description,
+                    "critical": True,
+                    "specified": path is not None,
+                }
+            )
 
     # Check optional artifacts
     for name, path, description in optional_artifacts:
         if path and path.exists():
-            included_artifacts.append({"name": name, "path": str(path), "description": description, "critical": False})
+            included_artifacts.append({"name": name, "path": str(path), "description": description, "critical": False, "specified": True})
         else:
-            missing_artifacts.append({"name": name, "path": str(path) if path else "not specified", "description": description, "critical": False})
+            missing_artifacts.append(
+                {
+                    "name": name,
+                    "path": str(path) if path else "not specified",
+                    "description": description,
+                    "critical": False,
+                    "specified": path is not None,
+                }
+            )
 
     # Extract status from artifacts
     dataset_quality_status = None
@@ -174,6 +195,11 @@ def build_validation_delivery_packet(
 
     # Determine overall status
     overall_status = "pass"
+    required_present = sum(1 for a in included_artifacts if a["critical"])
+    required_missing = sum(1 for a in missing_artifacts if a["critical"])
+    optional_present = sum(1 for a in included_artifacts if not a["critical"])
+    optional_missing = sum(1 for a in missing_artifacts if (not a["critical"]) and a.get("specified"))
+    optional_not_specified = sum(1 for a in missing_artifacts if (not a["critical"]) and (not a.get("specified")))
 
     # Check critical missing artifacts
     critical_missing = [a for a in missing_artifacts if a["critical"]]
@@ -193,10 +219,15 @@ def build_validation_delivery_packet(
 
     # Warn conditions
     if overall_status == "pass":
-        optional_missing = [a for a in missing_artifacts if not a["critical"]]
-        if optional_missing:
+        optional_missing_paths = [a for a in missing_artifacts if (not a["critical"]) and a.get("specified")]
+        if optional_missing_paths:
             overall_status = "warn"
-            reviewer_notes.append(f"Optional artifacts missing: {', '.join(a['name'] for a in optional_missing)}")
+            reviewer_notes.append(f"Optional artifacts missing: {', '.join(a['name'] for a in optional_missing_paths)}")
+
+        if optional_not_specified:
+            reviewer_notes.append(
+                f"Optional artifacts not requested in this run: {optional_not_specified}"
+            )
 
         if runtime_budget_status in ("warn", "fail"):
             if overall_status == "pass":
@@ -219,6 +250,11 @@ def build_validation_delivery_packet(
         source_roots=source_roots,
         included_artifacts=included_artifacts,
         missing_artifacts=missing_artifacts,
+        required_present_count=required_present,
+        required_missing_count=required_missing,
+        optional_present_count=optional_present,
+        optional_missing_count=optional_missing,
+        optional_note_count=optional_not_specified,
         overall_status=overall_status,
         dataset_quality_status=dataset_quality_status,
         dataset_quality_score=dataset_quality_score,
@@ -251,6 +287,11 @@ def generate_packet_index_markdown(packet: ValidationDeliveryPacket) -> str:
         "",
         "## Summary",
         "",
+        f"- required_present_count: `{packet.required_present_count}`",
+        f"- required_missing_count: `{packet.required_missing_count}`",
+        f"- optional_present_count: `{packet.optional_present_count}`",
+        f"- optional_missing_count: `{packet.optional_missing_count}`",
+        f"- optional_note_count: `{packet.optional_note_count}`",
         f"- dataset_quality_status: `{packet.dataset_quality_status or 'N/A'}`",
         f"- dataset_quality_score: `{packet.dataset_quality_score or 'N/A'}`",
         f"- contract_status: `{packet.contract_status or 'N/A'}`",
