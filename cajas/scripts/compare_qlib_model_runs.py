@@ -14,11 +14,11 @@ from cajas.reports.qlib_model_run_registry import load_qlib_model_registry
 from cajas.reports.qlib_model_run_comparison import build_qlib_model_run_comparison
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Compare qlib model bridge runs from registry.")
     p.add_argument("--registry", required=True)
     p.add_argument("--out", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     records = load_qlib_model_registry(registry_path=args.registry)
     report = build_qlib_model_run_comparison(records=records)

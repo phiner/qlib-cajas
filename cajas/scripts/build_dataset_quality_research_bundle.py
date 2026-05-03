@@ -18,7 +18,7 @@ from cajas.reports.dataset_quality_research import (  # noqa: E402
 from cajas.reports.runtime_io_summary import safe_json_write  # noqa: E402
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build dataset quality + chunked feature dry-run research bundle.")
     p.add_argument("--input-csv", required=True)
     p.add_argument("--out-dir", required=True)
@@ -30,7 +30,7 @@ def main() -> int:
     p.add_argument("--row-limit", type=int, default=None)
     p.add_argument("--imbalance-warn-threshold", type=float, default=0.75)
     p.add_argument("--json", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     out = Path(args.out_dir).expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cajas.reports.dataset_quality_research import build_dataset_quality_research_artifacts
+from cajas.scripts.build_dataset_quality_research_bundle import main as build_dataset_quality_research_bundle_main
 
 
 class DatasetQualityResearchBundleTests(unittest.TestCase):
@@ -72,10 +71,8 @@ class DatasetQualityResearchBundleTests(unittest.TestCase):
                 "EURUSD,2025-01-01 00:15:00,1.1,2.1,down\n",
                 encoding="utf-8",
             )
-            subprocess.run(
+            code = build_dataset_quality_research_bundle_main(
                 [
-                    sys.executable,
-                    "cajas/scripts/build_dataset_quality_research_bundle.py",
                     "--input-csv",
                     str(csv),
                     "--out-dir",
@@ -88,9 +85,9 @@ class DatasetQualityResearchBundleTests(unittest.TestCase):
                     "feature_b",
                     "--chunk-size",
                     "1",
-                ],
-                check=True,
+                ]
             )
+            self.assertEqual(code, 0)
             self.assertTrue((out / "dataset_quality_report.json").exists())
             self.assertTrue((out / "feature_schema_manifest.json").exists())
             self.assertTrue((out / "offline_research_queue_summary.json").exists())
