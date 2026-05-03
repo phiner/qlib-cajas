@@ -45,6 +45,7 @@ def build_validation_release_readiness_report(
     post_freeze_handoff_seal_report: Path | None = None,
     routine_release_cycle_stability_report: Path | None = None,
     routine_stability_watch_closure: Path | None = None,
+    final_maintenance_handoff_report: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -78,6 +79,7 @@ def build_validation_release_readiness_report(
     post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else {}
     routine_stability = _load_json(routine_release_cycle_stability_report) if routine_release_cycle_stability_report and routine_release_cycle_stability_report.exists() else {}
     routine_watch_closure = _load_json(routine_stability_watch_closure) if routine_stability_watch_closure and routine_stability_watch_closure.exists() else {}
+    final_handoff = _load_json(final_maintenance_handoff_report) if final_maintenance_handoff_report and final_maintenance_handoff_report.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -267,6 +269,10 @@ def build_validation_release_readiness_report(
         status = "ready"
         release_readiness_reason = "routine_stability_watch_closure_closed_non_blocking"
         next_actions = ["monitor_next_release_cycle"]
+    if final_handoff.get("status") == "blocked" and status != "blocked":
+        status = "blocked"
+        release_readiness_reason = "final_maintenance_handoff_status=blocked"
+        next_actions = ["resolve_blocking_gates"]
 
     primary_artifacts = [
         str(milestone_packet),
@@ -365,6 +371,10 @@ def build_validation_release_readiness_report(
         "routine_stability_watch_closure_blocking": routine_watch_closure.get("blocking"),
         "routine_stability_watch_closure_interpretation": routine_watch_closure.get("interpretation"),
         "routine_stability_watch_closure_next_action": routine_watch_closure.get("next_action"),
+        "final_maintenance_handoff_status": final_handoff.get("status"),
+        "final_maintenance_handoff_blocking": final_handoff.get("blocking"),
+        "final_maintenance_handoff_manual_merge_required": final_handoff.get("manual_merge_required"),
+        "final_maintenance_handoff_merge_method": final_handoff.get("merge_method"),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -414,6 +424,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Post-freeze handoff seal status: `{payload.get('post_freeze_handoff_seal_status', 'not_included')}`",
             f"- Routine release-cycle stability status: `{payload.get('routine_release_cycle_stability_status', 'not_included')}`",
             f"- Routine stability watch closure status: `{payload.get('routine_stability_watch_closure_status', 'not_included')}`",
+            f"- Final maintenance handoff status: `{payload.get('final_maintenance_handoff_status', 'not_included')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",

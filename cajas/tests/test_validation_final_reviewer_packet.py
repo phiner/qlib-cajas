@@ -90,6 +90,15 @@ def _inputs(tmp_path: Path):
                 "next_action": "monitor_next_release_cycle",
             },
         ),
+        "final_maintenance_handoff_report": _write(
+            tmp_path / "final_handoff.json",
+            {
+                "status": "ready_for_manual_github_merge",
+                "blocking": False,
+                "manual_merge_required": True,
+                "merge_method": "manual_github",
+            },
+        ),
     }
 
 
@@ -107,6 +116,7 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert packet["post_freeze_handoff_seal_status"] == "sealed"
     assert packet["routine_release_cycle_stability_status"] == "stable"
     assert packet["routine_stability_watch_closure_status"] == "closed_non_blocking"
+    assert packet["final_maintenance_handoff_status"] == "ready_for_manual_github_merge"
     md = render_validation_final_reviewer_packet_markdown(packet)
     assert "Reviewer Handoff" in md
     assert "Governance Closure" in md
@@ -116,6 +126,7 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert "Post-Freeze Handoff Seal" in md
     assert "Routine Release-Cycle Stability" in md
     assert "Routine Stability Watch Closure" in md
+    assert "Final Maintenance Handoff" in md
     assert "Optional Followup Queue" in md
     assert "Scope Boundary" in md
 

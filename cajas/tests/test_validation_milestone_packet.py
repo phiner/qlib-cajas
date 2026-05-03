@@ -422,6 +422,29 @@ def test_milestone_packet_includes_routine_watch_closure_non_blocking(tmp_path: 
     assert "Routine Stability Watch Closure" in md
 
 
+def test_milestone_packet_blocks_when_final_handoff_blocked(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    final_handoff = tmp_path / "final_handoff.json"
+    final_handoff.write_text(
+        json.dumps({"status": "blocked", "blocking": True}),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        final_maintenance_handoff_report=final_handoff,
+    )
+    assert packet["blocking"] is True
+    assert "final_maintenance_handoff_status=blocked" in packet["blocking_reasons"]
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Final Maintenance Handoff" in md
+
+
 def test_milestone_packet_includes_post_removal_closure_summary(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     closure = tmp_path / "closure.json"

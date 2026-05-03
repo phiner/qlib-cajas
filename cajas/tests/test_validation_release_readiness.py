@@ -314,6 +314,27 @@ def test_release_readiness_ready_when_watch_closure_closed_non_blocking(tmp_path
     assert report["routine_stability_watch_closure_status"] == "closed_non_blocking"
 
 
+def test_release_readiness_blocked_when_final_handoff_blocked(tmp_path: Path) -> None:
+    _write_json(tmp_path / "milestone.json", {"overall_status": "pass", "alias_migration_summary": {"status": "pass"}})
+    _write_json(tmp_path / "alias.json", {"status": "ready", "decision_gate": {"status": "ready", "next_actions": []}})
+    _write_json(tmp_path / "cycle.json", {"status": "pass"})
+    _write_json(tmp_path / "variance.json", {"status": "pass"})
+    _write_json(tmp_path / "edge.json", {"status": "pass"})
+    _write_json(tmp_path / "budget.json", {"overall_status": "pass", "timing_consistency": {"status": "pass"}})
+    _write_json(tmp_path / "final_handoff.json", {"status": "blocked", "blocking": True})
+    report = build_validation_release_readiness_report(
+        milestone_packet=tmp_path / "milestone.json",
+        alias_sunset_review=tmp_path / "alias.json",
+        runtime_release_cycle_report=tmp_path / "cycle.json",
+        runtime_variance_report=tmp_path / "variance.json",
+        runtime_edge_report=tmp_path / "edge.json",
+        runtime_budget_report=tmp_path / "budget.json",
+        final_maintenance_handoff_report=tmp_path / "final_handoff.json",
+    )
+    assert report["status"] == "blocked"
+    assert report["final_maintenance_handoff_status"] == "blocked"
+
+
 def test_post_removal_mode_supersedes_pre_removal_watch_items(tmp_path: Path) -> None:
     milestone = _write_json(tmp_path / "milestone.json", {"overall_status": "watch", "alias_migration_summary": {"status": "pass"}})
     alias = _write_json(tmp_path / "alias.json", {"status": "watch", "decision_gate": {"status": "watch", "next_actions": ["collect_consumer_evidence"]}})
