@@ -922,3 +922,35 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Known limitation**:
 - Legacy timing payloads remain supported for compatibility and are surfaced as warnings instead of hard failures unless critical numeric fields are invalid.
+
+
+## Phase 1466–1525: CI-Friendly Validation Automation Bundle
+
+**Goal**: Provide a single CI-friendly validation review-bundle path with explicit gate aggregation and machine-readable final status artifacts.
+
+**What changed**:
+- Added reusable gate-summary helper: `cajas/reports/validation_gate_summary.py`
+- Added CI mode support in `build_validation_review_bundle.py`:
+  - `--ci`
+  - `--fail-on-warn`
+  - `--skip-history`
+  - `--skip-manifest-compatibility`
+  - `--skip-runtime-budget`
+  - `--max-timing-age-seconds`
+- Added final status artifacts:
+  - `final_status.json`
+  - `final_status.md`
+- Added top-level `CI Gate Summary` section in bundle index.
+- Added gate aggregation across smoke/runtime budget/timing consistency/manifest compatibility/history/delivery packet/reviewer diff/data-source audit.
+
+**CI behavior**:
+- In CI mode, canonical workflow defaults are applied conservatively:
+  - history update enabled unless explicitly skipped
+  - manifest compatibility enabled unless explicitly skipped
+  - runtime budget check enabled unless explicitly skipped
+- CI mode requires timing input (`--fast-timing-json`) unless `--run-fast-validation` is used.
+- `--warn-only` affects command exit behavior, not artifact status values.
+- `--fail-on-warn` exits non-zero when final overall status is `warn`.
+
+**Non-goals**:
+- No trading execution, broker routing, live trading, annotation, or model-performance claims.

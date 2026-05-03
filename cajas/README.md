@@ -1075,3 +1075,12 @@ Current audit delta:
 - Runtime budget reports now include a `timing_consistency` section in JSON/Markdown outputs.
 - Review bundle workflow now records timing consistency status in manifest/index and gates failure-level consistency unless `--warn-only`.
 - This improves reviewer confidence that budget checks are using fresh, internally consistent timing inputs.
+
+
+## Phase 1466–1525 Addendum: CI-Friendly Validation Automation Bundle
+
+- Added CI-oriented gate aggregation for validation review bundles.
+- Added final status artifacts (`final_status.json`, `final_status.md`) with machine-readable gate-level outcomes.
+- Added `--ci` workflow mode with explicit skip/fail behavior controls (`--fail-on-warn`, skip flags, timing-age control).
+- Review bundle index now starts with an overall status and CI gate summary table.
+- Timing freshness/consistency remains integrated through runtime budget reporting and is surfaced in final status.

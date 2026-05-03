@@ -2204,3 +2204,24 @@ Readability polish only. No new workflow semantics, no Qlib core changes, and no
 ### Scope Confirmation
 
 Offline Qlib research validation observability only. No trading execution, broker routing, live/paper trading, annotation workflows, or Qlib core changes introduced.
+
+
+## Phase 1466–1525 Addendum: CI-Friendly Validation Automation Bundle
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Consolidate validation review-bundle automation into a CI-friendly path with explicit gate summaries and deterministic exit behavior.
+
+### Highlights
+
+1. Added reusable gate model and status aggregation helper.
+2. Added CI-mode control surface to review-bundle orchestration.
+3. Added `final_status.json` and `final_status.md` artifacts.
+4. Added gate summary integration to bundle index and manifest.
+5. Added warning/failure exit controls suitable for CI (`--fail-on-warn`, `--warn-only`).
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, manual annotation, or Qlib core changes introduced.
