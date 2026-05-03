@@ -2579,3 +2579,16 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Integrated watch-closure summary into final reviewer, readiness, and milestone packets.
 - Remaining followup (`slow_test_optimization`) remains routine-only maintenance and is monitored on next release cycle.
 - Scope remains offline Qlib validation automation only.
+
+## Phase 4766-4885 Final Maintenance Handoff and Manual GitHub Merge Readiness
+
+- Added final handoff report:
+  - `tmp/validation-final-maintenance-handoff.json`
+  - `tmp/validation-final-maintenance-handoff.md`
+- Handoff report marks manual-merge readiness when release/reviewer/milestone gates are healthy:
+  - `status=ready_for_manual_github_merge`
+  - `manual_merge_required=true`
+  - `merge_method=manual_github`
+- Integrated handoff status into final reviewer, release readiness, and milestone packets.
+- Remaining optional followup is still `slow_test_optimization` and remains non-blocking routine maintenance.
+- Codex/local scripts must not run automated merge operations; merge is human/manual on GitHub only.

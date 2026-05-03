@@ -3580,3 +3580,23 @@ Routine maintenance command additions (next release cycle):
   - this watch signal is maintenance-only and does not block release-review posture.
 - Remaining followup (`slow_test_optimization`) remains optional and non-blocking.
 - Scope remains unchanged: offline Qlib validation automation only; no trading, broker routing, live/paper execution, or training/workflow execution.
+
+## Phase 4766-4885 Final Maintenance Handoff and Manual Merge Readiness
+
+- Added final maintenance handoff artifacts:
+  - `tmp/validation-final-maintenance-handoff.json`
+  - `tmp/validation-final-maintenance-handoff.md`
+- Integrated handoff summary into:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Manual merge policy is now explicit:
+  - `manual_merge_required=true`
+  - `merge_method=manual_github`
+  - Codex/local scripts must not perform automated merge operations
+- Current end-state:
+  - release readiness: `ready`
+  - final reviewer packet: `ready_for_review`
+  - milestone: non-blocking governance watch (`review_state=ready_for_review`, `blocking=false`)
+  - routine watch closure: `closed_non_blocking`
+  - optional followup count: `1` (`slow_test_optimization`, non-blocking)
