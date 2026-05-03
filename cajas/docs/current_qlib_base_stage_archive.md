@@ -9,12 +9,30 @@
 
 ## 1. Executive Summary
 
+- **Maintenance closure update (Phase 4166-4525):** external consumer evidence governance closure, final maintenance archive closure, and post-freeze handoff seal are now part of the canonical maintenance review surface
 - **Current Mainline:** Qlib-based research platform engineering focused on dataset quality, schema contracts, and reproducible research workflows
 - **Core Achievement:** Comprehensive dataset quality validation pipeline with schema contracts, golden fixture regression, and drift detection
 - **Validation Status:** Fast validation ~85s, contract validation passing, data-source audit stable at 29 read_csv calls
 - **Engineering Maturity:** Research infrastructure layer with CI guardrails, not a trading execution system
 - **Historical Routes Excluded:** Manual K-line annotation, old Rust trading system, broker adapters, live trading execution
 - **Next Focus:** Enhanced drift semantics, richer golden scenarios, Qlib experiment reproducibility strengthening
+
+## Maintenance Freeze and Handoff Contract (Phase 4166-4525)
+
+- Maintenance mode is `frozen_routine` for offline validation automation.
+- Canonical producer behavior remains `history` only; active `history_update` emission is not supported.
+- Legacy read normalization remains preserved for historical compatibility.
+- External consumer evidence governance is tracked as closed or external-tracking-only non-blocking maintenance context.
+- Final archive closure and post-freeze handoff seal are reviewer-facing summaries only; they do not mutate prior artifacts.
+- Routine cadence stays on next release cycle maintenance commands:
+  - `python cajas/scripts/run_fast_validation.py`
+  - `python cajas/scripts/audit_data_sources.py`
+  - `python cajas/scripts/audit_validation_runtime.py`
+  - `python cajas/scripts/check_path_hygiene.py`
+- Scope boundary remains unchanged:
+  - no Qlib core changes
+  - no trading execution or broker routing
+  - no live/paper trading extensions
 
 ---
 

@@ -11,6 +11,24 @@ Current focus:
 
 Current scope is research-only and is **not** a trading system.
 
+## Maintenance Mode (Phase 4166-4525)
+
+Current maintenance posture is routine/frozen for offline validation governance:
+
+- External consumer evidence governance is closed or external-tracking-only non-blocking context.
+- Final maintenance archive closure and post-freeze handoff seal are generated reviewer artifacts.
+- Canonical manifest contract remains `history` only (`history_update` alias emission stays removed).
+- Legacy read normalization remains preserved for historical compatibility.
+- Release readiness remains `ready`, final reviewer packet remains `ready_for_review`, milestone remains non-blocking ready-for-review context.
+
+Routine regeneration commands:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_validation_external_consumer_evidence_closure.py --out-json tmp/validation-external-consumer-evidence-closure.json --out-md tmp/validation-external-consumer-evidence-closure.md
+./.venv-qlib313/bin/python cajas/scripts/build_validation_final_maintenance_archive_closure.py --out-json tmp/validation-final-maintenance-archive-closure.json --out-md tmp/validation-final-maintenance-archive-closure.md
+./.venv-qlib313/bin/python cajas/scripts/build_validation_post_freeze_handoff_seal.py --out-json tmp/validation-post-freeze-handoff-seal.json --out-md tmp/validation-post-freeze-handoff-seal.md
+```
+
 ## Out of Scope
 
 This phase does not include:

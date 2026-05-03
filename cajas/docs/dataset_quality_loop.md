@@ -2,6 +2,28 @@
 
 This workflow is for offline dataset QA and feature research readiness only.
 
+## New in Phase 4166-4525
+
+Final maintenance closure artifacts were added for reviewer handoff governance:
+
+- `validation-external-consumer-evidence-closure`:
+  - tracks external consumer ownership/evidence closure as non-blocking maintenance when canonical-only contract is intact
+  - does not re-enable alias emission
+- `validation-final-maintenance-archive-closure`:
+  - freezes routine maintenance archive posture
+  - confirms canonical-only behavior and legacy read normalization posture
+- `validation-post-freeze-handoff-seal`:
+  - validates closure consistency across release readiness, final reviewer packet, and milestone packet
+  - summarizes routine handoff cadence and non-blocking followups
+
+Maintenance contract in this phase:
+
+- release readiness remains `ready`
+- final reviewer packet remains `ready_for_review`
+- milestone remains non-blocking with `review_state=ready_for_review`
+- optional followups are routine/non-blocking context only
+- scope remains offline validation automation only (no trading execution)
+
 ## New in Phase 836-865
 
 Dataset quality reports now include:
