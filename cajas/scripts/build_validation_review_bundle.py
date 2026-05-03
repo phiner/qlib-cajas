@@ -40,6 +40,19 @@ from cajas.scripts.check_review_bundle_manifest_compatibility import (
     render_compatibility_markdown,
 )
 
+def _extract_read_csv_count(audit_data: dict[str, Any] | None) -> int | None:
+    if not isinstance(audit_data, dict):
+        return None
+    top = audit_data.get("read_csv_count")
+    if isinstance(top, int):
+        return top
+    summary = audit_data.get("summary")
+    if isinstance(summary, dict):
+        nested = summary.get("read_csv_count")
+        if isinstance(nested, int):
+            return nested
+    return None
+
 
 def get_git_info() -> dict[str, str]:
     """Get current git branch and commit."""
@@ -469,9 +482,10 @@ def build_review_bundle(
                     f.write(generate_history_summary_markdown(snapshots, last_n=history_last_n))
 
                 history_status = infer_history_status(recommendation, regressions, history_error=False)
+                legacy_status = "not_requested" if history_status == "not_requested" else "error" if history_status == "fail" else history_status
                 history_metadata.update(
                     {
-                        "status": "ok",
+                        "status": legacy_status,
                         "history_jsonl": str(history_jsonl),
                         "summary_json": str(history_summary_json),
                         "summary_md": str(history_summary_md),
@@ -699,7 +713,7 @@ def build_review_bundle(
 
     if artifacts.get("data_source_audit"):
         audit_data = _load_json_if_exists(artifacts.get("data_source_audit"))
-        read_count = audit_data.get("read_csv_count") if isinstance(audit_data, dict) else None
+        read_count = _extract_read_csv_count(audit_data)
         summary = f"data-source audit completed (read_csv_count={read_count})" if read_count is not None else "data-source audit completed"
         gates.append(
             ValidationGate(

@@ -777,7 +777,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            self.assertEqual(manifest["history_update"]["status"], "ok")
+            self.assertEqual(manifest["history_update"]["status"], "pass")
             self.assertTrue(history_jsonl.exists())
             self.assertIn("history_jsonl", manifest["artifacts"])
             self.assertIn("history", manifest)
@@ -1234,6 +1234,70 @@ class ValidationReviewBundleTests(unittest.TestCase):
                         manifest_compatibility_out_md=tmp_path / "compat.md",
                         warn_only=False,
                     )
+
+    def test_nested_audit_summary_read_csv_count_is_consumed(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            timing_json = tmp_path / "timing.json"
+            timing_json.write_text(json.dumps({"total_seconds": 80.0, "results": []}), encoding="utf-8")
+            budgets_json = tmp_path / "budgets.json"
+            budgets_json.write_text(json.dumps({"budgets_seconds": {"fast_total": 100.0}}), encoding="utf-8")
+
+            def _mock_with_nested_audit(cmd: list[str], description: str) -> tuple[bool, str]:
+                joined = " ".join(cmd)
+                if "check_validation_runtime_budget.py" in joined:
+                    (out_root / "validation_runtime_budget_report.json").write_text(
+                        json.dumps(
+                            {
+                                "overall_status": "pass",
+                                "budget_status": "pass",
+                                "timing_consistency": {"status": "pass", "issues": []},
+                                "results": [],
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                if "audit_data_sources.py" in joined:
+                    (out_root / "data_source_audit.json").write_text(
+                        json.dumps({"summary": {"read_csv_count": 29}}),
+                        encoding="utf-8",
+                    )
+                return True, json.dumps({"status": "ok"})
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", _mock_with_nested_audit):
+                build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=timing_json,
+                    budgets=budgets_json,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=False,
+                    run_data_source_audit=True,
+                    skip_data_source_audit=False,
+                    data_root=tmp_path,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=False,
+                    history_jsonl=None,
+                    history_last_n=10,
+                    warn_only=True,
+                )
+
+            final_status = json.loads((out_root / "final_status.json").read_text(encoding="utf-8"))
+            audit_gate = [g for g in final_status["gates"] if g["name"] == "data_source_audit"][0]
+            self.assertIn("read_csv_count=29", audit_gate["summary"])
 
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ class ReviewBundleManifestCompatibilityTests(unittest.TestCase):
                 "summary_json": "h.json",
                 "summary_md": "h.md",
             },
-            "history_update": {"deprecated": True, "use": "history", "requested": True, "status": "ok"},
+            "history_update": {"deprecated": True, "use": "history", "requested": True, "status": "pass"},
         }
         report = build_compatibility_report(manifest, "dummy.json")
         self.assertEqual(report["manifest_path"], "dummy.json")
