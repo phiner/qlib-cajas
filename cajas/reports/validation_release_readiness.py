@@ -44,6 +44,7 @@ def build_validation_release_readiness_report(
     final_maintenance_archive_closure_report: Path | None = None,
     post_freeze_handoff_seal_report: Path | None = None,
     routine_release_cycle_stability_report: Path | None = None,
+    routine_stability_watch_closure: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -76,6 +77,7 @@ def build_validation_release_readiness_report(
     final_archive_closure = _load_json(final_maintenance_archive_closure_report) if final_maintenance_archive_closure_report and final_maintenance_archive_closure_report.exists() else {}
     post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else {}
     routine_stability = _load_json(routine_release_cycle_stability_report) if routine_release_cycle_stability_report and routine_release_cycle_stability_report.exists() else {}
+    routine_watch_closure = _load_json(routine_stability_watch_closure) if routine_stability_watch_closure and routine_stability_watch_closure.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -252,6 +254,19 @@ def build_validation_release_readiness_report(
         next_actions = ["resolve_blocking_gates"]
     if routine_stability.get("status") == "watch" and status == "ready" and routine_stability.get("blocking") is False:
         release_readiness_reason = "routine_release_cycle_stability_status=watch_non_blocking"
+    if routine_watch_closure.get("status") == "blocked" and status != "blocked":
+        status = "blocked"
+        release_readiness_reason = "routine_stability_watch_closure_status=blocked"
+        next_actions = ["resolve_blocking_gates"]
+    if (
+        routine_watch_closure.get("status") == "closed_non_blocking"
+        and routine_watch_closure.get("blocking") is False
+        and routine_stability.get("status") == "watch"
+        and status == "watch"
+    ):
+        status = "ready"
+        release_readiness_reason = "routine_stability_watch_closure_closed_non_blocking"
+        next_actions = ["monitor_next_release_cycle"]
 
     primary_artifacts = [
         str(milestone_packet),
@@ -345,6 +360,11 @@ def build_validation_release_readiness_report(
         "routine_release_cycle_stability_status": routine_stability.get("status"),
         "routine_release_cycle_stability_review_state": routine_stability.get("review_state"),
         "routine_release_cycle_stability_blocking": routine_stability.get("blocking"),
+        "routine_stability_watch_closure_status": routine_watch_closure.get("status"),
+        "routine_stability_watch_closure_review_state": routine_watch_closure.get("review_state"),
+        "routine_stability_watch_closure_blocking": routine_watch_closure.get("blocking"),
+        "routine_stability_watch_closure_interpretation": routine_watch_closure.get("interpretation"),
+        "routine_stability_watch_closure_next_action": routine_watch_closure.get("next_action"),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -393,6 +413,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Final maintenance archive closure status: `{payload.get('final_maintenance_archive_closure_status', 'not_included')}`",
             f"- Post-freeze handoff seal status: `{payload.get('post_freeze_handoff_seal_status', 'not_included')}`",
             f"- Routine release-cycle stability status: `{payload.get('routine_release_cycle_stability_status', 'not_included')}`",
+            f"- Routine stability watch closure status: `{payload.get('routine_stability_watch_closure_status', 'not_included')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",

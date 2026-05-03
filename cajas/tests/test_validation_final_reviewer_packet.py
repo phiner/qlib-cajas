@@ -80,6 +80,16 @@ def _inputs(tmp_path: Path):
             tmp_path / "routine_stability.json",
             {"status": "stable", "review_state": "ready_for_review", "blocking": False},
         ),
+        "routine_stability_watch_closure": _write(
+            tmp_path / "routine_watch_closure.json",
+            {
+                "status": "closed_non_blocking",
+                "review_state": "ready_for_review",
+                "blocking": False,
+                "interpretation": "Routine stability watch is non-blocking.",
+                "next_action": "monitor_next_release_cycle",
+            },
+        ),
     }
 
 
@@ -96,6 +106,7 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert packet["final_maintenance_archive_closure_status"] == "ready"
     assert packet["post_freeze_handoff_seal_status"] == "sealed"
     assert packet["routine_release_cycle_stability_status"] == "stable"
+    assert packet["routine_stability_watch_closure_status"] == "closed_non_blocking"
     md = render_validation_final_reviewer_packet_markdown(packet)
     assert "Reviewer Handoff" in md
     assert "Governance Closure" in md
@@ -104,6 +115,7 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert "Final Maintenance Archive Closure" in md
     assert "Post-Freeze Handoff Seal" in md
     assert "Routine Release-Cycle Stability" in md
+    assert "Routine Stability Watch Closure" in md
     assert "Optional Followup Queue" in md
     assert "Scope Boundary" in md
 

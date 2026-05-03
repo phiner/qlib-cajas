@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--final-maintenance-archive-closure-report", type=Path)
     parser.add_argument("--post-freeze-handoff-seal-report", type=Path)
     parser.add_argument("--routine-release-cycle-stability-report", type=Path)
+    parser.add_argument("--routine-stability-watch-closure", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -108,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         final_maintenance_archive_closure_report=args.final_maintenance_archive_closure_report,
         post_freeze_handoff_seal_report=args.post_freeze_handoff_seal_report,
         routine_release_cycle_stability_report=args.routine_release_cycle_stability_report,
+        routine_stability_watch_closure=args.routine_stability_watch_closure,
     )
 
     if missing:

@@ -385,6 +385,43 @@ def test_milestone_packet_blocks_when_routine_stability_blocked(tmp_path: Path) 
     assert packet["overall_status"] == "fail"
 
 
+def test_milestone_packet_includes_routine_watch_closure_non_blocking(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    routine_stability = tmp_path / "routine_stability.json"
+    routine_closure = tmp_path / "routine_closure.json"
+    routine_stability.write_text(
+        json.dumps({"status": "watch", "review_state": "ready_for_review", "blocking": False}),
+        encoding="utf-8",
+    )
+    routine_closure.write_text(
+        json.dumps(
+            {
+                "status": "closed_non_blocking",
+                "review_state": "ready_for_review",
+                "blocking": False,
+                "interpretation": "Routine stability watch is a non-blocking maintenance signal.",
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        routine_release_cycle_stability_report=routine_stability,
+        routine_stability_watch_closure=routine_closure,
+    )
+    assert packet["blocking"] is False
+    assert packet["routine_stability_watch_closure_summary"]["status"] == "closed_non_blocking"
+    assert "routine_stability_watch_closure=closed_non_blocking" in packet["non_blocking_governance_notes"]
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Routine Stability Watch Closure" in md
+
+
 def test_milestone_packet_includes_post_removal_closure_summary(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     closure = tmp_path / "closure.json"
