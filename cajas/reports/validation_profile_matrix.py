@@ -10,10 +10,28 @@ from typing import Any
 from cajas.reports.validation_gate_summary import (
     DEFAULT_CI_PROFILES,
     ValidationGate,
-    _normalize_profile_config,
     aggregate_gate_status,
-    _is_gate_escalated,
 )
+
+def _normalize_profile_config(config: dict[str, Any]) -> dict[str, bool]:
+    return {
+        "optional_not_run_affects_status": bool(config.get("optional_not_run_affects_status", False)),
+        "optional_warn_affects_status": bool(config.get("optional_warn_affects_status", True)),
+        "required_warn_affects_status": bool(config.get("required_warn_affects_status", True)),
+    }
+
+def _is_gate_escalated(gate: ValidationGate, profile_config: dict[str, bool]) -> bool:
+    if gate.status == "fail":
+        return True
+    if gate.required and gate.status == "warn":
+        return profile_config["required_warn_affects_status"]
+    if gate.required and gate.status == "not_run":
+        return True
+    if (not gate.required) and gate.status == "warn":
+        return profile_config["optional_warn_affects_status"]
+    if (not gate.required) and gate.status == "not_run":
+        return profile_config["optional_not_run_affects_status"]
+    return False
 
 
 def _count_escalated_gates(gates_data: list[dict[str, Any]]) -> int:
@@ -79,9 +97,15 @@ def build_profile_matrix(
         non_escalated = [g for g in gate_dicts if g["status"] in {"warn", "not_run"} and not g["escalated"]]
         blocking = [g for g in gate_dicts if g["status"] == "fail" and g["escalated"]]
         
+        reason_code = "all_required_gates_passed"
+        if overall != "pass":
+            reason_code = "gates_require_review"
+        elif non_escalated:
+            reason_code = "pass_with_non_escalated_warnings"
+
         matrix_profiles[prof] = {
             "overall_status": overall,
-            "overall_reason_code": "all_required_gates_passed" if overall == "pass" else "gates_require_review",
+            "overall_reason_code": reason_code,
             "blocking_gates": blocking,
             "warning_gates": [g for g in gate_dicts if g["status"] == "warn"],
             "non_escalated_warnings": non_escalated,
