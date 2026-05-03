@@ -1036,8 +1036,13 @@ def build_review_bundle(
     return bundle_manifest
 
 
+def _flag_present(argv: list[str], flag: str) -> bool:
+    return flag in argv
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main entry point."""
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
     parser = argparse.ArgumentParser(description="Build validation review bundle")
     parser.add_argument("--bundle-name", required=True, help="Bundle name")
     parser.add_argument("--out-root", type=Path, required=True, help="Output root directory")
@@ -1113,17 +1118,17 @@ def main(argv: list[str] | None = None) -> int:
             presets_data = json.loads(args.preset_config.read_text(encoding="utf-8"))
             preset_cfg = presets_data.get("presets", {}).get(args.preset)
             if preset_cfg:
-                if "ci_profile" in preset_cfg:
+                if "ci_profile" in preset_cfg and not _flag_present(raw_argv, "--ci-profile"):
                     args.ci_profile = preset_cfg["ci_profile"]
-                if preset_cfg.get("warn_only"):
+                if preset_cfg.get("warn_only") and not _flag_present(raw_argv, "--warn-only"):
                     args.warn_only = True
-                if preset_cfg.get("fail_on_warn"):
+                if preset_cfg.get("fail_on_warn") and not _flag_present(raw_argv, "--fail-on-warn"):
                     args.fail_on_warn = True
-                if preset_cfg.get("run_fast_validation"):
+                if preset_cfg.get("run_fast_validation") and not _flag_present(raw_argv, "--run-fast-validation"):
                     args.run_fast_validation = True
-                if preset_cfg.get("update_history"):
+                if preset_cfg.get("update_history") and not _flag_present(raw_argv, "--update-history"):
                     args.update_history = True
-                if preset_cfg.get("check_manifest_compatibility"):
+                if preset_cfg.get("check_manifest_compatibility") and not _flag_present(raw_argv, "--check-manifest-compatibility"):
                     args.check_manifest_compatibility = True
         except Exception as e:
             logger.warning(f"Failed to load preset config: {e}")

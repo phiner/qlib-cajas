@@ -582,6 +582,88 @@ class ValidationReviewBundleTests(unittest.TestCase):
             )
             self.assertNotEqual(ret, 0)
 
+    def test_preset_local_review_applies_defaults(self) -> None:
+        from cajas.scripts import build_validation_review_bundle as mod
+
+        captured: dict[str, object] = {}
+
+        def _fake_build_review_bundle(**kwargs):
+            captured.update(kwargs)
+            return {"commands_executed": [], "final_status": {"overall_status": "pass"}}
+
+        with patch.object(mod, "build_review_bundle", side_effect=_fake_build_review_bundle):
+            ret = mod.main(
+                [
+                    "--bundle-name",
+                    "bundle",
+                    "--out-root",
+                    "tmp/x-bundle",
+                    "--smoke-root",
+                    "tmp/x-smoke",
+                    "--preset",
+                    "local_review",
+                ]
+            )
+            self.assertEqual(ret, 0)
+            self.assertEqual(captured["ci_profile"], "local")
+            self.assertTrue(captured["warn_only"])
+            self.assertTrue(captured["update_history"])
+            self.assertTrue(captured["check_manifest_compatibility"])
+            self.assertFalse(captured["run_fast_validation"])
+
+    def test_preset_strict_release_enables_fail_on_warn(self) -> None:
+        from cajas.scripts import build_validation_review_bundle as mod
+
+        captured: dict[str, object] = {}
+
+        def _fake_build_review_bundle(**kwargs):
+            captured.update(kwargs)
+            return {"commands_executed": [], "final_status": {"overall_status": "pass"}}
+
+        with patch.object(mod, "build_review_bundle", side_effect=_fake_build_review_bundle):
+            ret = mod.main(
+                [
+                    "--bundle-name",
+                    "bundle",
+                    "--out-root",
+                    "tmp/x-bundle",
+                    "--smoke-root",
+                    "tmp/x-smoke",
+                    "--preset",
+                    "strict_release",
+                ]
+            )
+            self.assertEqual(ret, 0)
+            self.assertEqual(captured["ci_profile"], "strict")
+            self.assertTrue(captured["run_fast_validation"])
+
+    def test_explicit_cli_overrides_preset_values(self) -> None:
+        from cajas.scripts import build_validation_review_bundle as mod
+
+        captured: dict[str, object] = {}
+
+        def _fake_build_review_bundle(**kwargs):
+            captured.update(kwargs)
+            return {"commands_executed": [], "final_status": {"overall_status": "pass"}}
+
+        with patch.object(mod, "build_review_bundle", side_effect=_fake_build_review_bundle):
+            ret = mod.main(
+                [
+                    "--bundle-name",
+                    "bundle",
+                    "--out-root",
+                    "tmp/x-bundle",
+                    "--smoke-root",
+                    "tmp/x-smoke",
+                    "--preset",
+                    "strict_release",
+                    "--ci-profile",
+                    "local",
+                ]
+            )
+            self.assertEqual(ret, 0)
+            self.assertEqual(captured["ci_profile"], "local")
+
     def test_optional_warn_can_be_pass_under_local_profile(self) -> None:
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
 
