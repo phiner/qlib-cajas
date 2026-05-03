@@ -111,6 +111,7 @@ def build_history_alias_migration_report(
         recommendation = "not_ready"
         next_action = "Keep current default alias behavior and resolve mismatches before default flip."
 
+    fallback_alias = no_alias_manifest.get("history_update") if isinstance(no_alias_manifest.get("history_update"), dict) else {}
     return {
         "schema_version": "v1",
         "status": status,
@@ -132,6 +133,14 @@ def build_history_alias_migration_report(
             "has_differences": optional_diff,
             "default": default_optional,
             "no_alias": no_alias_optional,
+        },
+        "alias_fallback": {
+            "default_emits_alias": isinstance(default_manifest.get("history_update"), dict),
+            "fallback_flag": "--include-history-update-alias",
+            "fallback_manifest_has_alias": isinstance(no_alias_manifest.get("history_update"), dict),
+            "deprecation_stage": fallback_alias.get("deprecation_stage"),
+            "consumer_action": fallback_alias.get("consumer_action"),
+            "sunset_recommendation": "keep_fallback_for_external_consumers_until_next_review",
         },
         "recommendation": recommendation,
         "next_action": next_action,
@@ -169,6 +178,14 @@ def render_history_alias_migration_markdown(payload: dict[str, Any]) -> str:
             "## Optional Differences",
             "",
             f"- Has differences: `{payload.get('optional_gate_differences', {}).get('has_differences', False)}`",
+            "",
+            "## Alias Fallback",
+            "",
+            f"- Default emits alias: `{payload.get('alias_fallback', {}).get('default_emits_alias', False)}`",
+            f"- Fallback flag: `{payload.get('alias_fallback', {}).get('fallback_flag', '--include-history-update-alias')}`",
+            f"- Fallback manifest has alias: `{payload.get('alias_fallback', {}).get('fallback_manifest_has_alias', False)}`",
+            f"- Consumer action: `{payload.get('alias_fallback', {}).get('consumer_action', 'Read manifest.history instead.')}`",
+            f"- Sunset recommendation: `{payload.get('alias_fallback', {}).get('sunset_recommendation', 'keep_fallback_for_external_consumers_until_next_review')}`",
             "",
             "## Next Action",
             "",

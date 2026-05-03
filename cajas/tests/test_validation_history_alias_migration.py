@@ -99,3 +99,27 @@ def test_history_alias_migration_alias_fallback_mode(tmp_path: Path) -> None:
         no_alias_bundle_root=tmp_path / "alias-fallback",
     )
     assert report["comparison_mode"] == "alias-fallback"
+    assert report["alias_fallback"]["fallback_flag"] == "--include-history-update-alias"
+
+
+def test_history_alias_report_includes_alias_fallback_details(tmp_path: Path) -> None:
+    gates = [{"name": "runtime_budget", "required": True, "status": "pass"}]
+    profiles = {"local": "pass", "ci": "pass", "strict": "warn"}
+    _write_bundle(tmp_path / "default", manifest_compat="pass", profiles=profiles, gates=gates)
+    _write_bundle(tmp_path / "alias-fallback", manifest_compat="pass", profiles=profiles, gates=gates)
+    manifest = json.loads((tmp_path / "alias-fallback" / "review_bundle_manifest.json").read_text(encoding="utf-8"))
+    manifest["history_update"] = {
+        "deprecated": True,
+        "use": "history",
+        "deprecation_stage": "compatibility_alias",
+        "consumer_action": "Read manifest.history instead.",
+    }
+    (tmp_path / "alias-fallback" / "review_bundle_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    report = build_history_alias_migration_report(
+        default_bundle_root=tmp_path / "default",
+        no_alias_bundle_root=tmp_path / "alias-fallback",
+    )
+    assert report["alias_fallback"]["default_emits_alias"] is False
+    assert report["alias_fallback"]["fallback_manifest_has_alias"] is True
+    assert report["alias_fallback"]["deprecation_stage"] == "compatibility_alias"
