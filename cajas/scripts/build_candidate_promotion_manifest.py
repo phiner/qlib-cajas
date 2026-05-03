@@ -26,7 +26,7 @@ def _render_md(manifest: dict) -> str:
     )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build candidate promotion manifest from research decision packet.")
     p.add_argument("--decision-packet", required=True)
     p.add_argument("--out-dir", required=True)
@@ -35,7 +35,7 @@ def main() -> int:
     p.add_argument("--target-name", required=True)
     p.add_argument("--horizon", required=True, type=int)
     p.add_argument("--model-family", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     out = Path(args.out_dir).expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -58,4 +58,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

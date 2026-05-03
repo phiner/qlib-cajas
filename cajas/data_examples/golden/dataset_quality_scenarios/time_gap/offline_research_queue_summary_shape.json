@@ -1,0 +1,22 @@
+{
+  "schema_version": "str",
+  "scope": "str",
+  "items": [
+    {
+      "priority": "str",
+      "task": "str",
+      "reason": "str"
+    }
+  ],
+  "ranked_review_items": [
+    {
+      "rank": "number",
+      "priority": "str",
+      "category": "str",
+      "title": "str",
+      "reason": "str",
+      "recommended_action": "str",
+      "source_report": "str"
+    }
+  ]
+}

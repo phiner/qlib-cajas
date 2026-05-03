@@ -13,11 +13,11 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.final_readiness_summary import render_final_readiness_summary
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build final readiness markdown summary.")
     p.add_argument("--packet", required=True)
     p.add_argument("--out", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     packet = json.loads(Path(args.packet).expanduser().read_text(encoding="utf-8"))
     md = render_final_readiness_summary(packet=packet)

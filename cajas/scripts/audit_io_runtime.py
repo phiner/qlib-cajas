@@ -13,13 +13,13 @@ from cajas.reports.io_runtime_audit import build_io_runtime_audit, render_io_run
 from cajas.reports.runtime_io_summary import safe_json_write
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Audit IO-heavy patterns and tmp filesystem footprint.")
     p.add_argument("--project-root", default="cajas")
     p.add_argument("--tmp-root", default=None)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     report = build_io_runtime_audit(project_root=args.project_root, tmp_root=args.tmp_root)
     safe_json_write(args.out_json, report)

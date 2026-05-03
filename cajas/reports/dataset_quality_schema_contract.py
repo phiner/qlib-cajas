@@ -1,0 +1,354 @@
+"""Schema contracts for dataset quality reports."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class ContractIssue:
+    """Schema contract validation issue."""
+
+    severity: str  # "error", "warning", "info"
+    path: str
+    message: str
+
+
+@dataclass
+class SchemaDiff:
+    """Schema shape difference."""
+
+    added_fields: list[str]
+    removed_fields: list[str]
+    type_changes: list[tuple[str, str, str]]
+    is_breaking: bool
+
+
+@dataclass
+class DriftItem:
+    """Schema drift item for reporting."""
+
+    file: str
+    path: str
+    kind: str  # "missing_required", "type_change", "additive", "removed"
+    expected: str
+    actual: str
+
+
+@dataclass
+class DriftSummary:
+    """Summary of schema drift."""
+
+    breaking_count: int
+    additive_count: int
+    type_change_count: int
+    missing_required_count: int
+    files_checked: int
+    files_with_drift: int
+
+
+@dataclass
+class SemanticIssue:
+    """Semantic validation issue."""
+
+    severity: str  # "error", "warning"
+    path: str
+    message: str
+    expected: str
+    actual: str
+
+
+REQUIRED_REPORT_KEYS = {
+    "dataset_quality_report": {
+        "schema_version": str,
+        "report_type": str,
+        "status": str,
+        "severity_counts": dict,
+        "scope": str,
+        "row_count": int,
+        "column_count": int,
+        "quality_score": dict,
+        "label_diagnostics": list,
+        "label_review_buckets": list,
+        "time_coverage": dict,
+        "feature_readiness": dict,
+    },
+    "label_coverage_diagnostics": {
+        "schema_version": str,
+        "scope": str,
+        "label_diagnostics": list,
+    },
+    "time_coverage_diagnostics": {
+        "schema_version": str,
+        "scope": str,
+        "time_coverage": dict,
+    },
+    "chunked_feature_dry_run": {
+        "schema_version": str,
+        "scope": str,
+        "chunked_feature_dry_run": dict,
+    },
+    "feature_schema_manifest": {
+        "schema_version": str,
+        "features": list,
+    },
+    "offline_research_queue_summary": {
+        "schema_version": str,
+        "scope": str,
+        "items": list,
+        "ranked_review_items": list,
+    },
+}
+
+
+def validate_report_contract(report: dict, report_type: str) -> list[ContractIssue]:
+    """Validate report against schema contract."""
+    issues = []
+    if report_type not in REQUIRED_REPORT_KEYS:
+        issues.append(ContractIssue("error", "", f"unknown report_type: {report_type}"))
+        return issues
+
+    required = REQUIRED_REPORT_KEYS[report_type]
+    for key, expected_type in required.items():
+        if key not in report:
+            issues.append(ContractIssue("error", key, f"missing required key: {key}"))
+        elif not isinstance(report[key], expected_type):
+            actual_type = type(report[key]).__name__
+            issues.append(ContractIssue("error", key, f"type mismatch: expected {expected_type.__name__}, got {actual_type}"))
+
+    # Validate quality_score structure for dataset_quality_report
+    if report_type == "dataset_quality_report" and "quality_score" in report:
+        qs = report["quality_score"]
+        for qkey in ["score", "max_score", "grade", "components"]:
+            if qkey not in qs:
+                issues.append(ContractIssue("error", f"quality_score.{qkey}", f"missing required key: {qkey}"))
+
+    # Validate ranked_review_items structure for offline queue
+    if report_type == "offline_research_queue_summary" and "ranked_review_items" in report:
+        for idx, item in enumerate(report["ranked_review_items"]):
+            for rkey in ["rank", "priority", "category", "title", "recommended_action"]:
+                if rkey not in item:
+                    issues.append(ContractIssue("warning", f"ranked_review_items[{idx}].{rkey}", f"missing key: {rkey}"))
+
+    return issues
+
+
+def validate_bundle_contract(bundle: dict) -> list[ContractIssue]:
+    """Validate combined bundle contract."""
+    issues = []
+    expected_keys = ["dataset_quality_report", "feature_schema_manifest", "offline_research_queue_summary"]
+    for key in expected_keys:
+        if key not in bundle:
+            issues.append(ContractIssue("error", key, f"missing bundle key: {key}"))
+        else:
+            issues.extend(validate_report_contract(bundle[key], key))
+    return issues
+
+
+def extract_schema_shape(value: Any, max_depth: int = 5, current_depth: int = 0) -> Any:
+    """Extract schema shape from value."""
+    if current_depth >= max_depth:
+        return "..."
+    if isinstance(value, dict):
+        return {k: extract_schema_shape(v, max_depth, current_depth + 1) for k, v in value.items()}
+    if isinstance(value, list):
+        if not value:
+            return []
+        return [extract_schema_shape(value[0], max_depth, current_depth + 1)]
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "str"
+    if isinstance(value, bool):
+        return "bool"
+    if value is None:
+        return "null"
+    return type(value).__name__
+
+
+def compare_schema_shapes(old: dict, new: dict, path: str = "") -> SchemaDiff:
+    """Compare two schema shapes."""
+    added = []
+    removed = []
+    type_changes = []
+
+    old_keys = set(old.keys()) if isinstance(old, dict) else set()
+    new_keys = set(new.keys()) if isinstance(new, dict) else set()
+
+    for key in new_keys - old_keys:
+        added.append(f"{path}.{key}" if path else key)
+
+    for key in old_keys - new_keys:
+        removed.append(f"{path}.{key}" if path else key)
+
+    for key in old_keys & new_keys:
+        old_val = old[key]
+        new_val = new[key]
+        if isinstance(old_val, dict) and isinstance(new_val, dict):
+            sub_diff = compare_schema_shapes(old_val, new_val, f"{path}.{key}" if path else key)
+            added.extend(sub_diff.added_fields)
+            removed.extend(sub_diff.removed_fields)
+            type_changes.extend(sub_diff.type_changes)
+        elif type(old_val) != type(new_val):
+            full_path = f"{path}.{key}" if path else key
+            type_changes.append((full_path, str(type(old_val)), str(type(new_val))))
+
+    is_breaking = len(removed) > 0 or len(type_changes) > 0
+    return SchemaDiff(added, removed, type_changes, is_breaking)
+
+
+
+def detect_drift_against_golden(
+    current_shape: dict, golden_shape: dict, filename: str, required_keys: set[str] | None = None
+) -> list[DriftItem]:
+    """Detect drift between current and golden shapes."""
+    drift_items = []
+    required_keys = required_keys or set()
+
+    diff = compare_schema_shapes(golden_shape, current_shape)
+
+    # Missing required fields
+    for removed_field in diff.removed_fields:
+        if any(removed_field.startswith(req) or removed_field == req for req in required_keys):
+            drift_items.append(
+                DriftItem(
+                    file=filename,
+                    path=removed_field,
+                    kind="missing_required",
+                    expected="present",
+                    actual="missing",
+                )
+            )
+        else:
+            drift_items.append(
+                DriftItem(
+                    file=filename,
+                    path=removed_field,
+                    kind="removed",
+                    expected="present",
+                    actual="missing",
+                )
+            )
+
+    # Type changes
+    for path, old_type, new_type in diff.type_changes:
+        drift_items.append(
+            DriftItem(
+                file=filename,
+                path=path,
+                kind="type_change",
+                expected=old_type,
+                actual=new_type,
+            )
+        )
+
+    # Additive fields
+    for added_field in diff.added_fields:
+        drift_items.append(
+            DriftItem(
+                file=filename,
+                path=added_field,
+                kind="additive",
+                expected="not present",
+                actual="present",
+            )
+        )
+
+    return drift_items
+
+
+def compute_drift_summary(drift_items: list[DriftItem], files_checked: int) -> DriftSummary:
+    """Compute drift summary from drift items."""
+    breaking_count = sum(1 for d in drift_items if d.kind in ("missing_required", "removed", "type_change"))
+    additive_count = sum(1 for d in drift_items if d.kind == "additive")
+    type_change_count = sum(1 for d in drift_items if d.kind == "type_change")
+    missing_required_count = sum(1 for d in drift_items if d.kind == "missing_required")
+    files_with_drift = len(set(d.file for d in drift_items))
+
+    return DriftSummary(
+        breaking_count=breaking_count,
+        additive_count=additive_count,
+        type_change_count=type_change_count,
+        missing_required_count=missing_required_count,
+        files_checked=files_checked,
+        files_with_drift=files_with_drift,
+    )
+
+
+def validate_semantic_constraints(report: dict, report_type: str) -> list[SemanticIssue]:
+    """Validate semantic constraints for report fields."""
+    issues = []
+
+    if report_type == "dataset_quality_report":
+        # Validate quality_score
+        if "quality_score" in report:
+            qs = report["quality_score"]
+            if "score" in qs:
+                score = qs["score"]
+                if not isinstance(score, (int, float)):
+                    issues.append(
+                        SemanticIssue("error", "quality_score.score", "score must be numeric", "number", str(type(score).__name__))
+                    )
+                elif score < 0 or score > 100:
+                    issues.append(
+                        SemanticIssue("error", "quality_score.score", "score must be in [0, 100]", "[0, 100]", str(score))
+                    )
+
+            if "max_score" in qs:
+                max_score = qs["max_score"]
+                if not isinstance(max_score, (int, float)):
+                    issues.append(
+                        SemanticIssue("error", "quality_score.max_score", "max_score must be numeric", "number", str(type(max_score).__name__))
+                    )
+                elif max_score < 0:
+                    issues.append(
+                        SemanticIssue("error", "quality_score.max_score", "max_score must be non-negative", ">=0", str(max_score))
+                    )
+
+            if "grade" in qs:
+                grade = qs["grade"]
+                valid_grades = {"A", "B", "C", "D", "review_needed"}
+                if grade not in valid_grades:
+                    issues.append(
+                        SemanticIssue("warning", "quality_score.grade", "unknown grade value", str(valid_grades), str(grade))
+                    )
+
+        # Validate status
+        if "status" in report:
+            status = report["status"]
+            valid_statuses = {"pass", "warn", "review_needed", "blocked"}
+            if status not in valid_statuses:
+                issues.append(
+                    SemanticIssue("warning", "status", "unknown status value", str(valid_statuses), str(status))
+                )
+
+        # Validate severity_counts
+        if "severity_counts" in report:
+            sc = report["severity_counts"]
+            for key in ["error", "warning", "info"]:
+                if key in sc:
+                    count = sc[key]
+                    if not isinstance(count, int):
+                        issues.append(
+                            SemanticIssue("error", f"severity_counts.{key}", "count must be integer", "int", str(type(count).__name__))
+                        )
+                    elif count < 0:
+                        issues.append(
+                            SemanticIssue("error", f"severity_counts.{key}", "count must be non-negative", ">=0", str(count))
+                        )
+
+        # Validate row_count and column_count
+        for field in ["row_count", "column_count"]:
+            if field in report:
+                count = report[field]
+                if not isinstance(count, int):
+                    issues.append(
+                        SemanticIssue("error", field, f"{field} must be integer", "int", str(type(count).__name__))
+                    )
+                elif count < 0:
+                    issues.append(
+                        SemanticIssue("error", field, f"{field} must be non-negative", ">=0", str(count))
+                    )
+
+    return issues

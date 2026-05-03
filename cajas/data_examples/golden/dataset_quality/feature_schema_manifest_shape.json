@@ -1,0 +1,11 @@
+{
+  "features": [
+    {
+      "dtype": "str",
+      "name": "str",
+      "source_stage": "str",
+      "tag": "str"
+    }
+  ],
+  "schema_version": "str"
+}

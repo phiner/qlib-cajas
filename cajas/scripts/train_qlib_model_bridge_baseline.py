@@ -14,7 +14,7 @@ from cajas.baseline.qlib_model_bridge_trainer import train_qlib_model_bridge_bas
 from cajas.reports.qlib_experiment_artifacts import write_experiment_artifacts
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Train CPU baseline for qlib model experiment bridge.")
     p.add_argument("--training-contract", required=True)
     p.add_argument("--out-dir", required=True)
@@ -26,7 +26,7 @@ def main() -> int:
     p.add_argument("--selected-columns", default=None, help="comma-separated column list")
     p.add_argument("--use-cache", action="store_true")
     p.add_argument("--manifest", default=None)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contract = json.loads(Path(args.training_contract).expanduser().read_text(encoding="utf-8"))
     result = train_qlib_model_bridge_baseline(

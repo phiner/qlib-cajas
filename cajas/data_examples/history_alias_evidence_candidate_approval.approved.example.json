@@ -1,0 +1,11 @@
+{
+  "schema_version": "v1",
+  "approval_date": "2026-05-03",
+  "approver": "example-reviewer",
+  "approved": true,
+  "candidate_evidence_file": "tmp/simulated-confirmed-clear/history_alias_external_consumers.candidate.json",
+  "approval_scope": "simulation_only",
+  "notes": [
+    "Example only. Do not use as real approval without human reviewer confirmation."
+  ]
+}

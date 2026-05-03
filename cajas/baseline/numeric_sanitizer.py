@@ -34,7 +34,8 @@ def sanitize_features_for_model(
     df = src.copy()
     numeric = df.apply(pd.to_numeric, errors="coerce")
 
-    vals = numeric.to_numpy(dtype=float)
+    # copy=True avoids read-only array views across pandas/numpy versions.
+    vals = numeric.to_numpy(dtype=float, copy=True)
     pos_inf = np.isposinf(vals)
     neg_inf = np.isneginf(vals)
 

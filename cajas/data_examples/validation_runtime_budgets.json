@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "budgets_seconds": {
+    "fast_total": 105.0,
+    "pytest_fast": 95.0,
+    "compileall": 1.0,
+    "path_hygiene": 12.0,
+    "init_py_find": 1.0,
+    "git_init_py_check": 1.0,
+    "dataset_quality_tests": 15.0,
+    "contract_tests": 5.0,
+    "scenario_tests": 5.0,
+    "manifest_tests": 5.0,
+    "micro_smoke": 15.0,
+    "data_source_audit": 10.0
+  },
+  "required_components": [
+    "fast_total",
+    "pytest_fast"
+  ],
+  "optional_components": [
+    "compileall",
+    "path_hygiene",
+    "init_py_find",
+    "git_init_py_check",
+    "dataset_quality_tests",
+    "contract_tests",
+    "scenario_tests",
+    "manifest_tests",
+    "micro_smoke",
+    "data_source_audit"
+  ],
+  "warn_threshold_ratio": 1.15,
+  "component_categories": {
+    "fast_total": "core",
+    "pytest_fast": "core",
+    "compileall": "utility",
+    "path_hygiene": "utility",
+    "init_py_find": "utility",
+    "git_init_py_check": "utility",
+    "dataset_quality_tests": "utility",
+    "contract_tests": "utility",
+    "scenario_tests": "utility",
+    "manifest_tests": "utility",
+    "micro_smoke": "utility",
+    "data_source_audit": "utility"
+  },
+  "notes": [
+    "Budgets are guardrails for local/CI validation sustainability.",
+    "They are not performance claims or trading/model performance metrics.",
+    "warn_threshold_ratio: budgets allow up to 15% overage before warning.",
+    "Budgets based on observed Phase 1016 baseline: fast_total ~85s, pytest_fast ~82s.",
+    "required_components: must be measured, missing causes warn/fail.",
+    "optional_components: nice to have, missing does not cause overall warn."
+  ],
+  "global_warn_margin_seconds": 0.0,
+  "warn_margin_seconds": {
+    "pytest_fast": 5.0,
+    "fast_total": 5.0,
+    "path_hygiene": 2.0
+  }
+}

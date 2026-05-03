@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
+import re
 import shlex
 import subprocess
 import sys
 import time
+from uuid import uuid4
 from pathlib import Path
 
 
@@ -53,7 +56,11 @@ def run_validation_step(
     if echo:
         print("$ " + " ".join(step.command))
     try:
-        completed = runner(step.command, check=True)
+        try:
+            completed = runner(step.command, check=True, capture_output=True, text=True)
+        except TypeError:
+            # Test doubles may not accept subprocess.run kwargs.
+            completed = runner(step.command, check=True)
         returncode = int(getattr(completed, "returncode", 0))
         stdout = str(getattr(completed, "stdout", "") or "")
         stderr = str(getattr(completed, "stderr", "") or "")
@@ -160,6 +167,65 @@ def evaluate_budget(results: list[ValidationStepResult], max_seconds: float | No
     return True, [message]
 
 
+def _extract_test_summary(results: list[ValidationStepResult]) -> dict[str, int | None]:
+    pytest_result = next((r for r in results if r.name.startswith("pytest")), None)
+    if pytest_result is None:
+        return {
+            "passed": None,
+            "deselected": None,
+            "failed": None,
+            "skipped": None,
+            "xfailed": None,
+            "xpassed": None,
+            "errors": None,
+            "total_reported": None,
+        }
+    text = "\n".join([pytest_result.stdout, pytest_result.stderr])
+    passed = deselected = failed = skipped = xfailed = xpassed = errors = None
+    match_passed = re.search(r"(\d+)\s+passed", text)
+    match_deselected = re.search(r"(\d+)\s+deselected", text)
+    match_failed = re.search(r"(\d+)\s+failed", text)
+    match_skipped = re.search(r"(\d+)\s+skipped", text)
+    match_xfailed = re.search(r"(\d+)\s+xfailed", text)
+    match_xpassed = re.search(r"(\d+)\s+xpassed", text)
+    match_errors = re.search(r"(\d+)\s+error(?:s)?", text)
+    if match_passed:
+        passed = int(match_passed.group(1))
+    if match_deselected:
+        deselected = int(match_deselected.group(1))
+    if match_failed:
+        failed = int(match_failed.group(1))
+    if match_skipped:
+        skipped = int(match_skipped.group(1))
+    if match_xfailed:
+        xfailed = int(match_xfailed.group(1))
+    if match_xpassed:
+        xpassed = int(match_xpassed.group(1))
+    if match_errors:
+        errors = int(match_errors.group(1))
+    total_reported = None
+    if passed is not None:
+        total_reported = (
+            passed
+            + (deselected or 0)
+            + (failed or 0)
+            + (skipped or 0)
+            + (xfailed or 0)
+            + (xpassed or 0)
+            + (errors or 0)
+        )
+    return {
+        "passed": passed,
+        "deselected": deselected,
+        "failed": failed,
+        "skipped": skipped,
+        "xfailed": xfailed,
+        "xpassed": xpassed,
+        "errors": errors,
+        "total_reported": total_reported,
+    }
+
+
 def build_timing_payload(
     *,
     args: argparse.Namespace,
@@ -168,12 +234,40 @@ def build_timing_payload(
     overall_status: str,
     budget_exceeded: bool,
 ) -> dict:
+    command_tokens = [Path(__file__).resolve().as_posix(), "--tier", args.tier]
+    if args.skip_compileall:
+        command_tokens.append("--skip-compileall")
+    if args.skip_pytest:
+        command_tokens.append("--skip-pytest")
+    if args.only_pytest:
+        command_tokens.append("--only-pytest")
+    if args.only_hygiene:
+        command_tokens.append("--only-hygiene")
+    if args.pytest_expression != DEFAULT_FAST_EXPRESSION:
+        command_tokens.extend(["--pytest-expression", args.pytest_expression])
+    if args.durations is not None:
+        command_tokens.extend(["--durations", str(args.durations)])
+    if args.pytest_extra_args:
+        command_tokens.extend(["--pytest-extra-args", args.pytest_extra_args])
+    if args.max_seconds is not None:
+        command_tokens.extend(["--max-seconds", str(args.max_seconds)])
+    if args.fail_on_budget:
+        command_tokens.append("--fail-on-budget")
+    if args.timing_json:
+        command_tokens.extend(["--timing-json", str(args.timing_json)])
+
     return {
-        "schema_version": "v1",
+        "schema_version": "v2",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "run_id": str(uuid4()),
+        "command": " ".join(shlex.quote(token) for token in command_tokens),
+        "timing_source": "run_fast_validation.py",
         "tier": args.tier,
         "pytest_expression": args.pytest_expression,
         "results": [result.to_json_dict() for result in results],
         "total_seconds": round(total_seconds, 3),
+        "pytest_fast": next((round(r.elapsed_seconds, 3) for r in results if r.name == "pytest_fast"), None),
+        "test_summary": _extract_test_summary(results),
         "overall_status": overall_status,
         "budget": {
             "max_seconds": args.max_seconds,

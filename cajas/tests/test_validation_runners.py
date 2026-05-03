@@ -72,7 +72,10 @@ class ValidationRunnersTests(unittest.TestCase):
 
         def fake_runner(cmd: list[str], check: bool) -> object:
             calls.append(cmd)
-            return type("Completed", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+            stdout = ""
+            if "-m" in cmd and "pytest" in cmd:
+                stdout = "=== 3 passed, 2 deselected in 0.10s ==="
+            return type("Completed", (), {"returncode": 0, "stdout": stdout, "stderr": ""})()
 
         with TemporaryDirectory() as tmp:
             out = Path(tmp) / "timing.json"
@@ -89,6 +92,14 @@ class ValidationRunnersTests(unittest.TestCase):
             self.assertIn("total_seconds", payload)
             self.assertEqual(payload["overall_status"], "pass")
             self.assertEqual(len(payload["results"]), 4)
+            self.assertEqual(payload["test_summary"]["passed"], 3)
+            self.assertEqual(payload["test_summary"]["deselected"], 2)
+            self.assertEqual(payload["test_summary"]["failed"], None)
+            self.assertEqual(payload["test_summary"]["skipped"], None)
+            self.assertIn("created_at", payload)
+            self.assertIn("run_id", payload)
+            self.assertIn("timing_source", payload)
+            self.assertIn("command", payload)
 
     def test_fail_on_budget_returns_nonzero(self) -> None:
         def fake_runner(cmd: list[str], check: bool) -> object:

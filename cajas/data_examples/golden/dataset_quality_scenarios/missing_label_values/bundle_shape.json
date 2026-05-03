@@ -1,0 +1,147 @@
+{
+  "dataset_quality_report": {
+    "schema_version": "str",
+    "report_type": "str",
+    "status": "str",
+    "severity_counts": {
+      "info": "number",
+      "warning": "number",
+      "review_needed": "number",
+      "blocked": "number"
+    },
+    "scope": "str",
+    "input_csv": "str",
+    "row_count": "number",
+    "column_count": "number",
+    "quality_score": {
+      "score": "number",
+      "max_score": "number",
+      "percentage": "number",
+      "grade": "str",
+      "components": [
+        {
+          "name": "...",
+          "score": "...",
+          "max": "...",
+          "status": "..."
+        }
+      ]
+    },
+    "column_completeness": [
+      {
+        "column": "str",
+        "non_null_count": "number",
+        "null_count": "number",
+        "completeness_ratio": "number"
+      }
+    ],
+    "label_diagnostics": [
+      {
+        "label": "str",
+        "null_count": "number",
+        "non_null_count": "number",
+        "distinct_count": "number",
+        "distribution": {
+          "up": "...",
+          "nan": "..."
+        },
+        "top_ratio": "number",
+        "imbalance_warning": "number"
+      }
+    ],
+    "label_review_buckets": [],
+    "time_coverage": {
+      "datetime_column": "str",
+      "datetime_parse_success_count": "number",
+      "datetime_parse_failed_count": "number",
+      "earliest_timestamp": "str",
+      "latest_timestamp": "str",
+      "suspicious_gap_count": "number",
+      "suspicious_gap_examples": [],
+      "session_hour_distribution": {
+        "0": "number"
+      },
+      "time_quality": {
+        "status": "str",
+        "issues": []
+      }
+    },
+    "instrument_summary": {
+      "instrument_column": "str",
+      "unique_instrument_count": "number",
+      "top_instruments": [
+        {
+          "instrument": "...",
+          "count": "..."
+        }
+      ]
+    },
+    "chunked_feature_dry_run": {
+      "selected_columns": [
+        "str"
+      ],
+      "feature_columns": [
+        "str"
+      ],
+      "chunk_size": "number",
+      "row_limit": "null",
+      "chunk_count": "number",
+      "row_count": "number",
+      "schema_consistency": {
+        "column_dtype_map": {
+          "instrument": "...",
+          "datetime": "...",
+          "Open": "...",
+          "High": "...",
+          "Low": "...",
+          "Close": "...",
+          "Volume": "...",
+          "future_direction_8": "..."
+        }
+      },
+      "rows_per_second": "null"
+    },
+    "feature_readiness": {
+      "status": "str",
+      "ready_columns": [
+        "str"
+      ],
+      "review_columns": [],
+      "blocked_columns": [],
+      "warnings": []
+    }
+  },
+  "feature_schema_manifest": {
+    "schema_version": "str",
+    "features": [
+      {
+        "name": "str",
+        "dtype": "str",
+        "source_stage": "str",
+        "tag": "str"
+      }
+    ]
+  },
+  "offline_research_queue_summary": {
+    "schema_version": "str",
+    "scope": "str",
+    "items": [
+      {
+        "priority": "str",
+        "task": "str",
+        "reason": "str"
+      }
+    ],
+    "ranked_review_items": [
+      {
+        "rank": "number",
+        "priority": "str",
+        "category": "str",
+        "title": "str",
+        "reason": "str",
+        "recommended_action": "str",
+        "source_report": "str"
+      }
+    ]
+  }
+}

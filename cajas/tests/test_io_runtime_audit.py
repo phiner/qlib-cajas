@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cajas.reports.io_runtime_audit import build_io_runtime_audit
+from cajas.scripts.audit_io_runtime import main as audit_io_runtime_main
 
 
 class IoRuntimeAuditTests(unittest.TestCase):
@@ -20,10 +19,8 @@ class IoRuntimeAuditTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             out_json = Path(tmp) / "io_runtime_audit.json"
             out_md = Path(tmp) / "io_runtime_audit.md"
-            subprocess.run(
+            code = audit_io_runtime_main(
                 [
-                    sys.executable,
-                    "cajas/scripts/audit_io_runtime.py",
                     "--project-root",
                     "cajas",
                     "--tmp-root",
@@ -32,9 +29,9 @@ class IoRuntimeAuditTests(unittest.TestCase):
                     str(out_json),
                     "--out-md",
                     str(out_md),
-                ],
-                check=True,
+                ]
             )
+            self.assertEqual(code, 0)
             payload = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertIn("tmp_summary", payload)
 

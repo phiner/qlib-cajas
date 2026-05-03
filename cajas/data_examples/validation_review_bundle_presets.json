@@ -1,0 +1,29 @@
+{
+  "schema_version": "v1",
+  "presets": {
+    "local_review": {
+      "ci_profile": "local",
+      "warn_only": true,
+      "run_fast_validation": false,
+      "update_history": true,
+      "check_manifest_compatibility": true,
+      "description": "Recommended for local development: does not rerun fast validation, uses local profile (optional warnings are notes), updates local history."
+    },
+    "ci_required": {
+      "ci_profile": "ci",
+      "warn_only": false,
+      "run_fast_validation": true,
+      "update_history": true,
+      "check_manifest_compatibility": true,
+      "description": "Recommended for standard CI: reruns fast validation, uses ci profile (optional warnings escalate), updates history."
+    },
+    "strict_release": {
+      "ci_profile": "strict",
+      "fail_on_warn": true,
+      "run_fast_validation": true,
+      "update_history": true,
+      "check_manifest_compatibility": true,
+      "description": "Recommended for release gates: fails on any warning, reruns fast validation, uses strict profile (missing optional gates escalate)."
+    }
+  }
+}

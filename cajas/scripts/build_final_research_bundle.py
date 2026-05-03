@@ -17,7 +17,7 @@ def _load(path: str | Path) -> dict:
     return json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build final research bundle outputs.")
     p.add_argument("--root", required=True)
     p.add_argument("--final-readiness-packet", required=True)
@@ -32,7 +32,7 @@ def main() -> int:
     p.add_argument("--research-only-approval-packet", default=None)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     bundle = build_final_research_bundle(
         root=str(Path(args.root).expanduser().resolve()),

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cajas.reports.data_source_audit import build_data_source_audit
+from cajas.scripts.audit_data_sources import main as audit_data_sources_main
 
 
 class DataSourceAuditTests(unittest.TestCase):
@@ -20,10 +19,8 @@ class DataSourceAuditTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             out_json = Path(tmp) / "data_source_audit.json"
             out_md = Path(tmp) / "data_source_audit.md"
-            subprocess.run(
+            code = audit_data_sources_main(
                 [
-                    sys.executable,
-                    "cajas/scripts/audit_data_sources.py",
                     "--project-root",
                     "cajas",
                     "--data-root",
@@ -32,13 +29,14 @@ class DataSourceAuditTests(unittest.TestCase):
                     str(out_json),
                     "--out-md",
                     str(out_md),
-                ],
-                check=True,
+                ]
             )
+            self.assertEqual(code, 0)
             self.assertTrue(out_json.exists())
             self.assertTrue(out_md.exists())
             payload = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertIn("summary", payload)
+            self.assertIn("read_csv_count", payload["summary"])
 
     def test_policy_guarded_read_csv_not_counted_as_full_read_likely(self) -> None:
         with TemporaryDirectory() as tmp:

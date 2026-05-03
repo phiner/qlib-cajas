@@ -12,7 +12,7 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.qlib_model_training_contract_builder import build_qlib_model_training_contract
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build qlib model bridge training contract.")
     p.add_argument("--handler-input", required=True)
     p.add_argument("--handler-manifest", required=True)
@@ -23,7 +23,7 @@ def main() -> int:
     p.add_argument("--label-col", default=None)
     p.add_argument("--row-limit", type=int, default=None)
     p.add_argument("--allow-large-data", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contract = build_qlib_model_training_contract(
         handler_input_path=args.handler_input,

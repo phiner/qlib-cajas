@@ -1,0 +1,112 @@
+{
+  "chunked_feature_dry_run": {
+    "chunk_count": "number",
+    "chunk_size": "number",
+    "feature_columns": [
+      "str"
+    ],
+    "row_count": "number",
+    "row_limit": "number",
+    "rows_per_second": "null",
+    "schema_consistency": {
+      "column_dtype_map": {
+        "Close": "...",
+        "High": "...",
+        "Low": "...",
+        "Open": "...",
+        "Time (UTC)": "...",
+        "Volume": "...",
+        "future_direction_8": "...",
+        "instrument": "..."
+      }
+    },
+    "selected_columns": [
+      "str"
+    ]
+  },
+  "column_completeness": [
+    {
+      "column": "str",
+      "completeness_ratio": "number",
+      "non_null_count": "number",
+      "null_count": "number"
+    }
+  ],
+  "column_count": "number",
+  "feature_readiness": {
+    "blocked_columns": [],
+    "ready_columns": [
+      "str"
+    ],
+    "review_columns": [],
+    "status": "str",
+    "warnings": []
+  },
+  "input_csv": "str",
+  "instrument_summary": {
+    "instrument_column": "str",
+    "top_instruments": [
+      {
+        "count": "...",
+        "instrument": "..."
+      }
+    ],
+    "unique_instrument_count": "number"
+  },
+  "label_diagnostics": [
+    {
+      "distinct_count": "number",
+      "distribution": {
+        "flat": "...",
+        "up": "..."
+      },
+      "imbalance_warning": "number",
+      "label": "str",
+      "non_null_count": "number",
+      "null_count": "number",
+      "top_ratio": "number"
+    }
+  ],
+  "label_review_buckets": [],
+  "quality_score": {
+    "components": [
+      {
+        "max": "...",
+        "name": "...",
+        "score": "...",
+        "status": "..."
+      }
+    ],
+    "grade": "str",
+    "max_score": "number",
+    "percentage": "number",
+    "score": "number"
+  },
+  "report_type": "str",
+  "row_count": "number",
+  "schema_version": "str",
+  "scope": "str",
+  "severity_counts": {
+    "blocked": "number",
+    "info": "number",
+    "review_needed": "number",
+    "warning": "number"
+  },
+  "status": "str",
+  "time_coverage": {
+    "datetime_column": "str",
+    "datetime_parse_failed_count": "number",
+    "datetime_parse_success_count": "number",
+    "earliest_timestamp": "str",
+    "latest_timestamp": "str",
+    "session_hour_distribution": {
+      "0": "number"
+    },
+    "suspicious_gap_count": "number",
+    "suspicious_gap_examples": [],
+    "time_quality": {
+      "issues": [],
+      "status": "str"
+    }
+  }
+}

@@ -11,6 +11,35 @@ Current focus:
 
 Current scope is research-only and is **not** a trading system.
 
+## Maintenance Mode (Phase 4166-4525)
+
+Current maintenance posture is routine/frozen for offline validation governance:
+
+- External consumer evidence governance is closed or external-tracking-only non-blocking context.
+- Final maintenance archive closure and post-freeze handoff seal are generated reviewer artifacts.
+- Canonical manifest contract remains `history` only (`history_update` alias emission stays removed).
+- Legacy read normalization remains preserved for historical compatibility.
+- Release readiness remains `ready`, final reviewer packet remains `ready_for_review`, milestone remains non-blocking ready-for-review context.
+
+Routine regeneration commands:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_validation_external_consumer_evidence_closure.py --out-json tmp/validation-external-consumer-evidence-closure.json --out-md tmp/validation-external-consumer-evidence-closure.md
+./.venv-qlib313/bin/python cajas/scripts/build_validation_final_maintenance_archive_closure.py --out-json tmp/validation-final-maintenance-archive-closure.json --out-md tmp/validation-final-maintenance-archive-closure.md
+./.venv-qlib313/bin/python cajas/scripts/build_validation_post_freeze_handoff_seal.py --out-json tmp/validation-post-freeze-handoff-seal.json --out-md tmp/validation-post-freeze-handoff-seal.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_routine_release_cycle_stability.py --release-readiness-report tmp/validation-release-readiness.json --final-reviewer-packet tmp/validation-final-reviewer-packet.json --milestone-packet tmp/validation-milestone-packet.json --runtime-budget-report tmp/validation_runtime_budget_report.json --runtime-edge-report tmp/validation-runtime-edge-report.json --runtime-release-cycle-report tmp/validation-runtime-release-cycle-report.json --runtime-variance-closure-report tmp/validation-runtime-variance-closure.json --data-source-audit-report tmp/data_source_audit.json --maintenance-checklist tmp/validation-maintenance-checklist.json --maintenance-governance-closure tmp/validation-maintenance-governance-closure.json --final-maintenance-archive-closure-report tmp/validation-final-maintenance-archive-closure.json --external-consumer-evidence-closure-report tmp/validation-external-consumer-evidence-closure.json --post-freeze-handoff-seal-report tmp/validation-post-freeze-handoff-seal.json --optional-followups tmp/validation-optional-followups.json --out-json tmp/validation-routine-release-cycle-stability.json --out-md tmp/validation-routine-release-cycle-stability.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_routine_stability_watch_closure.py --routine-release-cycle-stability-report tmp/validation-routine-release-cycle-stability.json --release-readiness-report tmp/validation-release-readiness.json --final-reviewer-packet tmp/validation-final-reviewer-packet.json --milestone-packet tmp/validation-milestone-packet.json --optional-followups-report tmp/validation-optional-followups.json --out-json tmp/validation-routine-stability-watch-closure.json --out-md tmp/validation-routine-stability-watch-closure.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_final_maintenance_handoff.py --branch phase-post-merge-research-next --release-readiness-report tmp/validation-release-readiness.json --final-reviewer-packet tmp/validation-final-reviewer-packet.json --milestone-packet tmp/validation-milestone-packet.json --routine-stability-watch-closure tmp/validation-routine-stability-watch-closure.json --post-freeze-handoff-seal-report tmp/validation-post-freeze-handoff-seal.json --final-maintenance-archive-closure-report tmp/validation-final-maintenance-archive-closure.json --external-consumer-evidence-closure-report tmp/validation-external-consumer-evidence-closure.json --alias-post-removal-closure-report tmp/alias-post-removal-closure.json --optional-followups-report tmp/validation-optional-followups.json --out-json tmp/validation-final-maintenance-handoff.json --out-md tmp/validation-final-maintenance-handoff.md
+```
+
+Watch-closure semantics:
+- Routine stability may stay `watch` while release readiness remains `ready` when watch closure is `closed_non_blocking`.
+- Remaining `slow_test_optimization` followup is maintenance-only and non-blocking.
+
+Manual merge policy:
+- Final maintenance handoff is review-only and requires manual GitHub merge by a human reviewer.
+- Do not run automated merge operations from Codex or local scripts.
+
 ## Out of Scope
 
 This phase does not include:
@@ -36,6 +65,134 @@ cajas/
   configs/       # draft experiment configs
   data_examples/ # expected input/output schema notes
 ```
+
+## Dataset Quality Loop (Phase 776-805, Enhanced Phase 836-865, Contracts Phase 866-895)
+
+**Phase 836-865 Enhancements:**
+
+Dataset quality reports now include:
+- Quality score (0-100) with grade (A-D or review_needed)
+- Status levels: pass, warn, review_needed, blocked
+- Label review buckets with priority ranking
+- Ranked review items for offline research queue
+- Feature readiness categories
+- Enhanced time quality with session distribution
+
+**Phase 866-895 Schema Contracts:**
+
+- Explicit schema validation for all report types
+- Golden shape snapshots for regression testing
+- Contract validation CLI
+- Additive vs breaking change detection
+
+**Phase 896-925 Contract Adoption:**
+
+- Integrated contract validation in smoke workflow
+- Automatic schema validation after report generation
+- CLI failure tests for missing fields and type mismatches
+- Contract workflow documentation
+
+**Phase 926-955 Contract Drift Detection:**
+
+- Drift detection against golden shapes
+- Reviewer-friendly drift summaries
+- Breaking vs additive drift classification
+- Drift items with specific change details
+
+**Phase 956-985 Enhanced Drift Semantics and Trend Tracking:**
+
+- Semantic validation for critical field constraints
+  - `quality_score` must be in [0, 100]
+  - Count fields must be non-negative
+  - Grade/status fields validated against known values
+- Trend snapshots generated after each smoke run
+- Trend comparison CLI for detecting regressions
+- Regression detection: contract failures, semantic errors, quality drops, status degradation
+- Semantic errors fail contract validation separately from shape drift
+
+**Phase 986-1015 Golden Fixture Scenario Expansion:**
+
+- Multiple edge-case scenarios for robust regression testing
+  - `tiny_balanced`, `missing_label_values`, `single_class_label`, `time_gap`, `minimal_columns`
+- Scenario manifest describing each scenario
+- Scenario builder CLI to regenerate golden shapes
+- 6 scenario regression tests (~2s)
+- 21 golden shape files committed across 5 scenarios
+
+**Phase 1016-1045 Qlib Experiment Reproducibility Strengthening:**
+
+- Experiment manifest for offline Qlib research reproducibility
+- Links dataset quality reports, contract reports, trend snapshots, golden scenarios
+- Captures git branch/commit, Python version, platform info
+- Manifest builder CLI with validation
+- Reviewer-friendly Markdown with artifact table and reproducibility status
+- 9 manifest tests (~2s)
+- Manifests clearly marked as offline research only, not trading execution
+
+**Phase 1046-1075 Runtime Budget Enforcement and Test Optimization:**
+
+- Runtime budget configuration for validation sustainability
+- Budget checking CLI with pass/warn/fail classification
+- Reviewer-friendly budget reports with component table
+- 9 runtime budget tests (~2s)
+- Fast validation: ~83.5s (Phase 986: ~100s, Phase 1016: ~85s)
+- Budgets are engineering guardrails, not performance claims
+
+**Phase 1076-1105 Reviewer Report Enhancements — Diffs and Trends:**
+
+- Reviewer diff report generation comparing baseline vs current artifacts
+- Compares dataset quality, contract, semantic, drift, runtime budget status
+- Detects quality score deltas, status changes, error increases
+- 7 reviewer diff tests (~2s)
+- Reviewer-friendly Markdown with executive summary and artifact table
+- Clearly marked as offline research infrastructure comparison only
+
+**Phase 1106-1135 Validation Delivery Packet and Artifact Index:**
+
+- Validation delivery packet bundling all validation artifacts
+- Artifact index with presence/missing status and role classification
+- Status aggregation: pass/warn/fail based on critical artifacts
+- 6 delivery packet tests (~2s)
+- Reviewer-friendly packet index with recommended actions
+- Optional artifact copying into packet directory
+
+Combined bundle builder:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_dataset_quality_research_bundle.py \
+  --input-csv cajas/data_examples/validation_fixtures/eurusd_tiny.csv \
+  --out-dir tmp/dataset-quality-bundle \
+  --label-col future_direction_8 \
+  --feature-col Open \
+  --feature-col High \
+  --feature-col Low \
+  --feature-col Close \
+  --feature-col Volume \
+  --datetime-col "Time (UTC)"
+```
+
+Modular CLIs:
+
+- `build_dataset_quality_report.py`
+- `build_label_coverage_diagnostics.py`
+- `build_time_coverage_diagnostics.py`
+- `run_chunked_feature_dry_run.py`
+- `build_feature_schema_manifest.py`
+- `build_offline_research_queue_summary.py`
+
+Smoke workflow:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/run_dataset_quality_smoke.py \
+  --out-root tmp/dataset-quality-smoke
+```
+
+Notes:
+
+- defaults use tiny local fixtures
+- larger reads require explicit `--allow-large-data`
+- outputs are offline research artifacts only
+- quality scores are data quality indicators, not trading/model performance metrics
 
 ## Phase 1: Run Real EURUSD 15m Preparation
 
@@ -130,6 +287,34 @@ This phase still excludes:
 - CLI command:
   - `./.venv-qlib313/bin/python cajas/scripts/run_baseline_disabled.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
 - Optional artifact output:
+
+## Phase 3086-3205: Controlled Apply Readiness and Alias Fallback Removal Scheduling
+
+- Added controlled canonical evidence apply hardening for:
+  - `cajas/scripts/apply_canonical_evidence_update.py`
+  - `cajas/reports/validation_canonical_evidence_apply.py`
+- In apply mode, the target is the explicit `--out-evidence` path.
+- This phase uses controlled target apply under:
+  - `tmp/applied-canonical-evidence/history_alias_external_consumers.json`
+- Added applied readiness report:
+  - `cajas/reports/validation_applied_evidence_readiness.py`
+  - `cajas/scripts/build_applied_evidence_readiness_report.py`
+- Added alias fallback removal scheduling-readiness packet:
+  - `cajas/reports/validation_alias_fallback_removal_readiness.py`
+  - `cajas/scripts/build_alias_fallback_removal_readiness.py`
+- Integrated both into release readiness and milestone packet builders.
+
+Current outcome snapshot:
+- applied readiness: `ready_for_real_apply`
+- fallback removal readiness: `ready_to_schedule`
+- real release readiness: `watch`
+- real milestone: `watch`
+
+Safety constraints:
+- manual real apply remains required
+- fallback alias removal remains out of scope for this phase
+- no Qlib core modification
+- offline validation only (no trading/broker/live execution)
   - `--write-artifacts --output-dir tmp/cajas/baseline_disabled_runs --run-name phase12_baseline_disabled`
   - files:
     - `baseline_blocked_run_report.json`
@@ -836,5 +1021,950 @@ Current audit delta:
   - `cajas/docs/pr_readiness_checklist.md`
 - Final phase archive index:
   - `cajas/docs/final_phase_archive_index.md`
+- Post-merge next workstream plan:
+  - `cajas/docs/post_merge_next_workstream_plan.md`
+- Next implementation prompt:
+  - `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`
 - Validation delivery packet builder:
   - `./.venv-qlib313/bin/python cajas/scripts/build_validation_delivery_packet.py --fast-timing tmp/validation-runtime-audit/fast_validation_phase566.json --data-source-audit tmp/data-io-audit/data_source_audit_phase566.json --runtime-audit tmp/validation-runtime-audit/validation_runtime_phase566.json --out-json tmp/validation-delivery/validation_delivery_packet.json --out-md tmp/validation-delivery/validation_delivery_packet.md --allow-missing-inputs`
+
+
+### Phase 1136–1165: Validation Timing Granularity and Delivery Packet Integration
+- Distinguished required vs optional runtime budget components
+- Updated budget checker to only warn for missing required components
+- Enhanced budget reports with component type classification (🔴 required vs optional)
+- Integrated runtime budget status into validation delivery packets
+- Added test for optional components not causing warnings
+- Runtime budget status now **pass** (previously warn due to missing optional timings)
+- Fast validation: ~84.03s (376 tests, +1 from Phase 1106)
+- Reduced noise in runtime budget reporting
+
+
+### Phase 1166–1195: Automated Validation Review Bundle Workflow
+- Created orchestration CLI to build complete validation review bundles
+- Coordinates smoke → timing → budget → diff → manifest → audit → packet
+- Safe execution modes with explicit opt-in for expensive operations
+- Generates bundle manifest and index with execution record
+- Integrates delivery packet as subdirectory
+- Added 6 tests covering orchestration logic
+- Fast validation: ~103.70s (382 tests, +6 from Phase 1136)
+- Single command to generate reviewer-ready bundle
+
+
+### Phase 1196–1225: Fast Validation Runtime Optimization and Tier Split
+- Optimized review bundle tests by mocking subprocess calls
+- Review bundle tests: 12.97s → 0.22s (58x speedup)
+- Fast validation: 111.73s → 97.66s (14.07s improvement)
+- Runtime budget status: warn → **pass** ✅
+- Back under 105s budget without weakening coverage
+- No tier split needed - optimization alone sufficient
+- Data-source audit: stable at read_csv_count=29
+
+
+### Phase 1226–1255: Validation Review Bundle History and Trend Tracking
+- Added lightweight historical tracking for validation review bundles
+- Created JSONL-based snapshot history with key validation metrics
+- Built history update CLI with regression detection
+- Detects status regressions, runtime increases, count changes
+- Generates reviewer-friendly Markdown summaries
+- Added 8 tests covering history tracking (2.16s, no subprocess calls)
+- Fast validation: ~90.11s (390 tests, +8 from Phase 1196)
+- No impact on fast validation runtime
+
+
+### Phase 1256–1285: Integrated Review Bundle History Workflow
+- Integrated optional history update into `build_validation_review_bundle.py`
+- Added `--update-history`, `--history-jsonl`, `--history-last-n` flags
+- Reused history module directly (no subprocess history update step)
+- Extended `review_bundle_manifest.json` with `history_update` section
+- Extended `review_bundle_index.md` with history paths, deltas, regressions, and recommendation
+- Preserved default behavior when history update is not requested
+- Added conservative failure policy:
+  - history requested + failure => fail by default
+  - with `--warn-only` => record warning and continue
+- Expanded review bundle tests for integrated history workflow and failure modes
+
+
+### Phase 1286–1315: Review Bundle Index Polish and History Delta Readability
+- Polished `review_bundle_index.md` history output for reviewer readability
+- Replaced raw dict-style delta text with human-readable runtime delta table
+- Added compact `History Summary` section in bundle index
+- Added stable `history` fields in `review_bundle_manifest.json` while preserving existing `history_update` compatibility
+- Kept semantics unchanged (readability-only improvement)
+
+
+### Phase 1316–1345: Review Bundle History Field Standardization and Compatibility
+- Standardized `history` as canonical review bundle manifest metadata
+- Added normalization helper to read either canonical `history` or legacy `history_update`
+- Kept `history_update` as deprecated compatibility alias with explicit deprecation markers
+- Updated index rendering to consume normalized canonical history metadata
+- No new workflow semantics; compatibility and contract cleanup only
+
+
+### Phase 1346–1375: Canonical History Consumer Migration Guard
+- Audited internal `history_update` consumer paths and routed consumers through canonical helper path
+- Added shared utility `cajas/reports/validation_review_bundle_metadata.py`
+- Added compatibility warnings helper for canonical/legacy mismatch detection
+- Added `check_review_bundle_manifest_compatibility.py` for manifest compatibility reporting
+- Retained `history_update` only as deprecated compatibility alias for migration window
+
+
+### Phase 1376–1405: Integrated Manifest Compatibility Report in Review Bundle Workflow
+- Integrated optional manifest compatibility report generation into review bundle builder
+- Added manifest compatibility metadata section to bundle manifest and index
+- Preserved default behavior when compatibility check flag is not used
+- Reused existing canonical/compatibility helpers directly without subprocess overhead
+
+
+### Phase 1406–1435: Manifest Compatibility Severity and Bundle Gating
+- Added explicit compatibility severities and status model: `pass|warn|fail`
+- Added severity counts and issue list to compatibility report
+- Updated compatibility CLI exit behavior and added `--fail-on-warn`
+- Added review bundle compatibility gating: fail status raises unless `--warn-only`
+- Kept canonical `history` contract and deprecated `history_update` compatibility window
+
+
+## Phase 1436–1465 Addendum: Fast Validation Timing Freshness and Consistency Guard
+
+- Added timing freshness metadata to fast validation timing JSON:
+  - `created_at`, `run_id`, `command`, `timing_source`
+- Added timing consistency assessment to runtime budget reporting with `pass|warn|fail` semantics.
+- Runtime budget reports now include a `timing_consistency` section in JSON/Markdown outputs.
+- Review bundle workflow now records timing consistency status in manifest/index and gates failure-level consistency unless `--warn-only`.
+- This improves reviewer confidence that budget checks are using fresh, internally consistent timing inputs.
+
+
+## Phase 1466–1525 Addendum: CI-Friendly Validation Automation Bundle
+
+- Added CI-oriented gate aggregation for validation review bundles.
+- Added final status artifacts (`final_status.json`, `final_status.md`) with machine-readable gate-level outcomes.
+- Added `--ci` workflow mode with explicit skip/fail behavior controls (`--fail-on-warn`, skip flags, timing-age control).
+- Review bundle index now starts with an overall status and CI gate summary table.
+- Timing freshness/consistency remains integrated through runtime budget reporting and is surfaced in final status.
+
+
+## Phase 1526–1585 Addendum: CI Gate Explainability and Warn Reduction
+
+- Added explicit gate reason/action fields for reviewer and CI explainability.
+- Added profile-aware final status aggregation (`local|ci|strict`) to reduce noisy warnings in local workflows.
+- Hardened final status artifact schema with run metadata and structured reason sections.
+- Final status markdown now highlights primary reason, reviewer next action, and primary artifact.
+
+
+## Phase 1586–1645 Addendum: CI Profile Policy Externalization, Runtime Variance Margin, and Final-Reason Selection
+
+- Added external CI profile policy config: `cajas/data_examples/validation_ci_profiles.json`.
+- Added `--ci-profile-config` to `build_validation_review_bundle.py` for policy loading without editing Python constants.
+- Final status now includes:
+  - `profile_policy` (source + active policy booleans)
+  - per-gate `escalated` and `profile_effect`
+  - prioritized `overall_reason_code`
+- Review bundle index now starts with profile-aware escalation summary:
+  - escalated gate count
+  - non-escalated warning gate count
+  - primary artifact and reviewer next action
+- Runtime budget configuration now supports variance margins:
+  - `warn_margin_seconds` (per component)
+  - `global_warn_margin_seconds`
+- Runtime budget report now includes per-component:
+  - `reason_code` (`within_budget`, `within_variance_margin`, `over_budget_warn`, `over_budget_fail`, `missing_required_timing`)
+  - `warn_margin_seconds`
+- Runtime variance handling improves explainability without weakening required gate semantics.
+
+
+## Phase 1646–1705 Addendum: Runtime Utility Budget Calibration and Final-Status Recovery
+
+- Audited runtime budget components into two classes:
+  - core: `fast_total`, `pytest_fast`
+  - utility: `path_hygiene`, `compileall`, `init_py_find`, `git_init_py_check`, and other optional checks
+- Calibrated `path_hygiene` budget from `5.0s` to `12.0s` with `warn_margin_seconds.path_hygiene=2.0`.
+- Added `component_categories` in `validation_runtime_budgets.json` for explicit core vs utility semantics.
+- Runtime budget aggregation now treats utility over-budget failures as overall `warn` instead of `fail` unless core required components fail.
+- Added per-component runtime output fields:
+  - `category`
+  - `action`
+- Action guidance now differentiates:
+  - utility: `review_utility_budget` / `optimize_utility_step`
+  - core: `optimize_tests`
+- Local-profile CI review-bundle final status recovers from false fail caused by unrealistic utility budget.
+
+
+## Phase 1766–1825 Addendum: CI Profile Matrix Validation and Automation Presets
+
+- Added Profile Matrix generator to compare `local`, `ci`, and `strict` gate behavior side-by-side.
+- Added `--preset` parameter to review bundle builder (`local_review`, `ci_required`, `strict_release`).
+- Embedded profile matrix summary into `review_bundle_index.md`.
+
+- Audited delivery packet warning root cause:
+  - optional artifacts that were not explicitly requested were counted as missing warnings
+  - final status could remain `pass` while reason code pointed to `delivery_packet_warn`
+- Delivery packet behavior now distinguishes:
+  - required missing artifacts (fail)
+  - optional missing artifacts with explicit path input (warn)
+  - optional artifacts not requested by this run (note/info, non-escalated)
+- Added packet summary counters:
+  - `required_present_count`
+  - `required_missing_count`
+  - `optional_present_count`
+  - `optional_missing_count`
+  - `optional_note_count`
+- Final status reasoning for pass cases improved:
+  - `pass_with_non_escalated_warnings` when optional warnings exist but do not escalate
+  - `all_required_gates_passed` for clean pass
+- Primary artifact selection for pass now points to reviewer-friendly summaries:
+  - `review_bundle_index.md` for pass with notes
+  - `final_status.md` for clean pass
+
+
+## Phase 1766–1825 Recovery Addendum: Validation Closure and Test Repair
+
+- Completed recovery closure for partially implemented profile-matrix/preset work.
+- Validation environment standardized on `./.venv-qlib313/bin/python` for this phase.
+- Repaired numeric sanitizer compatibility across pandas/numpy variants:
+  - `to_numpy(..., copy=True)` to avoid read-only array assignment failures.
+- Repaired feature-importance summary test behavior for stale local run directories:
+  - test now skips when run dir exists but has zero usable artifacts.
+- Hardened profile matrix implementation:
+  - removed dependency on private gate-summary helpers
+  - aligned reason-code handling with current final-status pass/warn semantics
+- Profile matrix CLI artifacts are generated and linked from review bundle outputs.
+
+
+## Phase 1826–1885 Addendum: Manifest Compatibility Closure and Audit Schema Normalization
+
+- Root cause of manifest compatibility fail:
+  - canonical `history.status` used `pass|warn|fail`
+  - legacy alias `history_update.status` still used `ok` on success
+  - compatibility gate correctly flagged `canonical_legacy_status_mismatch`
+- Compatibility repair:
+  - synchronized `history_update.status` with canonical status semantics
+  - preserved strict compatibility failure behavior for real malformed manifests
+- Data-source audit schema normalization:
+  - review-bundle consumer now supports both:
+    - top-level `read_csv_count`
+    - nested `summary.read_csv_count`
+- Result:
+  - manifest compatibility gate recovers to `pass` for healthy generated bundles
+  - runtime budget and timing consistency remain `pass`
+  - profile matrix no longer fails all profiles due to manifest compatibility mismatch
+
+## Phase 1886-1945 Addendum: History Alias Deprecation and Strict Profile Warning Clarity
+
+- Added explicit deprecation metadata for compatibility alias `history_update`:
+  - `deprecation_stage=compatibility_alias`
+  - `removal_target_phase=future`
+  - `consumer_action=Read manifest.history instead.`
+- Added `--omit-history-update-alias` to `build_validation_review_bundle.py`:
+  - default keeps compatibility alias
+  - optional mode emits canonical `history` only
+- Compatibility expectations now covered by tests:
+  - canonical-only `history`: `pass`
+  - canonical `history` + synchronized alias: `pass`
+  - legacy-only alias fallback: `warn`
+  - canonical/alias mismatch: `fail`
+- Strict-profile outputs now explicitly explain expected warn behavior:
+  - `strict_warning_reason=optional_not_run_or_warn_escalated_by_strict_policy`
+  - `profile_matrix.md` includes `Strict Warning Note` when strict is `warn` with zero blocking gates
+
+Example canonical-only run:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile local \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --bundle-name dataset_quality_review_bundle_no_alias \
+  --out-root tmp/validation-review-bundle-no-alias \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle-no-alias/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility \
+  --warn-only \
+  --omit-history-update-alias
+```
+
+## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and Preset Regression
+
+- Added history alias migration readiness report module and CLI:
+  - `cajas/reports/validation_history_alias_migration.py`
+  - `cajas/scripts/build_history_alias_migration_report.py`
+- Readiness report compares default alias bundle vs canonical-only no-alias bundle and evaluates:
+  - manifest compatibility
+  - local/ci/strict profile status equivalence
+  - required gate equivalence
+  - optional gate differences
+- Preset behavior hardening:
+  - explicit CLI flags now override preset defaults
+  - presets remain available: `local_review`, `ci_required`, `strict_release`
+- Current readiness result (`tmp/history-alias-migration-readiness.json`):
+  - `status=pass`
+  - `recommendation=ready_for_default_no_alias_trial`
+  - default/no-alias profile outcomes equivalent (`local=pass`, `ci=pass`, `strict=warn`)
+
+Known limitation:
+- Recommendation is for a controlled future default-flip phase; this phase does not flip default alias behavior.
+
+## Phase 2006-2065 Addendum: Controlled Default No-Alias Trial and Compatibility Fallback
+
+- Default generated review-bundle manifests now emit canonical `history` only.
+- Added explicit fallback flag `--include-history-update-alias` to emit deprecated alias metadata when needed.
+- Retained `--omit-history-update-alias` as compatibility/no-op transition flag.
+- Compatibility checker semantics unchanged:
+  - canonical-only: pass
+  - canonical + alias synced: pass
+  - legacy-only: warn
+  - mismatch/malformed alias: fail
+- Consumer final check (`tmp/history_alias_consumer_scan.txt`) shows active internal consumers already rely on canonical path or compatibility normalization (`normalize_history_metadata`).
+- Current trial readiness remains `pass` with recommendation `ready_for_default_no_alias_trial`.
+
+## Phase 2066-2125 Addendum: Alias Fallback Sunset Guard and Runtime Edge Stabilization
+
+- Added hard no-alias regression guard coverage in review-bundle tests:
+  - default manifest remains canonical-only (`history`)
+  - fallback alias requires `--include-history-update-alias`
+  - transition `--omit-history-update-alias` remains accepted/no-op
+- Extended migration readiness output with `alias_fallback` block:
+  - fallback flag, alias presence checks, deprecation metadata visibility, sunset recommendation
+- Added runtime edge risk report:
+  - `cajas/reports/validation_runtime_edge.py`
+  - `cajas/scripts/build_validation_runtime_edge_report.py`
+  - outputs `tmp/validation-runtime-edge-report.json|md`
+- Runtime edge report is reviewer-facing and does not replace runtime budget pass/fail gate.
+
+## Phase 2126-2185 Addendum: Phase 2000+ Milestone Review Packet
+
+- Added milestone packet report and CLI:
+  - `cajas/reports/validation_milestone_packet.py`
+  - `cajas/scripts/build_validation_milestone_packet.py`
+- Milestone packet consolidates operating model, artifact map, gate/profile/runtime/alias state, risks, and next actions.
+- Generated outputs:
+  - `tmp/validation-milestone-packet.json`
+  - `tmp/validation-milestone-packet.md`
+- Latest milestone packet status: `pass`.
+
+## Phase 2186-2245 Addendum: Alias Sunset Review and Runtime Release-Cycle Monitoring
+
+- Added alias sunset review module + CLI:
+  - `cajas/reports/validation_alias_sunset_review.py`
+  - `cajas/scripts/build_alias_sunset_review.py`
+- Added runtime release-cycle monitor module + CLI:
+  - `cajas/reports/validation_runtime_release_cycle.py`
+  - `cajas/scripts/build_validation_runtime_release_cycle_report.py`
+- Added milestone packet optional integration for:
+  - `--alias-sunset-review`
+  - `--runtime-release-cycle-report`
+- Current alias sunset review result (`external-consumer-status=unknown`): `watch`, action `keep_fallback`.
+- Current runtime release-cycle result: `pass`, recommendation `ok`.
+
+## Phase 2246-2305 Addendum: Consumer Evidence Intake and Runtime Variance Triage
+
+- Added external consumer evidence example:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+- Extended alias sunset review to ingest consumer evidence:
+  - `cajas/reports/validation_alias_sunset_review.py`
+  - `cajas/scripts/build_alias_sunset_review.py`
+- Alias sunset precedence:
+  - explicit `--external-consumer-status` overrides evidence file status for the current run
+- Alias sunset evidence summary now includes:
+  - `evidence_source`
+  - `consumers`
+  - `requires_alias_count`
+  - `confirmed_clear_count`
+  - `unresolved_count`
+- Added runtime variance triage report + CLI:
+  - `cajas/reports/validation_runtime_variance.py`
+  - `cajas/scripts/build_validation_runtime_variance_report.py`
+- Runtime variance status rules:
+  - `fail`: runtime budget/timing consistency fail
+  - `warn`: runtime budget warns
+  - `watch`: material delta over configured threshold (default 10%) with budget pass
+  - `pass`: budget/timing pass and deltas below watch threshold
+- Integrated runtime variance into release-cycle monitor:
+  - `cajas/reports/validation_runtime_release_cycle.py`
+  - `cajas/scripts/build_validation_runtime_release_cycle_report.py`
+- Integrated alias evidence + runtime variance into milestone packet:
+  - `cajas/reports/validation_milestone_packet.py`
+  - `cajas/scripts/build_validation_milestone_packet.py`
+
+Current outputs:
+- alias sunset review: `tmp/history-alias-sunset-review.json|md`
+- runtime variance report: `tmp/validation-runtime-variance-report.json|md`
+- runtime release-cycle report: `tmp/validation-runtime-release-cycle-report.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- alias sunset review: `watch`, action `keep_fallback` (external consumer unresolved)
+- runtime variance: `pass` (`88.806s`, below 10% watch threshold vs baselines)
+- runtime release-cycle: `pass`, recommendation `ok`
+- milestone overall: `watch` (driven by alias sunset watch)
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3026-3085 Addendum: Canonical Evidence Apply Dry-Run Guard
+
+- Added guarded apply workflow:
+  - `cajas/reports/validation_canonical_evidence_apply.py`
+  - `cajas/scripts/apply_canonical_evidence_update.py`
+  - output:
+    - `tmp/canonical-evidence-apply-dry-run.json`
+    - `tmp/canonical-evidence-apply-dry-run.md`
+- Guard behavior:
+  - defaults to dry-run/non-destructive behavior.
+  - requires approved approval + ready update plan + valid candidate before dry-run-ready/apply.
+  - includes backup/rollback instructions and post-apply validation command checklist.
+  - `alias_fallback_removal_allowed=false` in this phase.
+- Readiness/milestone integration:
+  - `--canonical-evidence-apply-report` optional input added to both report builders.
+
+Current status snapshot:
+- apply dry-run report: `dry_run_ready`
+- real release readiness: `watch`
+- real milestone packet: `watch`
+
+Runtime snapshot:
+- fast validation total: `55.92s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2966-3025 Addendum: Approved Simulation and Canonical Evidence Update Plan
+
+- Added approved simulation approval example:
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.approved.example.json`
+  - explicitly marked `approval_scope=simulation_only`.
+- Added canonical evidence update planning report:
+  - `cajas/reports/validation_canonical_evidence_update_plan.py`
+  - `cajas/scripts/build_canonical_evidence_update_plan.py`
+  - outputs:
+    - `tmp/canonical-evidence-update-plan.json`
+    - `tmp/canonical-evidence-update-plan.md`
+- Added readiness/milestone optional integration:
+  - `--canonical-evidence-update-plan`
+- Approved simulation outputs:
+  - `tmp/simulated-approved/evidence-candidate-approval-report.json|md`
+  - `tmp/simulated-approved/history-alias-sunset-schedule.json|md`
+
+Current status snapshot:
+- real approval gate: `approval_required` (real path still unapproved)
+- approved simulation gate: `approved_candidate`
+- approved simulation schedule: `ready_to_schedule`
+- canonical update plan: `ready_to_apply` with `manual_update_required=true` and `do_not_auto_apply=true`
+- real release readiness remains `watch`
+- real milestone remains `watch`
+
+Runtime snapshot:
+- fast validation total: `53.22s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2906-2965 Addendum: Evidence Approval Gate and Sunset Scheduling Packet
+
+- Added evidence candidate approval gate:
+  - `cajas/reports/validation_evidence_candidate_approval.py`
+  - `cajas/scripts/build_evidence_candidate_approval_report.py`
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.example.json` (default `approved=false`)
+- Added alias sunset scheduling packet:
+  - `cajas/reports/validation_alias_sunset_schedule.py`
+  - `cajas/scripts/build_alias_sunset_schedule.py`
+- Added readiness/milestone optional integrations:
+  - `--evidence-candidate-approval-report`
+  - `--alias-sunset-schedule`
+- Current approval/schedule state:
+  - approval report: `approval_required`
+  - schedule packet: `not_scheduled`
+  - real release readiness: `watch`
+  - real milestone packet: `watch`
+- Runtime snapshot:
+  - fast validation total: `52.646s`
+  - runtime budget overall: `pass`
+  - timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2846-2905 Addendum: Confirmed-Clear Candidate Review and Evidence Apply Dry-Run
+
+- Added confirmed-clear simulation owner response example:
+  - `cajas/data_examples/history_alias_consumer_owner_response.confirmed_clear.example.json`
+  - explicitly marked as example-only, not production evidence.
+- Hardened owner response apply-dry-run metadata:
+  - validator now reports `candidate_written`, `candidate_output_path`, `manual_approval_required`, `do_not_auto_apply`.
+  - `--apply-to-out` writes a candidate only for valid responses.
+  - candidate keeps untouched consumers and adds candidate provenance metadata.
+- Added candidate-readiness simulation report:
+  - `cajas/reports/validation_consumer_evidence_candidate.py`
+  - `cajas/scripts/build_consumer_evidence_candidate_report.py`
+  - output: `tmp/simulated-confirmed-clear/history-alias-consumer-evidence-candidate.json|md`
+- Added optional candidate summary integration:
+  - release readiness supports `--consumer-evidence-candidate-report`
+  - milestone packet supports `--consumer-evidence-candidate-report`
+  - real readiness remains based on real evidence (`watch`) while surfacing candidate projection.
+
+Current real vs simulated status snapshot:
+- real owner response validation: `incomplete`, `safe_to_update_evidence=false`
+- simulated confirmed-clear validation: `valid_ready_to_apply`, `candidate_written=true`
+- candidate simulation status: `ready_candidate`, `release_readiness_projected_status=ready`
+- real release readiness: `watch`
+- real milestone packet overall: `watch`
+
+Runtime snapshot:
+- fast validation total: `56.757s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2306-2365 Addendum: Alias Sunset Decision Gate and Release Readiness Dashboard
+
+- Added external consumer confirmation template:
+  - `cajas/data_examples/history_alias_external_consumers.template.json`
+- Strengthened alias sunset review with decision-gate output:
+  - `decision_gate.status`: `blocked|watch|ready`
+  - `required_evidence_complete`
+  - `unresolved_consumers`
+  - `consumers_requiring_alias`
+  - `ready_conditions`
+  - `blocking_conditions`
+  - `next_actions`
+- Alias sunset action semantics now distinguish:
+  - `collect_consumer_evidence` for unresolved/watch evidence
+  - `migrate_consumers` when alias dependency is confirmed
+  - `schedule_removal` only when ready conditions are satisfied
+- Added release-readiness dashboard report + CLI:
+  - `cajas/reports/validation_release_readiness.py`
+  - `cajas/scripts/build_validation_release_readiness_report.py`
+- Release-readiness status rules:
+  - `blocked`: any required gate fails or alias decision gate blocked
+  - `watch`: alias watch or runtime watch/warn conditions
+  - `ready`: required gates pass and alias decision gate ready
+- Integrated release-readiness summary into milestone packet:
+  - `--release-readiness-report`
+  - milestone markdown now includes readiness status/reason/next actions
+
+Current outputs:
+- alias sunset review: `tmp/history-alias-sunset-review.json|md`
+- release readiness dashboard: `tmp/validation-release-readiness.json|md`
+- runtime variance report: `tmp/validation-runtime-variance-report.json|md`
+- runtime release-cycle report: `tmp/validation-runtime-release-cycle-report.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- alias sunset decision gate: `watch`, action `collect_consumer_evidence`
+- release readiness: `watch`, reason `alias_sunset_decision_gate=watch`
+- runtime variance: `pass` (`88.472s`; vs phase_2126 `-0.166s`, vs phase_2186 `-8.400s`)
+- runtime release-cycle: `pass`, recommendation `ok`
+- milestone overall: `watch` with actionable release-readiness next actions
+
+Known limitations:
+- Alias fallback sunset remains deferred until unresolved external consumers are confirmed clear.
+- Runtime health is pass in this cycle but remains a release-cycle monitoring input.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2366-2425 Addendum: External Consumer Evidence Closure and Alias Removal Plan Packet
+
+- Added confirmed-clear simulation evidence example:
+  - `cajas/data_examples/history_alias_external_consumers.confirmed_clear.example.json`
+  - explicitly marked as simulation/example only, not real clearance.
+- Added alias removal plan report + CLI:
+  - `cajas/reports/validation_alias_removal_plan.py`
+  - `cajas/scripts/build_alias_removal_plan.py`
+- Removal plan output covers:
+  - `status`: `not_ready|ready_to_schedule|blocked`
+  - preconditions and blockers
+  - future removal steps
+  - explicit non-goal note (no fallback removal in this phase)
+- Extended release-readiness dashboard integration:
+  - optional `--alias-removal-plan`
+  - includes removal-plan status/recommendation/blockers as watch context
+- Extended milestone packet integration:
+  - optional `--alias-removal-plan`
+  - includes removal-plan summary block in packet JSON/Markdown
+
+Real current outputs:
+- alias removal plan: `tmp/history-alias-removal-plan.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Simulated confirmed-clear outputs:
+- `tmp/simulated-confirmed-clear/history-alias-sunset-review.json|md`
+- `tmp/simulated-confirmed-clear/history-alias-removal-plan.json|md`
+
+Current status snapshot:
+- real alias sunset: `watch` (unresolved external consumer remains)
+- real removal plan: `not_ready`, recommendation `keep_fallback`
+- real release readiness: `watch`
+- simulated alias sunset: `ready`
+- simulated removal plan: `ready_to_schedule`
+
+Runtime snapshot (latest fast run):
+- fast validation total: `94.03s`
+- runtime budget: `pass`
+- runtime edge: `watch`
+- runtime release-cycle: `watch`
+- runtime variance: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2426-2485 Addendum: Real Consumer Evidence Closure and Runtime Watch Triage
+
+- Extended real consumer evidence tracking in:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+  - fields now include `review_owner`, `last_checked`, `next_action`, `due_phase`.
+- Added consumer evidence closure report + CLI:
+  - `cajas/reports/validation_consumer_evidence_closure.py`
+  - `cajas/scripts/build_consumer_evidence_closure_report.py`
+- Added runtime watch triage report + CLI:
+  - `cajas/reports/validation_runtime_watch_triage.py`
+  - `cajas/scripts/build_validation_runtime_watch_triage_report.py`
+- Extended release readiness optional integration:
+  - `--consumer-evidence-closure-report`
+  - `--runtime-watch-triage-report`
+- Extended milestone packet optional integration:
+  - `--consumer-evidence-closure-report`
+  - `--runtime-watch-triage-report`
+
+Current outputs:
+- consumer evidence closure: `tmp/history-alias-consumer-evidence-closure.json|md`
+- runtime watch triage: `tmp/validation-runtime-watch-triage-report.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- consumer evidence closure: `incomplete` (1 unresolved consumer, next action `identify_owner`)
+- alias sunset: `watch`
+- alias removal plan: `not_ready`, recommendation `keep_fallback`
+- runtime watch triage: `pass`, recommendation `monitor`
+- runtime edge/release-cycle: both `pass` in latest run
+- release readiness overall: `watch` (driven by unresolved consumer evidence, not runtime)
+
+Runtime comparison:
+- latest fast total: `88.418s`
+- vs phase_2306 baseline `88.472s`: `-0.054s`
+- vs phase_2366 baseline `94.03s`: `-5.612s`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2486-2545 Addendum: Consumer Owner Resolution and Timing Observability
+
+- Updated real evidence owner/action details in:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+  - unresolved consumer now explicitly uses:
+    - `owner=external-review-needed`
+    - `next_action=identify_owner`
+    - `due_phase=future`
+    - `blocking_alias_sunset=true`
+- Extended consumer evidence closure report with action tracking:
+  - `action_plan`
+  - `blocking_consumer_count`
+  - `owner_missing_count`
+  - markdown action table
+- Added fast timing test-summary extraction in:
+  - `cajas/scripts/run_fast_validation.py`
+  - emits `test_summary` with `passed|deselected|failed|total_reported` when parseable
+- Extended runtime watch triage with test-count observability:
+  - `test_count`
+  - `tests_deselected`
+  - `seconds_per_test`
+  - `test_count_source`
+- Extended readiness/milestone summaries with:
+  - consumer evidence action plan
+  - runtime test-count fields
+
+Current outputs:
+- consumer evidence closure: `tmp/history-alias-consumer-evidence-closure.json|md`
+- runtime watch triage: `tmp/validation-runtime-watch-triage-report.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- consumer evidence closure: `incomplete` (one blocking unresolved consumer)
+- alias sunset/removal: `watch` / `not_ready`
+- runtime budget: `warn` in latest run (`fast_total=109.788s`, `pytest_fast=105.537s`)
+- runtime watch triage: `warn`, recommendation `optimize`
+- release readiness: `watch` (evidence + runtime warn)
+
+Known limitation:
+- `test_summary` remains `null` in real runs when pytest output is not captured by the runner environment; parser remains conservative and non-failing.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2546-2605 Addendum: Pytest Fast Runtime Profiling and Summary Reliability
+
+- Added pytest runtime profile report path:
+  - `cajas/reports/validation_pytest_runtime_profile.py`
+  - `cajas/scripts/profile_pytest_fast_runtime.py`
+- Improved fast validation summary reliability:
+  - `cajas/scripts/run_fast_validation.py` now requests subprocess output capture and expands summary fields (`passed|failed|deselected|skipped|xfailed|xpassed|errors|total_reported`).
+- Extended runtime watch triage integration:
+  - optional `--pytest-runtime-profile`
+  - emits profile status + slowest tests/files summaries.
+- Extended release readiness and milestone packet integration:
+  - optional `--pytest-runtime-profile`
+  - readiness/milestone now surface runtime-profile summary fields.
+
+Current outputs:
+- `tmp/validation-pytest-runtime-profile.json|md`
+- `tmp/validation-runtime-watch-triage-report.json|md`
+- `tmp/validation-release-readiness.json|md`
+- `tmp/validation-milestone-packet.json|md`
+
+Current runtime snapshot:
+- fast validation total: `96.83s`
+- pytest_fast: `92.79s`
+- runtime budget: `pass`
+- runtime edge: `watch`
+- runtime variance: `warn` (vs older baselines)
+- runtime watch triage: `watch`, recommendation `optimize_slow_tests`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2606-2665 Addendum: Targeted Pytest Runtime Optimization and Edge Recovery
+
+- Reviewed profile artifacts:
+  - `tmp/validation-pytest-runtime-profile.json|md`
+  - top slowdown pattern was repeated one-test CLI subprocess launches.
+- Applied safe optimization:
+  - converted selected CLI smoke tests from `subprocess.run([sys.executable, ...])` to direct `main(argv)` calls.
+  - updated corresponding script `main()` entrypoints to accept optional `argv` while preserving CLI behavior.
+- Generated before/after profile snapshots:
+  - `tmp/validation-pytest-runtime-profile-before.json|md`
+  - `tmp/validation-pytest-runtime-profile.json|md`
+
+Current runtime snapshot after optimization:
+- fast validation total: `78.623s`
+- pytest_fast: `73.181s`
+- runtime budget: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`, recommendation `monitor`
+
+Status impact:
+- runtime edge recovered from prior `warn` to `pass`.
+- release readiness remains `watch` because alias consumer evidence remains incomplete (`blocking_consumer_count=1`), not because runtime health.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2666-2725 Addendum: Runtime Optimization Round 2 and Consumer Closure Path
+
+- Second-round profile findings (`tmp/validation-pytest-runtime-profile.json|md`):
+  - top hotspot remains `test_baseline_runner`.
+  - next hotspots are still mostly single-test CLI wrappers.
+  - runtime/data-audit CLI tests remained meaningful contributors before this round.
+- Applied safe round-2 optimization:
+  - `cajas/scripts/audit_data_sources.py` and `cajas/scripts/audit_validation_runtime.py` now support `main(argv)`.
+  - corresponding tests switched from subprocess launches to direct `main(argv)` invocation:
+    - `cajas/tests/test_data_source_audit.py`
+    - `cajas/tests/test_validation_runtime_audit.py`
+  - validation assertions preserved; no test skip/tier downgrade.
+- Consumer evidence closure path tightened:
+  - `cajas/reports/validation_consumer_evidence_closure.py` now includes explicit `closure_checklist` in JSON and Markdown.
+  - checklist covers owner identification, `manifest.history` dependency confirmation, alias-required migration handling, and evidence update requirements.
+
+Current runtime snapshot:
+- fast validation total: `79.427s`
+- pytest_fast: `70.796s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Consumer closure/readiness snapshot:
+- consumer evidence closure: `incomplete` (`unresolved_count=1`, `blocking_consumer_count=1`)
+- alias sunset review: `watch` (`recommended_action=collect_consumer_evidence`)
+- release readiness: `watch` (evidence/alias reasons, runtime healthy)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2726-2785 Addendum: Remaining CLI Hotspots and Consumer Owner Handoff
+
+- Converted remaining safe CLI wrapper hotspots to direct `main(argv)` tests:
+  - `build_artifact_lineage.py`
+  - `build_final_readiness_packet.py`
+  - `build_final_research_bundle.py`
+  - `build_candidate_promotion_manifest.py`
+  - corresponding CLI tests now call `main([...])` directly.
+- Baseline runner review:
+  - `test_baseline_runner` still a top hotspot.
+  - safe fixture optimization applied by writing compact CSV text directly (removed `pandas` fixture dependency in test setup).
+  - disabled-training assertions were preserved.
+- Added consumer owner handoff packet:
+  - `cajas/reports/validation_consumer_owner_handoff.py`
+  - `cajas/scripts/build_consumer_owner_handoff.py`
+  - outputs:
+    - `tmp/history-alias-consumer-owner-handoff.json`
+    - `tmp/history-alias-consumer-owner-handoff.md`
+- Integrated owner handoff into readiness/milestone reports:
+  - release readiness optional arg `--consumer-owner-handoff`
+  - milestone packet optional arg `--consumer-owner-handoff`
+
+Current runtime snapshot:
+- fast validation total: `66.579s`
+- pytest_fast: `59.935s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Consumer/readiness snapshot:
+- owner handoff: `open` with one blocking unresolved consumer
+- consumer evidence closure: `incomplete`
+- alias sunset review: `watch`
+- release readiness: `watch` (evidence/owner handoff reasons, not runtime)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2786-2845 Addendum: CLI-Heavy Wrapper Round and Owner Response Intake
+
+- Converted additional CLI-heavy wrappers to direct `main(argv)` tests:
+  - `train_qlib_model_bridge_baseline.py`
+  - `compare_qlib_model_runs.py`
+  - `build_dataset_quality_research_bundle.py`
+  - `audit_io_runtime.py`
+- Updated corresponding tests to direct-call mode:
+  - `test_train_qlib_model_bridge_baseline_cli.py`
+  - `test_compare_qlib_model_runs_cli.py`
+  - `test_dataset_quality_research_bundle.py`
+  - `test_io_runtime_audit.py`
+- Added owner response intake schema and validation workflow:
+  - example input: `cajas/data_examples/history_alias_consumer_owner_response.example.json`
+  - validation module: `cajas/reports/validation_consumer_owner_response.py`
+  - validation CLI: `cajas/scripts/validate_consumer_owner_response.py`
+  - output:
+    - `tmp/history-alias-consumer-owner-response-validation.json`
+    - `tmp/history-alias-consumer-owner-response-validation.md`
+- Owner response validation integrated into:
+  - release readiness (`--consumer-owner-response-validation`)
+  - milestone packet (`--consumer-owner-response-validation`)
+
+Current runtime snapshot:
+- fast validation total: `59.314s`
+- pytest_fast: `51.599s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Owner/evidence snapshot:
+- owner handoff: `open` (`blocking_consumer_count=1`)
+- owner response validation: `incomplete` (example response not ready to apply)
+- consumer evidence closure: `incomplete`
+- release readiness: `watch` (owner/evidence reasons)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3206-3325 Alias Fallback Removal Readiness
+
+- Active `history_update` alias emission was removed from review bundle generation.
+- `--include-history-update-alias` is sunset and fails fast with a migration message.
+- Canonical-only manifest output (`history`) is now enforced.
+- Legacy archived manifests remain readable via `normalize_history_metadata` compatibility normalization.
+- Release readiness and milestone packet now include post-removal alias status and rollback planning.
+- This remains offline validation infrastructure work; not trading logic.
+
+## Phase 3326-3445 Post-Removal Closure
+
+- Added post-removal closure packet for canonical-only alias migration state.
+- Release readiness now supersedes stale pre-removal consumer-evidence/sunset watch items when post-removal mode is active and closure/runtime/compatibility remain healthy.
+- Milestone packet now includes alias post-removal closure summary.
+- Legacy read normalization for archived manifests remains intentionally preserved.
+- Rollback readiness remains explicit.
+
+## Phase 3446-3565 Runtime Release-Ready Closure
+
+- Runtime release-cycle monitor now includes structured reason codes and gate lists for blocker/watch diagnosis.
+- Added final release-ready closure report and wired it into release readiness and milestone outputs.
+- Runtime status now reflects fresh budget/edge/variance/watch-triage inputs rather than stale release-cycle artifacts.
+
+## Phase 3566-3685 Runtime Variance Closure and Reviewer Finalization Packet
+
+- Added runtime variance closure classification and artifacts:
+  - `tmp/validation-runtime-variance-closure.json`
+  - `tmp/validation-runtime-variance-closure.md`
+- Runtime closure semantics:
+  - `blocked` when runtime budget/edge/timing fails
+  - `monitoring_only` when runtime gates pass but runtime variance/release-cycle remains watch
+  - `closed` when all runtime gates and variance/release-cycle pass
+- Updated release-ready closure semantics to separate blocker state from non-blocking monitoring follow-up:
+  - when only non-blocking runtime monitoring remains, closure keeps watch status while reporting `review_state=ready_for_review` and `blocking=false`
+- Added final reviewer packet:
+  - `tmp/validation-final-reviewer-packet.json`
+  - `tmp/validation-final-reviewer-packet.md`
+- Final reviewer packet summarizes:
+  - canonical-only manifest enforcement
+  - alias post-removal closure state
+  - preserved legacy read normalization for archived manifests
+  - runtime budget/edge and runtime variance closure posture
+  - data-source audit read count and remaining follow-up cadence
+- Release readiness and milestone packet now include final reviewer packet status and primary artifact linkage.
+- Scope remains offline Qlib validation automation only; no trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3686-3805 Milestone Watch Governance Closure and Stable Maintenance Cadence
+
+- Milestone `watch` reason was audited and classified as non-blocking governance carryover, not a release/runtime blocker.
+- Milestone packet now provides explicit reviewer-facing semantics:
+  - `review_state`
+  - `blocking`
+  - `blocking_reasons`
+  - `non_blocking_governance_notes`
+  - `superseded_watch_items`
+  - `maintenance_cadence`
+- Added maintenance cadence report and CLI:
+  - `tmp/validation-maintenance-cadence.json`
+  - `tmp/validation-maintenance-cadence.md`
+- Cadence integration added to:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Final reviewer packet now includes a concise reviewer handoff section with canonical policy, alias closure status, runtime summary, data-source audit stability, and next cadence action.
+- Maintenance mode remains routine release-cycle monitoring with explicit command list; optional governance evidence follow-up remains non-blocking.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3806-3925 Maintenance Mode Hardening and Checklist Freeze
+
+- Added maintenance checklist report and CLI:
+  - `tmp/validation-maintenance-checklist.json`
+  - `tmp/validation-maintenance-checklist.md`
+- Added optional follow-up queue report and CLI:
+  - `tmp/validation-optional-followups.json`
+  - `tmp/validation-optional-followups.md`
+- Maintenance checklist now defines:
+  - routine release-cycle commands and expected pass states
+  - canonical artifact freeze surface
+  - generated/transient/preserved-compatibility artifact policy
+  - blocking policy vs non-blocking optional follow-up handling
+- Final reviewer packet, release readiness, and milestone packet now include checklist/follow-up summaries.
+- Maintenance mode remains review-ready while optional queue stays explicitly non-blocking.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

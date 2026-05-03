@@ -1,0 +1,32 @@
+{
+  "schema_version": "v1",
+  "review_date": "2026-05-03",
+  "review_owner": "qlib-cajas-validation",
+  "consumers": [
+    {
+      "name": "internal_review_bundle",
+      "owner": "qlib-cajas",
+      "status": "confirmed_clear",
+      "evidence": "Uses canonical history via normalize_history_metadata.",
+      "requires_history_update": false,
+      "last_checked": "2026-05-03",
+      "next_action": "none",
+      "due_phase": "done"
+    },
+    {
+      "name": "external_unknown_consumer",
+      "owner": "external-review-needed",
+      "status": "unknown",
+      "evidence": "No confirmation captured yet.",
+      "requires_history_update": null,
+      "last_checked": null,
+      "next_action": "identify_owner",
+      "due_phase": "future",
+      "blocking_alias_sunset": true
+    }
+  ],
+  "external_status": "unknown",
+  "notes": [
+    "Conservative default: keep alias fallback until external consumers are confirmed clear."
+  ]
+}

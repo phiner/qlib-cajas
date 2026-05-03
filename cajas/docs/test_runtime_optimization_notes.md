@@ -324,3 +324,51 @@ Delivery artifacts:
 - final workflow docs:
   - `cajas/docs/final_research_stack_index.md`
   - `cajas/docs/future_work_checklist.md`
+
+
+## Phase 806-835 Dataset Quality Runtime Tightening
+
+Regression identified:
+
+- Fast subset runtime before this phase: `~106.18s` (pytest_fast: `~103.13s`)
+- Regression cause: Phase 776-805 added dataset-quality modular CLI tests that used subprocess execution for 6 CLI scripts.
+- Slowest test: `test_dataset_quality_modular_clis.py::test_modular_clis_write_outputs` took `11.47s`.
+
+Optimization applied:
+
+- Updated 6 dataset-quality CLI scripts to accept optional `argv` parameter:
+  - `build_dataset_quality_report.py`
+  - `build_label_coverage_diagnostics.py`
+  - `build_time_coverage_diagnostics.py`
+  - `run_chunked_feature_dry_run.py`
+  - `build_feature_schema_manifest.py`
+  - `build_offline_research_queue_summary.py`
+- Converted `test_dataset_quality_modular_clis.py` from subprocess calls to in-process `main(argv)` calls.
+- Test runtime improvement: `11.47s` → `0.05s` (~230x speedup).
+
+Runtime after optimization:
+
+- Fast subset: `310 passed, 16 deselected in 81.94s` (pytest_fast)
+- `run_fast_validation.py --tier fast`: total `85.19s`
+- Improvement: `~21s` faster (~20% improvement)
+- Micro smoke: `11.47s` (stable)
+- Dataset quality smoke: passes (stable)
+
+Data-source audit:
+
+- `read_csv_count = 29` (stable, no regression)
+
+Remaining top slow tests (fast tier):
+
+- `3.06s` `test_baseline_runner.py::test_training_and_model_actions_are_disabled`
+- `2.42s` `test_io_runtime_audit.py::test_cli_writes_outputs`
+- `2.31s` `test_validation_runtime_audit.py::test_audit_cli_writes_json_and_markdown`
+- `2.26s` `test_data_source_audit.py::test_cli_writes_outputs`
+- `2.12s` `test_train_qlib_model_bridge_baseline_cli.py::test_cli`
+
+Policy:
+
+- Dataset-quality CLI tests now use in-process calls for fast validation.
+- Explicit dataset-quality smoke workflow remains available:
+  - `./.venv-qlib313/bin/python cajas/scripts/run_dataset_quality_smoke.py --out-root tmp/dataset-quality-smoke`
+- Modular CLI scripts support both command-line and programmatic invocation.

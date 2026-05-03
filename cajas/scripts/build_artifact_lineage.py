@@ -13,12 +13,12 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.artifact_lineage import build_artifact_lineage, render_artifact_lineage_md
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build artifact lineage graph reports.")
     p.add_argument("--root", required=True)
     p.add_argument("--out-json", required=True)
     p.add_argument("--out-md", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
     rep = build_artifact_lineage(root=args.root)
     out_j = Path(args.out_json).expanduser().resolve()
     out_m = Path(args.out_md).expanduser().resolve()

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.train_qlib_model_bridge_baseline import main
 
 
 class TrainQlibModelBridgeBaselineCliTests(unittest.TestCase):
@@ -34,10 +34,10 @@ class TrainQlibModelBridgeBaselineCliTests(unittest.TestCase):
                 "split_ratios": {"train": 0.5, "valid": 0.25, "test": 0.25},
             }), encoding="utf-8")
             out = d / "exp"
-            subprocess.run([
-                sys.executable, "cajas/scripts/train_qlib_model_bridge_baseline.py",
+            code = main([
                 "--training-contract", str(contract), "--out-dir", str(out), "--seed", "42", "--max-rows", "100"
-            ], check=True)
+            ])
+            self.assertEqual(code, 0)
             self.assertTrue((out / "metrics.json").exists())
 
 

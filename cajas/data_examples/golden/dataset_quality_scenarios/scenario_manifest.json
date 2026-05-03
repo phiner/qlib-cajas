@@ -1,0 +1,86 @@
+{
+  "schema_version": "v1",
+  "scenarios": [
+    {
+      "name": "tiny_balanced",
+      "description": "Healthy tiny balanced fixture",
+      "fixture_generator": "generate_tiny_balanced_fixture",
+      "feature_columns": [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume"
+      ],
+      "expected_reports": [
+        "dataset_quality_report",
+        "feature_schema_manifest",
+        "offline_research_queue_summary"
+      ]
+    },
+    {
+      "name": "missing_label_values",
+      "description": "Rows with missing label values",
+      "fixture_generator": "generate_missing_label_values_fixture",
+      "feature_columns": [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume"
+      ],
+      "expected_reports": [
+        "dataset_quality_report",
+        "feature_schema_manifest",
+        "offline_research_queue_summary"
+      ]
+    },
+    {
+      "name": "single_class_label",
+      "description": "Label with only one class",
+      "fixture_generator": "generate_single_class_label_fixture",
+      "feature_columns": [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume"
+      ],
+      "expected_reports": [
+        "dataset_quality_report",
+        "feature_schema_manifest",
+        "offline_research_queue_summary"
+      ]
+    },
+    {
+      "name": "time_gap",
+      "description": "Timestamp series with deliberate gap",
+      "fixture_generator": "generate_time_gap_fixture",
+      "feature_columns": [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Volume"
+      ],
+      "expected_reports": [
+        "dataset_quality_report",
+        "feature_schema_manifest",
+        "offline_research_queue_summary"
+      ]
+    },
+    {
+      "name": "minimal_columns",
+      "description": "Minimal required columns only",
+      "fixture_generator": "generate_minimal_columns_fixture",
+      "feature_columns": [
+        "Close"
+      ],
+      "expected_reports": [
+        "dataset_quality_report",
+        "feature_schema_manifest",
+        "offline_research_queue_summary"
+      ]
+    }
+  ]
+}

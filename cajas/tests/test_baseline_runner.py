@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pandas as pd
 import yaml
 
 from cajas.scripts.run_baseline_disabled import run_baseline_disabled
@@ -14,52 +13,19 @@ from cajas.scripts.run_baseline_disabled import write_baseline_disabled_artifact
 
 class BaselineRunnerTests(unittest.TestCase):
     def _write_csv(self, tmp_dir: str) -> Path:
-        rows = [
-            {
-                "datetime": "2025-01-01T00:00:00Z",
-                "symbol": "EURUSD",
-                "timeframe": "15m",
-                "open": 1.1,
-                "high": 1.2,
-                "low": 1.0,
-                "close": 1.15,
-                "volume": 100,
-                "f1": 0.1,
-                "future_close_8": 1.2,
-                "future_return_8": 0.01,
-                "future_direction_8": "down",
-            },
-            {
-                "datetime": "2025-09-01T00:00:00Z",
-                "symbol": "EURUSD",
-                "timeframe": "15m",
-                "open": 1.2,
-                "high": 1.3,
-                "low": 1.1,
-                "close": 1.22,
-                "volume": 110,
-                "f1": 0.2,
-                "future_close_8": 1.25,
-                "future_return_8": 0.02,
-                "future_direction_8": "up",
-            },
-            {
-                "datetime": "2025-11-01T00:00:00Z",
-                "symbol": "EURUSD",
-                "timeframe": "15m",
-                "open": 1.3,
-                "high": 1.31,
-                "low": 1.2,
-                "close": 1.23,
-                "volume": 120,
-                "f1": 0.3,
-                "future_close_8": 1.27,
-                "future_return_8": 0.03,
-                "future_direction_8": "flat",
-            },
-        ]
         path = Path(tmp_dir) / "d.csv"
-        pd.DataFrame(rows).to_csv(path, index=False)
+        path.write_text(
+            "\n".join(
+                [
+                    "datetime,symbol,timeframe,open,high,low,close,volume,f1,future_close_8,future_return_8,future_direction_8",
+                    "2025-01-01T00:00:00Z,EURUSD,15m,1.1,1.2,1.0,1.15,100,0.1,1.2,0.01,down",
+                    "2025-09-01T00:00:00Z,EURUSD,15m,1.2,1.3,1.1,1.22,110,0.2,1.25,0.02,up",
+                    "2025-11-01T00:00:00Z,EURUSD,15m,1.3,1.31,1.2,1.23,120,0.3,1.27,0.03,flat",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
         return path
 
     def _write_cfg(self, tmp_dir: str, csv_path: Path) -> Path:

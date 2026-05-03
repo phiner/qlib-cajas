@@ -1,0 +1,661 @@
+"""Phase 2000+ milestone packet report builder."""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_csv_count(audit: dict[str, Any]) -> int | None:
+    direct = audit.get("read_csv_count")
+    if isinstance(direct, int):
+        return direct
+    nested = (audit.get("summary") or {}).get("read_csv_count")
+    if isinstance(nested, int):
+        return nested
+    return None
+
+
+def _gate_overall_from_final_status(final_status: dict[str, Any]) -> str:
+    overall = final_status.get("overall_status")
+    return overall if isinstance(overall, str) else "warn"
+
+
+def _build_artifact_map(
+    *,
+    review_bundle_root: Path,
+    alias_fallback_bundle_root: Path,
+    runtime_edge_report: Path,
+    migration_readiness_report: Path,
+    runtime_budget_report: Path,
+    data_source_audit_report: Path,
+    fast_timing_json: Path,
+) -> dict[str, str]:
+    return {
+        "default_review_bundle_index_md": str(review_bundle_root / "review_bundle_index.md"),
+        "default_final_status_json": str(review_bundle_root / "final_status.json"),
+        "default_final_status_md": str(review_bundle_root / "final_status.md"),
+        "default_review_bundle_manifest_json": str(review_bundle_root / "review_bundle_manifest.json"),
+        "default_profile_matrix_json": str(review_bundle_root / "profile_matrix.json"),
+        "default_profile_matrix_md": str(review_bundle_root / "profile_matrix.md"),
+        "default_delivery_packet_manifest_json": str(review_bundle_root / "delivery_packet" / "packet_manifest.json"),
+        "default_manifest_compatibility_json": str(review_bundle_root / "manifest_compatibility_report.json"),
+        "default_manifest_compatibility_md": str(review_bundle_root / "manifest_compatibility_report.md"),
+        "default_history_summary_json": str(review_bundle_root / "history" / "review_bundle_history_summary.json"),
+        "default_history_summary_md": str(review_bundle_root / "history" / "review_bundle_history_summary.md"),
+        "alias_fallback_review_bundle_manifest_json": str(alias_fallback_bundle_root / "review_bundle_manifest.json"),
+        "alias_fallback_final_status_json": str(alias_fallback_bundle_root / "final_status.json"),
+        "alias_fallback_profile_matrix_json": str(alias_fallback_bundle_root / "profile_matrix.json"),
+        "runtime_budget_report_json": str(runtime_budget_report),
+        "runtime_edge_report_json": str(runtime_edge_report),
+        "migration_readiness_report_json": str(migration_readiness_report),
+        "data_source_audit_report_json": str(data_source_audit_report),
+        "fast_timing_json": str(fast_timing_json),
+    }
+
+
+def build_validation_milestone_packet(
+    *,
+    review_bundle_root: Path,
+    alias_fallback_bundle_root: Path,
+    runtime_edge_report: Path,
+    migration_readiness_report: Path,
+    runtime_budget_report: Path,
+    data_source_audit_report: Path,
+    fast_timing_json: Path,
+    alias_sunset_review: Path | None = None,
+    runtime_release_cycle_report: Path | None = None,
+    runtime_variance_report: Path | None = None,
+    release_readiness_report: Path | None = None,
+    alias_removal_plan: Path | None = None,
+    consumer_evidence_closure_report: Path | None = None,
+    consumer_owner_handoff: Path | None = None,
+    consumer_owner_response_validation: Path | None = None,
+    consumer_evidence_candidate_report: Path | None = None,
+    evidence_candidate_approval_report: Path | None = None,
+    alias_sunset_schedule: Path | None = None,
+    canonical_evidence_update_plan: Path | None = None,
+    canonical_evidence_apply_report: Path | None = None,
+    applied_evidence_readiness: Path | None = None,
+    alias_fallback_removal_readiness: Path | None = None,
+    runtime_watch_triage_report: Path | None = None,
+    pytest_runtime_profile: Path | None = None,
+    alias_post_removal_closure: Path | None = None,
+    release_ready_closure: Path | None = None,
+    final_reviewer_packet: Path | None = None,
+    maintenance_cadence: Path | None = None,
+    maintenance_checklist: Path | None = None,
+    optional_followups: Path | None = None,
+    maintenance_governance_closure: Path | None = None,
+    external_consumer_governance: Path | None = None,
+    external_consumer_evidence_closure_report: Path | None = None,
+    final_maintenance_archive_closure_report: Path | None = None,
+    post_freeze_handoff_seal_report: Path | None = None,
+    routine_release_cycle_stability_report: Path | None = None,
+    routine_stability_watch_closure: Path | None = None,
+    final_maintenance_handoff_report: Path | None = None,
+) -> dict[str, Any]:
+    default_final = _load_json(review_bundle_root / "final_status.json")
+    alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
+    default_matrix = _load_json(review_bundle_root / "profile_matrix.json")
+    runtime_edge = _load_json(runtime_edge_report)
+    migration = _load_json(migration_readiness_report)
+    runtime_budget = _load_json(runtime_budget_report)
+    data_source_audit = _load_json(data_source_audit_report)
+    fast_timing = _load_json(fast_timing_json)
+    alias_sunset = _load_json(alias_sunset_review) if alias_sunset_review and alias_sunset_review.exists() else None
+    runtime_release_cycle = (
+        _load_json(runtime_release_cycle_report)
+        if runtime_release_cycle_report and runtime_release_cycle_report.exists()
+        else None
+    )
+    runtime_variance = _load_json(runtime_variance_report) if runtime_variance_report and runtime_variance_report.exists() else None
+    release_readiness = (
+        _load_json(release_readiness_report) if release_readiness_report and release_readiness_report.exists() else None
+    )
+    removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else None
+    evidence_closure = (
+        _load_json(consumer_evidence_closure_report)
+        if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
+        else None
+    )
+    owner_handoff = _load_json(consumer_owner_handoff) if consumer_owner_handoff and consumer_owner_handoff.exists() else None
+    owner_response_validation = (
+        _load_json(consumer_owner_response_validation)
+        if consumer_owner_response_validation and consumer_owner_response_validation.exists()
+        else None
+    )
+    evidence_candidate = (
+        _load_json(consumer_evidence_candidate_report)
+        if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists()
+        else None
+    )
+    candidate_approval = (
+        _load_json(evidence_candidate_approval_report)
+        if evidence_candidate_approval_report and evidence_candidate_approval_report.exists()
+        else None
+    )
+    sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else None
+    update_plan = (
+        _load_json(canonical_evidence_update_plan)
+        if canonical_evidence_update_plan and canonical_evidence_update_plan.exists()
+        else None
+    )
+    apply_report = (
+        _load_json(canonical_evidence_apply_report)
+        if canonical_evidence_apply_report and canonical_evidence_apply_report.exists()
+        else None
+    )
+    applied_readiness = (
+        _load_json(applied_evidence_readiness)
+        if applied_evidence_readiness and applied_evidence_readiness.exists()
+        else None
+    )
+    fallback_removal_readiness = (
+        _load_json(alias_fallback_removal_readiness)
+        if alias_fallback_removal_readiness and alias_fallback_removal_readiness.exists()
+        else None
+    )
+    runtime_watch_triage = (
+        _load_json(runtime_watch_triage_report)
+        if runtime_watch_triage_report and runtime_watch_triage_report.exists()
+        else None
+    )
+    runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else None
+    post_removal_closure = (
+        _load_json(alias_post_removal_closure)
+        if alias_post_removal_closure and alias_post_removal_closure.exists()
+        else None
+    )
+    final_release_closure = (
+        _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else None
+    )
+    reviewer_packet = _load_json(final_reviewer_packet) if final_reviewer_packet and final_reviewer_packet.exists() else None
+    cadence_packet = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else None
+    checklist_packet = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else None
+    followups_packet = _load_json(optional_followups) if optional_followups and optional_followups.exists() else None
+    governance_packet = _load_json(maintenance_governance_closure) if maintenance_governance_closure and maintenance_governance_closure.exists() else None
+    external_governance_packet = _load_json(external_consumer_governance) if external_consumer_governance and external_consumer_governance.exists() else None
+    external_evidence_closure = _load_json(external_consumer_evidence_closure_report) if external_consumer_evidence_closure_report and external_consumer_evidence_closure_report.exists() else None
+    final_archive_closure = _load_json(final_maintenance_archive_closure_report) if final_maintenance_archive_closure_report and final_maintenance_archive_closure_report.exists() else None
+    post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else None
+    routine_stability = _load_json(routine_release_cycle_stability_report) if routine_release_cycle_stability_report and routine_release_cycle_stability_report.exists() else None
+    routine_watch_closure = _load_json(routine_stability_watch_closure) if routine_stability_watch_closure and routine_stability_watch_closure.exists() else None
+    final_handoff = _load_json(final_maintenance_handoff_report) if final_maintenance_handoff_report and final_maintenance_handoff_report.exists() else None
+
+    default_overall = _gate_overall_from_final_status(default_final)
+    alias_overall = _gate_overall_from_final_status(alias_final)
+    runtime_edge_status = runtime_edge.get("status", "warn")
+    migration_status = migration.get("status", "warn")
+
+    alias_sunset_status = (alias_sunset or {}).get("status")
+    runtime_cycle_status = (runtime_release_cycle or {}).get("status")
+    runtime_variance_status = (runtime_variance or {}).get("status")
+    release_readiness_status = (release_readiness or {}).get("status")
+
+    if default_overall == "fail" or alias_overall == "fail":
+        overall_status = "fail"
+    elif alias_sunset_status in {"watch", "blocked"}:
+        overall_status = "watch"
+    elif migration_status in {"warn", "fail"}:
+        overall_status = "warn"
+    elif runtime_cycle_status in {"watch", "warn", "fail"}:
+        overall_status = runtime_cycle_status
+    elif runtime_variance_status in {"watch", "warn", "fail"}:
+        overall_status = runtime_variance_status
+    elif release_readiness_status in {"watch", "blocked"}:
+        overall_status = "watch" if release_readiness_status == "watch" else "fail"
+    elif (post_removal_closure or {}).get("status") == "blocked":
+        overall_status = "fail"
+    elif (post_removal_closure or {}).get("status") == "watch":
+        overall_status = "watch"
+    elif (final_release_closure or {}).get("status") == "blocked":
+        overall_status = "fail"
+    elif (external_evidence_closure or {}).get("status") == "fail":
+        overall_status = "fail"
+    elif (final_archive_closure or {}).get("status") == "fail":
+        overall_status = "fail"
+    elif (post_freeze_handoff or {}).get("status") == "fail":
+        overall_status = "fail"
+    elif (routine_stability or {}).get("status") == "blocked":
+        overall_status = "fail"
+    elif runtime_edge_status == "watch":
+        overall_status = "watch"
+    elif runtime_edge_status == "fail":
+        overall_status = "fail"
+    elif runtime_edge_status == "warn":
+        overall_status = "warn"
+    else:
+        overall_status = "pass"
+
+    blocking_reasons: list[str] = []
+    if default_overall == "fail" or alias_overall == "fail":
+        blocking_reasons.append("review_bundle_overall=fail")
+    if migration_status == "fail":
+        blocking_reasons.append("migration_readiness_status=fail")
+    if runtime_edge_status == "fail":
+        blocking_reasons.append("runtime_edge_status=fail")
+    if runtime_cycle_status == "fail":
+        blocking_reasons.append("runtime_release_cycle_status=fail")
+    if runtime_variance_status == "fail":
+        blocking_reasons.append("runtime_variance_status=fail")
+    if (post_removal_closure or {}).get("status") == "blocked":
+        blocking_reasons.append("alias_post_removal_closure_status=blocked")
+    if (final_release_closure or {}).get("status") == "blocked":
+        blocking_reasons.append("release_ready_closure_status=blocked")
+    if (external_evidence_closure or {}).get("status") == "fail":
+        blocking_reasons.append("external_consumer_evidence_closure_status=fail")
+    if (final_archive_closure or {}).get("status") == "fail":
+        blocking_reasons.append("final_maintenance_archive_closure_status=fail")
+    if (post_freeze_handoff or {}).get("status") == "fail":
+        blocking_reasons.append("post_freeze_handoff_seal_status=fail")
+    if (routine_stability or {}).get("status") == "blocked" or (routine_stability or {}).get("blocking") is True:
+        blocking_reasons.append("routine_release_cycle_stability_status=blocked")
+    if (routine_watch_closure or {}).get("status") == "blocked" or (routine_watch_closure or {}).get("blocking") is True:
+        blocking_reasons.append("routine_stability_watch_closure_status=blocked")
+    if (final_handoff or {}).get("status") == "blocked" or (final_handoff or {}).get("blocking") is True:
+        blocking_reasons.append("final_maintenance_handoff_status=blocked")
+
+    non_blocking_governance_notes: list[str] = []
+    superseded_watch_items: list[str] = []
+    if alias_sunset_status in {"watch", "blocked"}:
+        non_blocking_governance_notes.append(f"alias_sunset_status={alias_sunset_status}")
+    if release_readiness and release_readiness.get("superseded_watch_items"):
+        superseded_watch_items.extend(release_readiness.get("superseded_watch_items", []))
+    if release_readiness and release_readiness.get("status") == "ready" and alias_sunset_status == "watch":
+        superseded_watch_items.append("alias_sunset_decision_gate=watch")
+    if overall_status == "watch" and not blocking_reasons:
+        non_blocking_governance_notes.append("watch_reason=historical_governance_context_only")
+    if (routine_watch_closure or {}).get("status") == "closed_non_blocking":
+        non_blocking_governance_notes.append("routine_stability_watch_closure=closed_non_blocking")
+
+    cadence_value = (cadence_packet or {}).get("recommended_cadence")
+    if not isinstance(cadence_value, str) or not cadence_value:
+        cadence_value = "routine_next_release_cycle"
+
+    final_ready = (final_release_closure or {}).get("status") == "ready"
+    reviewer_ready = (reviewer_packet or {}).get("status") == "ready_for_review"
+    readiness_ready = release_readiness_status == "ready"
+    runtime_ok = runtime_edge_status == "pass" and runtime_cycle_status == "pass" and runtime_variance_status == "pass"
+    post_removal_closed = (post_removal_closure or {}).get("status") == "closed"
+
+    blocking = len(blocking_reasons) > 0
+    if blocking:
+        review_state = "blocked"
+    elif readiness_ready and final_ready and reviewer_ready and runtime_ok and post_removal_closed:
+        review_state = "ready_for_review"
+    elif overall_status in {"watch", "warn"}:
+        review_state = "watch"
+    else:
+        review_state = "ready_for_review"
+
+    gate_summary = {
+        "default_bundle_overall": default_overall,
+        "alias_fallback_bundle_overall": alias_overall,
+        "runtime_budget_status": runtime_budget.get("overall_status"),
+        "timing_consistency_status": (runtime_budget.get("timing_consistency") or {}).get("status"),
+        "runtime_edge_status": runtime_edge_status,
+        "migration_readiness_status": migration_status,
+    }
+
+    profile_summary = {
+        "default_bundle_profiles": {
+            k: v.get("overall_status") for k, v in (default_matrix.get("profiles") or {}).items()
+        }
+    }
+
+    runtime_summary = {
+        "fast_total_seconds": fast_timing.get("total_seconds"),
+        "runtime_budget_overall_status": runtime_budget.get("overall_status"),
+        "timing_consistency_status": (runtime_budget.get("timing_consistency") or {}).get("status"),
+        "runtime_edge": runtime_edge,
+    }
+
+    recent_phase_summary = [
+        "Phase 1886-1945: alias deprecation metadata and canonical-only mode option (~86.781s fast validation baseline).",
+        "Phase 1946-2005: no-alias migration readiness pass (~92.92s baseline).",
+        "Phase 2006-2065: default no-alias trial with explicit fallback (~93.681s baseline).",
+        "Phase 2066-2125: runtime edge report added (~84.861s baseline).",
+    ]
+
+    risks: list[str] = []
+    if migration_status != "pass":
+        risks.append("Alias migration readiness is not pass; fallback sunset should be deferred.")
+    if runtime_edge_status in {"watch", "warn", "fail"}:
+        risks.append("Runtime is near or beyond edge threshold; monitor variance.")
+    if not risks:
+        risks.append("External downstream consumers may still require explicit alias fallback during migration window.")
+
+    recommended_next_actions = [
+        "Keep canonical-only default manifest behavior.",
+        "Maintain explicit alias fallback for external consumers until next sunset review.",
+        "Track runtime edge trend per release cycle and investigate drift if watch/warn reappears.",
+        "Prepare a follow-up sunset decision phase with external consumer confirmation evidence.",
+    ]
+
+    return {
+        "schema_version": "v1",
+        "milestone": "phase_2000_plus_validation_automation",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "overall_status": overall_status,
+        "review_state": review_state,
+        "blocking": blocking,
+        "blocking_reasons": blocking_reasons,
+        "non_blocking_governance_notes": sorted(set(non_blocking_governance_notes)),
+        "superseded_watch_items": sorted(set(superseded_watch_items)),
+        "maintenance_cadence": cadence_value,
+        "current_baseline": {
+            "default_manifest_mode": "canonical_history_only",
+            "fallback_flag": "--include-history-update-alias (sunset; fail-fast)",
+            "transition_flag": "--omit-history-update-alias",
+            "active_alias_emission_supported": False,
+            "legacy_read_normalization_kept": True,
+        },
+        "artifact_map": _build_artifact_map(
+            review_bundle_root=review_bundle_root,
+            alias_fallback_bundle_root=alias_fallback_bundle_root,
+            runtime_edge_report=runtime_edge_report,
+            migration_readiness_report=migration_readiness_report,
+            runtime_budget_report=runtime_budget_report,
+            data_source_audit_report=data_source_audit_report,
+            fast_timing_json=fast_timing_json,
+        ),
+        "gate_summary": gate_summary,
+        "profile_summary": profile_summary,
+        "runtime_summary": runtime_summary,
+        "runtime_release_cycle_summary": runtime_release_cycle,
+        "runtime_variance_summary": runtime_variance,
+        "release_readiness_summary": release_readiness,
+        "alias_removal_plan_summary": removal_plan,
+        "consumer_evidence_closure_summary": evidence_closure,
+        "consumer_owner_handoff_summary": owner_handoff,
+        "consumer_owner_response_validation_summary": owner_response_validation,
+        "consumer_evidence_candidate_summary": evidence_candidate,
+        "evidence_candidate_approval_summary": candidate_approval,
+        "alias_sunset_schedule_summary": sunset_schedule,
+        "canonical_evidence_update_plan_summary": update_plan,
+        "canonical_evidence_apply_report_summary": apply_report,
+        "applied_evidence_readiness_summary": applied_readiness,
+        "alias_fallback_removal_readiness_summary": fallback_removal_readiness,
+        "runtime_watch_triage_summary": runtime_watch_triage,
+        "pytest_runtime_profile_summary": runtime_profile,
+        "alias_post_removal_closure_summary": post_removal_closure,
+        "release_ready_closure_summary": final_release_closure,
+        "final_reviewer_packet_summary": reviewer_packet,
+        "maintenance_cadence_summary": cadence_packet,
+        "maintenance_checklist_summary": checklist_packet,
+        "optional_followups_summary": followups_packet,
+        "maintenance_governance_closure_summary": governance_packet,
+        "external_consumer_governance_summary": external_governance_packet,
+        "external_consumer_evidence_closure_summary": external_evidence_closure,
+        "final_maintenance_archive_closure_summary": final_archive_closure,
+        "post_freeze_handoff_seal_summary": post_freeze_handoff,
+        "routine_release_cycle_stability_summary": routine_stability,
+        "routine_stability_watch_closure_summary": routine_watch_closure,
+        "final_maintenance_handoff_summary": final_handoff,
+        "alias_migration_summary": migration,
+        "alias_sunset_review_summary": alias_sunset,
+        "data_source_audit_summary": {
+            "read_csv_count": _read_csv_count(data_source_audit),
+        },
+        "recent_phase_summary": recent_phase_summary,
+        "risks": risks,
+        "recommended_next_actions": recommended_next_actions,
+        "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
+    }
+
+
+def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
+    artifact_map = payload.get("artifact_map", {})
+    return "\n".join(
+        [
+            "# Qlib Base Validation Automation Milestone Packet",
+            "",
+            "## Overall Status",
+            "",
+            f"- `{payload.get('overall_status', 'warn')}`",
+            f"- review_state: `{payload.get('review_state', 'watch')}`",
+            f"- blocking: `{payload.get('blocking', True)}`",
+            f"- blocking_reasons: `{payload.get('blocking_reasons', [])}`",
+            f"- maintenance_cadence: `{payload.get('maintenance_cadence', 'routine_next_release_cycle')}`",
+            "",
+            "## Current Operating Model",
+            "",
+            "- Default manifest emits canonical `history` only.",
+            "- Active `history_update` alias emission is removed; `--include-history-update-alias` is sunset (fail-fast).",
+            "- Legacy manifest read compatibility is preserved via normalization.",
+            "",
+            "## Primary Reviewer Artifacts",
+            "",
+            f"1. `{artifact_map.get('default_review_bundle_index_md', '')}`",
+            f"2. `{artifact_map.get('default_final_status_md', '')}`",
+            f"3. `{artifact_map.get('default_profile_matrix_md', '')}`",
+            f"4. `{artifact_map.get('runtime_edge_report_json', '')}`",
+            f"5. `{artifact_map.get('migration_readiness_report_json', '')}`",
+            "",
+            "## CI/Profile Matrix Summary",
+            "",
+            f"- `{payload.get('profile_summary', {})}`",
+            "",
+            "## Runtime Budget and Runtime Edge",
+            "",
+            f"- `{payload.get('runtime_summary', {})}`",
+            "",
+            "## History Alias Migration Status",
+            "",
+            f"- `{payload.get('alias_migration_summary', {}).get('status', 'warn')}`",
+            "",
+            "## Alias Sunset Review",
+            "",
+            f"- `{(payload.get('alias_sunset_review_summary') or {}).get('status', 'not_included')}`",
+            f"- action: `{(payload.get('alias_sunset_review_summary') or {}).get('recommended_action', 'n/a')}`",
+            "",
+            "## Data Source Audit",
+            "",
+            f"- read_csv_count: `{(payload.get('data_source_audit_summary') or {}).get('read_csv_count')}`",
+            "",
+            "## Recent Phase Summary",
+            "",
+            *[f"- {item}" for item in payload.get("recent_phase_summary", [])],
+            "",
+            "## Remaining Risks",
+            "",
+            *[f"- {item}" for item in payload.get("risks", [])],
+            "",
+            "## Recommended Next Actions",
+            "",
+            *[f"- {item}" for item in payload.get("recommended_next_actions", [])],
+            "",
+            "## Runtime Release-Cycle Monitor",
+            "",
+            f"- `{(payload.get('runtime_release_cycle_summary') or {}).get('status', 'not_included')}`",
+            f"- next trigger: `{(payload.get('runtime_release_cycle_summary') or {}).get('next_review_trigger', 'n/a')}`",
+            "",
+            "## Runtime Variance Triage",
+            "",
+            f"- `{(payload.get('runtime_variance_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('runtime_variance_summary') or {}).get('recommendation', 'n/a')}`",
+            "",
+            "## Release Readiness Dashboard",
+            "",
+            f"- `{(payload.get('release_readiness_summary') or {}).get('status', 'not_included')}`",
+            f"- reason: `{(payload.get('release_readiness_summary') or {}).get('release_readiness_reason', 'n/a')}`",
+            f"- next_actions: `{(payload.get('release_readiness_summary') or {}).get('next_actions', [])}`",
+            "",
+            "## Alias Post-Removal Closure",
+            "",
+            f"- `{(payload.get('alias_post_removal_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- canonical_only_manifest_confirmed: `{(payload.get('alias_post_removal_closure_summary') or {}).get('canonical_only_manifest_confirmed', 'n/a')}`",
+            f"- history_update_absent: `{(payload.get('alias_post_removal_closure_summary') or {}).get('history_update_absent', 'n/a')}`",
+            f"- remaining_followups: `{(payload.get('alias_post_removal_closure_summary') or {}).get('remaining_followups', [])}`",
+            "",
+            "## Final Release-Ready Closure",
+            "",
+            f"- `{(payload.get('release_ready_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('release_ready_closure_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- remaining_blockers: `{(payload.get('release_ready_closure_summary') or {}).get('remaining_blockers', [])}`",
+            "",
+            "## Final Reviewer Packet",
+            "",
+            f"- `{(payload.get('final_reviewer_packet_summary') or {}).get('status', 'not_included')}`",
+            f"- remaining_followups: `{(payload.get('final_reviewer_packet_summary') or {}).get('remaining_followups', [])}`",
+            "",
+            "## Maintenance Cadence",
+            "",
+            f"- `{(payload.get('maintenance_cadence_summary') or {}).get('status', 'not_included')}`",
+            f"- recommended_cadence: `{(payload.get('maintenance_cadence_summary') or {}).get('recommended_cadence', 'n/a')}`",
+            f"- routine_command_count: `{len((payload.get('maintenance_cadence_summary') or {}).get('routine_commands', []))}`",
+            f"- watch_items: `{(payload.get('maintenance_cadence_summary') or {}).get('watch_items', [])}`",
+            "",
+            "## Maintenance Checklist",
+            "",
+            f"- `{(payload.get('maintenance_checklist_summary') or {}).get('status', 'not_included')}`",
+            f"- mode: `{(payload.get('maintenance_checklist_summary') or {}).get('mode', 'n/a')}`",
+            f"- optional_followup_count: `{(payload.get('maintenance_checklist_summary') or {}).get('optional_followup_count', 'n/a')}`",
+            "",
+            "## Optional Followup Queue",
+            "",
+            f"- `{(payload.get('optional_followups_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('optional_followups_summary') or {}).get('blocking', 'n/a')}`",
+            f"- items_count: `{len((payload.get('optional_followups_summary') or {}).get('items', []))}`",
+            "",
+            "## Maintenance Governance Closure",
+            "",
+            f"- `{(payload.get('maintenance_governance_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- conclusion: `{(payload.get('maintenance_governance_closure_summary') or {}).get('conclusion', 'n/a')}`",
+            f"- milestone_watch_context_only: `{(payload.get('maintenance_governance_closure_summary') or {}).get('conclusion') in {'routine', 'ready_for_review', 'watch_non_blocking'}}`",
+            "",
+            "## External Consumer Governance",
+            "",
+            f"- `{(payload.get('external_consumer_governance_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('external_consumer_governance_summary') or {}).get('blocking', 'n/a')}`",
+            f"- release_readiness_impact: `{(payload.get('external_consumer_governance_summary') or {}).get('release_readiness_impact', 'n/a')}`",
+            "",
+            "## External Consumer Evidence Closure",
+            "",
+            f"- `{(payload.get('external_consumer_evidence_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('external_consumer_evidence_closure_summary') or {}).get('blocking', 'n/a')}`",
+            "",
+            "## Final Maintenance Archive Closure",
+            "",
+            f"- `{(payload.get('final_maintenance_archive_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('final_maintenance_archive_closure_summary') or {}).get('blocking', 'n/a')}`",
+            "",
+            "## Post-Freeze Handoff Seal",
+            "",
+            f"- `{(payload.get('post_freeze_handoff_seal_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('post_freeze_handoff_seal_summary') or {}).get('blocking', 'n/a')}`",
+            "",
+            "## Routine Release-Cycle Stability",
+            "",
+            f"- `{(payload.get('routine_release_cycle_stability_summary') or {}).get('status', 'not_included')}`",
+            f"- review_state: `{(payload.get('routine_release_cycle_stability_summary') or {}).get('review_state', 'n/a')}`",
+            f"- blocking: `{(payload.get('routine_release_cycle_stability_summary') or {}).get('blocking', 'n/a')}`",
+            "",
+            "## Routine Stability Watch Closure",
+            "",
+            f"- `{(payload.get('routine_stability_watch_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- review_state: `{(payload.get('routine_stability_watch_closure_summary') or {}).get('review_state', 'n/a')}`",
+            f"- blocking: `{(payload.get('routine_stability_watch_closure_summary') or {}).get('blocking', 'n/a')}`",
+            f"- interpretation: `{(payload.get('routine_stability_watch_closure_summary') or {}).get('interpretation', 'n/a')}`",
+            "",
+            "## Final Maintenance Handoff",
+            "",
+            f"- `{(payload.get('final_maintenance_handoff_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking: `{(payload.get('final_maintenance_handoff_summary') or {}).get('blocking', 'n/a')}`",
+            f"- manual_merge_required: `{(payload.get('final_maintenance_handoff_summary') or {}).get('manual_merge_required', 'n/a')}`",
+            f"- merge_method: `{(payload.get('final_maintenance_handoff_summary') or {}).get('merge_method', 'n/a')}`",
+            "",
+            "## Alias Removal Plan",
+            "",
+            f"- `{(payload.get('alias_removal_plan_summary') or {}).get('status', 'not_included')}`",
+            f"- preconditions_met: `{(payload.get('alias_removal_plan_summary') or {}).get('preconditions_met', 'n/a')}`",
+            f"- recommendation: `{(payload.get('alias_removal_plan_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- remaining_blockers: `{(payload.get('alias_removal_plan_summary') or {}).get('remaining_blockers', [])}`",
+            "",
+            "## Consumer Evidence Closure",
+            "",
+            f"- `{(payload.get('consumer_evidence_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- next_actions: `{(payload.get('consumer_evidence_closure_summary') or {}).get('next_actions', [])}`",
+            f"- action_plan: `{(payload.get('consumer_evidence_closure_summary') or {}).get('action_plan', [])}`",
+            "",
+            "## Runtime Watch Triage",
+            "",
+            f"- `{(payload.get('runtime_watch_triage_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('runtime_watch_triage_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- test_count: `{(payload.get('runtime_watch_triage_summary') or {}).get('test_count', 'n/a')}`",
+            f"- seconds_per_test: `{(payload.get('runtime_watch_triage_summary') or {}).get('seconds_per_test', 'n/a')}`",
+            "",
+            "## Consumer Owner Handoff",
+            "",
+            f"- `{(payload.get('consumer_owner_handoff_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking_consumer_count: `{(payload.get('consumer_owner_handoff_summary') or {}).get('blocking_consumer_count', 'n/a')}`",
+            f"- handoff_items: `{(payload.get('consumer_owner_handoff_summary') or {}).get('handoff_items', [])}`",
+            "",
+            "## Consumer Owner Response Validation",
+            "",
+            f"- `{(payload.get('consumer_owner_response_validation_summary') or {}).get('status', 'not_included')}`",
+            f"- safe_to_update_evidence: `{(payload.get('consumer_owner_response_validation_summary') or {}).get('safe_to_update_evidence', 'n/a')}`",
+            f"- issues: `{(payload.get('consumer_owner_response_validation_summary') or {}).get('issues', [])}`",
+            "",
+            "## Consumer Evidence Candidate",
+            "",
+            f"- `{(payload.get('consumer_evidence_candidate_summary') or {}).get('status', 'not_included')}`",
+            f"- projected_release_readiness: `{(payload.get('consumer_evidence_candidate_summary') or {}).get('release_readiness_projected_status', 'n/a')}`",
+            f"- manual_approval_required: `{(payload.get('consumer_evidence_candidate_summary') or {}).get('manual_approval_required', 'n/a')}`",
+            "",
+            "## Evidence Candidate Approval Gate",
+            "",
+            f"- `{(payload.get('evidence_candidate_approval_summary') or {}).get('status', 'not_included')}`",
+            f"- next_action: `{(payload.get('evidence_candidate_approval_summary') or {}).get('next_action', 'n/a')}`",
+            f"- manual_approval_required: `{(payload.get('evidence_candidate_approval_summary') or {}).get('manual_approval_required', 'n/a')}`",
+            "",
+            "## Alias Sunset Schedule",
+            "",
+            f"- `{(payload.get('alias_sunset_schedule_summary') or {}).get('status', 'not_included')}`",
+            f"- reason: `{(payload.get('alias_sunset_schedule_summary') or {}).get('reason', 'n/a')}`",
+            f"- do_not_remove_in_this_phase: `{(payload.get('alias_sunset_schedule_summary') or {}).get('do_not_remove_in_this_phase', 'n/a')}`",
+            "",
+            "## Canonical Evidence Update Plan",
+            "",
+            f"- `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- manual_update_required: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('manual_update_required', 'n/a')}`",
+            "",
+            "## Canonical Evidence Apply Report",
+            "",
+            f"- `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('status', 'not_included')}`",
+            f"- next_action: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('next_action', 'n/a')}`",
+            f"- alias_fallback_removal_allowed: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('alias_fallback_removal_allowed', 'n/a')}`",
+            "",
+            "## Applied Evidence Readiness",
+            "",
+            f"- `{(payload.get('applied_evidence_readiness_summary') or {}).get('status', 'not_included')}`",
+            f"- next_action: `{(payload.get('applied_evidence_readiness_summary') or {}).get('next_action', 'n/a')}`",
+            "",
+            "## Alias Fallback Removal Readiness",
+            "",
+            f"- `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('status', 'not_included')}`",
+            f"- preconditions_met: `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('preconditions_met', 'n/a')}`",
+            f"- do_not_remove_in_this_phase: `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('do_not_remove_in_this_phase', 'n/a')}`",
+            "",
+            "## Pytest Runtime Profile",
+            "",
+            f"- `{(payload.get('pytest_runtime_profile_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('pytest_runtime_profile_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- test_summary: `{(payload.get('pytest_runtime_profile_summary') or {}).get('test_summary', {})}`",
+            f"- slowest_tests_count: `{len((payload.get('pytest_runtime_profile_summary') or {}).get('slowest_tests', []))}`",
+            f"- slowest_files_count: `{len((payload.get('pytest_runtime_profile_summary') or {}).get('slowest_files', []))}`",
+            "",
+            "## Scope Boundary",
+            "",
+            f"- {payload.get('scope_note', '')}",
+            "",
+        ]
+    )

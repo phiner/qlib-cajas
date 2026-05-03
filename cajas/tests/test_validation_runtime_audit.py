@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from cajas.scripts.audit_validation_runtime import main as audit_validation_runtime_main
 from cajas.reports.validation_runtime_audit import build_validation_runtime_audit
 from cajas.reports.validation_runtime_audit import find_unmarked_validation_runner_subprocess_tests
 
@@ -35,10 +34,8 @@ class ValidationRuntimeAuditTests(unittest.TestCase):
             )
             out_json = root / "validation_runtime_audit.json"
             out_md = root / "validation_runtime_audit.md"
-            subprocess.run(
+            code = audit_validation_runtime_main(
                 [
-                    sys.executable,
-                    "cajas/scripts/audit_validation_runtime.py",
                     "--tests-root",
                     "cajas/tests",
                     "--timing-json",
@@ -47,9 +44,9 @@ class ValidationRuntimeAuditTests(unittest.TestCase):
                     str(out_json),
                     "--out-md",
                     str(out_md),
-                ],
-                check=True,
+                ]
             )
+            self.assertEqual(code, 0)
             self.assertTrue(out_json.exists())
             self.assertTrue(out_md.exists())
             payload = json.loads(out_json.read_text(encoding="utf-8"))

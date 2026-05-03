@@ -1,0 +1,29 @@
+{
+  "schema_version": "v1",
+  "review_date": "YYYY-MM-DD",
+  "review_owner": "example",
+  "external_status": "confirmed_clear",
+  "consumers": [
+    {
+      "name": "internal_review_bundle",
+      "owner": "qlib-cajas",
+      "status": "confirmed_clear",
+      "requires_history_update": false,
+      "evidence": "Uses canonical history via normalize_history_metadata.",
+      "last_checked": "YYYY-MM-DD",
+      "next_action": "none"
+    },
+    {
+      "name": "external_example_consumer",
+      "owner": "external-team",
+      "status": "confirmed_clear",
+      "requires_history_update": false,
+      "evidence": "Consumer validated against canonical history field.",
+      "last_checked": "YYYY-MM-DD",
+      "next_action": "none"
+    }
+  ],
+  "notes": [
+    "Example only. Do not use as real external clearance."
+  ]
+}

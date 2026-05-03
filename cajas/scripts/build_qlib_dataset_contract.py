@@ -13,7 +13,7 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.qlib_dataset_contract_builder import build_qlib_dataset_contract
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build offline Qlib dataset contract from a feature/label CSV.")
     p.add_argument("--input-csv", required=True)
     p.add_argument("--out", required=True)
@@ -23,7 +23,7 @@ def main() -> int:
     p.add_argument("--label-col", action="append", dest="label_cols")
     p.add_argument("--row-limit", type=int, default=None)
     p.add_argument("--allow-large-data", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contract = build_qlib_dataset_contract(
         input_csv=args.input_csv,
