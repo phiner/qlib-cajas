@@ -69,6 +69,8 @@ def build_validation_milestone_packet(
     runtime_budget_report: Path,
     data_source_audit_report: Path,
     fast_timing_json: Path,
+    alias_sunset_review: Path | None = None,
+    runtime_release_cycle_report: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -78,6 +80,12 @@ def build_validation_milestone_packet(
     runtime_budget = _load_json(runtime_budget_report)
     data_source_audit = _load_json(data_source_audit_report)
     fast_timing = _load_json(fast_timing_json)
+    alias_sunset = _load_json(alias_sunset_review) if alias_sunset_review and alias_sunset_review.exists() else None
+    runtime_release_cycle = (
+        _load_json(runtime_release_cycle_report)
+        if runtime_release_cycle_report and runtime_release_cycle_report.exists()
+        else None
+    )
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -163,7 +171,9 @@ def build_validation_milestone_packet(
         "gate_summary": gate_summary,
         "profile_summary": profile_summary,
         "runtime_summary": runtime_summary,
+        "runtime_release_cycle_summary": runtime_release_cycle,
         "alias_migration_summary": migration,
+        "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
             "read_csv_count": _read_csv_count(data_source_audit),
         },
@@ -209,6 +219,11 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "",
             f"- `{payload.get('alias_migration_summary', {}).get('status', 'warn')}`",
             "",
+            "## Alias Sunset Review",
+            "",
+            f"- `{(payload.get('alias_sunset_review_summary') or {}).get('status', 'not_included')}`",
+            f"- action: `{(payload.get('alias_sunset_review_summary') or {}).get('recommended_action', 'n/a')}`",
+            "",
             "## Data Source Audit",
             "",
             f"- read_csv_count: `{(payload.get('data_source_audit_summary') or {}).get('read_csv_count')}`",
@@ -224,6 +239,11 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "## Recommended Next Actions",
             "",
             *[f"- {item}" for item in payload.get("recommended_next_actions", [])],
+            "",
+            "## Runtime Release-Cycle Monitor",
+            "",
+            f"- `{(payload.get('runtime_release_cycle_summary') or {}).get('status', 'not_included')}`",
+            f"- next trigger: `{(payload.get('runtime_release_cycle_summary') or {}).get('next_review_trigger', 'n/a')}`",
             "",
             "## Scope Boundary",
             "",

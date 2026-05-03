@@ -1288,3 +1288,17 @@ Known limitation:
   - `tmp/validation-milestone-packet.json`
   - `tmp/validation-milestone-packet.md`
 - Latest milestone packet status: `pass`.
+
+## Phase 2186-2245 Addendum: Alias Sunset Review and Runtime Release-Cycle Monitoring
+
+- Added alias sunset review module + CLI:
+  - `cajas/reports/validation_alias_sunset_review.py`
+  - `cajas/scripts/build_alias_sunset_review.py`
+- Added runtime release-cycle monitor module + CLI:
+  - `cajas/reports/validation_runtime_release_cycle.py`
+  - `cajas/scripts/build_validation_runtime_release_cycle_report.py`
+- Added milestone packet optional integration for:
+  - `--alias-sunset-review`
+  - `--runtime-release-cycle-report`
+- Current alias sunset review result (`external-consumer-status=unknown`): `watch`, action `keep_fallback`.
+- Current runtime release-cycle result: `pass`, recommendation `ok`.

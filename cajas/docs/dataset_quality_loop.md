@@ -1471,3 +1471,31 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2186-2245 Addendum: External Consumer Alias Sunset Review and Release-Cycle Runtime Monitoring
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add a conservative external-consumer alias sunset checklist and a repeatable release-cycle runtime monitor, then surface both in milestone packet review outputs.
+
+### Highlights
+
+1. Added alias sunset review report with external-consumer status options:
+   - `unknown`
+   - `confirmed_clear`
+   - `requires_alias`
+2. Added runtime release-cycle monitor report based on runtime-edge + budget + fast timing.
+3. Extended milestone packet to include optional alias-sunset/runtime-cycle summaries.
+4. Kept alias fallback in place for this phase (no removal).
+
+### Current Results
+
+- Alias sunset review: `watch` (external consumer status unknown)
+- Runtime release-cycle monitor: `pass`
+- Milestone packet overall status: `watch` (conservative due alias sunset watch)
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
