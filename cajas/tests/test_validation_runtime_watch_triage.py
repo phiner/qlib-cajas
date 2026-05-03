@@ -15,7 +15,7 @@ def test_runtime_watch_triage_watch_status(tmp_path: Path) -> None:
         {
             "total_seconds": 94.0,
             "results": [{"name": "compileall", "seconds": 0.1}, {"name": "pytest_fast", "seconds": 90.0}],
-            "test_count": 479,
+            "test_summary": {"passed": 479, "deselected": 16, "failed": 0, "total_reported": 495},
         },
     )
     edge = _write(tmp_path / "edge.json", {"status": "watch", "remaining_budget_seconds": 11.0, "remaining_budget_ratio": 0.10})
@@ -28,12 +28,14 @@ def test_runtime_watch_triage_watch_status(tmp_path: Path) -> None:
     )
     assert report["status"] == "watch"
     assert report["likely_cause"] == "test_count_growth"
+    assert report["test_count"] == 479
+    assert report["seconds_per_test"] is not None
 
 
 def test_runtime_watch_triage_pass_status(tmp_path: Path) -> None:
     timing = _write(
         tmp_path / "timing.json",
-        {"total_seconds": 88.0, "results": [{"name": "pytest_fast", "seconds": 84.0}], "test_count": 470},
+        {"total_seconds": 88.0, "results": [{"name": "pytest_fast", "seconds": 84.0}], "test_summary": {"passed": 470, "deselected": 10, "failed": 0}},
     )
     edge = _write(tmp_path / "edge.json", {"status": "pass", "remaining_budget_seconds": 17.0, "remaining_budget_ratio": 0.16})
     variance = _write(tmp_path / "variance.json", {"status": "pass"})
@@ -49,7 +51,7 @@ def test_runtime_watch_triage_pass_status(tmp_path: Path) -> None:
 def test_runtime_watch_triage_warn_status(tmp_path: Path) -> None:
     timing = _write(
         tmp_path / "timing.json",
-        {"total_seconds": 99.0, "results": [{"name": "pytest_fast", "seconds": 96.0}], "test_count": 480},
+        {"total_seconds": 99.0, "results": [{"name": "pytest_fast", "seconds": 96.0}], "test_summary": {"passed": 480, "deselected": 15, "failed": 0}},
     )
     edge = _write(tmp_path / "edge.json", {"status": "warn", "remaining_budget_seconds": 3.0, "remaining_budget_ratio": 0.03})
     variance = _write(tmp_path / "variance.json", {"status": "watch"})
@@ -61,3 +63,16 @@ def test_runtime_watch_triage_warn_status(tmp_path: Path) -> None:
     )
     assert report["status"] == "warn"
     assert report["recommendation"] == "optimize"
+
+
+def test_runtime_watch_triage_compatible_when_test_summary_missing(tmp_path: Path) -> None:
+    timing = _write(tmp_path / "timing.json", {"total_seconds": 90.0, "results": [{"name": "pytest_fast", "seconds": 85.0}]})
+    edge = _write(tmp_path / "edge.json", {"status": "pass", "remaining_budget_seconds": 15.0, "remaining_budget_ratio": 0.15})
+    variance = _write(tmp_path / "variance.json", {"status": "pass"})
+    report = build_validation_runtime_watch_triage_report(
+        fast_timing_json=timing,
+        runtime_edge_report=edge,
+        runtime_variance_report=variance,
+        baselines=[{"label": "p1", "fast_total_seconds": 88.0}],
+    )
+    assert report["test_count"] is None

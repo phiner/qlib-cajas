@@ -53,6 +53,13 @@ def build_validation_runtime_watch_triage_report(
     variance_status = variance.get("status", "watch")
     remaining_budget = edge.get("remaining_budget_seconds")
     remaining_ratio = edge.get("remaining_budget_ratio")
+    test_summary = timing.get("test_summary") or {}
+    tests_passed = test_summary.get("passed")
+    tests_deselected = test_summary.get("deselected")
+    test_count = tests_passed
+    seconds_per_test = None
+    if isinstance(test_count, int) and test_count > 0 and isinstance(current, (int, float)):
+        seconds_per_test = float(current) / float(test_count)
 
     if edge_status in {"warn", "fail"}:
         status = edge_status
@@ -79,7 +86,10 @@ def build_validation_runtime_watch_triage_report(
         "remaining_budget_ratio": remaining_ratio,
         "largest_step": largest_step,
         "largest_step_seconds": largest_step_seconds if largest_step_seconds >= 0 else None,
-        "test_count": timing.get("test_count"),
+        "test_count": test_count,
+        "tests_deselected": tests_deselected,
+        "seconds_per_test": seconds_per_test,
+        "test_count_source": "fast_timing_json.test_summary" if test_count is not None else "missing",
         "baseline_comparisons": baseline_comparisons,
         "likely_cause": likely_cause,
         "recommendation": recommendation,
@@ -99,6 +109,9 @@ def render_validation_runtime_watch_triage_markdown(payload: dict[str, Any]) -> 
             f"- Remaining budget seconds: `{payload.get('remaining_budget_seconds')}`",
             f"- Remaining budget ratio: `{payload.get('remaining_budget_ratio')}`",
             f"- Largest step: `{payload.get('largest_step')}` ({payload.get('largest_step_seconds')}s)",
+            f"- test_count: `{payload.get('test_count')}`",
+            f"- tests_deselected: `{payload.get('tests_deselected')}`",
+            f"- seconds_per_test: `{payload.get('seconds_per_test')}`",
             f"- Likely cause: `{payload.get('likely_cause')}`",
             f"- Recommendation: `{payload.get('recommendation')}`",
             "",

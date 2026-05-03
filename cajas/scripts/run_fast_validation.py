@@ -5,6 +5,7 @@ import argparse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import json
+import re
 import shlex
 import subprocess
 import sys
@@ -162,6 +163,32 @@ def evaluate_budget(results: list[ValidationStepResult], max_seconds: float | No
     return True, [message]
 
 
+def _extract_test_summary(results: list[ValidationStepResult]) -> dict[str, int | None]:
+    pytest_result = next((r for r in results if r.name.startswith("pytest")), None)
+    if pytest_result is None:
+        return {"passed": None, "deselected": None, "failed": None, "total_reported": None}
+    text = "\n".join([pytest_result.stdout, pytest_result.stderr])
+    passed = deselected = failed = None
+    match_passed = re.search(r"(\d+)\s+passed", text)
+    match_deselected = re.search(r"(\d+)\s+deselected", text)
+    match_failed = re.search(r"(\d+)\s+failed", text)
+    if match_passed:
+        passed = int(match_passed.group(1))
+    if match_deselected:
+        deselected = int(match_deselected.group(1))
+    if match_failed:
+        failed = int(match_failed.group(1))
+    total_reported = None
+    if passed is not None:
+        total_reported = passed + (deselected or 0) + (failed or 0)
+    return {
+        "passed": passed,
+        "deselected": deselected,
+        "failed": failed,
+        "total_reported": total_reported,
+    }
+
+
 def build_timing_payload(
     *,
     args: argparse.Namespace,
@@ -203,6 +230,7 @@ def build_timing_payload(
         "results": [result.to_json_dict() for result in results],
         "total_seconds": round(total_seconds, 3),
         "pytest_fast": next((round(r.elapsed_seconds, 3) for r in results if r.name == "pytest_fast"), None),
+        "test_summary": _extract_test_summary(results),
         "overall_status": overall_status,
         "budget": {
             "max_seconds": args.max_seconds,
