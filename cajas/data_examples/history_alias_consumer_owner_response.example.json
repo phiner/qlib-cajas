@@ -1,0 +1,14 @@
+{
+  "schema_version": "v1",
+  "response_date": "2026-05-03",
+  "consumer": "external_unknown_consumer",
+  "owner": "external-review-needed",
+  "status": "unknown",
+  "requires_history_update": false,
+  "evidence": "Owner response pending confirmation.",
+  "last_checked": "2026-05-03",
+  "next_action": "identify_owner",
+  "notes": [
+    "Example response only; do not treat as confirmed clear evidence."
+  ]
+}
