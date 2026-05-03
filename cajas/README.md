@@ -1013,3 +1013,16 @@ Current audit delta:
 - Added 8 tests covering history tracking (2.16s, no subprocess calls)
 - Fast validation: ~90.11s (390 tests, +8 from Phase 1196)
 - No impact on fast validation runtime
+
+
+### Phase 1256–1285: Integrated Review Bundle History Workflow
+- Integrated optional history update into `build_validation_review_bundle.py`
+- Added `--update-history`, `--history-jsonl`, `--history-last-n` flags
+- Reused history module directly (no subprocess history update step)
+- Extended `review_bundle_manifest.json` with `history_update` section
+- Extended `review_bundle_index.md` with history paths, deltas, regressions, and recommendation
+- Preserved default behavior when history update is not requested
+- Added conservative failure policy:
+  - history requested + failure => fail by default
+  - with `--warn-only` => record warning and continue
+- Expanded review bundle tests for integrated history workflow and failure modes

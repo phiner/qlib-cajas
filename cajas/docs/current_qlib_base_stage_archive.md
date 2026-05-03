@@ -2016,3 +2016,57 @@ git push origin phase-post-merge-research-next
 ```
 
 ---
+
+## Phase 1256–1285 Addendum: Integrated Review Bundle History Workflow
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Integrate review bundle orchestration with optional history append and summary generation so reviewers can run one workflow command with conservative failure semantics.
+
+### Problem Statement
+
+Phase 1226–1255 added history tracking, but review-bundle operators still needed a second manual command to update history and summaries, adding avoidable workflow steps.
+
+### Solution Implemented
+
+1. **Integrated history update into review bundle CLI**:
+   - Updated `cajas/scripts/build_validation_review_bundle.py`
+   - Added:
+     - `--update-history`
+     - `--history-jsonl`
+     - `--history-last-n`
+   - Default behavior unchanged when history flags are not used.
+
+2. **Direct module reuse**:
+   - Reused `cajas/reports/validation_review_bundle_history.py` functions directly.
+   - No subprocess history call in integrated path.
+
+3. **Manifest and index integration**:
+   - `review_bundle_manifest.json` now records `history_update` status/details.
+   - `review_bundle_index.md` now includes a `History` section with:
+     - history JSONL path
+     - summary JSON/MD paths
+     - latest status
+     - runtime delta from previous snapshot when available
+     - regression count
+     - reviewer recommendation
+   - If not enabled, index explicitly notes history was not requested.
+
+4. **Conservative failure behavior**:
+   - If `--update-history` is requested and history update fails:
+     - default: command fails
+     - with `--warn-only`: warning recorded and command continues
+   - Failure details are captured in manifest/index.
+
+5. **Test coverage additions**:
+   - Extended `cajas/tests/test_validation_review_bundle.py` for:
+     - default no-history behavior
+     - history-on artifact wiring
+     - second-run delta computation
+     - failure behavior with and without `--warn-only`
+
+### Scope Confirmation
+
+This addendum is limited to offline Qlib research validation workflow integration. No trading execution, broker routing, live trading, annotation workflows, or Qlib core changes were introduced.

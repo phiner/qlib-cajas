@@ -688,3 +688,76 @@ python cajas/scripts/update_validation_review_bundle_history.py \
 - No multi-repository history aggregation
 - Simple regression detection (no ML-based anomaly detection)
 - JSONL file grows unbounded (no rotation/archival)
+
+
+## Phase 1256–1285: Integrated Review Bundle History Workflow
+
+**Goal**: Integrate review bundle build workflow with optional history append/summarization so reviewers can use one command while preserving fast runtime discipline.
+
+**What changed**:
+
+1. **Integrated optional history update in bundle CLI**:
+   - Updated `cajas/scripts/build_validation_review_bundle.py`
+   - Added flags:
+     - `--update-history`
+     - `--history-jsonl`
+     - `--history-last-n`
+   - Default behavior remains unchanged when `--update-history` is omitted.
+
+2. **Direct module reuse (no subprocess)**:
+   - Reused `cajas/reports/validation_review_bundle_history.py` functions directly.
+   - Avoided extra subprocess overhead in tests and fast validation path.
+
+3. **Bundle manifest/index history wiring**:
+   - `review_bundle_manifest.json` now includes `history_update` metadata.
+   - `review_bundle_index.md` now includes a `History` section with:
+     - JSONL and summary paths when enabled
+     - latest bundle status
+     - runtime delta from previous snapshot when available
+     - regression count
+     - reviewer recommendation
+   - When not enabled, index states:
+     - `History update was not requested for this bundle.`
+
+4. **Conservative failure behavior**:
+   - If `--update-history` is requested and update fails:
+     - default: command fails
+     - with `--warn-only`: warning is recorded and command continues
+   - Failure details are recorded in manifest/index.
+
+5. **Test coverage expansion**:
+   - Extended `cajas/tests/test_validation_review_bundle.py` to cover:
+     - no-history default behavior
+     - history-enabled manifest/index output
+     - second run delta generation
+     - history failure behavior with and without `--warn-only`
+   - Existing history module tests remain in `cajas/tests/test_validation_review_bundle_history.py`.
+
+**Integrated usage**:
+
+```bash
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --warn-only
+```
+
+**Outputs when history is enabled**:
+- `tmp/validation-review-bundle/history/review_bundle_history.jsonl`
+- `tmp/validation-review-bundle/history/review_bundle_history_summary.json`
+- `tmp/validation-review-bundle/history/review_bundle_history_summary.md`
+- `tmp/validation-review-bundle/review_bundle_manifest.json` (`history_update` section)
+- `tmp/validation-review-bundle/review_bundle_index.md` (`History` section)
+
+**Non-goals (unchanged)**:
+- No trading execution logic
+- No broker/order routing integration
+- No live or paper trading
+- No Qlib core modification for this phase
