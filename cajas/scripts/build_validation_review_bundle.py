@@ -20,10 +20,13 @@ from cajas.reports.validation_review_bundle_history import (
     generate_history_summary_markdown,
     read_snapshots,
 )
-
-HISTORY_STATUS_PASS = "pass"
-HISTORY_STATUS_WARN = "warn"
-HISTORY_STATUS_FAIL = "fail"
+from cajas.reports.validation_review_bundle_metadata import (
+    HISTORY_STATUS_FAIL,
+    HISTORY_STATUS_PASS,
+    infer_history_status,
+    normalize_history_metadata,
+    validate_history_metadata_compatibility,
+)
 
 
 def get_git_info() -> dict[str, str]:
@@ -72,94 +75,6 @@ def format_seconds(value: Any) -> str:
     except (TypeError, ValueError):
         return "N/A"
 
-
-def infer_history_status(recommendation: str, regressions: list[str], history_error: bool = False) -> str:
-    """Infer compact history status for reviewer summary."""
-    if history_error:
-        return HISTORY_STATUS_FAIL
-    if recommendation == "review_regressions" or regressions:
-        return HISTORY_STATUS_WARN
-    return HISTORY_STATUS_PASS
-
-
-def normalize_history_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
-    """Return canonical history metadata from either `history` or legacy `history_update`."""
-    history = manifest.get("history")
-    if isinstance(history, dict) and "enabled" in history:
-        normalized = {
-            "enabled": bool(history.get("enabled", False)),
-            "status": history.get("status", "not_requested"),
-            "history_jsonl": history.get("history_jsonl"),
-            "summary_json": history.get("summary_json"),
-            "summary_md": history.get("summary_md"),
-            "snapshot_count": int(history.get("snapshot_count", 0) or 0),
-            "latest_bundle_status": history.get("latest_bundle_status"),
-            "runtime_budget_status": history.get("runtime_budget_status"),
-            "regression_count": int(history.get("regression_count", 0) or 0),
-            "delta_from_previous": history.get("delta_from_previous") or {},
-            "latest_snapshot": history.get("latest_snapshot") or {},
-            "regressions": history.get("regressions") or [],
-            "reviewer_recommendation": history.get("reviewer_recommendation"),
-            "note": history.get("note"),
-        }
-        return normalized
-
-    legacy = manifest.get("history_update", {})
-    requested = bool(legacy.get("requested", False))
-    if not requested:
-        return {
-            "enabled": False,
-            "status": "not_requested",
-            "history_jsonl": None,
-            "summary_json": None,
-            "summary_md": None,
-            "snapshot_count": 0,
-            "latest_bundle_status": None,
-            "runtime_budget_status": manifest.get("runtime_budget_status"),
-            "regression_count": 0,
-            "delta_from_previous": {},
-            "latest_snapshot": {},
-            "regressions": [],
-            "reviewer_recommendation": None,
-            "note": "History update was not requested for this bundle.",
-        }
-
-    if legacy.get("status") == "error":
-        return {
-            "enabled": True,
-            "status": HISTORY_STATUS_FAIL,
-            "history_jsonl": legacy.get("history_jsonl"),
-            "summary_json": legacy.get("summary_json"),
-            "summary_md": legacy.get("summary_md"),
-            "snapshot_count": 0,
-            "latest_bundle_status": legacy.get("latest_bundle_status"),
-            "runtime_budget_status": manifest.get("runtime_budget_status"),
-            "regression_count": int(legacy.get("regression_count", 0) or 0),
-            "delta_from_previous": legacy.get("delta_from_previous") or {},
-            "latest_snapshot": legacy.get("latest_snapshot") or {},
-            "regressions": legacy.get("regressions") or [],
-            "reviewer_recommendation": legacy.get("reviewer_recommendation"),
-            "note": legacy.get("error"),
-        }
-
-    recommendation = str(legacy.get("reviewer_recommendation", ""))
-    regressions = legacy.get("regressions") or []
-    return {
-        "enabled": True,
-        "status": infer_history_status(recommendation, regressions),
-        "history_jsonl": legacy.get("history_jsonl"),
-        "summary_json": legacy.get("summary_json"),
-        "summary_md": legacy.get("summary_md"),
-        "snapshot_count": int(legacy.get("snapshot_count", 0) or 0),
-        "latest_bundle_status": legacy.get("latest_bundle_status"),
-        "runtime_budget_status": manifest.get("runtime_budget_status"),
-        "regression_count": int(legacy.get("regression_count", 0) or 0),
-        "delta_from_previous": legacy.get("delta_from_previous") or {},
-        "latest_snapshot": legacy.get("latest_snapshot") or {},
-        "regressions": regressions,
-        "reviewer_recommendation": legacy.get("reviewer_recommendation"),
-        "note": None,
-    }
 
 
 def build_review_bundle(
@@ -526,6 +441,9 @@ def build_review_bundle(
         "use": "history",
         **history_metadata,
     }
+    compatibility_warnings = validate_history_metadata_compatibility(bundle_manifest)
+    if compatibility_warnings:
+        bundle_manifest["history_compatibility_warnings"] = compatibility_warnings
     if history_failed:
         msg = f"history update failed: {history_metadata.get('error', 'unknown error')}"
         if warn_only:
@@ -595,6 +513,8 @@ def build_review_bundle(
     index_lines.extend(["", "## History Summary", ""])
     history_section = normalize_history_metadata(bundle_manifest)
     if history_section.get("enabled") and history_section.get("status") != "not_requested":
+        if history_section.get("source") == "history_update":
+            index_lines.append("- Compatibility warning: canonical history field missing; fallback to deprecated history_update alias.")
         index_lines.append(f"- History status: `{history_section.get('status', HISTORY_STATUS_PASS)}`")
         index_lines.append(f"- Snapshot count: `{history_section.get('snapshot_count', 0)}`")
         index_lines.append(f"- Latest bundle status: `{history_section.get('latest_bundle_status', 'N/A')}`")
