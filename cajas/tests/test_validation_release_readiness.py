@@ -25,6 +25,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
     removal = _write_json(tmp_path / "removal.json", {"status": "not_ready", "recommendation": "keep_fallback"})
     evidence = _write_json(tmp_path / "evidence_closure.json", {"status": "incomplete", "next_actions": ["identify_owner"]})
     handoff = _write_json(tmp_path / "owner_handoff.json", {"status": "open", "blocking_consumer_count": 1, "handoff_items": [{"consumer": "x", "next_action": "identify_owner"}]})
+    owner_response = _write_json(tmp_path / "owner_response.json", {"status": "incomplete", "safe_to_update_evidence": False, "issues": ["missing_owner"]})
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "watch", "recommendation": "profile_slow_tests"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -40,6 +41,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         alias_removal_plan=removal,
         consumer_evidence_closure_report=evidence,
         consumer_owner_handoff=handoff,
+        consumer_owner_response_validation=owner_response,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -79,6 +81,7 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
     removal = _write_json(tmp_path / "removal.json", {"status": "ready_to_schedule", "recommendation": "schedule_removal_phase"})
     evidence = _write_json(tmp_path / "evidence_closure.json", {"status": "complete", "next_actions": []})
     handoff = _write_json(tmp_path / "owner_handoff.json", {"status": "ready", "blocking_consumer_count": 0, "handoff_items": []})
+    owner_response = _write_json(tmp_path / "owner_response.json", {"status": "valid_ready_to_apply", "safe_to_update_evidence": True, "issues": []})
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "pass", "recommendation": "monitor"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -94,6 +97,7 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         alias_removal_plan=removal,
         consumer_evidence_closure_report=evidence,
         consumer_owner_handoff=handoff,
+        consumer_owner_response_validation=owner_response,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -112,3 +116,4 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["consumer_evidence_action_plan"] == []
     assert report["pytest_runtime_profile_status"] == "watch"
     assert report["consumer_owner_handoff_status"] == "open"
+    assert report["consumer_owner_response_status"] == "incomplete"
