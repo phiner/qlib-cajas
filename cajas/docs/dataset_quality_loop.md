@@ -2642,3 +2642,14 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
   - no order generation
   - no production model training
   - no Qlib core changes
+
+## Phase 5246-5365 EURUSD 15m Anomaly Triage and Clean View
+
+- Added explicit OHLC anomaly triage layer with row-level violation reporting and quarantine recommendation.
+- Added deterministic non-destructive clean dataset view generation from raw EURUSD 15m Bid inputs plus triage report.
+- Added clean-view gating for research readiness:
+  - raw audit can remain blocked
+  - clean-view can be ready/watch
+  - readiness can become `ready_for_pattern_research_with_clean_view` when clean-view is approved and feature scaffold remains pass
+- Raw files are not mutated; quarantine output remains reviewable and auditable.
+- Boundaries unchanged: no 1H/4H aggregation, no live trading, no broker routing, no order generation, no Qlib core changes.

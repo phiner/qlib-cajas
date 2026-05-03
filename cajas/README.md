@@ -1987,3 +1987,16 @@ Policy notes:
 - This track is fixed to EURUSD 15m Bid structure research.
 - No 1H/4H aggregation in this phase.
 - No live trading, broker routing, order generation, or Qlib core changes.
+
+EURUSD 15m anomaly triage and clean-view commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_ohlc_anomaly_triage_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --symbol EURUSD --timeframe 15m --price-side Bid --output-json tmp/validation-eurusd-ohlc-anomaly-triage.json --output-md tmp/validation-eurusd-ohlc-anomaly-triage.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_clean_dataset_view_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --anomaly-triage-report tmp/validation-eurusd-ohlc-anomaly-triage.json --output-clean-csv tmp/eurusd/EURUSD_15m_Bid_clean_view.csv --output-quarantine-csv tmp/eurusd/EURUSD_15m_Bid_quarantined_rows.csv --output-json tmp/validation-eurusd-clean-dataset-view.json --output-md tmp/validation-eurusd-clean-dataset-view.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Readiness rule:
+- Keep raw audit status explicit (it may remain blocked).
+- Pattern research can proceed only with approved clean-view status (`ready` or non-blocking `watch`).
+- Raw CSV files remain immutable.

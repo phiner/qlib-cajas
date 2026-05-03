@@ -47,6 +47,31 @@ Fixed policy:
 - ATR-like rolling range average by horizon
 - volatility-normalized horizon movement
 
+## Anomaly triage and clean-view policy
+
+Current raw-data finding:
+
+- the 2020-2024 file has `10` OHLC anomaly rows violating raw-bar consistency checks
+- raw inputs remain immutable and are never overwritten
+
+Reviewable triage artifacts:
+
+- `tmp/validation-eurusd-ohlc-anomaly-triage.json`
+- `tmp/validation-eurusd-ohlc-anomaly-triage.md`
+
+Clean-view artifacts:
+
+- `tmp/eurusd/EURUSD_15m_Bid_clean_view.csv`
+- `tmp/eurusd/EURUSD_15m_Bid_quarantined_rows.csv`
+- `tmp/validation-eurusd-clean-dataset-view.json`
+- `tmp/validation-eurusd-clean-dataset-view.md`
+
+Research gating rule:
+
+- raw dataset audit may remain `blocked`
+- pattern research may proceed only when clean-view report is `ready` or non-blocking `watch`
+- readiness state for this path is `ready_for_pattern_research_with_clean_view`
+
 ## Out of scope
 
 - no live trading
@@ -58,7 +83,8 @@ Fixed policy:
 ## Next path
 
 1. validate EURUSD dataset contract and audit
-2. compute pattern features on 15m Bid bars
-3. create manual label/review examples
-4. test non-execution strategy hypotheses offline
-5. evaluate ML labels/model training only in later phases
+2. triage and quarantine anomaly rows
+3. compute pattern features on clean 15m Bid bars
+4. create manual label/review examples
+5. test non-execution strategy hypotheses offline
+6. evaluate ML labels/model training only in later phases

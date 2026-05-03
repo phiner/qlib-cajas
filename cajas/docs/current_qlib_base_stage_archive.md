@@ -3661,3 +3661,18 @@ Routine maintenance command additions (next release cycle):
   - no trading execution, no broker routing, no Qlib core changes
 - Readiness contract:
   - `ready_for_pattern_research` only when maintenance baseline, dataset contract, dataset audit, and feature scaffold checks are all non-blocking.
+
+## Phase 5246-5365 EURUSD 15m Data Anomaly Triage and Clean Dataset View
+
+- Added OHLC anomaly triage artifacts:
+  - `tmp/validation-eurusd-ohlc-anomaly-triage.json`
+  - `tmp/validation-eurusd-ohlc-anomaly-triage.md`
+- Added clean-view generation/report artifacts:
+  - `tmp/eurusd/EURUSD_15m_Bid_clean_view.csv`
+  - `tmp/eurusd/EURUSD_15m_Bid_quarantined_rows.csv`
+  - `tmp/validation-eurusd-clean-dataset-view.json`
+  - `tmp/validation-eurusd-clean-dataset-view.md`
+- Raw dataset remains immutable; anomaly rows are quarantined for review.
+- Readiness now distinguishes raw blocked audit vs clean-view allowance:
+  - `ready_for_pattern_research_with_clean_view` is allowed when clean-view status is `ready`/`watch` and non-blocking.
+- Scope remains fixed to EURUSD 15m Bid only, with no aggregation and no trading execution behavior.
