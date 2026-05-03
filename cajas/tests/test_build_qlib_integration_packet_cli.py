@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.build_qlib_integration_packet import main
 
 
 class BuildQlibIntegrationPacketCliTests(unittest.TestCase):
@@ -36,10 +36,8 @@ class BuildQlibIntegrationPacketCliTests(unittest.TestCase):
                 encoding="utf-8",
             )
             out = root / "out"
-            subprocess.run(
-                [sys.executable, "cajas/scripts/build_qlib_integration_packet.py", "--adapter-contract", str(contract), "--out-dir", str(out)],
-                check=True,
-            )
+            code = main(["--adapter-contract", str(contract), "--out-dir", str(out)])
+            self.assertEqual(code, 0)
             self.assertTrue((out / "qlib_integration_packet.json").exists())
             self.assertTrue((out / "qlib_integration_packet.md").exists())
 

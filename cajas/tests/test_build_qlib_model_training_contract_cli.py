@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.build_qlib_model_training_contract import main
 
 
 class BuildQlibModelTrainingContractCliTests(unittest.TestCase):
@@ -17,14 +17,14 @@ class BuildQlibModelTrainingContractCliTests(unittest.TestCase):
             (d / "dataset_contract.json").write_text(json.dumps({"instrument_col": "instrument", "datetime_col": "datetime", "label_columns": ["future_direction_8"]}), encoding="utf-8")
             (d / "handler_smoke_report.json").write_text(json.dumps({"status": "pass"}), encoding="utf-8")
             out = d / "contract.json"
-            subprocess.run([
-                sys.executable, "cajas/scripts/build_qlib_model_training_contract.py",
+            code = main([
                 "--handler-input", str(d / "handler_input.csv"),
                 "--handler-manifest", str(d / "handler_input_manifest.json"),
                 "--dataset-contract", str(d / "dataset_contract.json"),
                 "--handler-smoke-report", str(d / "handler_smoke_report.json"),
                 "--out", str(out),
-            ], check=True)
+            ])
+            self.assertEqual(code, 0)
             self.assertTrue(out.exists())
 
 

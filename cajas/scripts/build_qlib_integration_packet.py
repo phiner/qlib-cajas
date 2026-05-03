@@ -14,12 +14,12 @@ from cajas.reports.qlib_adapter_contract import ContractIssue, validate_qlib_ada
 from cajas.reports.qlib_integration_packet import build_qlib_integration_packet
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build dry-run Qlib integration packet from adapter contract.")
     p.add_argument("--adapter-contract", required=True)
     p.add_argument("--out-dir", required=True)
     p.add_argument("--strict-paths", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contract = json.loads(Path(args.adapter_contract).expanduser().read_text(encoding="utf-8"))
     issues = validate_qlib_adapter_contract(contract, strict_paths=args.strict_paths)

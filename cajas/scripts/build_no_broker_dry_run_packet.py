@@ -13,11 +13,11 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.no_broker_dry_run_packet import build_no_broker_dry_run_packet
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build no-broker dry-run packet from research gate packet.")
     p.add_argument("--gate-packet", required=True)
     p.add_argument("--out", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     gate = json.loads(Path(args.gate_packet).expanduser().read_text(encoding="utf-8"))
     packet = build_no_broker_dry_run_packet(gate_packet=gate)

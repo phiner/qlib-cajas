@@ -58,14 +58,14 @@ def _render_md(packet: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build conservative research decision packet.")
     p.add_argument("--reports-dir", required=True)
     p.add_argument("--out-dir", required=True)
     p.add_argument("--run-id", default="phase56_65_decision_packet")
     p.add_argument("--notes", default="")
     p.add_argument("--strict", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     result = build_research_decision(reports_dir=args.reports_dir, run_id=args.run_id, notes=args.notes)
     packet = result.to_dict()
@@ -88,4 +88,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -13,11 +13,11 @@ if str(REPO_ROOT) not in sys.path:
 from cajas.reports.stable_fingerprint import build_stable_fingerprint
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build stable fingerprint for a run root.")
     p.add_argument("--root", required=True)
     p.add_argument("--out", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
     rep = build_stable_fingerprint(root=args.root)
     out = Path(args.out).expanduser().resolve()
     out.parent.mkdir(parents=True, exist_ok=True)

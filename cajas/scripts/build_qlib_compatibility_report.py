@@ -14,13 +14,13 @@ from cajas.reports.qlib_adapter_contract import validate_qlib_adapter_contract
 from cajas.reports.qlib_compatibility_report import build_qlib_compatibility_report
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build Qlib compatibility report from adapter contract.")
     p.add_argument("--adapter-contract", required=True)
     p.add_argument("--out-dir", required=True)
     p.add_argument("--strict", action="store_true")
     p.add_argument("--strict-paths", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contract = json.loads(Path(args.adapter_contract).expanduser().read_text(encoding="utf-8"))
     issues = validate_qlib_adapter_contract(contract, strict_paths=args.strict_paths)

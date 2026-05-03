@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.build_research_decision_packet import main
 
 
 class BuildResearchDecisionPacketCliTests(unittest.TestCase):
@@ -26,10 +26,8 @@ class BuildResearchDecisionPacketCliTests(unittest.TestCase):
                 "qlib_readiness_report.json": {"unresolved_blockers": []},
             }.items():
                 (reports / name).write_text(json.dumps(payload), encoding="utf-8")
-            subprocess.run(
-                [sys.executable, "cajas/scripts/build_research_decision_packet.py", "--reports-dir", str(reports), "--out-dir", str(out)],
-                check=True,
-            )
+            code = main(["--reports-dir", str(reports), "--out-dir", str(out)])
+            self.assertEqual(code, 0)
             self.assertTrue((out / "research_decision_packet.json").exists())
             self.assertTrue((out / "research_decision_packet.md").exists())
             self.assertTrue((out / "research_decision_findings.csv").exists())
@@ -38,4 +36,3 @@ class BuildResearchDecisionPacketCliTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
