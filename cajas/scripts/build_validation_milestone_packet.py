@@ -41,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-watch-triage-report", type=Path)
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--alias-post-removal-closure", type=Path)
+    parser.add_argument("--release-ready-closure", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -86,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         runtime_watch_triage_report=args.runtime_watch_triage_report,
         pytest_runtime_profile=args.pytest_runtime_profile,
         alias_post_removal_closure=args.alias_post_removal_closure,
+        release_ready_closure=args.release_ready_closure,
     )
 
     if missing:

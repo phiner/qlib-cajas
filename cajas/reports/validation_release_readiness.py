@@ -33,6 +33,7 @@ def build_validation_release_readiness_report(
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
     alias_post_removal_closure: Path | None = None,
+    release_ready_closure: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -54,6 +55,7 @@ def build_validation_release_readiness_report(
     runtime_watch_triage = _load_json(runtime_watch_triage_report) if runtime_watch_triage_report and runtime_watch_triage_report.exists() else {}
     runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else {}
     post_removal_closure = _load_json(alias_post_removal_closure) if alias_post_removal_closure and alias_post_removal_closure.exists() else {}
+    final_release_closure = _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -85,6 +87,7 @@ def build_validation_release_readiness_report(
 
     closure_status = post_removal_closure.get("status")
     closure_release_readiness_status = post_removal_closure.get("release_readiness_status")
+    final_release_closure_status = final_release_closure.get("status")
 
     post_removal_mode = (
         fallback_removed is True
@@ -207,6 +210,11 @@ def build_validation_release_readiness_report(
         release_readiness_reason = "all required gates pass and alias sunset decision gate is ready"
         next_actions.append("proceed_release_cycle_review")
 
+    if final_release_closure_status == "blocked" and status != "blocked":
+        status = "blocked"
+        release_readiness_reason = "release_ready_closure_status=blocked"
+        next_actions = ["resolve_blocking_gates"]
+
     primary_artifacts = [
         str(milestone_packet),
         str(alias_sunset_review),
@@ -268,6 +276,10 @@ def build_validation_release_readiness_report(
         "remaining_watch_items": remaining_watch_items,
         "release_ready_after_post_removal": bool(post_removal_mode and status == "ready" and not blocking_items),
         "alias_post_removal_closure_status": closure_status,
+        "release_ready_closure_status": final_release_closure_status,
+        "release_ready_closure_recommendation": final_release_closure.get("recommendation"),
+        "release_ready_closure_remaining_blockers": final_release_closure.get("remaining_blockers", []),
+        "release_ready_closure_remaining_followups": final_release_closure.get("remaining_followups", []),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -302,6 +314,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Runtime variance: `{payload.get('runtime_variance_status', 'watch')}`",
             f"- Post-removal mode: `{payload.get('post_removal_mode')}`",
             f"- Alias post-removal closure status: `{payload.get('alias_post_removal_closure_status')}`",
+            f"- Final release-ready closure status: `{payload.get('release_ready_closure_status')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",

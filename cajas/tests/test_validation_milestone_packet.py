@@ -391,6 +391,34 @@ def test_milestone_packet_includes_post_removal_closure_summary(tmp_path: Path) 
     assert "Alias Post-Removal Closure" in md
 
 
+def test_milestone_packet_includes_final_release_ready_closure_summary(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    closure = tmp_path / "release_ready_closure.json"
+    closure.write_text(
+        json.dumps(
+            {
+                "status": "ready",
+                "recommendation": "ready_for_review",
+                "remaining_blockers": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        release_ready_closure=closure,
+    )
+    assert packet["release_ready_closure_summary"]["status"] == "ready"
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Final Release-Ready Closure" in md
+
+
 def test_cli_missing_critical_fails_without_warn_only(tmp_path: Path) -> None:
     out_json = tmp_path / "o.json"
     out_md = tmp_path / "o.md"
