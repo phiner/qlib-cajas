@@ -1347,3 +1347,51 @@ Current status snapshot:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2306-2365 Addendum: Alias Sunset Decision Gate and Release Readiness Dashboard
+
+- Added external consumer confirmation template:
+  - `cajas/data_examples/history_alias_external_consumers.template.json`
+- Strengthened alias sunset review with decision-gate output:
+  - `decision_gate.status`: `blocked|watch|ready`
+  - `required_evidence_complete`
+  - `unresolved_consumers`
+  - `consumers_requiring_alias`
+  - `ready_conditions`
+  - `blocking_conditions`
+  - `next_actions`
+- Alias sunset action semantics now distinguish:
+  - `collect_consumer_evidence` for unresolved/watch evidence
+  - `migrate_consumers` when alias dependency is confirmed
+  - `schedule_removal` only when ready conditions are satisfied
+- Added release-readiness dashboard report + CLI:
+  - `cajas/reports/validation_release_readiness.py`
+  - `cajas/scripts/build_validation_release_readiness_report.py`
+- Release-readiness status rules:
+  - `blocked`: any required gate fails or alias decision gate blocked
+  - `watch`: alias watch or runtime watch/warn conditions
+  - `ready`: required gates pass and alias decision gate ready
+- Integrated release-readiness summary into milestone packet:
+  - `--release-readiness-report`
+  - milestone markdown now includes readiness status/reason/next actions
+
+Current outputs:
+- alias sunset review: `tmp/history-alias-sunset-review.json|md`
+- release readiness dashboard: `tmp/validation-release-readiness.json|md`
+- runtime variance report: `tmp/validation-runtime-variance-report.json|md`
+- runtime release-cycle report: `tmp/validation-runtime-release-cycle-report.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- alias sunset decision gate: `watch`, action `collect_consumer_evidence`
+- release readiness: `watch`, reason `alias_sunset_decision_gate=watch`
+- runtime variance: `pass` (`88.472s`; vs phase_2126 `-0.166s`, vs phase_2186 `-8.400s`)
+- runtime release-cycle: `pass`, recommendation `ok`
+- milestone overall: `watch` with actionable release-readiness next actions
+
+Known limitations:
+- Alias fallback sunset remains deferred until unresolved external consumers are confirmed clear.
+- Runtime health is pass in this cycle but remains a release-cycle monitoring input.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

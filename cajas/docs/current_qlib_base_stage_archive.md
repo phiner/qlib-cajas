@@ -2558,3 +2558,58 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2306-2365 Addendum: Alias Sunset Decision Gate and Release Readiness Dashboard
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add a formal alias sunset decision gate and a consolidated release-readiness dashboard to make watch-to-ready workflow explicit and actionable.
+
+### Implemented Changes
+
+1. Added external consumer confirmation template:
+   - `cajas/data_examples/history_alias_external_consumers.template.json`
+2. Strengthened alias sunset report:
+   - introduced `decision_gate` with `status`, readiness conditions, blocking conditions, unresolved/alias-required consumer lists, and next actions.
+3. Added release-readiness dashboard module + CLI:
+   - `cajas/reports/validation_release_readiness.py`
+   - `cajas/scripts/build_validation_release_readiness_report.py`
+4. Extended milestone packet support:
+   - optional `--release-readiness-report`
+   - readiness summary section in markdown output.
+5. Added/updated tests:
+   - `cajas/tests/test_validation_alias_sunset_review.py`
+   - `cajas/tests/test_validation_release_readiness.py`
+   - `cajas/tests/test_validation_milestone_packet.py`
+
+### Validation Snapshot
+
+- Focused suites: pass
+- Related suites: pass (`163 passed`, `327 deselected`)
+- Fast validation: pass (`474 passed`, `16 deselected`, total `88.472s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Current Reviewer Outcomes
+
+- Alias sunset review:
+  - status: `watch`
+  - decision gate status: `watch`
+  - recommended action: `collect_consumer_evidence`
+  - unresolved consumers remain.
+- Release readiness dashboard:
+  - status: `watch`
+  - reason: `alias_sunset_decision_gate=watch`
+  - top next actions: `collect_consumer_evidence`, `keep_fallback`
+- Runtime variance/release-cycle:
+  - both `pass` in current cycle.
+- Milestone packet:
+  - overall `watch` with explicit release-readiness summary included.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

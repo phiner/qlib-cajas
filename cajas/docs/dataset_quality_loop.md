@@ -1556,3 +1556,72 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2306-2365 Addendum: Alias Sunset Decision Gate and Release Readiness Dashboard
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Convert milestone `watch` posture into an actionable release-readiness workflow with explicit alias sunset evidence requirements and next actions.
+
+### Highlights
+
+1. Added external consumer confirmation template:
+   - `cajas/data_examples/history_alias_external_consumers.template.json`
+2. Extended alias sunset review with a structured `decision_gate` block.
+3. Added release-readiness dashboard report and CLI:
+   - `cajas/reports/validation_release_readiness.py`
+   - `cajas/scripts/build_validation_release_readiness_report.py`
+4. Extended milestone packet with optional `--release-readiness-report` integration.
+5. Updated phase tests to cover `ready|watch|blocked` readiness flow and actionable next actions.
+
+### Decision Gate Rules
+
+- `ready` only when:
+  - migration readiness is `pass`
+  - milestone packet is not `fail`
+  - external status is `confirmed_clear`
+  - unresolved consumers are `0`
+  - consumers requiring alias are `0`
+- `blocked` when:
+  - any consumer still requires alias, or
+  - migration readiness fails, or
+  - milestone packet fails
+- `watch` for unresolved/unknown external evidence cases.
+
+### Current Outputs
+
+- `tmp/history-alias-sunset-review.json`
+- `tmp/history-alias-sunset-review.md`
+- `tmp/validation-release-readiness.json`
+- `tmp/validation-release-readiness.md`
+- `tmp/validation-runtime-variance-report.json`
+- `tmp/validation-runtime-release-cycle-report.json`
+- `tmp/validation-milestone-packet.json`
+- `tmp/validation-milestone-packet.md`
+
+### Current Results
+
+- Alias sunset decision gate:
+  - status: `watch`
+  - recommended action: `collect_consumer_evidence`
+  - unresolved consumers: `1`
+- Release readiness:
+  - status: `watch`
+  - reason: `alias_sunset_decision_gate=watch`
+  - next actions: `collect_consumer_evidence`, `keep_fallback`
+- Runtime health:
+  - runtime variance: `pass`
+  - runtime release-cycle: `pass`
+  - runtime budget: `pass`
+  - timing consistency: `pass`
+
+### Known Limitations
+
+- Current external evidence includes unresolved consumers, so alias fallback sunset remains deferred.
+- Release readiness remains `watch` until external-consumer confirmation is complete.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
