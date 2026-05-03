@@ -22,6 +22,9 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
     unresolved_count = 0
     requires_alias_count = 0
     items: list[dict[str, Any]] = []
+    action_plan: list[dict[str, Any]] = []
+    owner_missing_count = 0
+    blocking_consumer_count = 0
 
     for c in consumers:
         status = c.get("status", "unknown")
@@ -37,8 +40,9 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
         if status == "unknown" and not c.get("last_checked"):
             missing_fields.append("last_checked")
 
-        if not owner or owner == "unknown":
+        if not owner or owner in {"unknown", "unassigned", "external-review-needed"}:
             owners_missing += 1
+            owner_missing_count += 1
         if status == "confirmed_clear":
             confirmed_clear_count += 1
         elif status == "requires_alias":
@@ -49,6 +53,9 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
             requires_action_count += 1
 
         missing_fields_total += len(missing_fields)
+        blocking_alias_sunset = bool(c.get("blocking_alias_sunset", status != "confirmed_clear"))
+        if blocking_alias_sunset:
+            blocking_consumer_count += 1
         items.append(
             {
                 "name": c.get("name"),
@@ -56,9 +63,20 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
                 "status": status,
                 "next_action": next_action,
                 "due_phase": c.get("due_phase"),
+                "blocking_alias_sunset": blocking_alias_sunset,
                 "missing_fields": missing_fields,
             }
         )
+        if next_action and next_action != "none":
+            action_plan.append(
+                {
+                    "consumer": c.get("name"),
+                    "owner": owner,
+                    "next_action": next_action,
+                    "due_phase": c.get("due_phase"),
+                    "blocking_alias_sunset": blocking_alias_sunset,
+                }
+            )
 
     if requires_alias_count > 0:
         status = "blocked"
@@ -82,11 +100,14 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
         "unresolved_count": unresolved_count,
         "requires_alias_count": requires_alias_count,
         "owners_missing_count": owners_missing,
+        "owner_missing_count": owner_missing_count,
+        "blocking_consumer_count": blocking_consumer_count,
         "consumers_requiring_action_count": requires_action_count,
         "missing_fields_total": missing_fields_total,
         "evidence_complete": evidence_complete,
         "evidence_completeness_ratio": completeness_ratio,
         "next_actions": next_actions,
+        "action_plan": action_plan,
         "consumers": items,
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
     }
@@ -94,6 +115,7 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
 
 def render_consumer_evidence_closure_markdown(payload: dict[str, Any]) -> str:
     next_actions = payload.get("next_actions", [])
+    action_plan = payload.get("action_plan", [])
     return "\n".join(
         [
             "# History Alias Consumer Evidence Closure",
@@ -104,7 +126,19 @@ def render_consumer_evidence_closure_markdown(payload: dict[str, Any]) -> str:
             f"- unresolved_count: `{payload.get('unresolved_count', 0)}`",
             f"- requires_alias_count: `{payload.get('requires_alias_count', 0)}`",
             f"- owners_missing_count: `{payload.get('owners_missing_count', 0)}`",
+            f"- blocking_consumer_count: `{payload.get('blocking_consumer_count', 0)}`",
             f"- evidence_complete: `{payload.get('evidence_complete', False)}`",
+            "",
+            "## Action Plan",
+            "",
+            "| Consumer | Owner | Status | Next action | Blocking |",
+            "|---|---|---|---|---|",
+            *[
+                f"| {item.get('consumer')} | {item.get('owner')} | "
+                f"{next((c.get('status') for c in payload.get('consumers', []) if c.get('name') == item.get('consumer')), 'unknown')} | "
+                f"{item.get('next_action')} | {item.get('blocking_alias_sunset')} |"
+                for item in action_plan
+            ],
             "",
             "## Next Actions",
             "",

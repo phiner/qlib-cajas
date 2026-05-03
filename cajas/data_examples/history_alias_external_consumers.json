@@ -15,13 +15,14 @@
     },
     {
       "name": "external_unknown_consumer",
-      "owner": "external",
+      "owner": "external-review-needed",
       "status": "unknown",
       "evidence": "No confirmation captured yet.",
       "requires_history_update": null,
       "last_checked": null,
       "next_action": "identify_owner",
-      "due_phase": "future"
+      "due_phase": "future",
+      "blocking_alias_sunset": true
     }
   ],
   "external_status": "unknown",
