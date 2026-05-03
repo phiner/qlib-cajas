@@ -2613,3 +2613,56 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2366-2425 Addendum: External Consumer Evidence Closure and Alias Sunset Removal Plan Packet
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add an explicit alias-removal planning packet and a confirmed-clear simulation flow to demonstrate ready-state transition without removing fallback in this phase.
+
+### Implemented Changes
+
+1. Added confirmed-clear example evidence file:
+   - `cajas/data_examples/history_alias_external_consumers.confirmed_clear.example.json`
+2. Added alias removal plan report module + CLI:
+   - `cajas/reports/validation_alias_removal_plan.py`
+   - `cajas/scripts/build_alias_removal_plan.py`
+3. Extended release readiness:
+   - optional `--alias-removal-plan`
+   - includes removal plan status/recommendation/blockers in summary.
+4. Extended milestone packet:
+   - optional `--alias-removal-plan`
+   - includes alias removal plan summary and markdown section.
+5. Added tests:
+   - `cajas/tests/test_validation_alias_removal_plan.py`
+   - updated readiness/milestone suites for removal-plan integration.
+
+### Validation Snapshot
+
+- Focused phase suites: pass
+- Related suites: pass (`168 passed`, `327 deselected`)
+- Fast validation: pass (`479 passed`, `16 deselected`, total `94.03s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Real vs Simulated Decision Outcomes
+
+- Real evidence path:
+  - alias sunset: `watch`
+  - removal plan: `not_ready`
+  - release readiness: `watch`
+- Simulated confirmed-clear path:
+  - alias sunset: `ready`
+  - removal plan: `ready_to_schedule`
+
+### Non-Goal
+
+- This phase does not remove fallback alias emission (`--include-history-update-alias`); it prepares future removal planning only.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

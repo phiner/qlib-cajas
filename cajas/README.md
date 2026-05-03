@@ -1395,3 +1395,49 @@ Known limitations:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2366-2425 Addendum: External Consumer Evidence Closure and Alias Removal Plan Packet
+
+- Added confirmed-clear simulation evidence example:
+  - `cajas/data_examples/history_alias_external_consumers.confirmed_clear.example.json`
+  - explicitly marked as simulation/example only, not real clearance.
+- Added alias removal plan report + CLI:
+  - `cajas/reports/validation_alias_removal_plan.py`
+  - `cajas/scripts/build_alias_removal_plan.py`
+- Removal plan output covers:
+  - `status`: `not_ready|ready_to_schedule|blocked`
+  - preconditions and blockers
+  - future removal steps
+  - explicit non-goal note (no fallback removal in this phase)
+- Extended release-readiness dashboard integration:
+  - optional `--alias-removal-plan`
+  - includes removal-plan status/recommendation/blockers as watch context
+- Extended milestone packet integration:
+  - optional `--alias-removal-plan`
+  - includes removal-plan summary block in packet JSON/Markdown
+
+Real current outputs:
+- alias removal plan: `tmp/history-alias-removal-plan.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Simulated confirmed-clear outputs:
+- `tmp/simulated-confirmed-clear/history-alias-sunset-review.json|md`
+- `tmp/simulated-confirmed-clear/history-alias-removal-plan.json|md`
+
+Current status snapshot:
+- real alias sunset: `watch` (unresolved external consumer remains)
+- real removal plan: `not_ready`, recommendation `keep_fallback`
+- real release readiness: `watch`
+- simulated alias sunset: `ready`
+- simulated removal plan: `ready_to_schedule`
+
+Runtime snapshot (latest fast run):
+- fast validation total: `94.03s`
+- runtime budget: `pass`
+- runtime edge: `watch`
+- runtime release-cycle: `watch`
+- runtime variance: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

@@ -1625,3 +1625,52 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2366-2425 Addendum: Evidence Closure Workflow and Alias Removal Planning
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add a concrete evidence-closure workflow and a structured alias-removal planning packet while preserving the no-removal-in-this-phase boundary.
+
+### Highlights
+
+1. Added confirmed-clear simulation evidence:
+   - `cajas/data_examples/history_alias_external_consumers.confirmed_clear.example.json`
+2. Added alias removal plan report and CLI:
+   - `cajas/reports/validation_alias_removal_plan.py`
+   - `cajas/scripts/build_alias_removal_plan.py`
+3. Added simulated confirmed-clear artifact path:
+   - `tmp/simulated-confirmed-clear/`
+4. Extended release readiness with optional alias-removal-plan input:
+   - `--alias-removal-plan`
+5. Extended milestone packet with optional alias-removal-plan summary:
+   - `--alias-removal-plan`
+6. Added tests for real/watch vs simulated/ready-to-schedule transitions.
+
+### Real vs Simulated Outcomes
+
+- Real evidence (`history_alias_external_consumers.json`):
+  - alias sunset: `watch`
+  - alias removal plan: `not_ready`
+  - release readiness: `watch`
+- Simulated confirmed-clear evidence (`*.confirmed_clear.example.json`):
+  - alias sunset: `ready`
+  - alias removal plan: `ready_to_schedule`
+
+### Current Runtime Context
+
+- Fast validation total: `94.03s`
+- Runtime budget: `pass`
+- Runtime edge: `watch`
+- Runtime release-cycle: `watch`
+- Runtime variance: `pass`
+
+### Non-Goal
+
+- This phase does not remove `--include-history-update-alias`. It only prepares and validates the removal-plan packet workflow.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
