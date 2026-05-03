@@ -761,3 +761,28 @@ python cajas/scripts/build_validation_review_bundle.py \
 - No broker/order routing integration
 - No live or paper trading
 - No Qlib core modification for this phase
+
+
+## Phase 1286–1315: Review Bundle Index Polish and History Delta Readability
+
+**Goal**: Improve reviewer readability in `review_bundle_index.md` and make history delta output human-readable.
+
+**What changed**:
+- Replaced raw dict-style runtime delta rendering with a compact markdown delta table.
+- Added `## History Summary` section with clear reviewer fields:
+  - history status
+  - snapshot count
+  - latest bundle status
+  - runtime budget status
+  - regression notes
+  - history summary path
+- Added stable `history` object in `review_bundle_manifest.json`:
+  - `enabled`, `history_jsonl`, `summary_json`, `summary_md`, `status`, `snapshot_count`
+- Kept backward compatibility with existing `history_update` fields.
+
+**Behavior notes**:
+- If no previous snapshot exists, index renders: `No previous snapshot available.`
+- If history is not requested, index renders: `History update was not requested for this bundle.`
+
+**Validation note**:
+- No new workflow semantics were added; this phase is output/readability polish only.

@@ -1026,3 +1026,11 @@ Current audit delta:
   - history requested + failure => fail by default
   - with `--warn-only` => record warning and continue
 - Expanded review bundle tests for integrated history workflow and failure modes
+
+
+### Phase 1286–1315: Review Bundle Index Polish and History Delta Readability
+- Polished `review_bundle_index.md` history output for reviewer readability
+- Replaced raw dict-style delta text with human-readable runtime delta table
+- Added compact `History Summary` section in bundle index
+- Added stable `history` fields in `review_bundle_manifest.json` while preserving existing `history_update` compatibility
+- Kept semantics unchanged (readability-only improvement)

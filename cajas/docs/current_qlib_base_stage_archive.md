@@ -2070,3 +2070,29 @@ Phase 1226–1255 added history tracking, but review-bundle operators still need
 ### Scope Confirmation
 
 This addendum is limited to offline Qlib research validation workflow integration. No trading execution, broker routing, live trading, annotation workflows, or Qlib core changes were introduced.
+
+
+## Phase 1286–1315 Addendum: Review Bundle Index Polish and History Delta Readability
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Improve readability of review-bundle history output without changing validation semantics or workflow scope.
+
+### Highlights
+
+1. Replaced raw dict-style runtime delta rendering with a compact markdown delta table in `review_bundle_index.md`.
+2. Added a compact `History Summary` block with status, snapshot count, regression notes, and summary path.
+3. Added stable `history` fields in `review_bundle_manifest.json`:
+   - `enabled`
+   - `history_jsonl`
+   - `summary_json`
+   - `summary_md`
+   - `status`
+   - `snapshot_count`
+4. Preserved backward compatibility through existing `history_update` fields.
+
+### Scope Confirmation
+
+Readability polish only. No new workflow semantics, no Qlib core changes, and no trading or execution capabilities introduced.
