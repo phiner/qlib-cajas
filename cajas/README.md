@@ -1157,3 +1157,17 @@ Current audit delta:
 - Primary artifact selection for pass now points to reviewer-friendly summaries:
   - `review_bundle_index.md` for pass with notes
   - `final_status.md` for clean pass
+
+
+## Phase 1766–1825 Recovery Addendum: Validation Closure and Test Repair
+
+- Completed recovery closure for partially implemented profile-matrix/preset work.
+- Validation environment standardized on `./.venv-qlib313/bin/python` for this phase.
+- Repaired numeric sanitizer compatibility across pandas/numpy variants:
+  - `to_numpy(..., copy=True)` to avoid read-only array assignment failures.
+- Repaired feature-importance summary test behavior for stale local run directories:
+  - test now skips when run dir exists but has zero usable artifacts.
+- Hardened profile matrix implementation:
+  - removed dependency on private gate-summary helpers
+  - aligned reason-code handling with current final-status pass/warn semantics
+- Profile matrix CLI artifacts are generated and linked from review bundle outputs.

@@ -1147,6 +1147,53 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 - No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
 
 
+## Phase 1766–1825 Recovery Closure: Profile Matrix Validation Repair
+
+**Goal**: Close partially implemented profile-matrix/preset work with clean validation and stable environment assumptions.
+
+**What was already implemented**:
+- Profile matrix report module and CLI:
+  - `cajas/reports/validation_profile_matrix.py`
+  - `cajas/scripts/build_validation_profile_matrix.py`
+- Preset config:
+  - `cajas/data_examples/validation_review_bundle_presets.json`
+- Review-bundle integration for matrix artifacts and preset options.
+
+**What was repaired**:
+- Validation environment normalization:
+  - used `./.venv-qlib313/bin/python` as canonical runner for this phase
+  - no temporary ad hoc `.venv` promoted as project standard
+- Numeric sanitizer compatibility:
+  - `numeric.to_numpy(dtype=float, copy=True)` to ensure writable arrays
+- Feature-importance summary test resilience:
+  - skip when baseline run directory exists but contains no usable artifacts
+- Profile-matrix hardening:
+  - removed private-helper coupling to gate summary internals
+  - aligned reason-code behavior with current pass/non-escalated semantics
+
+**Profile matrix behavior**:
+- Compares `local`, `ci`, `strict` over the same gate set.
+- Reports:
+  - per-profile overall status
+  - escalated count
+  - blocking count
+  - next action
+  - transition table for gates whose escalation behavior differs by profile
+
+**Preset behavior**:
+- `local_review`: local profile + warn-only reviewer-oriented run
+- `ci_required`: CI profile with fast validation rerun and compatibility checks
+- `strict_release`: strict profile + fail-on-warn posture
+- Presets remain configurable in `validation_review_bundle_presets.json`.
+
+**Known limitations**:
+- Profile matrix reflects the current bundle’s gate outcomes; it does not rerun validations independently.
+- If manifest compatibility is failing, all profiles can remain `fail` due to required fail gate semantics.
+
+**Non-goals**:
+- No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
+
+
 ## Phase 1766–1825: CI Profile Matrix Validation and Automation Presets
 
 ### Context

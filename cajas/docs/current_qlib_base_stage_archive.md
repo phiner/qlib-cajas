@@ -2323,3 +2323,24 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+
+## Phase 1766–1825 Recovery Addendum: Profile Matrix Validation Closure
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Close incomplete profile-matrix/preset rollout and repair validation failures observed during initial attempt.
+
+### Highlights
+
+1. Standardized validation execution on project venv runner (`./.venv-qlib313/bin/python`).
+2. Fixed numeric sanitizer writeability issue by forcing a writable numpy copy.
+3. Updated feature-importance summary test to skip when local baseline path exists but has no usable artifacts.
+4. Hardened profile matrix module to avoid private gate-summary helper coupling.
+5. Confirmed matrix/preset outputs integrated into review-bundle workflow artifacts.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
