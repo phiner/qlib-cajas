@@ -810,9 +810,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            self.assertEqual(manifest["history_update"]["status"], "not_requested")
-            self.assertTrue(manifest["history_update"]["deprecated"])
-            self.assertEqual(manifest["history_update"]["use"], "history")
+            self.assertNotIn("history_update", manifest)
             self.assertFalse(manifest["history"]["enabled"])
             self.assertEqual(manifest["history"]["status"], "not_requested")
             self.assertIn("note", manifest["history"])
@@ -859,7 +857,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            self.assertEqual(manifest["history_update"]["status"], "pass")
+            self.assertNotIn("history_update", manifest)
             self.assertTrue(history_jsonl.exists())
             self.assertIn("history_jsonl", manifest["artifacts"])
             self.assertIn("history", manifest)
@@ -981,7 +979,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            self.assertEqual(warn_manifest["history_update"]["status"], "error")
+            self.assertFalse("history_update" in warn_manifest)
             self.assertTrue(warn_manifest["warnings"])
             self.assertEqual(warn_manifest["history"]["status"], "fail")
 
@@ -1165,8 +1163,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            self.assertIn("history_update", manifest)
-            self.assertTrue(manifest["history_update"]["deprecated"])
+            self.assertNotIn("history_update", manifest)
 
     def test_manifest_compatibility_report_enabled(self) -> None:
         """Compatibility check should write report metadata and index section."""
@@ -1219,8 +1216,92 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertIn("Manifest Compatibility", index_text)
             self.assertIn("Report JSON", index_text)
 
-    def test_omit_history_update_alias_emits_canonical_only_manifest(self) -> None:
-        """When requested, manifest should emit canonical history without deprecated alias."""
+    def test_default_manifest_emits_canonical_only_history(self) -> None:
+        """Default manifest should emit canonical history without deprecated alias."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
+                    history_last_n=10,
+                    check_manifest_compatibility=True,
+                    warn_only=True,
+                    ci=True,
+                )
+
+            self.assertIn("history", manifest)
+            self.assertNotIn("history_update", manifest)
+            self.assertEqual(manifest["manifest_compatibility"]["status"], "pass")
+
+    def test_include_history_update_alias_emits_deprecated_alias(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
+                    history_last_n=10,
+                    check_manifest_compatibility=True,
+                    warn_only=True,
+                    ci=True,
+                    include_history_update_alias=True,
+                )
+
+            self.assertIn("history_update", manifest)
+            self.assertEqual(manifest["history_update"]["deprecation_stage"], "compatibility_alias")
+
+    def test_omit_flag_still_accepted_as_noop_without_include(self) -> None:
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
 
         with TemporaryDirectory() as tmp:
@@ -1258,10 +1339,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     ci=True,
                     omit_history_update_alias=True,
                 )
-
-            self.assertIn("history", manifest)
             self.assertNotIn("history_update", manifest)
-            self.assertEqual(manifest["manifest_compatibility"]["status"], "pass")
 
     def test_manifest_compatibility_not_requested_note(self) -> None:
         """Index should contain clean note when compatibility check is not requested."""

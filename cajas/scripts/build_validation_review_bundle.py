@@ -145,6 +145,7 @@ def build_review_bundle(
     ci_profile: str = "ci",
     ci_profile_config: Path | None = None,
     omit_history_update_alias: bool = False,
+    include_history_update_alias: bool = False,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -530,7 +531,9 @@ def build_review_bundle(
             "note": "History update was not requested for this bundle.",
         }
     bundle_manifest["history"] = stable_history
-    if not omit_history_update_alias:
+    # Phase 2006-2065: default manifest is canonical-only. Alias is explicit fallback.
+    should_emit_history_alias = include_history_update_alias and not omit_history_update_alias
+    if should_emit_history_alias:
         bundle_manifest["history_update"] = {
             "deprecated": True,
             "use": "history",
@@ -1106,9 +1109,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to presets config JSON",
     )
     parser.add_argument(
+        "--include-history-update-alias",
+        action="store_true",
+        help="Include deprecated history_update alias for compatibility fallback.",
+    )
+    parser.add_argument(
         "--omit-history-update-alias",
         action="store_true",
-        help="Omit deprecated history_update alias and emit canonical history only.",
+        help="Compatibility flag retained during transition; default already omits history_update alias.",
     )
 
     args = parser.parse_args(argv)
@@ -1165,6 +1173,7 @@ def main(argv: list[str] | None = None) -> int:
             ci_profile=args.ci_profile,
             ci_profile_config=args.ci_profile_config,
             omit_history_update_alias=args.omit_history_update_alias,
+            include_history_update_alias=args.include_history_update_alias,
         )
 
         print(json.dumps({"status": "ok", "bundle_manifest": str(args.out_root / "review_bundle_manifest.json")}))
