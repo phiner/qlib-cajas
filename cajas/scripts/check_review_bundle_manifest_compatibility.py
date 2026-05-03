@@ -11,6 +11,7 @@ if __package__ in (None, ""):
 
 from cajas.reports.validation_review_bundle_metadata import (
     normalize_history_metadata,
+    summarize_compatibility_issues,
     validate_history_metadata_compatibility,
 )
 
@@ -18,14 +19,27 @@ from cajas.reports.validation_review_bundle_metadata import (
 def build_compatibility_report(manifest: dict, manifest_path: str) -> dict:
     """Build compatibility report payload from a loaded manifest."""
     normalized = normalize_history_metadata(manifest)
-    warnings = validate_history_metadata_compatibility(manifest)
+    issues = validate_history_metadata_compatibility(manifest)
+    summary = summarize_compatibility_issues(issues)
+    has_legacy_alias = isinstance(manifest.get("history_update"), dict)
     return {
-        "status": "warn" if warnings else "pass",
+        "status": summary["status"],
         "manifest_path": manifest_path,
         "history_source": normalized.get("source"),
         "history_enabled": normalized.get("enabled"),
         "history_status": normalized.get("status"),
-        "warnings": warnings,
+        "error_count": summary["error_count"],
+        "warning_count": summary["warning_count"],
+        "info_count": summary["info_count"],
+        "deprecated_alias_present": "yes" if has_legacy_alias else "no",
+        "issues": issues,
+        "reviewer_recommendation": (
+            "block_until_manifest_compatibility_fixed"
+            if summary["status"] == "fail"
+            else "review_and_migrate_alias_usage"
+            if summary["status"] == "warn"
+            else "compatible"
+        ),
     }
 
 
@@ -38,15 +52,22 @@ def render_compatibility_markdown(report: dict) -> str:
         f"- history_source: `{report['history_source']}`",
         f"- history_enabled: `{report['history_enabled']}`",
         f"- history_status: `{report['history_status']}`",
+        f"- deprecated_alias_present: `{report['deprecated_alias_present']}`",
+        f"- errors: `{report['error_count']}`",
+        f"- warnings: `{report['warning_count']}`",
+        f"- info: `{report['info_count']}`",
+        f"- reviewer_recommendation: `{report['reviewer_recommendation']}`",
         "",
-        "## Warnings",
+        "## Issues",
         "",
+        "| Severity | Code | Message |",
+        "|---|---|---|",
     ]
-    if report["warnings"]:
-        for warning in report["warnings"]:
-            lines.append(f"- {warning}")
+    if report["issues"]:
+        for issue in report["issues"]:
+            lines.append(f"| {issue['severity']} | {issue['code']} | {issue['message']} |")
     else:
-        lines.append("- none")
+        lines.append("| none | none | none |")
     return "\n".join(lines) + "\n"
 
 
@@ -55,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True, help="Path to review_bundle_manifest.json")
     parser.add_argument("--out-json", type=Path, required=True, help="Output JSON report path")
     parser.add_argument("--out-md", type=Path, required=True, help="Output Markdown report path")
+    parser.add_argument("--fail-on-warn", action="store_true", help="Return non-zero when status is warn")
     args = parser.parse_args(argv)
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
@@ -66,7 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     args.out_md.parent.mkdir(parents=True, exist_ok=True)
     args.out_md.write_text(render_compatibility_markdown(report), encoding="utf-8")
 
-    print(json.dumps({"status": report["status"], "warnings": len(report["warnings"])}))
+    print(json.dumps({"status": report["status"], "warnings": report["warning_count"], "errors": report["error_count"]}))
+    if report["status"] == "fail":
+        return 1
+    if report["status"] == "warn" and args.fail_on_warn:
+        return 1
     return 0
 
 

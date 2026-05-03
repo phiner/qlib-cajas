@@ -25,6 +25,7 @@ from cajas.reports.validation_review_bundle_metadata import (
     HISTORY_STATUS_PASS,
     infer_history_status,
     normalize_history_metadata,
+    summarize_compatibility_issues,
     validate_history_metadata_compatibility,
 )
 from cajas.scripts.check_review_bundle_manifest_compatibility import (
@@ -448,9 +449,9 @@ def build_review_bundle(
         "use": "history",
         **history_metadata,
     }
-    compatibility_warnings = validate_history_metadata_compatibility(bundle_manifest)
-    if compatibility_warnings:
-        bundle_manifest["history_compatibility_warnings"] = compatibility_warnings
+    compatibility_issues = validate_history_metadata_compatibility(bundle_manifest)
+    if compatibility_issues:
+        bundle_manifest["history_compatibility_issues"] = compatibility_issues
 
     # Step 9: Optional manifest compatibility report
     compat_meta: dict[str, Any]
@@ -470,7 +471,9 @@ def build_review_bundle(
         compat_meta = {
             "enabled": True,
             "status": report["status"],
-            "warning_count": len(report["warnings"]),
+            "error_count": report["error_count"],
+            "warning_count": report["warning_count"],
+            "info_count": report["info_count"],
             "canonical_source": report["history_source"],
             "deprecated_alias_present": "yes" if isinstance(bundle_manifest.get("history_update"), dict) else "no",
             "report_json": str(compat_json),
@@ -478,6 +481,8 @@ def build_review_bundle(
         }
         if report["status"] == "warn":
             warnings.append("manifest compatibility warnings detected")
+        if report["status"] == "fail":
+            warnings.append("manifest compatibility errors detected")
         if report["status"] == "fail" and not warn_only:
             raise RuntimeError("manifest compatibility check failed")
     else:
@@ -606,7 +611,9 @@ def build_review_bundle(
         index_lines.append(f"- Status: `{manifest_compat.get('status', 'warn')}`")
         index_lines.append(f"- Canonical source: `{manifest_compat.get('canonical_source', 'unknown')}`")
         index_lines.append(f"- Deprecated alias present: `{manifest_compat.get('deprecated_alias_present', 'unknown')}`")
+        index_lines.append(f"- Errors: `{manifest_compat.get('error_count', 0)}`")
         index_lines.append(f"- Warnings: `{manifest_compat.get('warning_count', 0)}`")
+        index_lines.append(f"- Info: `{manifest_compat.get('info_count', 0)}`")
         index_lines.append(f"- Report JSON: `{manifest_compat.get('report_json')}`")
         index_lines.append(f"- Report Markdown: `{manifest_compat.get('report_md')}`")
     else:

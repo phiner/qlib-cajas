@@ -99,32 +99,75 @@ def normalize_history_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_history_metadata_compatibility(manifest: dict[str, Any]) -> list[str]:
-    """Return lightweight compatibility warnings for canonical/legacy history metadata."""
-    warnings: list[str] = []
+def validate_history_metadata_compatibility(manifest: dict[str, Any]) -> list[dict[str, str]]:
+    """Return compatibility issues with severity for canonical/legacy history metadata."""
+    issues: list[dict[str, str]] = []
     history = manifest.get("history")
     legacy = manifest.get("history_update")
 
+    def add_issue(severity: str, code: str, message: str) -> None:
+        issues.append({"severity": severity, "code": code, "message": message})
+
     if history is None:
-        warnings.append("canonical history field missing")
+        add_issue("warning", "canonical_history_missing", "canonical history field missing")
+    elif not isinstance(history, dict):
+        add_issue("error", "canonical_history_invalid_type", "canonical history field is not an object")
+    else:
+        history_enabled = bool(history.get("enabled", False))
+        if history_enabled:
+            for field in ("status", "history_jsonl", "summary_json", "summary_md"):
+                if not history.get(field):
+                    add_issue("error", "canonical_history_missing_required_field", f"history.{field} is required when history.enabled=true")
+        elif not history.get("status"):
+            add_issue("warning", "canonical_history_missing_status", "history.status is recommended when history.enabled=false")
 
     if isinstance(legacy, dict):
         if legacy.get("deprecated") is not True:
-            warnings.append("history_update is present but deprecated flag is missing or false")
-        if legacy.get("use") != "history":
-            warnings.append("history_update.use should be 'history'")
+            add_issue("warning", "legacy_alias_not_marked_deprecated", "history_update is present but deprecated flag is missing or false")
+        legacy_use = legacy.get("use")
+        if legacy_use is not None and legacy_use != "history":
+            add_issue("error", "legacy_alias_use_mismatch", "history_update.use should be 'history'")
+        if legacy_use is None:
+            add_issue("warning", "legacy_alias_use_missing", "history_update.use is missing; expected 'history'")
+        else:
+            add_issue("info", "legacy_alias_present", "deprecated history_update alias is present during compatibility window")
 
     normalized = normalize_history_metadata(manifest)
     if normalized.get("source") == "history_update":
-        warnings.append("legacy-only history_update fallback used; migrate producer/consumer to canonical history")
+        add_issue("warning", "legacy_fallback_used", "legacy-only history_update fallback used; migrate producer/consumer to canonical history")
 
     if isinstance(history, dict) and isinstance(legacy, dict):
+        legacy_status = str(legacy.get("status") or "")
+        normalized_legacy_status = (
+            "pass" if legacy_status == "ok" else "fail" if legacy_status == "error" else legacy_status
+        )
         if history.get("enabled") != legacy.get("requested"):
-            warnings.append("history.enabled disagrees with history_update.requested")
-        if str(history.get("status")) == "pass" and str(legacy.get("status")) == "error":
-            warnings.append("history.status and history_update.status disagree")
-        if history.get("history_jsonl") and legacy.get("history_jsonl"):
-            if history.get("history_jsonl") != legacy.get("history_jsonl"):
-                warnings.append("history.history_jsonl disagrees with history_update.history_jsonl")
+            add_issue("error", "canonical_legacy_enabled_mismatch", "history.enabled disagrees with history_update.requested")
+        if history.get("status") and normalized_legacy_status and str(history.get("status")) != normalized_legacy_status:
+            add_issue("error", "canonical_legacy_status_mismatch", "history.status disagrees with history_update.status")
+        for field in ("history_jsonl", "summary_json", "summary_md"):
+            canonical_value = history.get(field)
+            legacy_value = legacy.get(field)
+            if canonical_value and legacy_value and canonical_value != legacy_value:
+                add_issue("error", "canonical_legacy_path_mismatch", f"history.{field} disagrees with history_update.{field}")
 
-    return warnings
+    return issues
+
+
+def summarize_compatibility_issues(issues: list[dict[str, str]]) -> dict[str, Any]:
+    """Summarize issue severities into status/counts."""
+    error_count = sum(1 for issue in issues if issue.get("severity") == "error")
+    warning_count = sum(1 for issue in issues if issue.get("severity") == "warning")
+    info_count = sum(1 for issue in issues if issue.get("severity") == "info")
+    if error_count > 0:
+        status = "fail"
+    elif warning_count > 0:
+        status = "warn"
+    else:
+        status = "pass"
+    return {
+        "status": status,
+        "error_count": error_count,
+        "warning_count": warning_count,
+        "info_count": info_count,
+    }
