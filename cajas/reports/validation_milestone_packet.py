@@ -76,6 +76,7 @@ def build_validation_milestone_packet(
     alias_removal_plan: Path | None = None,
     consumer_evidence_closure_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
+    pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -106,6 +107,7 @@ def build_validation_milestone_packet(
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
         else None
     )
+    runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -210,6 +212,7 @@ def build_validation_milestone_packet(
         "alias_removal_plan_summary": removal_plan,
         "consumer_evidence_closure_summary": evidence_closure,
         "runtime_watch_triage_summary": runtime_watch_triage,
+        "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -313,6 +316,14 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- recommendation: `{(payload.get('runtime_watch_triage_summary') or {}).get('recommendation', 'n/a')}`",
             f"- test_count: `{(payload.get('runtime_watch_triage_summary') or {}).get('test_count', 'n/a')}`",
             f"- seconds_per_test: `{(payload.get('runtime_watch_triage_summary') or {}).get('seconds_per_test', 'n/a')}`",
+            "",
+            "## Pytest Runtime Profile",
+            "",
+            f"- `{(payload.get('pytest_runtime_profile_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('pytest_runtime_profile_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- test_summary: `{(payload.get('pytest_runtime_profile_summary') or {}).get('test_summary', {})}`",
+            f"- slowest_tests_count: `{len((payload.get('pytest_runtime_profile_summary') or {}).get('slowest_tests', []))}`",
+            f"- slowest_files_count: `{len((payload.get('pytest_runtime_profile_summary') or {}).get('slowest_files', []))}`",
             "",
             "## Scope Boundary",
             "",

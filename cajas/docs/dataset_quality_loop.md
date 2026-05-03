@@ -1353,6 +1353,59 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2546-2605 Addendum: Pytest Runtime Profile and Fast Timing Reliability
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Produce actionable pytest-fast runtime profile artifacts, improve fast timing summary extraction reliability, and integrate profile signals into triage/readiness/milestone reviewers.
+
+### Implemented Changes
+
+1. Added runtime profile module + CLI:
+   - `cajas/reports/validation_pytest_runtime_profile.py`
+   - `cajas/scripts/profile_pytest_fast_runtime.py`
+2. Improved `run_fast_validation.py` summary extraction:
+   - capture subprocess stdout/stderr when possible.
+   - extended summary fields to include skipped/xfailed/xpassed/errors.
+3. Extended runtime watch triage:
+   - optional `--pytest-runtime-profile`
+   - includes profile status + slowest tests/files summaries.
+4. Extended release readiness and milestone packet:
+   - optional `--pytest-runtime-profile`
+   - includes profile summary fields in output JSON/Markdown.
+5. Added focused tests:
+   - `cajas/tests/test_validation_pytest_runtime_profile.py`
+   - updated runners/triage/readiness/milestone tests.
+
+### Validation Snapshot
+
+- Focused suites: pass
+- Related suites: pass (`189 passed`, `319 deselected`)
+- Fast validation: pass (`96.83s total`, `pytest_fast=92.79s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Findings
+
+- Profile artifact now captures slowest tests/files and recommendation.
+- Current run recovered from prior 109.788s spike, but remains above older baseline:
+  - phase_2426 baseline: `88.418s`
+  - current: `96.83s`
+- Runtime watch triage currently remains `watch` with `optimize_slow_tests`.
+
+### Known Limitations
+
+- Summary extraction still conservatively returns null fields when output is unavailable; this is intentionally non-failing behavior.
+- No test was removed from fast tier in this phase.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
 
 **Date**: 2026-05-03

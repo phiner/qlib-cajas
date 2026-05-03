@@ -30,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--alias-removal-plan", type=Path)
     parser.add_argument("--consumer-evidence-closure-report", type=Path)
     parser.add_argument("--runtime-watch-triage-report", type=Path)
+    parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -64,6 +65,7 @@ def main(argv: list[str] | None = None) -> int:
         alias_removal_plan=args.alias_removal_plan,
         consumer_evidence_closure_report=args.consumer_evidence_closure_report,
         runtime_watch_triage_report=args.runtime_watch_triage_report,
+        pytest_runtime_profile=args.pytest_runtime_profile,
     )
 
     if missing:

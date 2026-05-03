@@ -56,7 +56,11 @@ def run_validation_step(
     if echo:
         print("$ " + " ".join(step.command))
     try:
-        completed = runner(step.command, check=True)
+        try:
+            completed = runner(step.command, check=True, capture_output=True, text=True)
+        except TypeError:
+            # Test doubles may not accept subprocess.run kwargs.
+            completed = runner(step.command, check=True)
         returncode = int(getattr(completed, "returncode", 0))
         stdout = str(getattr(completed, "stdout", "") or "")
         stderr = str(getattr(completed, "stderr", "") or "")
@@ -166,25 +170,58 @@ def evaluate_budget(results: list[ValidationStepResult], max_seconds: float | No
 def _extract_test_summary(results: list[ValidationStepResult]) -> dict[str, int | None]:
     pytest_result = next((r for r in results if r.name.startswith("pytest")), None)
     if pytest_result is None:
-        return {"passed": None, "deselected": None, "failed": None, "total_reported": None}
+        return {
+            "passed": None,
+            "deselected": None,
+            "failed": None,
+            "skipped": None,
+            "xfailed": None,
+            "xpassed": None,
+            "errors": None,
+            "total_reported": None,
+        }
     text = "\n".join([pytest_result.stdout, pytest_result.stderr])
-    passed = deselected = failed = None
+    passed = deselected = failed = skipped = xfailed = xpassed = errors = None
     match_passed = re.search(r"(\d+)\s+passed", text)
     match_deselected = re.search(r"(\d+)\s+deselected", text)
     match_failed = re.search(r"(\d+)\s+failed", text)
+    match_skipped = re.search(r"(\d+)\s+skipped", text)
+    match_xfailed = re.search(r"(\d+)\s+xfailed", text)
+    match_xpassed = re.search(r"(\d+)\s+xpassed", text)
+    match_errors = re.search(r"(\d+)\s+error(?:s)?", text)
     if match_passed:
         passed = int(match_passed.group(1))
     if match_deselected:
         deselected = int(match_deselected.group(1))
     if match_failed:
         failed = int(match_failed.group(1))
+    if match_skipped:
+        skipped = int(match_skipped.group(1))
+    if match_xfailed:
+        xfailed = int(match_xfailed.group(1))
+    if match_xpassed:
+        xpassed = int(match_xpassed.group(1))
+    if match_errors:
+        errors = int(match_errors.group(1))
     total_reported = None
     if passed is not None:
-        total_reported = passed + (deselected or 0) + (failed or 0)
+        total_reported = (
+            passed
+            + (deselected or 0)
+            + (failed or 0)
+            + (skipped or 0)
+            + (xfailed or 0)
+            + (xpassed or 0)
+            + (errors or 0)
+        )
     return {
         "passed": passed,
         "deselected": deselected,
         "failed": failed,
+        "skipped": skipped,
+        "xfailed": xfailed,
+        "xpassed": xpassed,
+        "errors": errors,
         "total_reported": total_reported,
     }
 

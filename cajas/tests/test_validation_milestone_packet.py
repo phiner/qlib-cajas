@@ -193,6 +193,19 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         json.dumps({"status": "watch", "recommendation": "profile_slow_tests", "test_count": 486, "seconds_per_test": 0.18}),
         encoding="utf-8",
     )
+    pytest_profile = tmp_path / "pytest_profile.json"
+    pytest_profile.write_text(
+        json.dumps(
+            {
+                "status": "watch",
+                "recommendation": "monitor",
+                "test_summary": {"passed": 488, "deselected": 16},
+                "slowest_tests": [{"nodeid": "cajas/tests/test_a.py::test_x", "seconds": 2.1}],
+                "slowest_files": [{"file": "cajas/tests/test_a.py", "total_seconds": 2.1, "test_count": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
     packet = build_validation_milestone_packet(
         review_bundle_root=p["default"],
         alias_fallback_bundle_root=p["alias"],
@@ -203,12 +216,15 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         fast_timing_json=p["timing"],
         consumer_evidence_closure_report=evidence,
         runtime_watch_triage_report=triage,
+        pytest_runtime_profile=pytest_profile,
     )
     assert packet["consumer_evidence_closure_summary"]["status"] == "incomplete"
     assert packet["runtime_watch_triage_summary"]["status"] == "watch"
+    assert packet["pytest_runtime_profile_summary"]["status"] == "watch"
     md = render_validation_milestone_packet_markdown(packet)
     assert "Consumer Evidence Closure" in md
     assert "Runtime Watch Triage" in md
+    assert "Pytest Runtime Profile" in md
 
 
 def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:

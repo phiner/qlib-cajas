@@ -25,6 +25,10 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
     removal = _write_json(tmp_path / "removal.json", {"status": "not_ready", "recommendation": "keep_fallback"})
     evidence = _write_json(tmp_path / "evidence_closure.json", {"status": "incomplete", "next_actions": ["identify_owner"]})
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "watch", "recommendation": "profile_slow_tests"})
+    profile = _write_json(
+        tmp_path / "pytest_profile.json",
+        {"status": "watch", "recommendation": "monitor", "test_summary": {"passed": 488, "deselected": 16}},
+    )
     return build_validation_release_readiness_report(
         milestone_packet=milestone,
         alias_sunset_review=alias,
@@ -35,6 +39,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         alias_removal_plan=removal,
         consumer_evidence_closure_report=evidence,
         runtime_watch_triage_report=triage,
+        pytest_runtime_profile=profile,
     )
 
 
@@ -72,6 +77,10 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
     removal = _write_json(tmp_path / "removal.json", {"status": "ready_to_schedule", "recommendation": "schedule_removal_phase"})
     evidence = _write_json(tmp_path / "evidence_closure.json", {"status": "complete", "next_actions": []})
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "pass", "recommendation": "monitor"})
+    profile = _write_json(
+        tmp_path / "pytest_profile.json",
+        {"status": "watch", "recommendation": "monitor", "test_summary": {"passed": 488, "deselected": 16}},
+    )
     report = build_validation_release_readiness_report(
         milestone_packet=milestone,
         alias_sunset_review=alias,
@@ -82,6 +91,7 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         alias_removal_plan=removal,
         consumer_evidence_closure_report=evidence,
         runtime_watch_triage_report=triage,
+        pytest_runtime_profile=profile,
     )
     assert report["status"] == "ready"
     md = render_validation_release_readiness_markdown(report)
@@ -96,3 +106,4 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["consumer_evidence_closure_status"] == "incomplete"
     assert report["runtime_watch_triage_status"] == "watch"
     assert report["consumer_evidence_action_plan"] == []
+    assert report["pytest_runtime_profile_status"] == "watch"

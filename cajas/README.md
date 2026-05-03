@@ -1526,3 +1526,34 @@ Known limitation:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2546-2605 Addendum: Pytest Fast Runtime Profiling and Summary Reliability
+
+- Added pytest runtime profile report path:
+  - `cajas/reports/validation_pytest_runtime_profile.py`
+  - `cajas/scripts/profile_pytest_fast_runtime.py`
+- Improved fast validation summary reliability:
+  - `cajas/scripts/run_fast_validation.py` now requests subprocess output capture and expands summary fields (`passed|failed|deselected|skipped|xfailed|xpassed|errors|total_reported`).
+- Extended runtime watch triage integration:
+  - optional `--pytest-runtime-profile`
+  - emits profile status + slowest tests/files summaries.
+- Extended release readiness and milestone packet integration:
+  - optional `--pytest-runtime-profile`
+  - readiness/milestone now surface runtime-profile summary fields.
+
+Current outputs:
+- `tmp/validation-pytest-runtime-profile.json|md`
+- `tmp/validation-runtime-watch-triage-report.json|md`
+- `tmp/validation-release-readiness.json|md`
+- `tmp/validation-milestone-packet.json|md`
+
+Current runtime snapshot:
+- fast validation total: `96.83s`
+- pytest_fast: `92.79s`
+- runtime budget: `pass`
+- runtime edge: `watch`
+- runtime variance: `warn` (vs older baselines)
+- runtime watch triage: `watch`, recommendation `optimize_slow_tests`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

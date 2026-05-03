@@ -95,6 +95,7 @@ class ValidationRunnersTests(unittest.TestCase):
             self.assertEqual(payload["test_summary"]["passed"], 3)
             self.assertEqual(payload["test_summary"]["deselected"], 2)
             self.assertEqual(payload["test_summary"]["failed"], None)
+            self.assertEqual(payload["test_summary"]["skipped"], None)
             self.assertIn("created_at", payload)
             self.assertIn("run_id", payload)
             self.assertIn("timing_source", payload)

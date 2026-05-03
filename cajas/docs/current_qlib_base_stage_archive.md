@@ -2760,3 +2760,54 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2546-2605 Addendum: Pytest Fast Runtime Profiling and Timing Summary Reliability
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add explicit pytest-fast runtime profiling artifacts, improve timing summary reliability, and propagate profiling context into runtime triage/readiness/milestone packets.
+
+### Implemented Changes
+
+1. Added pytest runtime profile report module:
+   - `cajas/reports/validation_pytest_runtime_profile.py`
+2. Added profiling CLI:
+   - `cajas/scripts/profile_pytest_fast_runtime.py`
+3. Improved fast timing summary extraction:
+   - `cajas/scripts/run_fast_validation.py` now attempts captured output parsing and includes extra summary fields.
+4. Extended runtime watch triage:
+   - `--pytest-runtime-profile` optional input
+   - profile summary included in triage outputs.
+5. Extended release readiness:
+   - `--pytest-runtime-profile` optional input
+   - profile status/recommendation/summary fields surfaced.
+6. Extended milestone packet:
+   - `--pytest-runtime-profile` optional input
+   - profile summary section included in JSON/Markdown.
+7. Added tests:
+   - `cajas/tests/test_validation_pytest_runtime_profile.py`
+   - updated runtime triage/readiness/milestone/runners test suites.
+
+### Validation Snapshot
+
+- Focused suites: pass
+- Related suites: pass (`189 passed`, `319 deselected`)
+- Fast validation: pass (`96.83s total`, `pytest_fast=92.79s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Outcome
+
+- Runtime recovered versus prior `109.788s` spike.
+- Compared to baselines:
+  - phase_2426: `88.418s` (current still slower)
+  - phase_2486: `109.788s` (current improved)
+- Runtime watch triage remains `watch` with recommendation `optimize_slow_tests`.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

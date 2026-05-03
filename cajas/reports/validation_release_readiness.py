@@ -22,6 +22,7 @@ def build_validation_release_readiness_report(
     alias_removal_plan: Path | None = None,
     consumer_evidence_closure_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
+    pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -40,6 +41,7 @@ def build_validation_release_readiness_report(
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
         else {}
     )
+    runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -150,6 +152,11 @@ def build_validation_release_readiness_report(
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
         "runtime_watch_triage_seconds_per_test": runtime_watch_triage.get("seconds_per_test"),
+        "pytest_runtime_profile_status": runtime_profile.get("status"),
+        "pytest_runtime_profile_recommendation": runtime_profile.get("recommendation"),
+        "pytest_runtime_profile_test_summary": runtime_profile.get("test_summary"),
+        "pytest_runtime_profile_slowest_tests": runtime_profile.get("slowest_tests", []),
+        "pytest_runtime_profile_slowest_files": runtime_profile.get("slowest_files", []),
         "required_gates": required_gates,
         "watch_items": watch_items,
         "blocking_items": blocking_items,
@@ -177,6 +184,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Consumer evidence closure: `{payload.get('consumer_evidence_closure_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
+            f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",
             "",
             "## Watch Items",
             "",
