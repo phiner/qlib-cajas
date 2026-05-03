@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "review_date": "YYYY-MM-DD",
+  "review_owner": "name/team",
+  "consumers": [
+    {
+      "name": "consumer-name",
+      "owner": "owner/team",
+      "contact": "optional",
+      "status": "unknown",
+      "requires_history_update": false,
+      "evidence": "Link or note explaining validation.",
+      "last_checked": "YYYY-MM-DD",
+      "next_action": "confirm_clear"
+    }
+  ],
+  "external_status": "unknown",
+  "notes": []
+}

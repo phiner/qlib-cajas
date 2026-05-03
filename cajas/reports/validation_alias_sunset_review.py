@@ -59,16 +59,66 @@ def build_alias_sunset_review(
         # If all listed consumers are resolved but no external status set, default to confirmed_clear.
         effective_external_status = "confirmed_clear"
 
-    readiness_pass = migration.get("status") == "pass" and milestone.get("overall_status") in {"pass", "watch"}
+    migration_status = migration.get("status", "warn")
+    milestone_status = milestone.get("overall_status", "warn")
+    readiness_pass = migration_status == "pass" and milestone_status != "fail"
     if effective_external_status == "confirmed_clear" and readiness_pass and requires_alias_count == 0 and unresolved_count == 0:
         status = "ready"
         recommended_action = "schedule_removal"
     elif effective_external_status == "requires_alias":
         status = "blocked"
-        recommended_action = "keep_fallback"
+        recommended_action = "migrate_consumers"
     else:
         status = "watch"
+        recommended_action = "collect_consumer_evidence"
+
+    if migration_status == "fail" or milestone_status == "fail":
+        status = "blocked"
         recommended_action = "keep_fallback"
+
+    unresolved_consumers = [
+        c
+        for c in consumers
+        if c.get("status") not in {"confirmed_clear", "requires_alias"}
+    ]
+    consumers_requiring_alias = [
+        c
+        for c in consumers
+        if c.get("status") == "requires_alias" or c.get("requires_history_update") is True
+    ]
+    required_evidence_complete = (
+        bool(consumers)
+        and unresolved_count == 0
+        and all(
+            bool(c.get("name")) and bool(c.get("owner")) and bool(c.get("evidence"))
+            for c in consumers
+        )
+    )
+    ready_conditions = [
+        "migration_readiness_status=pass",
+        "milestone_packet_status!=fail",
+        "external_status=confirmed_clear",
+        "unresolved_count=0",
+        "requires_alias_count=0",
+    ]
+    blocking_conditions: list[str] = []
+    if migration_status == "fail":
+        blocking_conditions.append("migration_readiness_status=fail")
+    if milestone_status == "fail":
+        blocking_conditions.append("milestone_packet_status=fail")
+    if requires_alias_count > 0:
+        blocking_conditions.append("consumers_requiring_alias>0")
+    if effective_external_status == "requires_alias":
+        blocking_conditions.append("external_status=requires_alias")
+    next_actions: list[str] = []
+    if status == "blocked":
+        if requires_alias_count > 0:
+            next_actions.append("migrate_consumers")
+        next_actions.append("keep_fallback")
+    elif status == "watch":
+        next_actions.extend(["collect_consumer_evidence", "keep_fallback"])
+    else:
+        next_actions.append("schedule_removal")
 
     checks = [
         {"name": "canonical_default_confirmed", "status": "pass" if canonical_default_confirmed else "fail"},
@@ -92,6 +142,15 @@ def build_alias_sunset_review(
         "unresolved_count": unresolved_count,
         "consumers": consumers,
         "recommended_action": recommended_action,
+        "decision_gate": {
+            "status": status,
+            "required_evidence_complete": required_evidence_complete,
+            "unresolved_consumers": unresolved_consumers,
+            "consumers_requiring_alias": consumers_requiring_alias,
+            "ready_conditions": ready_conditions,
+            "blocking_conditions": blocking_conditions,
+            "next_actions": next_actions,
+        },
         "checks": checks,
         "note": "Fallback alias is not removed in this phase.",
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
@@ -122,6 +181,12 @@ def render_alias_sunset_review_markdown(payload: dict[str, Any]) -> str:
             f"- confirmed_clear_count: `{payload.get('confirmed_clear_count', 0)}`",
             f"- unresolved_count: `{payload.get('unresolved_count', 0)}`",
             f"- {payload.get('note', '')}",
+            "",
+            "## Decision Gate",
+            "",
+            f"- status: `{(payload.get('decision_gate') or {}).get('status', 'watch')}`",
+            f"- required_evidence_complete: `{(payload.get('decision_gate') or {}).get('required_evidence_complete', False)}`",
+            f"- next_actions: `{(payload.get('decision_gate') or {}).get('next_actions', [])}`",
             "",
             "## Scope Boundary",
             "",
