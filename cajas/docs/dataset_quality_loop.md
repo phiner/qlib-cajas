@@ -841,3 +841,29 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Validation note**:
 - Contract hardening only; no new workflow semantics introduced.
+
+
+## Phase 1376–1405: Integrated Manifest Compatibility Report in Review Bundle Workflow
+
+**Goal**: Integrate manifest compatibility reporting into the standard review bundle workflow for reviewer visibility.
+
+**What changed**:
+- Added optional compatibility integration flags in review bundle builder:
+  - `--check-manifest-compatibility`
+  - `--manifest-compatibility-out-json`
+  - `--manifest-compatibility-out-md`
+- Reused shared compatibility logic directly (no subprocess):
+  - `normalize_history_metadata()`
+  - `validate_history_metadata_compatibility()`
+  - compatibility report rendering helpers
+- Added `manifest_compatibility` metadata to bundle manifest:
+  - `enabled`, `status`, `warning_count`, `report_json`, `report_md`
+  - `not_requested` note when disabled
+- Added `## Manifest Compatibility` section to `review_bundle_index.md`.
+
+**Relationship to history contract**:
+- Canonical source remains `manifest["history"]`.
+- Deprecated alias `history_update` remains compatibility-only during migration window.
+
+**Validation note**:
+- Workflow visibility integration only; no new validation semantics beyond existing compatibility guard.

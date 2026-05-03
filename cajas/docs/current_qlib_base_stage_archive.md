@@ -2143,3 +2143,26 @@ Readability polish only. No new workflow semantics, no Qlib core changes, and no
 - `history` is canonical immediately.
 - `history_update` remains temporary and deprecated.
 - A later phase may remove `history_update` after downstream migration is complete.
+
+
+## Phase 1376–1405 Addendum: Integrated Manifest Compatibility Report in Review Bundle Workflow
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Integrate compatibility reporting into review bundle generation so each bundle can expose canonical history metadata compatibility status as a first-class reviewer artifact.
+
+### Highlights
+
+1. Added optional compatibility check flags to `build_validation_review_bundle.py`.
+2. Added `manifest_compatibility` section in `review_bundle_manifest.json`.
+3. Added `## Manifest Compatibility` block to `review_bundle_index.md`.
+4. Reused existing helper logic from shared metadata/compatibility modules.
+5. Preserved default workflow behavior when compatibility check is not requested.
+
+### Compatibility Window
+
+- Canonical `history` remains source of truth.
+- Deprecated `history_update` remains available during migration window.
+- Compatibility report makes migration state visible without changing core validation semantics.

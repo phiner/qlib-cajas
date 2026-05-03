@@ -1050,3 +1050,10 @@ Current audit delta:
 - Added compatibility warnings helper for canonical/legacy mismatch detection
 - Added `check_review_bundle_manifest_compatibility.py` for manifest compatibility reporting
 - Retained `history_update` only as deprecated compatibility alias for migration window
+
+
+### Phase 1376–1405: Integrated Manifest Compatibility Report in Review Bundle Workflow
+- Integrated optional manifest compatibility report generation into review bundle builder
+- Added manifest compatibility metadata section to bundle manifest and index
+- Preserved default behavior when compatibility check flag is not used
+- Reused existing canonical/compatibility helpers directly without subprocess overhead
