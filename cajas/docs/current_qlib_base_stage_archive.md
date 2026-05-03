@@ -2246,6 +2246,67 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2906-2965 Addendum: Evidence Candidate Approval Gate and Sunset Scheduling
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add explicit manual approval gating for candidate evidence and a scheduling packet that documents fallback-removal timing prerequisites.
+
+### Implemented Changes
+
+1. Added evidence candidate approval gate report + CLI:
+   - `cajas/reports/validation_evidence_candidate_approval.py`
+   - `cajas/scripts/build_evidence_candidate_approval_report.py`
+2. Added example approval input (default deny):
+   - `cajas/data_examples/history_alias_evidence_candidate_approval.example.json` (`approved=false`)
+3. Added alias sunset scheduling packet + CLI:
+   - `cajas/reports/validation_alias_sunset_schedule.py`
+   - `cajas/scripts/build_alias_sunset_schedule.py`
+4. Extended release readiness and milestone packet with optional:
+   - `--evidence-candidate-approval-report`
+   - `--alias-sunset-schedule`
+5. Added tests:
+   - `cajas/tests/test_validation_evidence_candidate_approval.py`
+   - `cajas/tests/test_validation_alias_sunset_schedule.py`
+   - updated release-readiness/milestone tests for new summaries.
+
+### Current Real vs Approval-Gated Candidate State
+
+- Candidate approval gate:
+  - `status=approval_required`
+  - `candidate_valid=true`
+  - `candidate_safe_to_apply=true`
+  - `manual_approval_required=true`
+  - `real_evidence_unchanged=true`
+- Sunset schedule packet:
+  - `status=not_scheduled`
+  - reason: `manual_approval_required`
+  - `do_not_remove_in_this_phase=true`
+- Real readiness:
+  - `status=watch`
+- Real milestone packet:
+  - `overall_status=watch`
+
+### Runtime / Validation Snapshot
+
+- Fast validation total: `52.646s`
+- Runtime budget: `pass`
+- Related phase suite: `206 passed, 319 deselected`
+- Data source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Non-Goal / Safety Contract
+
+- This phase does not remove `--include-history-update-alias`.
+- No automatic mutation of canonical evidence file.
+- Alias fallback removal remains a later phase after explicit manual approval and regenerated readiness evidence.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2846-2905 Addendum: Owner Response Confirmed-Clear Candidate Review
 
 **Date**: 2026-05-03

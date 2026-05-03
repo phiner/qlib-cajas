@@ -1415,6 +1415,57 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - No automatic alias fallback removal.
 - No trading execution expansion.
 
+## Phase 2906-2965 Addendum: Evidence Approval and Sunset Scheduling
+
+### Evidence Candidate Approval Gate
+
+- Added:
+  - `cajas/reports/validation_evidence_candidate_approval.py`
+  - `cajas/scripts/build_evidence_candidate_approval_report.py`
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.example.json`
+- Behavior:
+  - `candidate_valid + candidate_safe + approved=false` => `approval_required`
+  - `candidate_valid + approved=true` => `approved_candidate`
+  - invalid candidate or malformed approval schema => `invalid`
+  - never defaults to approved.
+
+### Alias Sunset Scheduling Packet
+
+- Added:
+  - `cajas/reports/validation_alias_sunset_schedule.py`
+  - `cajas/scripts/build_alias_sunset_schedule.py`
+- Behavior:
+  - approval not yet granted => `not_scheduled`
+  - approved candidate + removal plan ready => `ready_to_schedule`
+  - invalid/blocked approval path => `blocked`
+  - includes explicit `do_not_remove_in_this_phase=true`.
+
+### Readiness/Milestone Integration
+
+- New optional inputs:
+  - `--evidence-candidate-approval-report`
+  - `--alias-sunset-schedule`
+- Current result:
+  - release readiness remains `watch` until approval is explicit.
+  - milestone packet includes approval/schedule summaries for reviewer visibility.
+
+### Validation Snapshot
+
+- Focused tests:
+  - approval gate + schedule + readiness + milestone: pass
+- Related suite:
+  - `206 passed, 319 deselected`
+- Fast validation:
+  - `52.646s`, `overall_status=pass`
+- Runtime budget:
+  - `overall_status=pass`
+- Data source audit:
+  - `read_csv_count=29`
+
+### Non-Goal
+
+- This phase does not remove `--include-history-update-alias`.
+
 ## Phase 2546-2605 Addendum: Pytest Runtime Profile and Fast Timing Reliability
 
 **Date**: 2026-05-03

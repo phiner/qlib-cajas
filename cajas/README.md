@@ -1348,6 +1348,31 @@ Current status snapshot:
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2906-2965 Addendum: Evidence Approval Gate and Sunset Scheduling Packet
+
+- Added evidence candidate approval gate:
+  - `cajas/reports/validation_evidence_candidate_approval.py`
+  - `cajas/scripts/build_evidence_candidate_approval_report.py`
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.example.json` (default `approved=false`)
+- Added alias sunset scheduling packet:
+  - `cajas/reports/validation_alias_sunset_schedule.py`
+  - `cajas/scripts/build_alias_sunset_schedule.py`
+- Added readiness/milestone optional integrations:
+  - `--evidence-candidate-approval-report`
+  - `--alias-sunset-schedule`
+- Current approval/schedule state:
+  - approval report: `approval_required`
+  - schedule packet: `not_scheduled`
+  - real release readiness: `watch`
+  - real milestone packet: `watch`
+- Runtime snapshot:
+  - fast validation total: `52.646s`
+  - runtime budget overall: `pass`
+  - timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2846-2905 Addendum: Confirmed-Clear Candidate Review and Evidence Apply Dry-Run
 
 - Added confirmed-clear simulation owner response example:
