@@ -2344,3 +2344,24 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+
+## Phase 1826–1885 Addendum: Manifest Compatibility Closure and Audit Count Schema Compatibility
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Resolve required manifest-compatibility gate failure in healthy generated bundles and harden audit count consumption against schema-location drift.
+
+### Highlights
+
+1. Root-caused compatibility failure to canonical/legacy status vocabulary mismatch (`pass|warn|fail` vs `ok`).
+2. Synchronized `history_update.status` with canonical history status semantics on successful history updates.
+3. Preserved strict fail behavior for genuine compatibility contract violations.
+4. Added tolerant read-count extraction for both top-level and nested audit summary formats.
+5. Revalidated review bundle, profile matrix, runtime budget, and related test suites after fix.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

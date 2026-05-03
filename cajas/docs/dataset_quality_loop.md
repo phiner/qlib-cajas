@@ -1147,6 +1147,41 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 - No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
 
 
+## Phase 1826–1885: Manifest Compatibility Failure Closure and Audit Schema Normalization
+
+**Goal**: Remove required manifest-compatibility failure from healthy generated bundles and normalize audit `read_csv_count` consumption across schema variants.
+
+**Manifest compatibility root cause**:
+- Compatibility check compares canonical `history` and deprecated alias `history_update`.
+- Canonical status used `pass|warn|fail`, while legacy alias still emitted `ok` for success.
+- This caused error `canonical_legacy_status_mismatch`, making `manifest_compatibility` fail and forcing final status `fail`.
+
+**Fix**:
+- During history update success path, legacy alias status is now synchronized to canonical status semantics.
+- Compatibility gate behavior remains strict:
+  - healthy canonical+legacy sync => pass
+  - malformed alias metadata (`use` mismatch, enabled/status disagreement, path disagreement) => fail
+  - legacy-only fallback remains warn.
+
+**Audit schema normalization**:
+- Added tolerant extraction for read-count consumption in review-bundle path:
+  - `read_csv_count` (legacy top-level)
+  - `summary.read_csv_count` (current nested schema)
+- Missing value remains non-fatal and avoids crashes.
+
+**Outcome**:
+- Rebuilt bundles now pass manifest compatibility.
+- Final status no longer fails due to this compatibility mismatch.
+- Profile matrix no longer shows all profiles fail from the same required compatibility error.
+
+**Known limitations**:
+- If history regressions are real (`history.status=warn`), profile matrix can still show warn/fail depending on required gate semantics.
+- Legacy alias remains present for compatibility window and should still be migrated out in a future major schema cleanup.
+
+**Non-goals**:
+- No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
+
+
 ## Phase 1766–1825 Recovery Closure: Profile Matrix Validation Repair
 
 **Goal**: Close partially implemented profile-matrix/preset work with clean validation and stable environment assumptions.

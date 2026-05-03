@@ -39,6 +39,7 @@ class DataSourceAuditTests(unittest.TestCase):
             self.assertTrue(out_md.exists())
             payload = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertIn("summary", payload)
+            self.assertIn("read_csv_count", payload["summary"])
 
     def test_policy_guarded_read_csv_not_counted_as_full_read_likely(self) -> None:
         with TemporaryDirectory() as tmp:

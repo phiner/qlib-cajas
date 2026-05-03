@@ -1171,3 +1171,22 @@ Current audit delta:
   - removed dependency on private gate-summary helpers
   - aligned reason-code handling with current final-status pass/warn semantics
 - Profile matrix CLI artifacts are generated and linked from review bundle outputs.
+
+
+## Phase 1826–1885 Addendum: Manifest Compatibility Closure and Audit Schema Normalization
+
+- Root cause of manifest compatibility fail:
+  - canonical `history.status` used `pass|warn|fail`
+  - legacy alias `history_update.status` still used `ok` on success
+  - compatibility gate correctly flagged `canonical_legacy_status_mismatch`
+- Compatibility repair:
+  - synchronized `history_update.status` with canonical status semantics
+  - preserved strict compatibility failure behavior for real malformed manifests
+- Data-source audit schema normalization:
+  - review-bundle consumer now supports both:
+    - top-level `read_csv_count`
+    - nested `summary.read_csv_count`
+- Result:
+  - manifest compatibility gate recovers to `pass` for healthy generated bundles
+  - runtime budget and timing consistency remain `pass`
+  - profile matrix no longer fails all profiles due to manifest compatibility mismatch
