@@ -2424,3 +2424,19 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Post-removal readiness now records `fallback_removed`, `active_alias_emission_supported`, `legacy_read_normalization_kept`, and `post_removal_status`.
 - Rollback contract is explicit: revert removal commits, restore controlled alias emission only if downstream breakage is confirmed, then regenerate/revalidate artifacts.
 - Scope remains offline Qlib research validation only; no trading, broker, or live execution scope.
+
+## Phase 3326-3445 Post-Removal Closure and Release Finalization
+
+- Audited release `watch` gates and classified them into post-removal stale workflow gates vs real runtime/compatibility blockers.
+- Added post-removal gate normalization in release readiness:
+  - `post_removal_mode`
+  - `superseded_watch_items`
+  - `remaining_watch_items`
+  - `release_ready_after_post_removal`
+- Added final closure packet:
+  - `tmp/alias-post-removal-closure.json`
+  - `tmp/alias-post-removal-closure.md`
+- Closure packet confirms canonical-only manifest policy, `history_update` absence, preserved legacy read normalization, and rollback-plan presence.
+- Integrated closure status into release readiness and milestone packet reporting.
+- Runtime/data-source/compatibility validations remain required and continue to gate readiness.
+- Scope remains offline Qlib validation automation only; no trading execution scope.

@@ -3368,3 +3368,24 @@ Non-goals:
 - No Qlib core mutation.
 - No model-training/serving claims.
 - No trading execution scope.
+
+## Phase 3326-3445 Post-Removal Consumer Evidence Gate Closure
+
+Summary:
+- Reconciled release-readiness semantics after active alias emission removal.
+- Introduced post-removal normalization to separate stale pre-removal watch gates from real remaining blockers.
+- Added alias post-removal closure packet and integrated it into release/milestone artifacts.
+
+Canonical-only state:
+- Producer manifest remains canonical-only (`history` present, `history_update` absent).
+- `--include-history-update-alias` remains fail-fast deprecated.
+- `--omit-history-update-alias` remains accepted as transition no-op warning.
+
+Compatibility and safeguards:
+- Legacy archived manifest read normalization remains preserved.
+- Runtime budget/timing consistency/runtime edge/data-source audit remain live gates.
+- Rollback readiness remains documented and report-backed.
+
+Non-goals:
+- No Qlib core mutation.
+- No trading execution, broker integration, or live automation scope.

@@ -1858,3 +1858,11 @@ Scope confirmation:
 - Legacy archived manifests remain readable via `normalize_history_metadata` compatibility normalization.
 - Release readiness and milestone packet now include post-removal alias status and rollback planning.
 - This remains offline validation infrastructure work; not trading logic.
+
+## Phase 3326-3445 Post-Removal Closure
+
+- Added post-removal closure packet for canonical-only alias migration state.
+- Release readiness now supersedes stale pre-removal consumer-evidence/sunset watch items when post-removal mode is active and closure/runtime/compatibility remain healthy.
+- Milestone packet now includes alias post-removal closure summary.
+- Legacy read normalization for archived manifests remains intentionally preserved.
+- Rollback readiness remains explicit.
