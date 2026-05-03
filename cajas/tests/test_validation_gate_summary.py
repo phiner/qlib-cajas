@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from cajas.reports.validation_gate_summary import (
+    DEFAULT_CI_PROFILES,
     ValidationGate,
     aggregate_gate_status,
     build_final_status_payload,
+    load_ci_profile_policy,
     render_final_status_markdown,
 )
 
@@ -62,8 +66,43 @@ class ValidationGateSummaryTests(unittest.TestCase):
         self.assertEqual(payload["schema_version"], "v1")
         self.assertIn("run_id", payload)
         self.assertEqual(payload["profile"], "strict")
+        self.assertIn("overall_reason_code", payload)
         self.assertIn("overall_reason", payload)
         self.assertIn("reviewer_next_action", payload)
+
+    def test_profile_config_loading_fallback_defaults(self) -> None:
+        profile_cfg, policy = load_ci_profile_policy("ci", None)
+        self.assertEqual(profile_cfg["optional_warn_affects_status"], DEFAULT_CI_PROFILES["ci"]["optional_warn_affects_status"])
+        self.assertEqual(policy["source"], "built-in defaults")
+
+    def test_profile_config_loading_from_file(self) -> None:
+        with TemporaryDirectory() as tmp:
+            profile_path = Path(tmp) / "profiles.json"
+            profile_path.write_text(
+                '{"profiles":{"local":{"optional_not_run_affects_status":false,"optional_warn_affects_status":false,"required_warn_affects_status":true}}}',
+                encoding="utf-8",
+            )
+            profile_cfg, policy = load_ci_profile_policy("local", profile_path)
+            self.assertFalse(profile_cfg["optional_warn_affects_status"])
+            self.assertEqual(policy["source"], str(profile_path))
+
+    def test_strict_profile_escalates_optional_not_run(self) -> None:
+        gates = [
+            ValidationGate("required", True, "pass", "ok", "none", "ok"),
+            ValidationGate("optional_nr", False, "not_run", "not_requested", "none", "optional missing"),
+        ]
+        payload = build_final_status_payload(
+            gates=gates,
+            bundle_name="bundle",
+            created_at="2026-05-03T00:00:00+00:00",
+            git_branch="x",
+            git_commit="y",
+            profile="strict",
+        )
+        self.assertEqual(payload["overall_status"], "warn")
+        optional_gate = [g for g in payload["gates"] if g["name"] == "optional_nr"][0]
+        self.assertTrue(optional_gate["escalated"])
+        self.assertIn("optional_not_run_escalated_under_strict", optional_gate["profile_effect"])
 
 
 if __name__ == "__main__":

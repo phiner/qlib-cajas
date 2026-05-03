@@ -22,6 +22,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         """Test component budget check passes when within budget."""
         result = check_component_budget("test_component", 5.0, 10.0)
         self.assertEqual(result.status, "pass")
+        self.assertEqual(result.reason_code, "within_budget")
         self.assertEqual(result.observed_seconds, 5.0)
         self.assertEqual(result.budget_seconds, 10.0)
         self.assertEqual(result.delta_seconds, -5.0)
@@ -30,6 +31,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         """Test component budget check warns when slightly over."""
         result = check_component_budget("test_component", 11.0, 10.0, warn_threshold_ratio=1.15)
         self.assertEqual(result.status, "warn")
+        self.assertEqual(result.reason_code, "over_budget_warn")
         self.assertGreater(result.observed_seconds, result.budget_seconds)
         self.assertLessEqual(result.ratio, 1.15)
 
@@ -37,13 +39,20 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         """Test component budget check fails when significantly over."""
         result = check_component_budget("test_component", 20.0, 10.0, warn_threshold_ratio=1.15)
         self.assertEqual(result.status, "fail")
+        self.assertEqual(result.reason_code, "over_budget_fail")
         self.assertGreater(result.ratio, 1.15)
 
     def test_component_budget_missing(self) -> None:
         """Test component budget check handles missing timing data."""
         result = check_component_budget("test_component", None, 10.0)
         self.assertEqual(result.status, "missing")
+        self.assertEqual(result.reason_code, "missing_required_timing")
         self.assertIsNone(result.observed_seconds)
+
+    def test_component_budget_within_variance_margin(self) -> None:
+        result = check_component_budget("pytest_fast", 96.0, 95.0, warn_threshold_ratio=1.15, warn_margin_seconds=5.0)
+        self.assertEqual(result.status, "warn")
+        self.assertEqual(result.reason_code, "within_variance_margin")
 
     def test_check_validation_runtime_budgets_pass(self) -> None:
         """Test validation runtime budget check passes."""
@@ -102,6 +111,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
                 "compileall": 1.0,
             },
             "warn_threshold_ratio": 1.15,
+            "warn_margin_seconds": {"fast_total": 5.0},
         }
         results, overall_status = check_validation_runtime_budgets(timing_data, budget_config)
         markdown = generate_budget_report_markdown(results, overall_status, budget_config)
@@ -256,6 +266,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         report = build_validation_runtime_budget_report(timing_data, budget_config, max_age_seconds=None)
         self.assertIn("timing_consistency", report)
         self.assertEqual(report["timing_consistency"]["status"], "pass")
+        self.assertIn("reason_code", report["results"][0])
 
 
 if __name__ == "__main__":

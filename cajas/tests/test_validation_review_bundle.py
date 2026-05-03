@@ -432,6 +432,33 @@ class ValidationReviewBundleTests(unittest.TestCase):
                 json.dumps({"budgets_seconds": {"fast_total": 100.0}, "required_components": ["fast_total"], "optional_components": []}),
                 encoding="utf-8",
             )
+            profile_json = tmp_path / "validation_ci_profiles.json"
+            profile_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "v1",
+                        "default_profile": "ci",
+                        "profiles": {
+                            "local": {
+                                "optional_not_run_affects_status": False,
+                                "optional_warn_affects_status": False,
+                                "required_warn_affects_status": True,
+                            },
+                            "ci": {
+                                "optional_not_run_affects_status": False,
+                                "optional_warn_affects_status": True,
+                                "required_warn_affects_status": True,
+                            },
+                            "strict": {
+                                "optional_not_run_affects_status": True,
+                                "optional_warn_affects_status": True,
+                                "required_warn_affects_status": True,
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             out_root = tmp_path / "bundle"
             self._write_packet_manifest(out_root)
 
@@ -472,6 +499,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     check_manifest_compatibility=True,
                     warn_only=True,
                     ci=True,
+                    ci_profile_config=profile_json,
                 )
 
             self.assertIn("final_status", manifest)
@@ -481,8 +509,12 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertEqual(manifest["final_status"]["profile"], "ci")
             self.assertTrue((out_root / "final_status.json").exists())
             self.assertTrue((out_root / "final_status.md").exists())
+            final_status = json.loads((out_root / "final_status.json").read_text(encoding="utf-8"))
+            self.assertIn("profile_policy", final_status)
+            self.assertEqual(final_status["profile_policy"]["source"], str(profile_json))
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
             self.assertIn("CI Gate Summary", index_text)
+            self.assertIn("Escalation Summary", index_text)
 
     def test_ci_mode_requires_timing_or_run_fast_validation(self) -> None:
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
