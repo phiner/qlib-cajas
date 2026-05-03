@@ -1034,3 +1034,11 @@ Current audit delta:
 - Added compact `History Summary` section in bundle index
 - Added stable `history` fields in `review_bundle_manifest.json` while preserving existing `history_update` compatibility
 - Kept semantics unchanged (readability-only improvement)
+
+
+### Phase 1316–1345: Review Bundle History Field Standardization and Compatibility
+- Standardized `history` as canonical review bundle manifest metadata
+- Added normalization helper to read either canonical `history` or legacy `history_update`
+- Kept `history_update` as deprecated compatibility alias with explicit deprecation markers
+- Updated index rendering to consume normalized canonical history metadata
+- No new workflow semantics; compatibility and contract cleanup only

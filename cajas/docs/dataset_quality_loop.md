@@ -709,7 +709,7 @@ python cajas/scripts/update_validation_review_bundle_history.py \
    - Avoided extra subprocess overhead in tests and fast validation path.
 
 3. **Bundle manifest/index history wiring**:
-   - `review_bundle_manifest.json` now includes `history_update` metadata.
+   - `review_bundle_manifest.json` now includes integrated history metadata.
    - `review_bundle_index.md` now includes a `History` section with:
      - JSONL and summary paths when enabled
      - latest bundle status
@@ -753,7 +753,7 @@ python cajas/scripts/build_validation_review_bundle.py \
 - `tmp/validation-review-bundle/history/review_bundle_history.jsonl`
 - `tmp/validation-review-bundle/history/review_bundle_history_summary.json`
 - `tmp/validation-review-bundle/history/review_bundle_history_summary.md`
-- `tmp/validation-review-bundle/review_bundle_manifest.json` (`history_update` section)
+- `tmp/validation-review-bundle/review_bundle_manifest.json` (`history` canonical section, `history_update` compatibility alias)
 - `tmp/validation-review-bundle/review_bundle_index.md` (`History` section)
 
 **Non-goals (unchanged)**:
@@ -786,3 +786,32 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Validation note**:
 - No new workflow semantics were added; this phase is output/readability polish only.
+
+
+## Phase 1316–1345: Review Bundle History Field Standardization and Compatibility
+
+**Goal**: Standardize `history` as the canonical review-bundle manifest contract while keeping compatibility for legacy `history_update` consumers.
+
+**What changed**:
+- Canonicalized manifest history metadata under `history`:
+  - `enabled`
+  - `status`
+  - `history_jsonl`
+  - `summary_json`
+  - `summary_md`
+  - `snapshot_count`
+  - `latest_bundle_status`
+  - `runtime_budget_status`
+  - `regression_count`
+- Added `normalize_history_metadata(manifest)` helper to consume both canonical and legacy shape safely.
+- Retained `history_update` as deprecated compatibility alias with explicit metadata:
+  - `deprecated: true`
+  - `use: "history"`
+- Updated index rendering to use canonical normalized history metadata.
+
+**Consumer guidance**:
+- Downstream readers should treat `history` as source of truth.
+- `history_update` should be treated as temporary compatibility surface.
+
+**Validation note**:
+- No new workflow semantics were introduced; this phase is manifest/index contract cleanup only.

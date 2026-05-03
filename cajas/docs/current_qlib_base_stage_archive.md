@@ -2096,3 +2096,27 @@ This addendum is limited to offline Qlib research validation workflow integratio
 ### Scope Confirmation
 
 Readability polish only. No new workflow semantics, no Qlib core changes, and no trading or execution capabilities introduced.
+
+
+## Phase 1316–1345 Addendum: Review Bundle History Field Standardization and Compatibility
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Make `history` the canonical review-bundle history contract while preserving backward compatibility for existing `history_update` consumers.
+
+### Highlights
+
+1. Canonical contract standardized under `history` in `review_bundle_manifest.json`.
+2. Added compatibility normalization helper `normalize_history_metadata(manifest)` to handle canonical and legacy shapes.
+3. Retained `history_update` as deprecated alias with explicit markers:
+   - `deprecated: true`
+   - `use: "history"`
+4. Updated index rendering to consume canonical normalized history metadata.
+
+### Consumer Guidance
+
+- New/updated consumers should read `manifest["history"]`.
+- Legacy consumers may continue reading `history_update` during compatibility window.
+- This phase does not change validation workflow semantics.
