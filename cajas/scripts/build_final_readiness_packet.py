@@ -17,7 +17,7 @@ def _load(path: str | Path) -> dict:
     return json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Build final readiness packet from research artifacts.")
     p.add_argument("--gate-packet", required=True)
     p.add_argument("--no-broker-packet", required=True)
@@ -31,7 +31,7 @@ def main() -> int:
     p.add_argument("--research-only-approval-packet", default=None)
     p.add_argument("--ci-plan", required=True)
     p.add_argument("--out", required=True)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     packet = build_final_readiness_packet(
         gate_packet=_load(args.gate_packet),

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.build_candidate_promotion_manifest import main
 
 
 class BuildCandidatePromotionManifestCliTests(unittest.TestCase):
@@ -18,10 +18,8 @@ class BuildCandidatePromotionManifestCliTests(unittest.TestCase):
                 encoding="utf-8",
             )
             out = root / "manifest"
-            subprocess.run(
+            code = main(
                 [
-                    sys.executable,
-                    "cajas/scripts/build_candidate_promotion_manifest.py",
                     "--decision-packet",
                     str(packet),
                     "--out-dir",
@@ -36,13 +34,12 @@ class BuildCandidatePromotionManifestCliTests(unittest.TestCase):
                     "8",
                     "--model-family",
                     "LightGBM",
-                ],
-                check=True,
+                ]
             )
+            self.assertEqual(code, 0)
             self.assertTrue((out / "candidate_promotion_manifest.json").exists())
             self.assertTrue((out / "candidate_promotion_manifest.md").exists())
 
 
 if __name__ == "__main__":
     unittest.main()
-

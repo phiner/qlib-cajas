@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from cajas.scripts.build_final_readiness_packet import main
 
 
 class BuildFinalReadinessPacketCliTests(unittest.TestCase):
@@ -23,16 +23,15 @@ class BuildFinalReadinessPacketCliTests(unittest.TestCase):
             rep.write_text(json.dumps({"final_status": "reproducible", "warnings": []}), encoding="utf-8")
             ci.write_text(json.dumps({"tiers": []}), encoding="utf-8")
             out = d / "final.json"
-            subprocess.run([
-                sys.executable,
-                "cajas/scripts/build_final_readiness_packet.py",
+            code = main([
                 "--gate-packet", str(gate),
                 "--no-broker-packet", str(nb),
                 "--manifest", str(man),
                 "--reproducibility-report", str(rep),
                 "--ci-plan", str(ci),
                 "--out", str(out),
-            ], check=True)
+            ])
+            self.assertEqual(code, 0)
             self.assertTrue(out.exists())
 
 
