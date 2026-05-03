@@ -185,8 +185,14 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
     p = _write_common_inputs(tmp_path)
     evidence = tmp_path / "evidence.json"
     triage = tmp_path / "triage.json"
-    evidence.write_text(json.dumps({"status": "incomplete", "next_actions": ["identify_owner"]}), encoding="utf-8")
-    triage.write_text(json.dumps({"status": "watch", "recommendation": "profile_slow_tests"}), encoding="utf-8")
+    evidence.write_text(
+        json.dumps({"status": "incomplete", "next_actions": ["identify_owner"], "action_plan": [{"consumer": "x", "owner": "external-review-needed"}]}),
+        encoding="utf-8",
+    )
+    triage.write_text(
+        json.dumps({"status": "watch", "recommendation": "profile_slow_tests", "test_count": 486, "seconds_per_test": 0.18}),
+        encoding="utf-8",
+    )
     packet = build_validation_milestone_packet(
         review_bundle_root=p["default"],
         alias_fallback_bundle_root=p["alias"],

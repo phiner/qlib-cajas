@@ -95,3 +95,4 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert "alias_removal_plan_status=not_ready" in report["watch_items"]
     assert report["consumer_evidence_closure_status"] == "incomplete"
     assert report["runtime_watch_triage_status"] == "watch"
+    assert report["consumer_evidence_action_plan"] == []
