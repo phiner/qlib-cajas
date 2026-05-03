@@ -346,6 +346,11 @@ class ValidationReviewBundleTests(unittest.TestCase):
                 )
 
             self.assertEqual(manifest["history_update"]["status"], "not_requested")
+            self.assertTrue(manifest["history_update"]["deprecated"])
+            self.assertEqual(manifest["history_update"]["use"], "history")
+            self.assertFalse(manifest["history"]["enabled"])
+            self.assertEqual(manifest["history"]["status"], "not_requested")
+            self.assertIn("note", manifest["history"])
             self.assertFalse((tmp_path / "history" / "history.jsonl").exists())
 
     def test_update_history_writes_manifest_and_index_paths(self) -> None:
@@ -392,6 +397,9 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertIn("history", manifest)
             self.assertTrue(manifest["history"]["enabled"])
             self.assertEqual(manifest["history"]["status"], "pass")
+            self.assertIn("latest_bundle_status", manifest["history"])
+            self.assertIn("runtime_budget_status", manifest["history"])
+            self.assertIn("regression_count", manifest["history"])
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
             self.assertIn("History Summary", index_text)
             self.assertIn("History status", index_text)
@@ -459,7 +467,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
                     warn_only=True,
                 )
 
-            delta = manifest["history_update"]["delta_from_previous"]
+            delta = manifest["history"]["delta_from_previous"]
             self.assertIn("fast_total_delta", delta)
             self.assertLess(delta["fast_total_delta"], 0)
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
@@ -573,6 +581,61 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertEqual(manifest["history"]["status"], "not_requested")
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
             self.assertIn("History update was not requested for this bundle.", index_text)
+
+    def test_normalize_history_metadata_falls_back_to_legacy_shape(self) -> None:
+        """Normalization should support old manifests with only history_update."""
+        from cajas.scripts.build_validation_review_bundle import normalize_history_metadata
+
+        legacy_manifest = {
+            "runtime_budget_status": "pass",
+            "history_update": {
+                "requested": True,
+                "status": "ok",
+                "history_jsonl": "tmp/history.jsonl",
+                "summary_json": "tmp/history_summary.json",
+                "summary_md": "tmp/history_summary.md",
+                "latest_bundle_status": "warn",
+                "delta_from_previous": {"fast_total_delta": -1.25},
+                "regression_count": 0,
+                "regressions": [],
+                "reviewer_recommendation": "stable_or_improved",
+                "latest_snapshot": {"fast_total_seconds": 87.0, "pytest_fast_seconds": 84.0},
+            },
+        }
+
+        normalized = normalize_history_metadata(legacy_manifest)
+        self.assertTrue(normalized["enabled"])
+        self.assertEqual(normalized["status"], "pass")
+        self.assertEqual(normalized["history_jsonl"], "tmp/history.jsonl")
+        self.assertEqual(normalized["runtime_budget_status"], "pass")
+
+    def test_normalize_history_metadata_prefers_canonical_history(self) -> None:
+        """Normalization should prioritize canonical history when both exist."""
+        from cajas.scripts.build_validation_review_bundle import normalize_history_metadata
+
+        manifest = {
+            "history": {
+                "enabled": True,
+                "status": "warn",
+                "history_jsonl": "canonical.jsonl",
+                "summary_json": "canonical.json",
+                "summary_md": "canonical.md",
+                "snapshot_count": 3,
+                "latest_bundle_status": "warn",
+                "runtime_budget_status": "pass",
+                "regression_count": 1,
+            },
+            "history_update": {
+                "requested": True,
+                "status": "ok",
+                "history_jsonl": "legacy.jsonl",
+            },
+        }
+
+        normalized = normalize_history_metadata(manifest)
+        self.assertEqual(normalized["history_jsonl"], "canonical.jsonl")
+        self.assertEqual(normalized["status"], "warn")
+        self.assertEqual(normalized["snapshot_count"], 3)
 
 
 if __name__ == "__main__":
