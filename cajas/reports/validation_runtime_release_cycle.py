@@ -16,6 +16,7 @@ def build_validation_runtime_release_cycle_report(
     runtime_edge_report: Path,
     runtime_budget_report: Path,
     fast_timing_json: Path,
+    runtime_variance_report: Path | None = None,
 ) -> dict[str, Any]:
     edge = _load_json(runtime_edge_report)
     budget = _load_json(runtime_budget_report)
@@ -23,6 +24,8 @@ def build_validation_runtime_release_cycle_report(
 
     edge_status = edge.get("status", "watch")
     budget_status = budget.get("overall_status", "warn")
+    variance = _load_json(runtime_variance_report) if runtime_variance_report and runtime_variance_report.exists() else None
+    variance_status = (variance or {}).get("status")
 
     if budget_status == "fail":
         status = "fail"
@@ -41,6 +44,15 @@ def build_validation_runtime_release_cycle_report(
         rec = "ok"
         trigger = "manual_next_release"
 
+    if variance_status == "watch" and status == "pass":
+        status = "watch"
+        rec = "watch_next_cycle"
+        trigger = "runtime_variance_watch"
+    elif variance_status in {"warn", "fail"}:
+        status = variance_status
+        rec = "optimize_before_release"
+        trigger = "runtime_variance_warn_or_fail"
+
     return {
         "schema_version": "v1",
         "status": status,
@@ -49,6 +61,7 @@ def build_validation_runtime_release_cycle_report(
         "remaining_budget_seconds": edge.get("remaining_budget_seconds"),
         "remaining_budget_ratio": edge.get("remaining_budget_ratio"),
         "runtime_budget_status": budget_status,
+        "runtime_variance_status": variance_status,
         "release_cycle_recommendation": rec,
         "next_review_trigger": trigger,
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",

@@ -54,3 +54,16 @@ def test_release_cycle_warn_fail(tmp_path: Path) -> None:
         fast_timing_json=timing2,
     )
     assert report2["status"] == "fail"
+
+
+def test_release_cycle_escalates_watch_from_variance(tmp_path: Path) -> None:
+    edge, budget, timing = _write_inputs(tmp_path, edge_status="pass", budget_status="pass")
+    variance = tmp_path / "variance.json"
+    variance.write_text(json.dumps({"status": "watch"}), encoding="utf-8")
+    report = build_validation_runtime_release_cycle_report(
+        runtime_edge_report=edge,
+        runtime_budget_report=budget,
+        fast_timing_json=timing,
+        runtime_variance_report=variance,
+    )
+    assert report["status"] == "watch"

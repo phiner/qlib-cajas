@@ -19,6 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-edge-report", required=True, type=Path)
     parser.add_argument("--runtime-budget-report", required=True, type=Path)
     parser.add_argument("--fast-timing-json", required=True, type=Path)
+    parser.add_argument("--runtime-variance-report", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -27,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
         runtime_edge_report=args.runtime_edge_report,
         runtime_budget_report=args.runtime_budget_report,
         fast_timing_json=args.fast_timing_json,
+        runtime_variance_report=args.runtime_variance_report,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
