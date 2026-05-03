@@ -1866,3 +1866,9 @@ Scope confirmation:
 - Milestone packet now includes alias post-removal closure summary.
 - Legacy read normalization for archived manifests remains intentionally preserved.
 - Rollback readiness remains explicit.
+
+## Phase 3446-3565 Runtime Release-Ready Closure
+
+- Runtime release-cycle monitor now includes structured reason codes and gate lists for blocker/watch diagnosis.
+- Added final release-ready closure report and wired it into release readiness and milestone outputs.
+- Runtime status now reflects fresh budget/edge/variance/watch-triage inputs rather than stale release-cycle artifacts.

@@ -2440,3 +2440,18 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Integrated closure status into release readiness and milestone packet reporting.
 - Runtime/data-source/compatibility validations remain required and continue to gate readiness.
 - Scope remains offline Qlib validation automation only; no trading execution scope.
+
+## Phase 3446-3565 Runtime Release-Ready Closure
+
+- Root cause of runtime release-cycle `warn` was stale artifact state and conservative release-cycle aggregation that did not consume watch-triage/profile context with structured reason codes.
+- Updated runtime release-cycle report to evaluate budget/timing/edge/variance/watch-triage gates explicitly and emit:
+  - `reason_code`
+  - `blocking_runtime_gates`
+  - `watch_runtime_gates`
+  - `non_blocking_notes`
+- Added final release-ready closure packet:
+  - `tmp/validation-release-ready-closure.json`
+  - `tmp/validation-release-ready-closure.md`
+- Integrated release-ready closure summary into release readiness and milestone packet surfaces.
+- Alias migration remains functionally closed (canonical-only producer, legacy read normalization preserved).
+- Scope remains offline Qlib validation automation only; no trading execution scope.

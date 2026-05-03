@@ -3389,3 +3389,20 @@ Compatibility and safeguards:
 Non-goals:
 - No Qlib core mutation.
 - No trading execution, broker integration, or live automation scope.
+
+## Phase 3446-3565 Runtime Release-Cycle Warn Closure
+
+Summary:
+- Audited runtime release-cycle warning and identified stale/legacy aggregation semantics as the primary cause.
+- Implemented runtime release-cycle gate normalization with explicit reason codes and gate classifications.
+- Added final release-ready closure packet and integrated it into release-readiness/milestone reporting.
+
+Current closure posture:
+- Alias post-removal closure remains closed.
+- Canonical-only manifest contract remains enforced.
+- Legacy archived-manifest read normalization remains preserved.
+- Runtime/data-source compatibility gates remain active and explicit.
+
+Non-goals:
+- No Qlib core changes.
+- No trading, broker, or live execution logic.
