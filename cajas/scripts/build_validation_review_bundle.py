@@ -144,6 +144,7 @@ def build_review_bundle(
     max_timing_age_seconds: int = 3600,
     ci_profile: str = "ci",
     ci_profile_config: Path | None = None,
+    omit_history_update_alias: bool = False,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -529,11 +530,15 @@ def build_review_bundle(
             "note": "History update was not requested for this bundle.",
         }
     bundle_manifest["history"] = stable_history
-    bundle_manifest["history_update"] = {
-        "deprecated": True,
-        "use": "history",
-        **history_metadata,
-    }
+    if not omit_history_update_alias:
+        bundle_manifest["history_update"] = {
+            "deprecated": True,
+            "use": "history",
+            "deprecation_stage": "compatibility_alias",
+            "removal_target_phase": "future",
+            "consumer_action": "Read manifest.history instead.",
+            **history_metadata,
+        }
     compatibility_issues = validate_history_metadata_compatibility(bundle_manifest)
     if compatibility_issues:
         bundle_manifest["history_compatibility_issues"] = compatibility_issues
@@ -1095,6 +1100,11 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("cajas/data_examples/validation_review_bundle_presets.json"),
         help="Path to presets config JSON",
     )
+    parser.add_argument(
+        "--omit-history-update-alias",
+        action="store_true",
+        help="Omit deprecated history_update alias and emit canonical history only.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -1149,6 +1159,7 @@ def main(argv: list[str] | None = None) -> int:
             max_timing_age_seconds=args.max_timing_age_seconds,
             ci_profile=args.ci_profile,
             ci_profile_config=args.ci_profile_config,
+            omit_history_update_alias=args.omit_history_update_alias,
         )
 
         print(json.dumps({"status": "ok", "bundle_manifest": str(args.out_root / "review_bundle_manifest.json")}))

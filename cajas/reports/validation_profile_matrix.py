@@ -109,6 +109,11 @@ def build_profile_matrix(
             "blocking_gates": blocking,
             "warning_gates": [g for g in gate_dicts if g["status"] == "warn"],
             "non_escalated_warnings": non_escalated,
+            "strict_warning_reason": (
+                "optional_not_run_or_warn_escalated_by_strict_policy"
+                if prof == "strict" and overall == "warn" and not blocking
+                else None
+            ),
             "escalated_count": _count_escalated_gates(gate_dicts),
             "blocking_count": _count_blocking_gates(gate_dicts),
             "next_action": _get_next_action(overall)
@@ -176,5 +181,17 @@ def render_profile_matrix_markdown(payload: dict[str, Any]) -> str:
         for t in transitions:
             lines.append(f"| {t['gate']} | {t.get('local', '-')} | {t.get('ci', '-')} | {t.get('strict', '-')} |")
         lines.append("")
+
+    strict_profile = profiles.get("strict")
+    if strict_profile and strict_profile.get("overall_status") == "warn" and strict_profile.get("blocking_count", 0) == 0:
+        lines.extend(
+            [
+                "## Strict Warning Note",
+                "",
+                "Strict profile warning is expected because strict mode escalates optional not-run/warn gates.",
+                "Required gates can still pass while strict remains warn for policy reasons.",
+                "",
+            ]
+        )
         
     return "\n".join(lines)
