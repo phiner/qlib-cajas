@@ -1474,3 +1474,184 @@ git push origin phase-post-merge-research-next
 ```
 
 ---
+
+
+---
+
+## Phase 1166–1195 Addendum: Automated Validation Review Bundle Workflow
+
+**Date**: 2026-05-02
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Reduce manual artifact assembly by adding orchestration script that builds complete validation review bundles from existing components.
+
+### Problem Statement
+
+Reviewers had to manually run multiple CLIs in sequence to assemble validation artifacts:
+1. Run smoke
+2. Run fast validation
+3. Run runtime budget check
+4. Create baseline and run diff
+5. Build experiment manifest
+6. Run data source audit
+7. Build delivery packet
+
+This was error-prone and time-consuming. No single command existed to generate a complete review bundle.
+
+### Solution Implemented
+
+1. **Review Bundle Orchestration CLI**:
+   - Created `cajas/scripts/build_validation_review_bundle.py`
+   - Orchestrates existing validation CLIs in correct sequence
+   - Coordinates: smoke → timing → budget → diff → manifest → audit → packet
+   - Safe execution modes with explicit opt-in for expensive operations
+
+2. **Execution Modes**:
+   - `--skip-fast-validation`: use existing timing JSON only (default safe mode)
+   - `--run-fast-validation`: explicitly run fast validation
+   - `--create-baseline-from-current`: create no-op diff baseline from current smoke
+   - `--build-experiment-manifest`: generate Qlib experiment manifest
+   - `--run-data-source-audit`: run audit with provided data root
+   - `--warn-only`: don't fail on reviewer-only warnings
+
+3. **Bundle Manifest and Index**:
+   - Generates `review_bundle_manifest.json` with complete execution record
+   - Generates `review_bundle_index.md` with reviewer-friendly summary
+   - Tracks commands executed vs skipped with reasons
+   - Surfaces delivery packet status, runtime budget status, reviewer diff status
+   - Provides clear "Reviewer Next Action" guidance
+
+4. **Delivery Packet Integration**:
+   - Bundle workflow invokes delivery packet builder as final step
+   - Packet artifacts placed in `delivery_packet/` subdirectory
+   - Bundle index includes packet status summary
+   - All artifacts organized under single bundle root
+
+### Key Changes
+
+**New Files**:
+- `cajas/scripts/build_validation_review_bundle.py` - orchestration CLI (408 lines)
+- `cajas/tests/test_validation_review_bundle.py` - 6 tests covering orchestration logic
+
+**Test Coverage**:
+- 6 review bundle tests (all pass)
+- Tests cover: manifest structure, skip modes, baseline creation, index generation, timing triggers, manifest option
+- No expensive subprocess calls in tests (uses fake artifacts)
+- All validation tests: 77 passed (was 71, +6 for review bundle)
+
+### Validation Results
+
+**Fast Validation**:
+- Runtime: ~103.70s (382 tests passed, +6 from Phase 1136)
+- Trend: Phase 1136 ~88.66s → Phase 1166 ~103.70s (+15.04s, expected due to +6 tests)
+- Status: **pass** (within 105s budget)
+
+**Runtime Budget Status**:
+- Overall: **pass**
+- Required components: all measured and within budget
+  - `fast_total`: 103.70s / 105.0s budget (0.99x, approaching limit)
+  - `pytest_fast`: measured and within budget
+
+**Component Tests**:
+- Dataset quality tests: 77 passed in 20.50s (was 71, +6)
+- Review bundle tests: 6 passed in 12.97s
+- All validation tests: 382 passed
+
+**Data-Source Audit**:
+- read_csv_count: 29 (stable)
+
+**Hygiene**:
+- No trailing whitespace ✅
+- No `init.py` files ✅
+- All imports clean ✅
+
+### Example Usage
+
+**Minimal bundle (smoke + packet only)**:
+```bash
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --warn-only
+```
+
+**Full bundle with baseline diff**:
+```bash
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --warn-only
+```
+
+**Bundle with all optional artifacts**:
+```bash
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --build-experiment-manifest \
+  --run-data-source-audit \
+  --data-root /tmp/nonexistent-data-root-for-static-audit \
+  --warn-only
+```
+
+### Impact
+
+**Positive**:
+- Single command to generate complete review bundle
+- Explicit control over expensive operations (no surprise long-running commands)
+- Clear execution record for reviewers
+- Reduced manual artifact assembly
+- Better CI integration path
+- Bundle index provides clear reviewer guidance
+
+**Limitations**:
+- Does not run fast validation by default (must opt-in with `--run-fast-validation`)
+- Does not run data source audit by default (must opt-in with `--run-data-source-audit`)
+- No historical bundle comparison yet
+- No bundle-level trend tracking
+- Fast validation approaching 105s budget (103.70s, 98.8% utilization)
+
+### Scope Confirmation
+
+This phase focused on **validation workflow orchestration only**. No changes to:
+- Data quality semantics
+- Contract validation logic
+- Golden fixture scenarios
+- Experiment manifest structure
+- Runtime budget thresholds
+- Qlib core
+
+All work in `cajas/` layer as required.
+
+### Next Steps
+
+Potential future enhancements:
+1. Add bundle-level trend tracking
+2. Add historical bundle comparison
+3. Optimize test runtime to stay well under 105s budget (currently 103.70s)
+4. Add CI-specific bundle mode
+5. Add bundle validation report aggregation
+
+### Commits
+
+1. `feat: add validation review bundle workflow orchestration`
+2. `test: cover validation review bundle orchestration`
+3. `docs: document validation review bundle workflow`
+
+### Manual Push Command
+
+```bash
+git push origin phase-post-merge-research-next
+```
+
+---

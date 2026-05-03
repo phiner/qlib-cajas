@@ -981,3 +981,14 @@ Current audit delta:
 - Runtime budget status now **pass** (previously warn due to missing optional timings)
 - Fast validation: ~84.03s (376 tests, +1 from Phase 1106)
 - Reduced noise in runtime budget reporting
+
+
+### Phase 1166–1195: Automated Validation Review Bundle Workflow
+- Created orchestration CLI to build complete validation review bundles
+- Coordinates smoke → timing → budget → diff → manifest → audit → packet
+- Safe execution modes with explicit opt-in for expensive operations
+- Generates bundle manifest and index with execution record
+- Integrates delivery packet as subdirectory
+- Added 6 tests covering orchestration logic
+- Fast validation: ~103.70s (382 tests, +6 from Phase 1136)
+- Single command to generate reviewer-ready bundle

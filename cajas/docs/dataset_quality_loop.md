@@ -477,3 +477,81 @@ Packet status interpretation:
 - Optional component timings still not captured by fast validation
 - No automated timing summary report yet (can be added if needed)
 - No convenience bundle script (manual commands still required)
+
+
+## Phase 1166–1195: Automated Validation Review Bundle Workflow
+
+**Goal**: Reduce manual artifact assembly by adding orchestration script that builds complete validation review bundles.
+
+**Problem**: Reviewers had to manually run multiple CLIs in sequence to assemble validation artifacts. No single command to generate a complete review bundle.
+
+**Solution**:
+
+1. **Review Bundle Orchestration CLI**:
+   - Created `build_validation_review_bundle.py` to orchestrate existing validation CLIs
+   - Coordinates: smoke → timing → budget → diff → manifest → audit → packet
+   - Safe execution modes with explicit opt-in for expensive operations
+
+2. **Execution Modes**:
+   - `--skip-fast-validation`: use existing timing JSON only (default)
+   - `--run-fast-validation`: run fast validation
+   - `--create-baseline-from-current`: create no-op diff baseline
+   - `--build-experiment-manifest`: generate experiment manifest
+   - `--run-data-source-audit`: run audit with data root
+   - `--warn-only`: don't fail on warnings
+
+3. **Bundle Manifest and Index**:
+   - Generates `review_bundle_manifest.json` with execution record
+   - Generates `review_bundle_index.md` with reviewer guidance
+   - Tracks commands executed vs skipped
+   - Surfaces delivery packet status, runtime budget status, reviewer diff status
+
+4. **Delivery Packet Integration**:
+   - Bundle workflow invokes delivery packet builder
+   - Packet artifacts placed in `delivery_packet/` subdirectory
+   - Bundle index includes packet status summary
+
+**Key Files**:
+- `cajas/scripts/build_validation_review_bundle.py` - orchestration CLI
+- `cajas/tests/test_validation_review_bundle.py` - 6 tests covering orchestration logic
+
+**Validation**:
+- Fast validation: ~103.70s (382 tests passed, +6 from Phase 1136)
+- Runtime budget status: **pass**
+- Data-source audit: stable at read_csv_count=29
+- Review bundle tests: 6 passed
+- All validation tests: 77 passed (was 71, +6 for review bundle)
+
+**Example Usage**:
+
+```bash
+# Minimal bundle (smoke + packet only)
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --warn-only
+
+# Full bundle with baseline diff
+python cajas/scripts/build_validation_review_bundle.py \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --warn-only
+```
+
+**Impact**:
+- Single command to generate complete review bundle
+- Explicit control over expensive operations
+- Clear execution record for reviewers
+- Reduced manual artifact assembly
+- Better CI integration path
+
+**Limitations**:
+- Does not run fast validation by default (must opt-in)
+- Does not run data source audit by default (must opt-in)
+- No historical bundle comparison yet
+- No bundle-level trend tracking
