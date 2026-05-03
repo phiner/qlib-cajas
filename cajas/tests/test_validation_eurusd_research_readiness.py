@@ -63,3 +63,23 @@ def test_readiness_markdown_policy(tmp_path: Path) -> None:
     md = render_validation_eurusd_research_readiness_markdown(payload).lower()
     assert "no live trading" in md
     assert "no qlib core changes" in md
+
+
+def test_readiness_includes_pattern_candidate_pack_when_provided(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        clean_dataset_view_report=_write(
+            tmp_path / "clean.json",
+            {"status": "ready", "quarantined_row_count": 10, "output_paths": {"clean_csv": "tmp/eurusd/clean.csv"}},
+        ),
+        pattern_candidate_pack_report=_write(
+            tmp_path / "pack.json",
+            {"status": "watch", "candidate_count": 321},
+        ),
+    )
+    assert payload["status"] == "ready_for_pattern_research_with_clean_view"
+    assert payload["pattern_candidate_pack_status"] == "watch"
+    assert payload["pattern_candidate_count"] == 321
+    assert payload["next_action"] == "review_pattern_samples"
