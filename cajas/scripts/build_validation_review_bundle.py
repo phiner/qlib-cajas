@@ -770,6 +770,29 @@ def build_review_bundle(
         "md": str(final_status_md),
     }
 
+    # Generate Profile Matrix
+    try:
+        from cajas.reports.validation_profile_matrix import (
+            build_profile_matrix,
+            render_profile_matrix_markdown,
+        )
+        matrix_payload = build_profile_matrix(
+            base_payload=final_status_payload,
+            profile_config=_load_json_if_exists(ci_profile_config) if ci_profile_config else None,
+        )
+        matrix_json = out_root / "profile_matrix.json"
+        matrix_md = out_root / "profile_matrix.md"
+        matrix_json.write_text(json.dumps(matrix_payload, indent=2), encoding="utf-8")
+        matrix_md.write_text(render_profile_matrix_markdown(matrix_payload), encoding="utf-8")
+        artifacts["profile_matrix_json"] = str(matrix_json)
+        artifacts["profile_matrix_md"] = str(matrix_md)
+        bundle_manifest["profile_matrix"] = {
+            "json": str(matrix_json),
+            "md": str(matrix_md),
+        }
+    except Exception as e:
+        logger.warning(f"Failed to generate profile matrix: {e}")
+
     # Write bundle manifest
     manifest_path = out_root / "review_bundle_manifest.json"
     with open(manifest_path, "w", encoding="utf-8") as f:
@@ -805,7 +828,32 @@ def build_review_bundle(
             f"- primary_artifact: `{final_status_payload.get('primary_artifact')}`",
             f"- reviewer_next_action: `{final_status_payload.get('reviewer_next_action')}`",
             "",
-            "## CI Gate Summary",
+        ]
+    )
+
+    if "profile_matrix" in locals() and "matrix_payload" in locals():
+        index_lines.extend([
+            "## Profile Matrix Summary",
+            "",
+            "| Profile | Overall | Escalated warnings | Blocking gates | Next action |",
+            "|---|---|---:|---:|---|",
+        ])
+        
+        profiles = matrix_payload.get("profiles", {})
+        for prof in ["local", "ci", "strict"]:
+            if prof in profiles:
+                p = profiles[prof]
+                index_lines.append(
+                    f"| {prof} | {p['overall_status']} | {p['escalated_count']} | {p['blocking_count']} | {p['next_action']} |"
+                )
+        index_lines.extend([
+            "",
+            f"See full matrix report: `{artifacts.get('profile_matrix_md', 'profile_matrix.md')}`",
+            "",
+        ])
+
+    index_lines.extend([
+        "## CI Gate Summary",
             "",
             "| Gate | Required | Status | Escalated | Profile Effect | Reason | Action | Artifact |",
             "|---|---:|---|---:|---|---|---|---|",
@@ -1022,8 +1070,39 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="Optional external CI profile config JSON (profiles/local|ci|strict)",
     )
+    parser.add_argument(
+        "--preset",
+        choices=["local_review", "ci_required", "strict_release"],
+        help="Apply automation preset to set flags automatically",
+    )
+    parser.add_argument(
+        "--preset-config",
+        type=Path,
+        default=Path("cajas/data_examples/validation_review_bundle_presets.json"),
+        help="Path to presets config JSON",
+    )
 
     args = parser.parse_args(argv)
+
+    if args.preset:
+        try:
+            presets_data = json.loads(args.preset_config.read_text(encoding="utf-8"))
+            preset_cfg = presets_data.get("presets", {}).get(args.preset)
+            if preset_cfg:
+                if "ci_profile" in preset_cfg:
+                    args.ci_profile = preset_cfg["ci_profile"]
+                if preset_cfg.get("warn_only"):
+                    args.warn_only = True
+                if preset_cfg.get("fail_on_warn"):
+                    args.fail_on_warn = True
+                if preset_cfg.get("run_fast_validation"):
+                    args.run_fast_validation = True
+                if preset_cfg.get("update_history"):
+                    args.update_history = True
+                if preset_cfg.get("check_manifest_compatibility"):
+                    args.check_manifest_compatibility = True
+        except Exception as e:
+            logger.warning(f"Failed to load preset config: {e}")
 
     try:
         bundle_manifest = build_review_bundle(

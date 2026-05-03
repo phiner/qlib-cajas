@@ -1147,7 +1147,32 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 - No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
 
 
-## Phase 1706–1765: Delivery Packet Warning Root-Cause Cleanup and Final Status Clarity
+## Phase 1766–1825: CI Profile Matrix Validation and Automation Presets
+
+### Context
+
+Previously, `local`, `ci`, and `strict` profiles existed but had to be run individually to see their outcome. To improve CI usage and fast-track pipeline maturity, a matrix report is needed to show outcomes across all profiles from a single validation run. Automation presets were also needed to bundle common CI/local command configurations.
+
+### Changes
+
+- Added `cajas/reports/validation_profile_matrix.py` to compare outcomes across `local`, `ci`, and `strict` profiles.
+- Added `build_validation_profile_matrix.py` CLI to generate JSON and MD matrix reports without rerunning validation.
+- Implemented preset support in `build_validation_review_bundle.py` with the `--preset` flag.
+- Presets configuration stored in `cajas/data_examples/validation_review_bundle_presets.json`.
+- Wrote tests to ensure `local` doesn't escalate optional warnings while `ci` and `strict` do.
+
+### Recommended Automation Presets
+
+The following presets are available via `--preset`:
+
+1. `local_review`: Uses local profile, updates local history, does not fail on optional warnings. Recommended for day-to-day dev.
+2. `ci_required`: Uses ci profile, reruns fast validation, escalates optional warnings to review state. Recommended for pull requests.
+3. `strict_release`: Uses strict profile, reruns fast validation, fails on any warning including missing optional gates. Recommended for main branch merges.
+
+### Explicit Limitations
+
+- This is infrastructure automation, not trading execution automation.
+- No live trading, broker logic, or real-money automation is added.
 
 **Goal**: Distinguish clean pass from pass-with-non-escalated warnings without hiding real warning details.
 

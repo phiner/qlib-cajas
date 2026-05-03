@@ -1132,7 +1132,11 @@ Current audit delta:
 - Local-profile CI review-bundle final status recovers from false fail caused by unrealistic utility budget.
 
 
-## Phase 1706–1765 Addendum: Delivery Packet Warning Cleanup and Final-Status Clarity
+## Phase 1766–1825 Addendum: CI Profile Matrix Validation and Automation Presets
+
+- Added Profile Matrix generator to compare `local`, `ci`, and `strict` gate behavior side-by-side.
+- Added `--preset` parameter to review bundle builder (`local_review`, `ci_required`, `strict_release`).
+- Embedded profile matrix summary into `review_bundle_index.md`.
 
 - Audited delivery packet warning root cause:
   - optional artifacts that were not explicitly requested were counted as missing warnings
