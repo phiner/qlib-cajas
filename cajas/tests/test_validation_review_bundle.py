@@ -640,8 +640,8 @@ class ValidationReviewBundleTests(unittest.TestCase):
         self.assertEqual(normalized["status"], "warn")
         self.assertEqual(normalized["snapshot_count"], 3)
 
-    def test_validate_history_metadata_compatibility_warns_on_disagreement(self) -> None:
-        """Compatibility check should detect canonical/legacy disagreement."""
+    def test_validate_history_metadata_compatibility_reports_error_on_disagreement(self) -> None:
+        """Compatibility check should detect canonical/legacy disagreement as error."""
         from cajas.reports.validation_review_bundle_metadata import validate_history_metadata_compatibility
 
         manifest = {
@@ -655,10 +655,12 @@ class ValidationReviewBundleTests(unittest.TestCase):
             },
         }
 
-        warnings = validate_history_metadata_compatibility(manifest)
-        self.assertTrue(any("deprecated flag" in warning for warning in warnings))
-        self.assertTrue(any("use should be 'history'" in warning for warning in warnings))
-        self.assertTrue(any("disagrees" in warning for warning in warnings))
+        issues = validate_history_metadata_compatibility(manifest)
+        self.assertTrue(any(issue["severity"] == "warning" for issue in issues))
+        self.assertTrue(any(issue["severity"] == "error" for issue in issues))
+        self.assertTrue(any("deprecated flag" in issue["message"] for issue in issues))
+        self.assertTrue(any("use should be 'history'" in issue["message"] for issue in issues))
+        self.assertTrue(any("disagrees" in issue["message"] for issue in issues))
 
     def test_manifest_contains_compatibility_warnings_field(self) -> None:
         """Generated manifest should expose compatibility warnings field when present."""
@@ -743,6 +745,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
             compat = manifest["manifest_compatibility"]
             self.assertTrue(compat["enabled"])
             self.assertIn(compat["status"], ("pass", "warn"))
+            self.assertIn("error_count", compat)
             self.assertIn("report_json", compat)
             self.assertIn("report_md", compat)
             self.assertTrue(Path(compat["report_json"]).exists())
@@ -791,6 +794,63 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertEqual(manifest["manifest_compatibility"]["status"], "not_requested")
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
             self.assertIn("Manifest compatibility check was not requested for this bundle.", index_text)
+
+    def test_review_bundle_fails_on_manifest_compatibility_fail_without_warn_only(self) -> None:
+        """Compatibility fail should raise unless warn_only is enabled."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            fail_report = {
+                "status": "fail",
+                "manifest_path": "dummy.json",
+                "history_source": "history",
+                "history_enabled": True,
+                "history_status": "pass",
+                "error_count": 1,
+                "warning_count": 0,
+                "info_count": 0,
+                "deprecated_alias_present": "yes",
+                "issues": [{"severity": "error", "code": "mock_fail", "message": "mock fail"}],
+                "reviewer_recommendation": "block_until_manifest_compatibility_fixed",
+            }
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command), patch(
+                "cajas.scripts.build_validation_review_bundle.build_compatibility_report",
+                return_value=fail_report,
+            ):
+                with self.assertRaises(RuntimeError):
+                    build_review_bundle(
+                        bundle_name="test_bundle",
+                        out_root=out_root,
+                        smoke_root=smoke_root,
+                        fast_timing_json=None,
+                        budgets=None,
+                        baseline_root=None,
+                        create_baseline_from_current=False,
+                        run_fast_validation=False,
+                        skip_fast_validation=True,
+                        run_data_source_audit=False,
+                        skip_data_source_audit=True,
+                        data_root=None,
+                        build_experiment_manifest=False,
+                        copy_artifacts=False,
+                        update_history=False,
+                        history_jsonl=None,
+                        history_last_n=10,
+                        check_manifest_compatibility=True,
+                        manifest_compatibility_out_json=tmp_path / "compat.json",
+                        manifest_compatibility_out_md=tmp_path / "compat.md",
+                        warn_only=False,
+                    )
 
 
 if __name__ == "__main__":
