@@ -3406,3 +3406,37 @@ Current closure posture:
 Non-goals:
 - No Qlib core changes.
 - No trading, broker, or live execution logic.
+
+## Phase 3566-3685 Runtime Variance Watch Closure and Final Reviewer Packet
+
+Summary:
+- Added a dedicated runtime variance closure layer to classify runtime variance watch as blocking vs non-blocking follow-up.
+- Added a final reviewer packet that consolidates canonical-only manifest closure, alias post-removal status, runtime gates, and data-source audit posture.
+- Integrated final reviewer packet summaries into release readiness and milestone packet artifacts.
+
+Runtime variance closure semantics:
+- `blocked`: runtime budget/edge/timing failure.
+- `monitoring_only`: runtime budget/edge/timing pass while runtime variance or runtime release-cycle remains watch/warn.
+- `closed`: all runtime gates and runtime variance/release-cycle are pass.
+
+Release-ready closure semantics:
+- Non-blocking runtime watch is represented as ready-for-review (`review_state=ready_for_review`, `blocking=false`) with explicit follow-up tracking.
+- Blocking posture remains reserved for true gate failures.
+
+Final reviewer packet artifacts:
+- `tmp/validation-final-reviewer-packet.json`
+- `tmp/validation-final-reviewer-packet.md`
+
+Validation snapshot (phase run):
+- Focused suites for runtime variance closure, release-ready closure, final reviewer packet, release readiness, and milestone packet all pass.
+- Runtime budget: pass.
+- Timing consistency: pass.
+- Runtime edge: pass.
+- Data-source audit read count remains tracked in packet summary.
+
+Maintenance cadence:
+- Continue runtime variance monitoring on the next release-cycle validation run when closure status is `monitoring_only`.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

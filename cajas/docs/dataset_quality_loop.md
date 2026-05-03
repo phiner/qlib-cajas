@@ -2455,3 +2455,23 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Integrated release-ready closure summary into release readiness and milestone packet surfaces.
 - Alias migration remains functionally closed (canonical-only producer, legacy read normalization preserved).
 - Scope remains offline Qlib validation automation only; no trading execution scope.
+
+## Phase 3566-3685 Runtime Variance Closure and Final Reviewer Packet
+
+- Added runtime variance closure report:
+  - `tmp/validation-runtime-variance-closure.json`
+  - `tmp/validation-runtime-variance-closure.md`
+- Runtime variance closure classification is explicit:
+  - `blocked` when runtime budget/edge/timing gates fail
+  - `monitoring_only` when runtime gates pass but runtime variance/release-cycle remains watch
+  - `closed` when runtime gates and variance/release-cycle all pass
+- Release-ready closure semantics now distinguish blocking vs non-blocking watch:
+  - `status=watch` with `review_state=ready_for_review` and `blocking=false` when only runtime monitoring follow-up remains
+  - `status=blocked` only for true blocking gates
+- Added final reviewer packet:
+  - `tmp/validation-final-reviewer-packet.json`
+  - `tmp/validation-final-reviewer-packet.md`
+- Final reviewer packet summarizes canonical-only manifest contract, alias post-removal closure, legacy read normalization, runtime/data-source gate state, remaining follow-ups, and explicit non-goals.
+- Release readiness and milestone packet now include final reviewer packet status, primary artifact paths, and non-blocking follow-up visibility.
+- Maintenance cadence remains release-cycle monitoring for runtime variance watch when present.
+- Scope remains offline Qlib validation automation only; no trading execution scope.

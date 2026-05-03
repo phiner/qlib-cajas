@@ -1872,3 +1872,26 @@ Scope confirmation:
 - Runtime release-cycle monitor now includes structured reason codes and gate lists for blocker/watch diagnosis.
 - Added final release-ready closure report and wired it into release readiness and milestone outputs.
 - Runtime status now reflects fresh budget/edge/variance/watch-triage inputs rather than stale release-cycle artifacts.
+
+## Phase 3566-3685 Runtime Variance Closure and Reviewer Finalization Packet
+
+- Added runtime variance closure classification and artifacts:
+  - `tmp/validation-runtime-variance-closure.json`
+  - `tmp/validation-runtime-variance-closure.md`
+- Runtime closure semantics:
+  - `blocked` when runtime budget/edge/timing fails
+  - `monitoring_only` when runtime gates pass but runtime variance/release-cycle remains watch
+  - `closed` when all runtime gates and variance/release-cycle pass
+- Updated release-ready closure semantics to separate blocker state from non-blocking monitoring follow-up:
+  - when only non-blocking runtime monitoring remains, closure keeps watch status while reporting `review_state=ready_for_review` and `blocking=false`
+- Added final reviewer packet:
+  - `tmp/validation-final-reviewer-packet.json`
+  - `tmp/validation-final-reviewer-packet.md`
+- Final reviewer packet summarizes:
+  - canonical-only manifest enforcement
+  - alias post-removal closure state
+  - preserved legacy read normalization for archived manifests
+  - runtime budget/edge and runtime variance closure posture
+  - data-source audit read count and remaining follow-up cadence
+- Release readiness and milestone packet now include final reviewer packet status and primary artifact linkage.
+- Scope remains offline Qlib validation automation only; no trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
