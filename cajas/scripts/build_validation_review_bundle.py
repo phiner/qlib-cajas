@@ -82,6 +82,86 @@ def infer_history_status(recommendation: str, regressions: list[str], history_er
     return HISTORY_STATUS_PASS
 
 
+def normalize_history_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Return canonical history metadata from either `history` or legacy `history_update`."""
+    history = manifest.get("history")
+    if isinstance(history, dict) and "enabled" in history:
+        normalized = {
+            "enabled": bool(history.get("enabled", False)),
+            "status": history.get("status", "not_requested"),
+            "history_jsonl": history.get("history_jsonl"),
+            "summary_json": history.get("summary_json"),
+            "summary_md": history.get("summary_md"),
+            "snapshot_count": int(history.get("snapshot_count", 0) or 0),
+            "latest_bundle_status": history.get("latest_bundle_status"),
+            "runtime_budget_status": history.get("runtime_budget_status"),
+            "regression_count": int(history.get("regression_count", 0) or 0),
+            "delta_from_previous": history.get("delta_from_previous") or {},
+            "latest_snapshot": history.get("latest_snapshot") or {},
+            "regressions": history.get("regressions") or [],
+            "reviewer_recommendation": history.get("reviewer_recommendation"),
+            "note": history.get("note"),
+        }
+        return normalized
+
+    legacy = manifest.get("history_update", {})
+    requested = bool(legacy.get("requested", False))
+    if not requested:
+        return {
+            "enabled": False,
+            "status": "not_requested",
+            "history_jsonl": None,
+            "summary_json": None,
+            "summary_md": None,
+            "snapshot_count": 0,
+            "latest_bundle_status": None,
+            "runtime_budget_status": manifest.get("runtime_budget_status"),
+            "regression_count": 0,
+            "delta_from_previous": {},
+            "latest_snapshot": {},
+            "regressions": [],
+            "reviewer_recommendation": None,
+            "note": "History update was not requested for this bundle.",
+        }
+
+    if legacy.get("status") == "error":
+        return {
+            "enabled": True,
+            "status": HISTORY_STATUS_FAIL,
+            "history_jsonl": legacy.get("history_jsonl"),
+            "summary_json": legacy.get("summary_json"),
+            "summary_md": legacy.get("summary_md"),
+            "snapshot_count": 0,
+            "latest_bundle_status": legacy.get("latest_bundle_status"),
+            "runtime_budget_status": manifest.get("runtime_budget_status"),
+            "regression_count": int(legacy.get("regression_count", 0) or 0),
+            "delta_from_previous": legacy.get("delta_from_previous") or {},
+            "latest_snapshot": legacy.get("latest_snapshot") or {},
+            "regressions": legacy.get("regressions") or [],
+            "reviewer_recommendation": legacy.get("reviewer_recommendation"),
+            "note": legacy.get("error"),
+        }
+
+    recommendation = str(legacy.get("reviewer_recommendation", ""))
+    regressions = legacy.get("regressions") or []
+    return {
+        "enabled": True,
+        "status": infer_history_status(recommendation, regressions),
+        "history_jsonl": legacy.get("history_jsonl"),
+        "summary_json": legacy.get("summary_json"),
+        "summary_md": legacy.get("summary_md"),
+        "snapshot_count": int(legacy.get("snapshot_count", 0) or 0),
+        "latest_bundle_status": legacy.get("latest_bundle_status"),
+        "runtime_budget_status": manifest.get("runtime_budget_status"),
+        "regression_count": int(legacy.get("regression_count", 0) or 0),
+        "delta_from_previous": legacy.get("delta_from_previous") or {},
+        "latest_snapshot": legacy.get("latest_snapshot") or {},
+        "regressions": regressions,
+        "reviewer_recommendation": legacy.get("reviewer_recommendation"),
+        "note": None,
+    }
+
+
 def build_review_bundle(
     bundle_name: str,
     out_root: Path,
@@ -323,6 +403,13 @@ def build_review_bundle(
         "summary_md": None,
         "status": "not_requested",
         "snapshot_count": 0,
+        "latest_bundle_status": None,
+        "runtime_budget_status": bundle_manifest.get("runtime_budget_status"),
+        "regression_count": 0,
+        "delta_from_previous": {},
+        "latest_snapshot": {},
+        "regressions": [],
+        "reviewer_recommendation": None,
     }
     history_failed = False
     if update_history:
@@ -335,6 +422,7 @@ def build_review_bundle(
                 }
             )
             stable_history["status"] = HISTORY_STATUS_FAIL
+            stable_history["note"] = "History update failed because required history path was missing."
         else:
             try:
                 previous_snapshots = read_snapshots(history_jsonl)
@@ -408,6 +496,13 @@ def build_review_bundle(
                         "summary_md": str(history_summary_md),
                         "status": history_status,
                         "snapshot_count": len(snapshots),
+                        "latest_bundle_status": current_snapshot.delivery_packet_status,
+                        "runtime_budget_status": current_snapshot.runtime_budget_status,
+                        "regression_count": len(regressions),
+                        "delta_from_previous": delta,
+                        "latest_snapshot": history_summary["latest_snapshot"],
+                        "regressions": regressions,
+                        "reviewer_recommendation": recommendation,
                     }
                 )
                 artifacts["history_jsonl"] = str(history_jsonl)
@@ -417,11 +512,20 @@ def build_review_bundle(
                 history_failed = True
                 history_metadata.update({"status": "error", "error": str(exc)})
                 stable_history["status"] = HISTORY_STATUS_FAIL
+                stable_history["note"] = f"History update failed: {exc}"
     else:
         history_metadata["status"] = "not_requested"
-        stable_history["status"] = "not_requested"
-    bundle_manifest["history_update"] = history_metadata
+        stable_history = {
+            "enabled": False,
+            "status": "not_requested",
+            "note": "History update was not requested for this bundle.",
+        }
     bundle_manifest["history"] = stable_history
+    bundle_manifest["history_update"] = {
+        "deprecated": True,
+        "use": "history",
+        **history_metadata,
+    }
     if history_failed:
         msg = f"history update failed: {history_metadata.get('error', 'unknown error')}"
         if warn_only:
@@ -489,26 +593,25 @@ def build_review_bundle(
         index_lines.append(f"- reviewer_diff_status: `{bundle_manifest['reviewer_diff_status']}`")
 
     index_lines.extend(["", "## History Summary", ""])
-    history_update = bundle_manifest.get("history_update", {})
-    if history_update.get("status") == "ok":
-        history_section = bundle_manifest.get("history", {})
-        index_lines.append(f"- History status: `{history_section.get('status', 'pass')}`")
+    history_section = normalize_history_metadata(bundle_manifest)
+    if history_section.get("enabled") and history_section.get("status") != "not_requested":
+        index_lines.append(f"- History status: `{history_section.get('status', HISTORY_STATUS_PASS)}`")
         index_lines.append(f"- Snapshot count: `{history_section.get('snapshot_count', 0)}`")
-        index_lines.append(f"- Latest bundle status: `{history_update.get('latest_bundle_status', 'N/A')}`")
-        index_lines.append(f"- Runtime budget status: `{bundle_manifest.get('runtime_budget_status', 'N/A')}`")
-        index_lines.append(f"- Regression notes: `{history_update.get('regression_count', 0)} regressions`")
-        index_lines.append(f"- History JSONL: `{history_update['history_jsonl']}`")
-        index_lines.append(f"- History summary: `{history_update['summary_md']}`")
+        index_lines.append(f"- Latest bundle status: `{history_section.get('latest_bundle_status', 'N/A')}`")
+        index_lines.append(f"- Runtime budget status: `{history_section.get('runtime_budget_status', bundle_manifest.get('runtime_budget_status', 'N/A'))}`")
+        index_lines.append(f"- Regression notes: `{history_section.get('regression_count', 0)} regressions`")
+        index_lines.append(f"- History JSONL: `{history_section.get('history_jsonl')}`")
+        index_lines.append(f"- History summary: `{history_section.get('summary_md')}`")
         index_lines.append("")
         index_lines.append("### History Delta")
         index_lines.append("")
-        delta = history_update.get("delta_from_previous", {})
+        delta = history_section.get("delta_from_previous", {})
         if not delta:
             index_lines.append("No previous snapshot available.")
         else:
             fast_delta = delta.get("fast_total_delta")
             pytest_delta = delta.get("pytest_fast_delta")
-            latest = history_update.get("latest_snapshot") or {}
+            latest = history_section.get("latest_snapshot") or {}
             latest_fast = latest.get("fast_total_seconds")
             latest_pytest = latest.get("pytest_fast_seconds")
             prev_fast = latest_fast - fast_delta if latest_fast is not None and fast_delta is not None else None
@@ -520,19 +623,19 @@ def build_review_bundle(
                 f"| pytest_fast | {format_seconds(prev_pytest)} | {format_seconds(latest_pytest)} | {format_seconds(pytest_delta)} |",
             ])
         index_lines.append("")
-        if history_update.get("latest_bundle_status") is not None:
-            index_lines.append(f"- Latest bundle status (raw): `{history_update['latest_bundle_status']}`")
-        if history_update.get("regressions") is not None and history_update.get("regressions"):
+        if history_section.get("latest_bundle_status") is not None:
+            index_lines.append(f"- Latest bundle status (raw): `{history_section['latest_bundle_status']}`")
+        if history_section.get("regressions"):
             index_lines.append("- Regression details:")
-            for regression in history_update["regressions"]:
+            for regression in history_section["regressions"]:
                 index_lines.append(f"  - {regression}")
-        if history_update.get("reviewer_recommendation"):
-            index_lines.append(f"- Reviewer recommendation: `{history_update['reviewer_recommendation']}`")
-    elif history_update.get("status") == "error":
+        if history_section.get("reviewer_recommendation"):
+            index_lines.append(f"- Reviewer recommendation: `{history_section['reviewer_recommendation']}`")
+    elif history_section.get("status") == HISTORY_STATUS_FAIL:
         index_lines.append(f"- History status: `{HISTORY_STATUS_FAIL}`")
-        index_lines.append(f"- History update error: `{history_update.get('error', 'unknown error')}`")
+        index_lines.append(f"- History update error: `{history_section.get('note', 'unknown error')}`")
     else:
-        index_lines.append("History update was not requested for this bundle.")
+        index_lines.append(history_section.get("note", "History update was not requested for this bundle."))
 
     index_lines.extend([
         "",
