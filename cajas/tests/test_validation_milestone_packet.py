@@ -152,6 +152,35 @@ def test_milestone_packet_includes_release_readiness_summary(tmp_path: Path) -> 
     assert "Release Readiness Dashboard" in md
 
 
+def test_milestone_packet_includes_alias_removal_plan_summary(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    removal_plan = tmp_path / "removal_plan.json"
+    removal_plan.write_text(
+        json.dumps(
+            {
+                "status": "not_ready",
+                "preconditions_met": False,
+                "recommendation": "keep_fallback",
+                "remaining_blockers": ["alias_sunset_status=watch"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        alias_removal_plan=removal_plan,
+    )
+    assert packet["alias_removal_plan_summary"]["status"] == "not_ready"
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Alias Removal Plan" in md
+
+
 def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     (p["migration"]).write_text(json.dumps({"status": "warn"}), encoding="utf-8")

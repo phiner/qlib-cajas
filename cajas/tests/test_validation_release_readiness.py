@@ -22,6 +22,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
     variance = _write_json(tmp_path / "variance.json", {"status": runtime_variance})
     edge = _write_json(tmp_path / "edge.json", {"status": "pass"})
     budget = _write_json(tmp_path / "budget.json", {"overall_status": "pass", "timing_consistency": {"status": "pass"}})
+    removal = _write_json(tmp_path / "removal.json", {"status": "not_ready", "recommendation": "keep_fallback"})
     return build_validation_release_readiness_report(
         milestone_packet=milestone,
         alias_sunset_review=alias,
@@ -29,6 +30,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         runtime_variance_report=variance,
         runtime_edge_report=edge,
         runtime_budget_report=budget,
+        alias_removal_plan=removal,
     )
 
 
@@ -63,6 +65,7 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
     variance = _write_json(tmp_path / "variance.json", {"status": "pass"})
     edge = _write_json(tmp_path / "edge.json", {"status": "pass"})
     budget = _write_json(tmp_path / "budget.json", {"overall_status": "pass", "timing_consistency": {"status": "pass"}})
+    removal = _write_json(tmp_path / "removal.json", {"status": "ready_to_schedule", "recommendation": "schedule_removal_phase"})
     report = build_validation_release_readiness_report(
         milestone_packet=milestone,
         alias_sunset_review=alias,
@@ -70,8 +73,15 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         runtime_variance_report=variance,
         runtime_edge_report=edge,
         runtime_budget_report=budget,
+        alias_removal_plan=removal,
     )
     assert report["status"] == "ready"
     md = render_validation_release_readiness_markdown(report)
     assert "Next Actions" in md
     assert "Scope Boundary" in md
+
+
+def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -> None:
+    report = _build_report(tmp_path, alias_gate="watch")
+    assert report["alias_removal_plan_status"] == "not_ready"
+    assert "alias_removal_plan_status=not_ready" in report["watch_items"]

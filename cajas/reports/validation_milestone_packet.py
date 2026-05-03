@@ -73,6 +73,7 @@ def build_validation_milestone_packet(
     runtime_release_cycle_report: Path | None = None,
     runtime_variance_report: Path | None = None,
     release_readiness_report: Path | None = None,
+    alias_removal_plan: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -92,6 +93,7 @@ def build_validation_milestone_packet(
     release_readiness = (
         _load_json(release_readiness_report) if release_readiness_report and release_readiness_report.exists() else None
     )
+    removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -193,6 +195,7 @@ def build_validation_milestone_packet(
         "runtime_release_cycle_summary": runtime_release_cycle,
         "runtime_variance_summary": runtime_variance,
         "release_readiness_summary": release_readiness,
+        "alias_removal_plan_summary": removal_plan,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -276,6 +279,13 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('release_readiness_summary') or {}).get('status', 'not_included')}`",
             f"- reason: `{(payload.get('release_readiness_summary') or {}).get('release_readiness_reason', 'n/a')}`",
             f"- next_actions: `{(payload.get('release_readiness_summary') or {}).get('next_actions', [])}`",
+            "",
+            "## Alias Removal Plan",
+            "",
+            f"- `{(payload.get('alias_removal_plan_summary') or {}).get('status', 'not_included')}`",
+            f"- preconditions_met: `{(payload.get('alias_removal_plan_summary') or {}).get('preconditions_met', 'n/a')}`",
+            f"- recommendation: `{(payload.get('alias_removal_plan_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- remaining_blockers: `{(payload.get('alias_removal_plan_summary') or {}).get('remaining_blockers', [])}`",
             "",
             "## Scope Boundary",
             "",

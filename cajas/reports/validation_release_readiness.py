@@ -19,6 +19,7 @@ def build_validation_release_readiness_report(
     runtime_variance_report: Path,
     runtime_edge_report: Path,
     runtime_budget_report: Path,
+    alias_removal_plan: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -26,6 +27,7 @@ def build_validation_release_readiness_report(
     runtime_variance = _load_json(runtime_variance_report)
     runtime_edge = _load_json(runtime_edge_report)
     runtime_budget = _load_json(runtime_budget_report)
+    removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -36,6 +38,7 @@ def build_validation_release_readiness_report(
     timing_consistency_status = (runtime_budget.get("timing_consistency") or {}).get("status", "warn")
     milestone_status = milestone.get("overall_status", "watch")
     migration_status = (milestone.get("alias_migration_summary") or {}).get("status", "warn")
+    removal_plan_status = removal_plan.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -80,6 +83,8 @@ def build_validation_release_readiness_report(
         watch_items.append("timing_consistency_status=warn")
     if migration_status == "warn":
         watch_items.append("alias_migration_readiness_status=warn")
+    if removal_plan_status in {"not_ready", "blocked"}:
+        watch_items.append(f"alias_removal_plan_status={removal_plan_status}")
 
     if blocking_items:
         status = "blocked"
@@ -117,6 +122,9 @@ def build_validation_release_readiness_report(
         "runtime_budget_status": runtime_budget_status,
         "timing_consistency_status": timing_consistency_status,
         "milestone_status": milestone_status,
+        "alias_removal_plan_status": removal_plan_status,
+        "alias_removal_plan_recommendation": removal_plan.get("recommendation"),
+        "alias_removal_plan_remaining_blockers": removal_plan.get("remaining_blockers", []),
         "required_gates": required_gates,
         "watch_items": watch_items,
         "blocking_items": blocking_items,
@@ -140,6 +148,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Runtime release-cycle: `{payload.get('runtime_release_cycle_status', 'watch')}`",
             f"- Runtime variance: `{payload.get('runtime_variance_status', 'watch')}`",
             f"- Milestone status: `{payload.get('milestone_status', 'watch')}`",
+            f"- Alias removal plan: `{payload.get('alias_removal_plan_status', 'not_included')}`",
             "",
             "## Watch Items",
             "",
@@ -152,6 +161,10 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             "## Next Actions",
             "",
             *[f"- {item}" for item in payload.get("next_actions", [])],
+            *[
+                f"- removal_plan_blocker: {item}"
+                for item in payload.get("alias_removal_plan_remaining_blockers", [])
+            ],
             "",
             "## Primary Artifacts",
             "",
