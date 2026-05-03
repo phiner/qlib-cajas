@@ -1002,3 +1002,14 @@ Current audit delta:
 - Back under 105s budget without weakening coverage
 - No tier split needed - optimization alone sufficient
 - Data-source audit: stable at read_csv_count=29
+
+
+### Phase 1226–1255: Validation Review Bundle History and Trend Tracking
+- Added lightweight historical tracking for validation review bundles
+- Created JSONL-based snapshot history with key validation metrics
+- Built history update CLI with regression detection
+- Detects status regressions, runtime increases, count changes
+- Generates reviewer-friendly Markdown summaries
+- Added 8 tests covering history tracking (2.16s, no subprocess calls)
+- Fast validation: ~90.11s (390 tests, +8 from Phase 1196)
+- No impact on fast validation runtime

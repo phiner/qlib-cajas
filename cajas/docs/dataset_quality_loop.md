@@ -610,3 +610,81 @@ python cajas/scripts/build_validation_review_bundle.py \
 - Fast validation at 93% of budget (97.66s / 105s)
 - Limited headroom for future test additions (~7s remaining)
 - May need tier split or budget increase in future phases
+
+
+## Phase 1226–1255: Validation Review Bundle History and Trend Tracking
+
+**Goal**: Add lightweight historical record for validation review bundles to track validation state evolution over time.
+
+**Problem**: No historical tracking of validation bundle state. Reviewers couldn't see how validation metrics evolved across commits or detect gradual regressions.
+
+**Solution**:
+
+1. **Bundle History Snapshots**:
+   - Created `validation_review_bundle_history.py` module
+   - Compact snapshots capture key validation metrics
+   - JSONL format for append-only history
+   - Includes: statuses, runtimes, counts, artifact presence
+
+2. **History Tracking Functions**:
+   - `create_snapshot_from_bundle()` - extract snapshot from bundle artifacts
+   - `append_snapshot()` - append to JSONL history file
+   - `read_snapshots()` - read all snapshots
+   - `compute_delta()` - calculate changes between snapshots
+   - `detect_regressions()` - identify validation regressions
+   - `generate_history_summary_markdown()` - reviewer-friendly summary
+
+3. **History Update CLI**:
+   - Created `update_validation_review_bundle_history.py`
+   - Reads bundle artifacts and appends snapshot
+   - Generates JSON and Markdown summaries
+   - Shows last N snapshots in table format
+   - Detects and highlights regressions
+
+4. **Regression Detection**:
+   - Status regressions: pass → warn/fail
+   - Runtime regressions: >10% increase
+   - Data source regressions: read_csv_count increase
+   - Contract error increases
+   - Missing required artifact increases
+
+**Key Files**:
+- `cajas/reports/validation_review_bundle_history.py` - history tracking module (322 lines)
+- `cajas/scripts/update_validation_review_bundle_history.py` - history update CLI (81 lines)
+- `cajas/tests/test_validation_review_bundle_history.py` - 8 tests covering history tracking
+
+**Validation**:
+- Fast validation: ~90.11s (390 tests passed, +8 from Phase 1196)
+- Runtime budget status: **pass** ✅
+- Required components within budget:
+  - `fast_total`: 90.11s / 105.0s (0.86x, -14.89s under budget)
+  - `pytest_fast`: 87.30s / 95.0s (0.92x, -7.70s under budget)
+- Data-source audit: stable at read_csv_count=29
+- History tests: 8 passed in 2.16s (fast, no subprocess calls)
+
+**Example Usage**:
+
+```bash
+# Update bundle history after building bundle
+python cajas/scripts/update_validation_review_bundle_history.py \
+  --bundle-root tmp/validation-review-bundle \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --out-json tmp/validation-review-bundle/history/review_bundle_history_summary.json \
+  --out-md tmp/validation-review-bundle/history/review_bundle_history_summary.md \
+  --last-n 10
+```
+
+**Impact**:
+- Lightweight historical tracking without heavy subprocess calls
+- Reviewers can see validation state evolution
+- Automatic regression detection
+- Fast tests (2.16s for 8 tests)
+- No impact on fast validation runtime (90.11s, same as Phase 1196)
+- JSONL format allows easy append and analysis
+
+**Limitations**:
+- No automatic integration with review bundle workflow (manual CLI call)
+- No historical trend visualization/charts
+- No multi-repository history aggregation
+- Simple regression detection (no ML-based anomaly detection)
+- JSONL file grows unbounded (no rotation/archival)
