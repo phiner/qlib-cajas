@@ -59,6 +59,7 @@ def test_milestone_packet_build_pass(tmp_path: Path) -> None:
     )
     assert packet["overall_status"] == "pass"
     assert "artifact_map" in packet
+    assert packet["current_baseline"]["active_alias_emission_supported"] is False
     md = render_validation_milestone_packet_markdown(packet)
     assert "Scope Boundary" in md
     assert "Primary Reviewer Artifacts" in md

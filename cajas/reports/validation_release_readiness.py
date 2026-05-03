@@ -102,6 +102,10 @@ def build_validation_release_readiness_report(
     apply_report_status = apply_report.get("status")
     applied_readiness_status = applied_readiness.get("status")
     fallback_removal_status = fallback_removal_readiness.get("status")
+    fallback_removed = fallback_removal_readiness.get("fallback_removed")
+    active_alias_emission_supported = fallback_removal_readiness.get("active_alias_emission_supported")
+    legacy_read_normalization_kept = fallback_removal_readiness.get("legacy_read_normalization_kept")
+    fallback_post_removal_status = fallback_removal_readiness.get("post_removal_status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -168,6 +172,8 @@ def build_validation_release_readiness_report(
         watch_items.append(f"applied_evidence_readiness_status={applied_readiness_status}")
     if fallback_removal_status in {"not_ready", "blocked"}:
         watch_items.append(f"alias_fallback_removal_readiness_status={fallback_removal_status}")
+    if fallback_post_removal_status == "fail":
+        blocking_items.append("alias_fallback_post_removal_status=fail")
 
     if blocking_items:
         status = "blocked"
@@ -236,6 +242,10 @@ def build_validation_release_readiness_report(
         "applied_evidence_readiness_status": applied_readiness_status,
         "applied_evidence_readiness_next_action": applied_readiness.get("next_action"),
         "alias_fallback_removal_readiness_status": fallback_removal_status,
+        "fallback_removed": fallback_removed,
+        "active_alias_emission_supported": active_alias_emission_supported,
+        "legacy_read_normalization_kept": legacy_read_normalization_kept,
+        "alias_fallback_post_removal_status": fallback_post_removal_status,
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get(
             "do_not_remove_in_this_phase"

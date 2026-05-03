@@ -237,8 +237,10 @@ def build_validation_milestone_packet(
         "overall_status": overall_status,
         "current_baseline": {
             "default_manifest_mode": "canonical_history_only",
-            "fallback_flag": "--include-history-update-alias",
+            "fallback_flag": "--include-history-update-alias (sunset; fail-fast)",
             "transition_flag": "--omit-history-update-alias",
+            "active_alias_emission_supported": False,
+            "legacy_read_normalization_kept": True,
         },
         "artifact_map": _build_artifact_map(
             review_bundle_root=review_bundle_root,
@@ -293,7 +295,8 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "## Current Operating Model",
             "",
             "- Default manifest emits canonical `history` only.",
-            "- Deprecated alias fallback is explicit via `--include-history-update-alias`.",
+            "- Active `history_update` alias emission is removed; `--include-history-update-alias` is sunset (fail-fast).",
+            "- Legacy manifest read compatibility is preserved via normalization.",
             "",
             "## Primary Reviewer Artifacts",
             "",
