@@ -187,10 +187,10 @@ def build_validation_eurusd_dataset_audit(
     elif watch:
         overall_status = "watch"
 
-    ready_like = [x for x in per_file if x.get("status") in {"ready", "watch"}]
-    combined_start = min((x.get("start_timestamp") for x in ready_like if x.get("start_timestamp")), default=None)
-    combined_end = max((x.get("end_timestamp") for x in ready_like if x.get("end_timestamp")), default=None)
-    combined_rows = sum(int(x.get("row_count", 0)) for x in ready_like)
+    with_rows = [x for x in per_file if isinstance(x.get("row_count"), int) and int(x.get("row_count", 0)) > 0]
+    combined_start = min((x.get("start_timestamp") for x in with_rows if x.get("start_timestamp")), default=None)
+    combined_end = max((x.get("end_timestamp") for x in with_rows if x.get("end_timestamp")), default=None)
+    combined_rows = sum(int(x.get("row_count", 0)) for x in with_rows)
 
     return {
         "schema_version": 1,
