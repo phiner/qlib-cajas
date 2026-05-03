@@ -389,9 +389,14 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertEqual(manifest["history_update"]["status"], "ok")
             self.assertTrue(history_jsonl.exists())
             self.assertIn("history_jsonl", manifest["artifacts"])
+            self.assertIn("history", manifest)
+            self.assertTrue(manifest["history"]["enabled"])
+            self.assertEqual(manifest["history"]["status"], "pass")
             index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
-            self.assertIn("history_jsonl", index_text)
-            self.assertIn("reviewer_recommendation", index_text)
+            self.assertIn("History Summary", index_text)
+            self.assertIn("History status", index_text)
+            self.assertIn("History summary", index_text)
+            self.assertNotIn("runtime_delta_from_previous: `{'", index_text)
 
     def test_second_history_run_computes_delta(self) -> None:
         """Second history-enabled run should include runtime delta."""
@@ -457,6 +462,11 @@ class ValidationReviewBundleTests(unittest.TestCase):
             delta = manifest["history_update"]["delta_from_previous"]
             self.assertIn("fast_total_delta", delta)
             self.assertLess(delta["fast_total_delta"], 0)
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("| Metric | Previous | Current | Delta |", index_text)
+            self.assertIn("| fast_total |", index_text)
+            self.assertIn("| pytest_fast |", index_text)
+            self.assertNotIn("{'fast_total_delta'", index_text)
 
     def test_history_failure_respects_warn_only(self) -> None:
         """History failures should warn with warn_only and fail without it."""
@@ -497,6 +507,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
             self.assertEqual(warn_manifest["history_update"]["status"], "error")
             self.assertTrue(warn_manifest["warnings"])
+            self.assertEqual(warn_manifest["history"]["status"], "fail")
 
             with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
                 with self.assertRaises(RuntimeError):
@@ -520,6 +531,48 @@ class ValidationReviewBundleTests(unittest.TestCase):
                         history_last_n=10,
                         warn_only=False,
                     )
+
+    def test_no_history_mode_has_clean_note(self) -> None:
+        """No-history mode should render clean explicit note."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=False,
+                    history_jsonl=tmp_path / "history" / "history.jsonl",
+                    history_last_n=10,
+                    warn_only=True,
+                )
+
+            self.assertFalse(manifest["history"]["enabled"])
+            self.assertEqual(manifest["history"]["status"], "not_requested")
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("History update was not requested for this bundle.", index_text)
 
 
 if __name__ == "__main__":
