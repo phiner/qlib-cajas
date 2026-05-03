@@ -2120,3 +2120,26 @@ Readability polish only. No new workflow semantics, no Qlib core changes, and no
 - New/updated consumers should read `manifest["history"]`.
 - Legacy consumers may continue reading `history_update` during compatibility window.
 - This phase does not change validation workflow semantics.
+
+
+## Phase 1346–1375 Addendum: Canonical History Consumer Migration Guard
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Harden consumer migration to canonical history metadata and guard against legacy drift during compatibility window.
+
+### Highlights
+
+1. Added shared helper module `cajas/reports/validation_review_bundle_metadata.py`.
+2. Centralized canonical/legacy normalization through `normalize_history_metadata(manifest)`.
+3. Added compatibility validation helper `validate_history_metadata_compatibility(manifest)`.
+4. Added compatibility check CLI `cajas/scripts/check_review_bundle_manifest_compatibility.py`.
+5. Updated bundle index rendering to consume canonical normalized metadata only.
+
+### Forward Migration Note
+
+- `history` is canonical immediately.
+- `history_update` remains temporary and deprecated.
+- A later phase may remove `history_update` after downstream migration is complete.

@@ -815,3 +815,29 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Validation note**:
 - No new workflow semantics were introduced; this phase is manifest/index contract cleanup only.
+
+
+## Phase 1346–1375: Canonical History Consumer Migration Guard
+
+**Goal**: Route internal history metadata consumers through canonical `history` or shared normalization helpers, and add migration-safety checks.
+
+**What changed**:
+- Added shared metadata utility module:
+  - `cajas/reports/validation_review_bundle_metadata.py`
+  - `normalize_history_metadata(manifest)`
+  - `validate_history_metadata_compatibility(manifest)`
+- Updated builder/index flow to use shared helper imports instead of script-local normalization logic.
+- Added optional compatibility check CLI:
+  - `cajas/scripts/check_review_bundle_manifest_compatibility.py`
+- Added migration-guard warnings for:
+  - missing canonical `history`
+  - malformed/deprecated `history_update` alias metadata
+  - canonical/legacy disagreement on key fields
+
+**Consumer guidance**:
+- Canonical source: `manifest["history"]`
+- Compatibility path: `normalize_history_metadata(manifest)`
+- Deprecated alias `history_update` is retained only for compatibility window.
+
+**Validation note**:
+- Contract hardening only; no new workflow semantics introduced.

@@ -1042,3 +1042,11 @@ Current audit delta:
 - Kept `history_update` as deprecated compatibility alias with explicit deprecation markers
 - Updated index rendering to consume normalized canonical history metadata
 - No new workflow semantics; compatibility and contract cleanup only
+
+
+### Phase 1346–1375: Canonical History Consumer Migration Guard
+- Audited internal `history_update` consumer paths and routed consumers through canonical helper path
+- Added shared utility `cajas/reports/validation_review_bundle_metadata.py`
+- Added compatibility warnings helper for canonical/legacy mismatch detection
+- Added `check_review_bundle_manifest_compatibility.py` for manifest compatibility reporting
+- Retained `history_update` only as deprecated compatibility alias for migration window
