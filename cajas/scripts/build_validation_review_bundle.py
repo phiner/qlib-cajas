@@ -24,6 +24,7 @@ from cajas.reports.validation_gate_summary import (
     DEFAULT_CI_PROFILES,
     ValidationGate,
     build_final_status_payload,
+    load_ci_profile_policy,
     render_final_status_markdown,
 )
 from cajas.reports.validation_review_bundle_metadata import (
@@ -129,6 +130,7 @@ def build_review_bundle(
     skip_runtime_budget: bool = False,
     max_timing_age_seconds: int = 3600,
     ci_profile: str = "ci",
+    ci_profile_config: Path | None = None,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -159,6 +161,10 @@ def build_review_bundle(
                 warnings.append(message)
             else:
                 raise RuntimeError(message)
+    profile_config, profile_policy = load_ci_profile_policy(
+        ci_profile if ci else "local",
+        ci_profile_config,
+    )
 
     # Step 1: Run dataset quality smoke
     smoke_cmd = [
@@ -741,6 +747,8 @@ def build_review_bundle(
         git_branch=git_info["branch"],
         git_commit=git_info["commit"],
         profile=ci_profile if ci else "local",
+        profile_config=profile_config,
+        profile_policy=profile_policy,
         command=" ".join(sys.argv),
     )
     final_status_json = out_root / "final_status.json"
@@ -773,17 +781,40 @@ def build_review_bundle(
         "**Important**: This bundle summarizes offline Qlib research infrastructure validation artifacts only.",
         "",
         f"Overall status: `{final_status_payload['overall_status']}`",
+        f"Profile: `{final_status_payload.get('profile')}`",
+        (
+            "Optional warnings are visible but do not escalate overall status."
+            if not final_status_payload.get("profile_policy", {}).get("optional_warn_affects_status", True)
+            else "Optional warnings escalate overall status."
+        ),
         "",
-        "## CI Gate Summary",
+        "## Escalation Summary",
         "",
-        "| Gate | Required | Status | Reason | Action | Artifact |",
-        "|---|---:|---|---|---|---|",
     ]
+    escalated = [
+        g for g in final_status_payload.get("gates", []) if g.get("status") in {"warn", "fail", "not_run"} and g.get("escalated")
+    ]
+    non_escalated_warn = [
+        g for g in final_status_payload.get("gates", []) if g.get("status") == "warn" and not g.get("escalated")
+    ]
+    index_lines.extend(
+        [
+            f"- escalated_gates: `{len(escalated)}`",
+            f"- non_escalated_warning_gates: `{len(non_escalated_warn)}`",
+            f"- primary_artifact: `{final_status_payload.get('primary_artifact')}`",
+            f"- reviewer_next_action: `{final_status_payload.get('reviewer_next_action')}`",
+            "",
+            "## CI Gate Summary",
+            "",
+            "| Gate | Required | Status | Escalated | Profile Effect | Reason | Action | Artifact |",
+            "|---|---:|---|---:|---|---|---|---|",
+        ]
+    )
 
     for gate in final_status_payload["gates"]:
         artifact = gate.get("artifact_json") or gate.get("artifact_md") or ""
         index_lines.append(
-            f"| {gate.get('name')} | {'yes' if gate.get('required') else 'no'} | {gate.get('status')} | {gate.get('reason_code', '')} | {gate.get('action', '')} | {artifact} |"
+            f"| {gate.get('name')} | {'yes' if gate.get('required') else 'no'} | {gate.get('status')} | {'yes' if gate.get('escalated') else 'no'} | {gate.get('profile_effect', '')} | {gate.get('reason_code', '')} | {gate.get('action', '')} | {artifact} |"
         )
 
     index_lines.extend([
@@ -985,6 +1016,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-runtime-budget", action="store_true", help="Skip runtime budget check in CI mode")
     parser.add_argument("--max-timing-age-seconds", type=int, default=3600, help="Maximum accepted timing age for runtime budget checks")
     parser.add_argument("--ci-profile", choices=["local", "ci", "strict"], default="ci", help="CI gate aggregation profile")
+    parser.add_argument(
+        "--ci-profile-config",
+        type=Path,
+        help="Optional external CI profile config JSON (profiles/local|ci|strict)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -1018,6 +1054,7 @@ def main(argv: list[str] | None = None) -> int:
             skip_runtime_budget=args.skip_runtime_budget,
             max_timing_age_seconds=args.max_timing_age_seconds,
             ci_profile=args.ci_profile,
+            ci_profile_config=args.ci_profile_config,
         )
 
         print(json.dumps({"status": "ok", "bundle_manifest": str(args.out_root / "review_bundle_manifest.json")}))

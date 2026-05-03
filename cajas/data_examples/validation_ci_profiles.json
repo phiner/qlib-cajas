@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "default_profile": "ci",
+  "profiles": {
+    "local": {
+      "optional_not_run_affects_status": false,
+      "optional_warn_affects_status": false,
+      "required_warn_affects_status": true,
+      "description": "Local reviewer mode: optional gates remain visible but do not escalate overall status."
+    },
+    "ci": {
+      "optional_not_run_affects_status": false,
+      "optional_warn_affects_status": true,
+      "required_warn_affects_status": true,
+      "description": "CI mode: optional warnings affect status, optional not-run gates do not."
+    },
+    "strict": {
+      "optional_not_run_affects_status": true,
+      "optional_warn_affects_status": true,
+      "required_warn_affects_status": true,
+      "description": "Strict mode: optional warnings and missing optional gates both affect status."
+    }
+  }
+}
