@@ -21,6 +21,10 @@ from cajas.reports.validation_review_bundle_history import (
     read_snapshots,
 )
 
+HISTORY_STATUS_PASS = "pass"
+HISTORY_STATUS_WARN = "warn"
+HISTORY_STATUS_FAIL = "fail"
+
 
 def get_git_info() -> dict[str, str]:
     """Get current git branch and commit."""
@@ -57,6 +61,25 @@ def run_command(cmd: list[str], description: str) -> tuple[bool, str]:
         return True, result.stdout
     except subprocess.CalledProcessError as e:
         return False, f"Error: {e.stderr}"
+
+
+def format_seconds(value: Any) -> str:
+    """Format seconds for human-readable markdown output."""
+    if value is None:
+        return "N/A"
+    try:
+        return f"{float(value):.2f}s"
+    except (TypeError, ValueError):
+        return "N/A"
+
+
+def infer_history_status(recommendation: str, regressions: list[str], history_error: bool = False) -> str:
+    """Infer compact history status for reviewer summary."""
+    if history_error:
+        return HISTORY_STATUS_FAIL
+    if recommendation == "review_regressions" or regressions:
+        return HISTORY_STATUS_WARN
+    return HISTORY_STATUS_PASS
 
 
 def build_review_bundle(
@@ -293,6 +316,14 @@ def build_review_bundle(
 
     # Step 8: Optional history update
     history_metadata: dict[str, Any] = {"requested": update_history}
+    stable_history: dict[str, Any] = {
+        "enabled": update_history,
+        "history_jsonl": str(history_jsonl) if history_jsonl else None,
+        "summary_json": None,
+        "summary_md": None,
+        "status": "not_requested",
+        "snapshot_count": 0,
+    }
     history_failed = False
     if update_history:
         if not history_jsonl:
@@ -303,6 +334,7 @@ def build_review_bundle(
                     "error": "history_jsonl is required when --update-history is set",
                 }
             )
+            stable_history["status"] = HISTORY_STATUS_FAIL
         else:
             try:
                 previous_snapshots = read_snapshots(history_jsonl)
@@ -340,6 +372,7 @@ def build_review_bundle(
                         "delivery_packet_status": current_snapshot.delivery_packet_status,
                         "runtime_budget_status": current_snapshot.runtime_budget_status,
                         "fast_total_seconds": current_snapshot.fast_total_seconds,
+                        "pytest_fast_seconds": current_snapshot.pytest_fast_seconds,
                     },
                     "latest_bundle_status": current_snapshot.delivery_packet_status,
                     "delta_from_previous": delta,
@@ -353,6 +386,7 @@ def build_review_bundle(
                 with open(history_summary_md, "w", encoding="utf-8") as f:
                     f.write(generate_history_summary_markdown(snapshots, last_n=history_last_n))
 
+                history_status = infer_history_status(recommendation, regressions, history_error=False)
                 history_metadata.update(
                     {
                         "status": "ok",
@@ -360,10 +394,20 @@ def build_review_bundle(
                         "summary_json": str(history_summary_json),
                         "summary_md": str(history_summary_md),
                         "latest_bundle_status": current_snapshot.delivery_packet_status,
+                        "latest_snapshot": history_summary["latest_snapshot"],
                         "delta_from_previous": delta,
                         "regressions": regressions,
                         "regression_count": len(regressions),
                         "reviewer_recommendation": recommendation,
+                    }
+                )
+                stable_history.update(
+                    {
+                        "history_jsonl": str(history_jsonl),
+                        "summary_json": str(history_summary_json),
+                        "summary_md": str(history_summary_md),
+                        "status": history_status,
+                        "snapshot_count": len(snapshots),
                     }
                 )
                 artifacts["history_jsonl"] = str(history_jsonl)
@@ -372,9 +416,12 @@ def build_review_bundle(
             except Exception as exc:
                 history_failed = True
                 history_metadata.update({"status": "error", "error": str(exc)})
+                stable_history["status"] = HISTORY_STATUS_FAIL
     else:
         history_metadata["status"] = "not_requested"
+        stable_history["status"] = "not_requested"
     bundle_manifest["history_update"] = history_metadata
+    bundle_manifest["history"] = stable_history
     if history_failed:
         msg = f"history update failed: {history_metadata.get('error', 'unknown error')}"
         if warn_only:
@@ -441,27 +488,49 @@ def build_review_bundle(
     if "reviewer_diff_status" in bundle_manifest:
         index_lines.append(f"- reviewer_diff_status: `{bundle_manifest['reviewer_diff_status']}`")
 
-    index_lines.extend([
-        "",
-        "## History",
-        "",
-    ])
+    index_lines.extend(["", "## History Summary", ""])
     history_update = bundle_manifest.get("history_update", {})
     if history_update.get("status") == "ok":
-        index_lines.append(f"- history_jsonl: `{history_update['history_jsonl']}`")
-        index_lines.append(f"- history_summary_json: `{history_update['summary_json']}`")
-        index_lines.append(f"- history_summary_md: `{history_update['summary_md']}`")
+        history_section = bundle_manifest.get("history", {})
+        index_lines.append(f"- History status: `{history_section.get('status', 'pass')}`")
+        index_lines.append(f"- Snapshot count: `{history_section.get('snapshot_count', 0)}`")
+        index_lines.append(f"- Latest bundle status: `{history_update.get('latest_bundle_status', 'N/A')}`")
+        index_lines.append(f"- Runtime budget status: `{bundle_manifest.get('runtime_budget_status', 'N/A')}`")
+        index_lines.append(f"- Regression notes: `{history_update.get('regression_count', 0)} regressions`")
+        index_lines.append(f"- History JSONL: `{history_update['history_jsonl']}`")
+        index_lines.append(f"- History summary: `{history_update['summary_md']}`")
+        index_lines.append("")
+        index_lines.append("### History Delta")
+        index_lines.append("")
+        delta = history_update.get("delta_from_previous", {})
+        if not delta:
+            index_lines.append("No previous snapshot available.")
+        else:
+            fast_delta = delta.get("fast_total_delta")
+            pytest_delta = delta.get("pytest_fast_delta")
+            latest = history_update.get("latest_snapshot") or {}
+            latest_fast = latest.get("fast_total_seconds")
+            latest_pytest = latest.get("pytest_fast_seconds")
+            prev_fast = latest_fast - fast_delta if latest_fast is not None and fast_delta is not None else None
+            prev_pytest = latest_pytest - pytest_delta if latest_pytest is not None and pytest_delta is not None else None
+            index_lines.extend([
+                "| Metric | Previous | Current | Delta |",
+                "|---|---:|---:|---:|",
+                f"| fast_total | {format_seconds(prev_fast)} | {format_seconds(latest_fast)} | {format_seconds(fast_delta)} |",
+                f"| pytest_fast | {format_seconds(prev_pytest)} | {format_seconds(latest_pytest)} | {format_seconds(pytest_delta)} |",
+            ])
+        index_lines.append("")
         if history_update.get("latest_bundle_status") is not None:
-            index_lines.append(f"- latest_bundle_status: `{history_update['latest_bundle_status']}`")
-        if history_update.get("delta_from_previous"):
-            index_lines.append(f"- runtime_delta_from_previous: `{history_update['delta_from_previous']}`")
-        if history_update.get("regressions") is not None:
-            index_lines.append(f"- regression_count: `{history_update['regression_count']}`")
+            index_lines.append(f"- Latest bundle status (raw): `{history_update['latest_bundle_status']}`")
+        if history_update.get("regressions") is not None and history_update.get("regressions"):
+            index_lines.append("- Regression details:")
+            for regression in history_update["regressions"]:
+                index_lines.append(f"  - {regression}")
         if history_update.get("reviewer_recommendation"):
-            index_lines.append(f"- reviewer_recommendation: `{history_update['reviewer_recommendation']}`")
+            index_lines.append(f"- Reviewer recommendation: `{history_update['reviewer_recommendation']}`")
     elif history_update.get("status") == "error":
-        index_lines.append(f"- history_update_status: `error`")
-        index_lines.append(f"- history_update_error: `{history_update.get('error', 'unknown error')}`")
+        index_lines.append(f"- History status: `{HISTORY_STATUS_FAIL}`")
+        index_lines.append(f"- History update error: `{history_update.get('error', 'unknown error')}`")
     else:
         index_lines.append("History update was not requested for this bundle.")
 
