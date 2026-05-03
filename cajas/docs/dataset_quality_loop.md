@@ -1499,3 +1499,60 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2246-2305 Addendum: External Consumer Evidence and Runtime Variance Triage
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Move alias sunset review from status-only input to evidence-aware review while adding runtime variance triage and integrating both into release-cycle and milestone reporting.
+
+### Highlights
+
+1. Added consumer evidence example file:
+   - `cajas/data_examples/history_alias_external_consumers.json`
+2. Extended alias sunset review to ingest evidence file and derive evidence counts.
+3. Kept explicit CLI override precedence:
+   - `--external-consumer-status` overrides evidence-file status for the current run.
+4. Added runtime variance triage report module and CLI.
+5. Extended runtime release-cycle report to consume variance status.
+6. Extended milestone packet to include runtime variance summary.
+
+### Current Outputs
+
+- `tmp/history-alias-sunset-review.json`
+- `tmp/history-alias-sunset-review.md`
+- `tmp/validation-runtime-variance-report.json`
+- `tmp/validation-runtime-variance-report.md`
+- `tmp/validation-runtime-release-cycle-report.json`
+- `tmp/validation-runtime-release-cycle-report.md`
+- `tmp/validation-milestone-packet.json`
+- `tmp/validation-milestone-packet.md`
+
+### Current Results
+
+- Alias sunset review:
+  - status: `watch`
+  - action: `keep_fallback`
+  - reason: unresolved external consumer evidence remains.
+- Runtime variance triage:
+  - status: `pass`
+  - `current_fast_total_seconds=88.806`
+  - largest delta vs baselines: `+3.945s` (`+4.65%`), below `10%` watch threshold.
+- Runtime release-cycle:
+  - status: `pass`
+  - recommendation: `ok`
+  - trigger: `manual_next_release`
+- Milestone packet:
+  - overall status: `watch`
+  - primary watch driver: alias sunset unresolved external consumer evidence.
+
+### Known Limitations
+
+- Alias fallback sunset remains blocked on external consumer confirmation.
+- Runtime variance classification is baseline-dependent; trend tracking must continue across future cycles.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

@@ -1302,3 +1302,48 @@ Known limitation:
   - `--runtime-release-cycle-report`
 - Current alias sunset review result (`external-consumer-status=unknown`): `watch`, action `keep_fallback`.
 - Current runtime release-cycle result: `pass`, recommendation `ok`.
+
+## Phase 2246-2305 Addendum: Consumer Evidence Intake and Runtime Variance Triage
+
+- Added external consumer evidence example:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+- Extended alias sunset review to ingest consumer evidence:
+  - `cajas/reports/validation_alias_sunset_review.py`
+  - `cajas/scripts/build_alias_sunset_review.py`
+- Alias sunset precedence:
+  - explicit `--external-consumer-status` overrides evidence file status for the current run
+- Alias sunset evidence summary now includes:
+  - `evidence_source`
+  - `consumers`
+  - `requires_alias_count`
+  - `confirmed_clear_count`
+  - `unresolved_count`
+- Added runtime variance triage report + CLI:
+  - `cajas/reports/validation_runtime_variance.py`
+  - `cajas/scripts/build_validation_runtime_variance_report.py`
+- Runtime variance status rules:
+  - `fail`: runtime budget/timing consistency fail
+  - `warn`: runtime budget warns
+  - `watch`: material delta over configured threshold (default 10%) with budget pass
+  - `pass`: budget/timing pass and deltas below watch threshold
+- Integrated runtime variance into release-cycle monitor:
+  - `cajas/reports/validation_runtime_release_cycle.py`
+  - `cajas/scripts/build_validation_runtime_release_cycle_report.py`
+- Integrated alias evidence + runtime variance into milestone packet:
+  - `cajas/reports/validation_milestone_packet.py`
+  - `cajas/scripts/build_validation_milestone_packet.py`
+
+Current outputs:
+- alias sunset review: `tmp/history-alias-sunset-review.json|md`
+- runtime variance report: `tmp/validation-runtime-variance-report.json|md`
+- runtime release-cycle report: `tmp/validation-runtime-release-cycle-report.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- alias sunset review: `watch`, action `keep_fallback` (external consumer unresolved)
+- runtime variance: `pass` (`88.806s`, below 10% watch threshold vs baselines)
+- runtime release-cycle: `pass`, recommendation `ok`
+- milestone overall: `watch` (driven by alias sunset watch)
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

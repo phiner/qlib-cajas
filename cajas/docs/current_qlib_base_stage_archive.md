@@ -2503,3 +2503,58 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2246-2305 Addendum: Consumer Evidence Intake and Runtime Variance Integration
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add evidence-backed alias sunset review and runtime variance triage, then connect both into release-cycle and milestone packet reviewer outputs.
+
+### Implemented Changes
+
+1. Added external-consumer evidence example:
+   - `cajas/data_examples/history_alias_external_consumers.json`
+2. Enhanced alias sunset review/report model:
+   - supports `--consumer-evidence`
+   - tracks evidence source, consumer list, and derived counts
+   - precedence: explicit `--external-consumer-status` overrides evidence status
+3. Added runtime variance report:
+   - `cajas/reports/validation_runtime_variance.py`
+   - `cajas/scripts/build_validation_runtime_variance_report.py`
+4. Extended runtime release-cycle report:
+   - consumes optional runtime-variance input
+   - escalates to `watch` when variance is `watch` and no stronger status exists
+5. Extended milestone packet:
+   - consumes optional runtime-variance report
+   - includes variance summary in final reviewer packet
+
+### Validation Snapshot
+
+- Focused phase suites: pass
+- Related validation suites: pass
+- Fast validation: pass (`468 passed`, `16 deselected`, total `88.806s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+
+### Current Reviewer Outcomes
+
+- Alias sunset review:
+  - status: `watch`
+  - recommended action: `keep_fallback`
+  - rationale: unresolved external consumer evidence remains.
+- Runtime variance:
+  - status: `pass`
+  - deltas below `10%` watch threshold against provided baselines.
+- Runtime release-cycle:
+  - status: `pass`
+  - recommendation: `ok`
+  - next trigger: `manual_next_release`
+- Milestone packet:
+  - overall status: `watch` (driven by alias sunset watch)
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
