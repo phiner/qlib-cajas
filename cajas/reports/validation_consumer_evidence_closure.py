@@ -108,6 +108,12 @@ def build_consumer_evidence_closure_report(*, consumer_evidence: Path) -> dict[s
         "evidence_completeness_ratio": completeness_ratio,
         "next_actions": next_actions,
         "action_plan": action_plan,
+        "closure_checklist": [
+            "Identify owner for unresolved external consumer",
+            "Confirm whether consumer reads manifest.history",
+            "If consumer requires alias, keep fallback and create migration item",
+            "If confirmed clear, update evidence file with owner, last_checked, evidence, and status",
+        ],
         "consumers": items,
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
     }
@@ -143,6 +149,10 @@ def render_consumer_evidence_closure_markdown(payload: dict[str, Any]) -> str:
             "## Next Actions",
             "",
             *([f"- {a}" for a in next_actions] if next_actions else ["- none"]),
+            "",
+            "## Closure Checklist",
+            "",
+            *[f"- {item}" for item in payload.get("closure_checklist", [])],
             "",
             "## Scope Boundary",
             "",
