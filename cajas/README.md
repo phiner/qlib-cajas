@@ -1190,3 +1190,42 @@ Current audit delta:
   - manifest compatibility gate recovers to `pass` for healthy generated bundles
   - runtime budget and timing consistency remain `pass`
   - profile matrix no longer fails all profiles due to manifest compatibility mismatch
+
+## Phase 1886-1945 Addendum: History Alias Deprecation and Strict Profile Warning Clarity
+
+- Added explicit deprecation metadata for compatibility alias `history_update`:
+  - `deprecation_stage=compatibility_alias`
+  - `removal_target_phase=future`
+  - `consumer_action=Read manifest.history instead.`
+- Added `--omit-history-update-alias` to `build_validation_review_bundle.py`:
+  - default keeps compatibility alias
+  - optional mode emits canonical `history` only
+- Compatibility expectations now covered by tests:
+  - canonical-only `history`: `pass`
+  - canonical `history` + synchronized alias: `pass`
+  - legacy-only alias fallback: `warn`
+  - canonical/alias mismatch: `fail`
+- Strict-profile outputs now explicitly explain expected warn behavior:
+  - `strict_warning_reason=optional_not_run_or_warn_escalated_by_strict_policy`
+  - `profile_matrix.md` includes `Strict Warning Note` when strict is `warn` with zero blocking gates
+
+Example canonical-only run:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile local \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --bundle-name dataset_quality_review_bundle_no_alias \
+  --out-root tmp/validation-review-bundle-no-alias \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle-no-alias/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility \
+  --warn-only \
+  --omit-history-update-alias
+```

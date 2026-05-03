@@ -2365,3 +2365,31 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 1886-1945 Addendum: History Alias Deprecation and Strict Profile Warning Clarity
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Clarify migration contract for deprecated `history_update` alias and explain strict-profile warning outcomes as policy effects, not hidden required-gate failures.
+
+### Highlights
+
+1. Extended generated alias metadata:
+   - `history_update.deprecation_stage=compatibility_alias`
+   - `history_update.removal_target_phase=future`
+   - `history_update.consumer_action=Read manifest.history instead.`
+2. Added `--omit-history-update-alias` to review-bundle builder for canonical-only emission.
+3. Verified compatibility behavior:
+   - canonical-only manifest passes
+   - canonical+alias synchronized manifest passes
+   - legacy-only alias fallback remains warn
+   - canonical/alias mismatch remains fail
+4. Added strict-profile reason clarity:
+   - profile matrix now emits `strict_warning_reason` when strict warn is due to optional gate escalation
+   - markdown adds `Strict Warning Note` explaining required gates may still pass
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

@@ -1322,3 +1322,33 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 
 **Non-goals**:
 - No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
+
+## Phase 1886-1945 Addendum: History Alias Deprecation and Strict Profile Warning Clarity
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Make `history`/`history_update` migration state explicit and reduce confusion around strict-profile warning outcomes.
+
+### Highlights
+
+1. Added alias deprecation metadata in generated manifests:
+   - `deprecation_stage=compatibility_alias`
+   - `removal_target_phase=future`
+   - `consumer_action=Read manifest.history instead.`
+2. Added optional alias omission control:
+   - `--omit-history-update-alias`
+   - default keeps alias for compatibility, flag emits canonical-only manifest
+3. Kept compatibility checker semantics explicit:
+   - canonical-only: `pass`
+   - canonical+alias synced: `pass`
+   - legacy-only alias fallback: `warn`
+   - canonical/alias mismatch: `fail`
+4. Added strict warning clarity in matrix outputs:
+   - strict warn with no blocking gates now carries `strict_warning_reason`
+   - markdown includes `Strict Warning Note` for expected strict-policy escalations
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
