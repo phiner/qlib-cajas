@@ -419,6 +419,48 @@ def test_milestone_packet_includes_final_release_ready_closure_summary(tmp_path:
     assert "Final Release-Ready Closure" in md
 
 
+def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    alias_sunset = tmp_path / "alias_sunset.json"
+    readiness = tmp_path / "readiness.json"
+    closure = tmp_path / "closure.json"
+    reviewer_packet = tmp_path / "reviewer.json"
+    alias_post = tmp_path / "alias_post.json"
+    cadence = tmp_path / "cadence.json"
+    runtime_cycle = tmp_path / "runtime_cycle.json"
+    runtime_variance = tmp_path / "runtime_variance.json"
+    alias_sunset.write_text(json.dumps({"status": "watch"}), encoding="utf-8")
+    readiness.write_text(json.dumps({"status": "ready", "superseded_watch_items": ["alias_sunset_decision_gate=watch"]}), encoding="utf-8")
+    closure.write_text(json.dumps({"status": "ready"}), encoding="utf-8")
+    reviewer_packet.write_text(json.dumps({"status": "ready_for_review"}), encoding="utf-8")
+    alias_post.write_text(json.dumps({"status": "closed"}), encoding="utf-8")
+    cadence.write_text(json.dumps({"status": "routine", "recommended_cadence": "next_release_cycle"}), encoding="utf-8")
+    runtime_cycle.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
+    runtime_variance.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        alias_sunset_review=alias_sunset,
+        release_readiness_report=readiness,
+        release_ready_closure=closure,
+        final_reviewer_packet=reviewer_packet,
+        alias_post_removal_closure=alias_post,
+        maintenance_cadence=cadence,
+        runtime_release_cycle_report=runtime_cycle,
+        runtime_variance_report=runtime_variance,
+    )
+    assert packet["overall_status"] == "watch"
+    assert packet["review_state"] == "ready_for_review"
+    assert packet["blocking"] is False
+    assert "alias_sunset_decision_gate=watch" in packet["superseded_watch_items"]
+    assert packet["maintenance_cadence"] == "next_release_cycle"
+
+
 def test_cli_missing_critical_fails_without_warn_only(tmp_path: Path) -> None:
     out_json = tmp_path / "o.json"
     out_md = tmp_path / "o.md"

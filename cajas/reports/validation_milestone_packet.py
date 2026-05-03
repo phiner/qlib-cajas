@@ -89,6 +89,7 @@ def build_validation_milestone_packet(
     alias_post_removal_closure: Path | None = None,
     release_ready_closure: Path | None = None,
     final_reviewer_packet: Path | None = None,
+    maintenance_cadence: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -166,6 +167,7 @@ def build_validation_milestone_packet(
         _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else None
     )
     reviewer_packet = _load_json(final_reviewer_packet) if final_reviewer_packet and final_reviewer_packet.exists() else None
+    cadence_packet = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -203,6 +205,51 @@ def build_validation_milestone_packet(
         overall_status = "warn"
     else:
         overall_status = "pass"
+
+    blocking_reasons: list[str] = []
+    if default_overall == "fail" or alias_overall == "fail":
+        blocking_reasons.append("review_bundle_overall=fail")
+    if migration_status == "fail":
+        blocking_reasons.append("migration_readiness_status=fail")
+    if runtime_edge_status == "fail":
+        blocking_reasons.append("runtime_edge_status=fail")
+    if runtime_cycle_status == "fail":
+        blocking_reasons.append("runtime_release_cycle_status=fail")
+    if runtime_variance_status == "fail":
+        blocking_reasons.append("runtime_variance_status=fail")
+    if (post_removal_closure or {}).get("status") == "blocked":
+        blocking_reasons.append("alias_post_removal_closure_status=blocked")
+    if (final_release_closure or {}).get("status") == "blocked":
+        blocking_reasons.append("release_ready_closure_status=blocked")
+
+    non_blocking_governance_notes: list[str] = []
+    superseded_watch_items: list[str] = []
+    if alias_sunset_status in {"watch", "blocked"}:
+        non_blocking_governance_notes.append(f"alias_sunset_status={alias_sunset_status}")
+    if release_readiness and release_readiness.get("superseded_watch_items"):
+        superseded_watch_items.extend(release_readiness.get("superseded_watch_items", []))
+    if release_readiness and release_readiness.get("status") == "ready" and alias_sunset_status == "watch":
+        superseded_watch_items.append("alias_sunset_decision_gate=watch")
+
+    cadence_value = (cadence_packet or {}).get("recommended_cadence")
+    if not isinstance(cadence_value, str) or not cadence_value:
+        cadence_value = "routine_next_release_cycle"
+
+    final_ready = (final_release_closure or {}).get("status") == "ready"
+    reviewer_ready = (reviewer_packet or {}).get("status") == "ready_for_review"
+    readiness_ready = release_readiness_status == "ready"
+    runtime_ok = runtime_edge_status == "pass" and runtime_cycle_status == "pass" and runtime_variance_status == "pass"
+    post_removal_closed = (post_removal_closure or {}).get("status") == "closed"
+
+    blocking = len(blocking_reasons) > 0
+    if blocking:
+        review_state = "blocked"
+    elif readiness_ready and final_ready and reviewer_ready and runtime_ok and post_removal_closed:
+        review_state = "ready_for_review"
+    elif overall_status in {"watch", "warn"}:
+        review_state = "watch"
+    else:
+        review_state = "ready_for_review"
 
     gate_summary = {
         "default_bundle_overall": default_overall,
@@ -253,6 +300,12 @@ def build_validation_milestone_packet(
         "milestone": "phase_2000_plus_validation_automation",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "overall_status": overall_status,
+        "review_state": review_state,
+        "blocking": blocking,
+        "blocking_reasons": blocking_reasons,
+        "non_blocking_governance_notes": sorted(set(non_blocking_governance_notes)),
+        "superseded_watch_items": sorted(set(superseded_watch_items)),
+        "maintenance_cadence": cadence_value,
         "current_baseline": {
             "default_manifest_mode": "canonical_history_only",
             "fallback_flag": "--include-history-update-alias (sunset; fail-fast)",
@@ -291,6 +344,7 @@ def build_validation_milestone_packet(
         "alias_post_removal_closure_summary": post_removal_closure,
         "release_ready_closure_summary": final_release_closure,
         "final_reviewer_packet_summary": reviewer_packet,
+        "maintenance_cadence_summary": cadence_packet,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -312,6 +366,10 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "## Overall Status",
             "",
             f"- `{payload.get('overall_status', 'warn')}`",
+            f"- review_state: `{payload.get('review_state', 'watch')}`",
+            f"- blocking: `{payload.get('blocking', True)}`",
+            f"- blocking_reasons: `{payload.get('blocking_reasons', [])}`",
+            f"- maintenance_cadence: `{payload.get('maintenance_cadence', 'routine_next_release_cycle')}`",
             "",
             "## Current Operating Model",
             "",
@@ -393,6 +451,13 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "",
             f"- `{(payload.get('final_reviewer_packet_summary') or {}).get('status', 'not_included')}`",
             f"- remaining_followups: `{(payload.get('final_reviewer_packet_summary') or {}).get('remaining_followups', [])}`",
+            "",
+            "## Maintenance Cadence",
+            "",
+            f"- `{(payload.get('maintenance_cadence_summary') or {}).get('status', 'not_included')}`",
+            f"- recommended_cadence: `{(payload.get('maintenance_cadence_summary') or {}).get('recommended_cadence', 'n/a')}`",
+            f"- routine_command_count: `{len((payload.get('maintenance_cadence_summary') or {}).get('routine_commands', []))}`",
+            f"- watch_items: `{(payload.get('maintenance_cadence_summary') or {}).get('watch_items', [])}`",
             "",
             "## Alias Removal Plan",
             "",
