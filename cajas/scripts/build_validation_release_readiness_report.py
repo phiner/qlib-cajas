@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--alias-post-removal-closure", type=Path)
     parser.add_argument("--release-ready-closure", type=Path)
+    parser.add_argument("--final-reviewer-packet", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -63,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         pytest_runtime_profile=args.pytest_runtime_profile,
         alias_post_removal_closure=args.alias_post_removal_closure,
         release_ready_closure=args.release_ready_closure,
+        final_reviewer_packet=args.final_reviewer_packet,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

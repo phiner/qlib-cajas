@@ -42,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--alias-post-removal-closure", type=Path)
     parser.add_argument("--release-ready-closure", type=Path)
+    parser.add_argument("--final-reviewer-packet", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -88,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
         pytest_runtime_profile=args.pytest_runtime_profile,
         alias_post_removal_closure=args.alias_post_removal_closure,
         release_ready_closure=args.release_ready_closure,
+        final_reviewer_packet=args.final_reviewer_packet,
     )
 
     if missing:

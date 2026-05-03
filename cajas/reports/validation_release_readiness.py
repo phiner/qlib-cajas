@@ -34,6 +34,7 @@ def build_validation_release_readiness_report(
     pytest_runtime_profile: Path | None = None,
     alias_post_removal_closure: Path | None = None,
     release_ready_closure: Path | None = None,
+    final_reviewer_packet: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -56,6 +57,7 @@ def build_validation_release_readiness_report(
     runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else {}
     post_removal_closure = _load_json(alias_post_removal_closure) if alias_post_removal_closure and alias_post_removal_closure.exists() else {}
     final_release_closure = _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else {}
+    reviewer_packet = _load_json(final_reviewer_packet) if final_reviewer_packet and final_reviewer_packet.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -280,6 +282,9 @@ def build_validation_release_readiness_report(
         "release_ready_closure_recommendation": final_release_closure.get("recommendation"),
         "release_ready_closure_remaining_blockers": final_release_closure.get("remaining_blockers", []),
         "release_ready_closure_remaining_followups": final_release_closure.get("remaining_followups", []),
+        "final_reviewer_packet_status": reviewer_packet.get("status"),
+        "final_reviewer_packet_primary_artifacts": reviewer_packet.get("primary_artifacts", []),
+        "final_reviewer_packet_remaining_followups": reviewer_packet.get("remaining_followups", []),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -315,6 +320,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Post-removal mode: `{payload.get('post_removal_mode')}`",
             f"- Alias post-removal closure status: `{payload.get('alias_post_removal_closure_status')}`",
             f"- Final release-ready closure status: `{payload.get('release_ready_closure_status')}`",
+            f"- Final reviewer packet status: `{payload.get('final_reviewer_packet_status')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",

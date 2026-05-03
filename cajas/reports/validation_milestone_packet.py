@@ -88,6 +88,7 @@ def build_validation_milestone_packet(
     pytest_runtime_profile: Path | None = None,
     alias_post_removal_closure: Path | None = None,
     release_ready_closure: Path | None = None,
+    final_reviewer_packet: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -164,6 +165,7 @@ def build_validation_milestone_packet(
     final_release_closure = (
         _load_json(release_ready_closure) if release_ready_closure and release_ready_closure.exists() else None
     )
+    reviewer_packet = _load_json(final_reviewer_packet) if final_reviewer_packet and final_reviewer_packet.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -288,6 +290,7 @@ def build_validation_milestone_packet(
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_post_removal_closure_summary": post_removal_closure,
         "release_ready_closure_summary": final_release_closure,
+        "final_reviewer_packet_summary": reviewer_packet,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -385,6 +388,11 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('release_ready_closure_summary') or {}).get('status', 'not_included')}`",
             f"- recommendation: `{(payload.get('release_ready_closure_summary') or {}).get('recommendation', 'n/a')}`",
             f"- remaining_blockers: `{(payload.get('release_ready_closure_summary') or {}).get('remaining_blockers', [])}`",
+            "",
+            "## Final Reviewer Packet",
+            "",
+            f"- `{(payload.get('final_reviewer_packet_summary') or {}).get('status', 'not_included')}`",
+            f"- remaining_followups: `{(payload.get('final_reviewer_packet_summary') or {}).get('remaining_followups', [])}`",
             "",
             "## Alias Removal Plan",
             "",
