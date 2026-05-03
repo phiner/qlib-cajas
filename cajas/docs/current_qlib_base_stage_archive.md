@@ -3676,3 +3676,23 @@ Routine maintenance command additions (next release cycle):
 - Readiness now distinguishes raw blocked audit vs clean-view allowance:
   - `ready_for_pattern_research_with_clean_view` is allowed when clean-view status is `ready`/`watch` and non-blocking.
 - Scope remains fixed to EURUSD 15m Bid only, with no aggregation and no trading execution behavior.
+
+## Phase 5366-5485 EURUSD 15m Pattern Candidate Sample Pack
+
+- Added deterministic pattern candidate detector over clean EURUSD 15m Bid input:
+  - `cajas/research/eurusd_pattern_candidates.py`
+- Added candidate pack artifacts:
+  - `tmp/eurusd/EURUSD_15m_pattern_candidates.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_samples.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl`
+  - `tmp/validation-eurusd-pattern-candidate-pack.json`
+  - `tmp/validation-eurusd-pattern-candidate-pack.md`
+- Candidate scope is review-only and explicitly non-trading:
+  - no trading signals
+  - no order generation
+  - no aggregation
+- Readiness now surfaces candidate-pack summary when provided:
+  - `pattern_candidate_pack_status`
+  - `pattern_candidate_count`
+  - `next_action=review_pattern_samples`
+- Fixed timeframe remains EURUSD 15m Bid only.

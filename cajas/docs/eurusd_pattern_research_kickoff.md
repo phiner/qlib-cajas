@@ -72,6 +72,26 @@ Research gating rule:
 - pattern research may proceed only when clean-view report is `ready` or non-blocking `watch`
 - readiness state for this path is `ready_for_pattern_research_with_clean_view`
 
+## Pattern candidate sample pack policy
+
+Approved input:
+
+- `tmp/eurusd/EURUSD_15m_Bid_clean_view.csv`
+
+Generated candidate artifacts:
+
+- `tmp/eurusd/EURUSD_15m_pattern_candidates.csv`
+- `tmp/eurusd/EURUSD_15m_pattern_review_samples.csv`
+- `tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl`
+- `tmp/validation-eurusd-pattern-candidate-pack.json`
+- `tmp/validation-eurusd-pattern-candidate-pack.md`
+
+Candidate review scope:
+
+- candidate tags are for human review only
+- candidate tags are not trading signals
+- no buy/sell/order/position outputs are produced
+
 ## Out of scope
 
 - no live trading
@@ -84,7 +104,8 @@ Research gating rule:
 
 1. validate EURUSD dataset contract and audit
 2. triage and quarantine anomaly rows
-3. compute pattern features on clean 15m Bid bars
-4. create manual label/review examples
-5. test non-execution strategy hypotheses offline
-6. evaluate ML labels/model training only in later phases
+3. generate clean-view candidate sample pack
+4. review candidate samples manually
+5. create manual label/review examples
+6. test non-execution strategy hypotheses offline
+7. evaluate ML labels/model training only in later phases

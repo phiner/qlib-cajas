@@ -2653,3 +2653,14 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
   - readiness can become `ready_for_pattern_research_with_clean_view` when clean-view is approved and feature scaffold remains pass
 - Raw files are not mutated; quarantine output remains reviewable and auditable.
 - Boundaries unchanged: no 1H/4H aggregation, no live trading, no broker routing, no order generation, no Qlib core changes.
+
+## Phase 5366-5485 EURUSD 15m Pattern Candidate Sample Pack
+
+- Added rule-based pattern candidate detection from the clean view for human review queues.
+- Added balanced per-type sample export (`csv` + `jsonl`) with confidence/priority/reason-code fields.
+- Added candidate-pack validation status and summary integration into EURUSD research readiness.
+- Maintained strict boundaries:
+  - no buy/sell/order/position outputs
+  - no trading execution semantics
+  - no timeframe aggregation
+  - no Qlib core changes
