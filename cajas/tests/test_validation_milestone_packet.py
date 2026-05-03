@@ -124,6 +124,34 @@ def test_milestone_packet_includes_runtime_variance_and_watch_reason(tmp_path: P
     assert packet["overall_status"] == "watch"
 
 
+def test_milestone_packet_includes_release_readiness_summary(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    release_readiness = tmp_path / "release_readiness.json"
+    release_readiness.write_text(
+        json.dumps(
+            {
+                "status": "watch",
+                "release_readiness_reason": "alias_sunset_decision_gate=watch",
+                "next_actions": ["collect_consumer_evidence", "keep_fallback"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        release_readiness_report=release_readiness,
+    )
+    assert packet["release_readiness_summary"]["status"] == "watch"
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Release Readiness Dashboard" in md
+
+
 def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     (p["migration"]).write_text(json.dumps({"status": "warn"}), encoding="utf-8")
