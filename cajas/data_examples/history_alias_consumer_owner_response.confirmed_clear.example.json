@@ -1,0 +1,14 @@
+{
+  "schema_version": "v1",
+  "response_date": "2026-05-03",
+  "consumer": "external_unknown_consumer",
+  "owner": "external-review-needed",
+  "status": "confirmed_clear",
+  "requires_history_update": false,
+  "evidence": "Example only: owner confirms consumer reads manifest.history and does not require history_update.",
+  "last_checked": "2026-05-03",
+  "next_action": "none",
+  "notes": [
+    "Example only. Do not use as real external clearance without owner approval."
+  ]
+}

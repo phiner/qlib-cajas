@@ -64,6 +64,9 @@ def _build_updated_evidence_candidate(evidence: dict[str, Any], response: dict[s
         item["last_checked"] = response.get("last_checked")
         item["next_action"] = response.get("next_action", "none")
         item["blocking_alias_sunset"] = response.get("status") != "confirmed_clear"
+    meta = updated.setdefault("candidate_metadata", {})
+    meta["manual_approval_required"] = True
+    meta["do_not_auto_apply"] = True
     return updated
 
 
@@ -82,16 +85,29 @@ def validate_consumer_owner_response(
     status, issues, safe_to_apply = _validate_response(response, known_consumers)
 
     out_path = None
+    candidate_written = False
+    manual_approval_required = True
     if apply_to_out and safe_to_apply:
         updated = _build_updated_evidence_candidate(evidence, response)
+        updated["candidate_metadata"]["source_owner_response_file"] = str(owner_response)
+        updated["candidate_metadata"]["generated_by"] = "validate_consumer_owner_response"
+        updated["candidate_metadata"]["generated_at"] = response.get("response_date")
+        updated["candidate_metadata"]["candidate_output_path"] = str(apply_to_out)
+        updated["candidate_metadata"]["canonical_evidence_path"] = str(consumer_evidence)
+        updated["candidate_metadata"]["is_canonical_path"] = str(apply_to_out) == str(consumer_evidence)
         apply_to_out.parent.mkdir(parents=True, exist_ok=True)
         apply_to_out.write_text(json.dumps(updated, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
         out_path = str(apply_to_out)
+        candidate_written = True
 
     return {
         "schema_version": "v1",
         "status": status,
         "safe_to_update_evidence": safe_to_apply,
+        "candidate_written": candidate_written,
+        "candidate_output_path": out_path,
+        "manual_approval_required": manual_approval_required,
+        "do_not_auto_apply": True,
         "issues": issues,
         "consumer": response.get("consumer"),
         "owner": response.get("owner"),
@@ -111,6 +127,10 @@ def render_consumer_owner_response_validation_markdown(payload: dict[str, Any]) 
             "",
             f"- Status: `{payload.get('status', 'invalid')}`",
             f"- safe_to_update_evidence: `{payload.get('safe_to_update_evidence', False)}`",
+            f"- candidate_written: `{payload.get('candidate_written', False)}`",
+            f"- candidate_output_path: `{payload.get('candidate_output_path')}`",
+            f"- manual_approval_required: `{payload.get('manual_approval_required', True)}`",
+            f"- do_not_auto_apply: `{payload.get('do_not_auto_apply', True)}`",
             f"- consumer: `{payload.get('consumer')}`",
             f"- owner: `{payload.get('owner')}`",
             f"- owner_response_status: `{payload.get('owner_response_status')}`",
