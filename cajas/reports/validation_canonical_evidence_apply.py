@@ -36,7 +36,7 @@ def _diff_summary(real: dict[str, Any], candidate: dict[str, Any]) -> dict[str, 
 
 def _rollback_plan(real_evidence: Path, backup_out: Path) -> list[str]:
     return [
-        f"Restore `{real_evidence}` from backup `{backup_out}`.",
+        f"Restore apply target file from backup `{backup_out}`.",
         "Regenerate evidence closure, alias sunset review, release readiness, and milestone packet.",
         "Confirm release readiness returns to pre-apply watch state if rollback is needed.",
     ]
@@ -101,9 +101,10 @@ def build_canonical_evidence_apply_report(
         out_evidence.write_text(json.dumps(candidate, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
         write_payload = candidate
     if status == "applied":
+        current_target = _load_json(out_evidence) if out_evidence.exists() else real
         backup_out.parent.mkdir(parents=True, exist_ok=True)
-        backup_out.write_text(json.dumps(real, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
-        real_evidence.write_text(json.dumps(candidate, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+        backup_out.write_text(json.dumps(current_target, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+        out_evidence.write_text(json.dumps(candidate, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
     payload = {
         "schema_version": "v1",
