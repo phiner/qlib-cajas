@@ -1092,3 +1092,24 @@ Current audit delta:
 - Added profile-aware final status aggregation (`local|ci|strict`) to reduce noisy warnings in local workflows.
 - Hardened final status artifact schema with run metadata and structured reason sections.
 - Final status markdown now highlights primary reason, reviewer next action, and primary artifact.
+
+
+## Phase 1586–1645 Addendum: CI Profile Policy Externalization, Runtime Variance Margin, and Final-Reason Selection
+
+- Added external CI profile policy config: `cajas/data_examples/validation_ci_profiles.json`.
+- Added `--ci-profile-config` to `build_validation_review_bundle.py` for policy loading without editing Python constants.
+- Final status now includes:
+  - `profile_policy` (source + active policy booleans)
+  - per-gate `escalated` and `profile_effect`
+  - prioritized `overall_reason_code`
+- Review bundle index now starts with profile-aware escalation summary:
+  - escalated gate count
+  - non-escalated warning gate count
+  - primary artifact and reviewer next action
+- Runtime budget configuration now supports variance margins:
+  - `warn_margin_seconds` (per component)
+  - `global_warn_margin_seconds`
+- Runtime budget report now includes per-component:
+  - `reason_code` (`within_budget`, `within_variance_margin`, `over_budget_warn`, `over_budget_fail`, `missing_required_timing`)
+  - `warn_margin_seconds`
+- Runtime variance handling improves explainability without weakening required gate semantics.

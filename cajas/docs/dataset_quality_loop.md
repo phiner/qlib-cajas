@@ -991,3 +991,77 @@ python cajas/scripts/build_validation_review_bundle.py \
 - `local`: optional warn/not-run do not affect overall status.
 - `ci`: optional warn affects overall status; optional not-run does not.
 - `strict`: optional warn and optional not-run both affect overall status.
+
+
+## Phase 1586–1645: CI Profile Policy Externalization, Runtime Variance Margin, and Final Status Reasoning
+
+**Goal**: Make CI behavior auditable/configurable, explain runtime budget variance clearly, and improve reviewer-facing final status reasoning.
+
+**What changed**:
+- Added committed profile policy file:
+  - `cajas/data_examples/validation_ci_profiles.json`
+- Added review-bundle profile policy input:
+  - `--ci-profile-config cajas/data_examples/validation_ci_profiles.json`
+- Final status now includes profile policy and escalation semantics:
+  - `profile_policy`
+  - gate-level `escalated`
+  - gate-level `profile_effect`
+  - `overall_reason_code` with deterministic priority
+- Runtime budget config now supports variance margin:
+  - `warn_margin_seconds` (per-component)
+  - `global_warn_margin_seconds`
+- Runtime budget report now includes:
+  - `reason_code`
+  - `warn_margin_seconds`
+  - explicit classification for variance-band warnings vs true over-budget behavior
+- Review bundle index now includes:
+  - profile summary
+  - escalated vs non-escalated warning counts
+  - primary artifact and next action
+
+**Recommended local reviewer command**:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile local \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility \
+  --warn-only
+```
+
+**Recommended CI command**:
+
+```bash
+./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile ci \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --run-fast-validation \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility
+```
+
+**Known limitations**:
+- Runtime budgets still depend on machine/runtime variance; variance margin reduces false-positive noise but does not remove it.
+- Final reason remains single-primary-cause; full gate table should still be reviewed.
+
+**Non-goals**:
+- No trading execution automation, broker routing, live/paper trading, annotation workflows, or model-performance claims.

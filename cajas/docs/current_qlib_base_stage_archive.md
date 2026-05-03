@@ -2245,3 +2245,32 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+
+## Phase 1586–1645 Addendum: CI Profile Policy Externalization, Runtime Budget Variance Handling, and Final Reasoning
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Externalize CI profile policy, explain runtime budget variance in artifacts, and make final status reasoning deterministic/reviewer-friendly.
+
+### Highlights
+
+1. Added external profile policy source:
+   - `cajas/data_examples/validation_ci_profiles.json`
+2. Added `--ci-profile-config` support in review-bundle orchestration.
+3. Final status payload now carries:
+   - `profile_policy`
+   - gate `escalated` flag
+   - gate `profile_effect`
+   - prioritized `overall_reason_code`
+4. Runtime budget supports variance margins:
+   - `warn_margin_seconds`
+   - `global_warn_margin_seconds`
+   - per-component reason codes
+5. Review bundle index now includes profile-escalation summary and primary reviewer action context.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
