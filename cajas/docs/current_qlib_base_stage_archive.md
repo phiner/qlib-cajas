@@ -2979,3 +2979,55 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2786-2845 Addendum: CLI-Heavy Wrapper Optimization and Owner Response Validation
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Reduce remaining CLI-heavy overhead and formalize owner response intake/validation prior to any evidence updates.
+
+### Implemented Changes
+
+1. Additional CLI-heavy wrappers now support direct-call tests:
+   - `train_qlib_model_bridge_baseline.py` (`main(argv)`)
+   - `compare_qlib_model_runs.py` (`main(argv)`)
+   - `build_dataset_quality_research_bundle.py` (`main(argv)`)
+   - `audit_io_runtime.py` (`main(argv)`)
+2. Converted corresponding tests from subprocess invocation to `main([...])`.
+3. Added owner response intake/validation:
+   - `history_alias_consumer_owner_response.example.json`
+   - `validation_consumer_owner_response.py`
+   - `validate_consumer_owner_response.py`
+   - `test_validation_consumer_owner_response.py`
+4. Added readiness/milestone integration for owner response validation:
+   - optional `--consumer-owner-response-validation`
+   - report summaries now include owner response status and safety flags.
+
+### Runtime Outcome
+
+- Fast validation: `59.314s`
+- `pytest_fast`: `51.599s`
+- Runtime budget/timing consistency/edge/variance/watch triage: all `pass`
+- Significant improvement vs prior baselines:
+  - vs Phase 2666 (`79.427s`)
+  - vs Phase 2726 (`66.579s`)
+
+### Evidence Outcome
+
+- Owner handoff remains `open` with one blocking unresolved consumer.
+- Owner response validation on example payload is `incomplete` and not safe-to-apply.
+- Release readiness remains `watch` for owner/evidence reasons.
+
+### Validation Snapshot
+
+- Focused tests: pass
+- Converted CLI tests: pass
+- Related suite: pass (`196 passed`, `319 deselected`)
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

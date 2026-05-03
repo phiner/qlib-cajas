@@ -1625,6 +1625,95 @@ Summaries now surface:
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2786-2845 Addendum: Remaining CLI-Heavy Wrappers and Owner Response Intake
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Convert remaining safe CLI-heavy wrappers and add an owner-response intake workflow that validates response quality before any evidence update.
+
+### Runtime Findings and CLI Targets
+
+Targeted hotspots in this phase:
+- `test_train_qlib_model_bridge_baseline_cli`
+- `test_compare_qlib_model_runs_cli`
+- `test_dataset_quality_research_bundle` CLI path
+- `test_io_runtime_audit` CLI path
+
+Actions:
+- added `main(argv)` support where needed.
+- converted subprocess-based CLI tests to direct function calls.
+- preserved output assertions and non-trading scope semantics.
+
+### Baseline Runner Review
+
+- `test_baseline_runner` remains the top single-test hotspot.
+- no additional assertion-lowering optimization was applied this phase; it remains a monitored heavy path.
+
+### Owner Response Intake Workflow
+
+Added owner response example schema:
+- `cajas/data_examples/history_alias_consumer_owner_response.example.json`
+
+Added validation report flow:
+- module: `cajas/reports/validation_consumer_owner_response.py`
+- CLI: `cajas/scripts/validate_consumer_owner_response.py`
+- output:
+  - `tmp/history-alias-consumer-owner-response-validation.json`
+  - `tmp/history-alias-consumer-owner-response-validation.md`
+
+Validation behavior:
+- `confirmed_clear`: requires owner/evidence/last_checked and `requires_history_update=false`
+- `requires_alias`: requires owner/evidence and `requires_history_update=true`
+- `unknown`: remains `incomplete` unless upgraded by owner response data
+- unknown consumer id => `invalid`
+- optional `--apply-to-out` supported for writing a candidate updated evidence file only when safe
+- default behavior never mutates real evidence file
+
+### Readiness/Milestone Integration
+
+Integrated optional `--consumer-owner-response-validation` into:
+- release readiness builder/report
+- milestone packet builder/report
+
+Outputs now surface:
+- owner response status
+- safe-to-update flag
+- validation issues list
+
+### Validation Snapshot
+
+- Focused suites: pass (including new owner-response tests)
+- Converted CLI tests: pass
+- Related suite: pass (`196 passed`, `319 deselected`)
+- Fast validation: pass (`59.314s total`, `pytest_fast=51.599s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Comparison
+
+- Phase 2666 baseline: `79.427s`
+- Phase 2726 baseline: `66.579s`
+- Current: `59.314s`
+
+### Current Alias/Evidence Status
+
+- owner handoff: `open`
+- owner response validation (example): `incomplete`
+- consumer evidence closure: `incomplete`
+- release readiness: `watch` (owner/evidence reasons)
+- milestone packet: `watch`
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
 
 **Date**: 2026-05-03

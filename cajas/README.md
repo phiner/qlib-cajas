@@ -1659,3 +1659,45 @@ Consumer/readiness snapshot:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2786-2845 Addendum: CLI-Heavy Wrapper Round and Owner Response Intake
+
+- Converted additional CLI-heavy wrappers to direct `main(argv)` tests:
+  - `train_qlib_model_bridge_baseline.py`
+  - `compare_qlib_model_runs.py`
+  - `build_dataset_quality_research_bundle.py`
+  - `audit_io_runtime.py`
+- Updated corresponding tests to direct-call mode:
+  - `test_train_qlib_model_bridge_baseline_cli.py`
+  - `test_compare_qlib_model_runs_cli.py`
+  - `test_dataset_quality_research_bundle.py`
+  - `test_io_runtime_audit.py`
+- Added owner response intake schema and validation workflow:
+  - example input: `cajas/data_examples/history_alias_consumer_owner_response.example.json`
+  - validation module: `cajas/reports/validation_consumer_owner_response.py`
+  - validation CLI: `cajas/scripts/validate_consumer_owner_response.py`
+  - output:
+    - `tmp/history-alias-consumer-owner-response-validation.json`
+    - `tmp/history-alias-consumer-owner-response-validation.md`
+- Owner response validation integrated into:
+  - release readiness (`--consumer-owner-response-validation`)
+  - milestone packet (`--consumer-owner-response-validation`)
+
+Current runtime snapshot:
+- fast validation total: `59.314s`
+- pytest_fast: `51.599s`
+- runtime budget: `pass`
+- timing consistency: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`
+
+Owner/evidence snapshot:
+- owner handoff: `open` (`blocking_consumer_count=1`)
+- owner response validation: `incomplete` (example response not ready to apply)
+- consumer evidence closure: `incomplete`
+- release readiness: `watch` (owner/evidence reasons)
+- milestone packet: `watch`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
