@@ -27,6 +27,10 @@ from cajas.reports.validation_review_bundle_metadata import (
     normalize_history_metadata,
     validate_history_metadata_compatibility,
 )
+from cajas.scripts.check_review_bundle_manifest_compatibility import (
+    build_compatibility_report,
+    render_compatibility_markdown,
+)
 
 
 def get_git_info() -> dict[str, str]:
@@ -95,7 +99,10 @@ def build_review_bundle(
     update_history: bool,
     history_jsonl: Path | None,
     history_last_n: int,
-    warn_only: bool,
+    check_manifest_compatibility: bool = False,
+    manifest_compatibility_out_json: Path | None = None,
+    manifest_compatibility_out_md: Path | None = None,
+    warn_only: bool = False,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -444,6 +451,42 @@ def build_review_bundle(
     compatibility_warnings = validate_history_metadata_compatibility(bundle_manifest)
     if compatibility_warnings:
         bundle_manifest["history_compatibility_warnings"] = compatibility_warnings
+
+    # Step 9: Optional manifest compatibility report
+    compat_meta: dict[str, Any]
+    if check_manifest_compatibility:
+        compat_json = manifest_compatibility_out_json or (out_root / "manifest_compatibility_report.json")
+        compat_md = manifest_compatibility_out_md or (out_root / "manifest_compatibility_report.md")
+        report = build_compatibility_report(
+            bundle_manifest,
+            str(out_root / "review_bundle_manifest.json"),
+        )
+        compat_json.parent.mkdir(parents=True, exist_ok=True)
+        compat_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        compat_md.parent.mkdir(parents=True, exist_ok=True)
+        compat_md.write_text(render_compatibility_markdown(report), encoding="utf-8")
+        artifacts["manifest_compatibility_report_json"] = str(compat_json)
+        artifacts["manifest_compatibility_report_md"] = str(compat_md)
+        compat_meta = {
+            "enabled": True,
+            "status": report["status"],
+            "warning_count": len(report["warnings"]),
+            "canonical_source": report["history_source"],
+            "deprecated_alias_present": "yes" if isinstance(bundle_manifest.get("history_update"), dict) else "no",
+            "report_json": str(compat_json),
+            "report_md": str(compat_md),
+        }
+        if report["status"] == "warn":
+            warnings.append("manifest compatibility warnings detected")
+        if report["status"] == "fail" and not warn_only:
+            raise RuntimeError("manifest compatibility check failed")
+    else:
+        compat_meta = {
+            "enabled": False,
+            "status": "not_requested",
+            "note": "Manifest compatibility check was not requested.",
+        }
+    bundle_manifest["manifest_compatibility"] = compat_meta
     if history_failed:
         msg = f"history update failed: {history_metadata.get('error', 'unknown error')}"
         if warn_only:
@@ -557,6 +600,18 @@ def build_review_bundle(
     else:
         index_lines.append(history_section.get("note", "History update was not requested for this bundle."))
 
+    index_lines.extend(["", "## Manifest Compatibility", ""])
+    manifest_compat = bundle_manifest.get("manifest_compatibility", {})
+    if manifest_compat.get("enabled"):
+        index_lines.append(f"- Status: `{manifest_compat.get('status', 'warn')}`")
+        index_lines.append(f"- Canonical source: `{manifest_compat.get('canonical_source', 'unknown')}`")
+        index_lines.append(f"- Deprecated alias present: `{manifest_compat.get('deprecated_alias_present', 'unknown')}`")
+        index_lines.append(f"- Warnings: `{manifest_compat.get('warning_count', 0)}`")
+        index_lines.append(f"- Report JSON: `{manifest_compat.get('report_json')}`")
+        index_lines.append(f"- Report Markdown: `{manifest_compat.get('report_md')}`")
+    else:
+        index_lines.append("Manifest compatibility check was not requested for this bundle.")
+
     index_lines.extend([
         "",
         "## Reviewer Next Action",
@@ -604,6 +659,21 @@ def main(argv: list[str] | None = None) -> int:
         help="History JSONL path used with --update-history",
     )
     parser.add_argument("--history-last-n", type=int, default=10, help="Number of snapshots in history markdown summary")
+    parser.add_argument(
+        "--check-manifest-compatibility",
+        action="store_true",
+        help="Generate manifest compatibility report using canonical history guard checks",
+    )
+    parser.add_argument(
+        "--manifest-compatibility-out-json",
+        type=Path,
+        help="Output JSON path for manifest compatibility report",
+    )
+    parser.add_argument(
+        "--manifest-compatibility-out-md",
+        type=Path,
+        help="Output markdown path for manifest compatibility report",
+    )
     parser.add_argument("--warn-only", action="store_true", help="Don't fail on warnings")
 
     args = parser.parse_args(argv)
@@ -627,6 +697,9 @@ def main(argv: list[str] | None = None) -> int:
             update_history=args.update_history,
             history_jsonl=args.history_jsonl,
             history_last_n=args.history_last_n,
+            check_manifest_compatibility=args.check_manifest_compatibility,
+            manifest_compatibility_out_json=args.manifest_compatibility_out_json,
+            manifest_compatibility_out_md=args.manifest_compatibility_out_md,
             warn_only=args.warn_only,
         )
 
