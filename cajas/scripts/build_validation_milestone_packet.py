@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fast-timing-json", required=True, type=Path)
     parser.add_argument("--alias-sunset-review", type=Path)
     parser.add_argument("--runtime-release-cycle-report", type=Path)
+    parser.add_argument("--runtime-variance-report", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -54,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         fast_timing_json=args.fast_timing_json,
         alias_sunset_review=args.alias_sunset_review,
         runtime_release_cycle_report=args.runtime_release_cycle_report,
+        runtime_variance_report=args.runtime_variance_report,
     )
 
     if missing:

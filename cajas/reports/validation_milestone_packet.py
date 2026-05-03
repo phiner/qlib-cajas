@@ -71,6 +71,7 @@ def build_validation_milestone_packet(
     fast_timing_json: Path,
     alias_sunset_review: Path | None = None,
     runtime_release_cycle_report: Path | None = None,
+    runtime_variance_report: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -86,16 +87,27 @@ def build_validation_milestone_packet(
         if runtime_release_cycle_report and runtime_release_cycle_report.exists()
         else None
     )
+    runtime_variance = _load_json(runtime_variance_report) if runtime_variance_report and runtime_variance_report.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
     runtime_edge_status = runtime_edge.get("status", "warn")
     migration_status = migration.get("status", "warn")
 
+    alias_sunset_status = (alias_sunset or {}).get("status")
+    runtime_cycle_status = (runtime_release_cycle or {}).get("status")
+    runtime_variance_status = (runtime_variance or {}).get("status")
+
     if default_overall == "fail" or alias_overall == "fail":
         overall_status = "fail"
+    elif alias_sunset_status in {"watch", "blocked"}:
+        overall_status = "watch"
     elif migration_status in {"warn", "fail"}:
         overall_status = "warn"
+    elif runtime_cycle_status in {"watch", "warn", "fail"}:
+        overall_status = runtime_cycle_status
+    elif runtime_variance_status in {"watch", "warn", "fail"}:
+        overall_status = runtime_variance_status
     elif runtime_edge_status == "watch":
         overall_status = "watch"
     elif runtime_edge_status == "fail":
@@ -172,6 +184,7 @@ def build_validation_milestone_packet(
         "profile_summary": profile_summary,
         "runtime_summary": runtime_summary,
         "runtime_release_cycle_summary": runtime_release_cycle,
+        "runtime_variance_summary": runtime_variance,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -244,6 +257,11 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             "",
             f"- `{(payload.get('runtime_release_cycle_summary') or {}).get('status', 'not_included')}`",
             f"- next trigger: `{(payload.get('runtime_release_cycle_summary') or {}).get('next_review_trigger', 'n/a')}`",
+            "",
+            "## Runtime Variance Triage",
+            "",
+            f"- `{(payload.get('runtime_variance_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('runtime_variance_summary') or {}).get('recommendation', 'n/a')}`",
             "",
             "## Scope Boundary",
             "",

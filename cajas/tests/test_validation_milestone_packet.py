@@ -100,6 +100,30 @@ def test_milestone_packet_includes_optional_alias_and_runtime_cycle(tmp_path: Pa
     assert packet["runtime_release_cycle_summary"]["status"] == "watch"
 
 
+def test_milestone_packet_includes_runtime_variance_and_watch_reason(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    alias_sunset = tmp_path / "alias_sunset.json"
+    runtime_cycle = tmp_path / "runtime_cycle.json"
+    runtime_variance = tmp_path / "runtime_variance.json"
+    alias_sunset.write_text(json.dumps({"status": "watch", "recommended_action": "keep_fallback"}), encoding="utf-8")
+    runtime_cycle.write_text(json.dumps({"status": "pass", "next_review_trigger": "manual_next_release"}), encoding="utf-8")
+    runtime_variance.write_text(json.dumps({"status": "watch", "recommendation": "watch_next_cycle"}), encoding="utf-8")
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        alias_sunset_review=alias_sunset,
+        runtime_release_cycle_report=runtime_cycle,
+        runtime_variance_report=runtime_variance,
+    )
+    assert packet["runtime_variance_summary"]["status"] == "watch"
+    assert packet["overall_status"] == "watch"
+
+
 def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     (p["migration"]).write_text(json.dumps({"status": "warn"}), encoding="utf-8")
