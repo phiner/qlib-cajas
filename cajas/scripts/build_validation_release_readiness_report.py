@@ -42,6 +42,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--maintenance-checklist", type=Path)
     parser.add_argument("--optional-followups", type=Path)
     parser.add_argument("--maintenance-governance-closure", type=Path)
+    parser.add_argument("--external-consumer-governance", type=Path)
+    parser.add_argument("--external-consumer-evidence-closure-report", type=Path)
+    parser.add_argument("--final-maintenance-archive-closure-report", type=Path)
+    parser.add_argument("--post-freeze-handoff-seal-report", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -73,6 +77,10 @@ def main(argv: list[str] | None = None) -> int:
         maintenance_checklist=args.maintenance_checklist,
         optional_followups=args.optional_followups,
         maintenance_governance_closure=args.maintenance_governance_closure,
+        external_consumer_governance=args.external_consumer_governance,
+        external_consumer_evidence_closure_report=args.external_consumer_evidence_closure_report,
+        final_maintenance_archive_closure_report=args.final_maintenance_archive_closure_report,
+        post_freeze_handoff_seal_report=args.post_freeze_handoff_seal_report,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

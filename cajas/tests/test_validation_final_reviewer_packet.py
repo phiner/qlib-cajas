@@ -56,6 +56,26 @@ def _inputs(tmp_path: Path):
                 "conclusion": "routine",
             },
         ),
+        "external_consumer_governance": _write(
+            tmp_path / "external_governance.json",
+            {
+                "status": "routine",
+                "blocking": False,
+                "release_readiness_impact": "none",
+            },
+        ),
+        "external_consumer_evidence_closure_report": _write(
+            tmp_path / "external_evidence_closure.json",
+            {"status": "closed_unresolved_external", "blocking": False},
+        ),
+        "final_maintenance_archive_closure_report": _write(
+            tmp_path / "archive_closure.json",
+            {"status": "ready", "blocking": False},
+        ),
+        "post_freeze_handoff_seal_report": _write(
+            tmp_path / "handoff_seal.json",
+            {"status": "sealed", "blocking": False},
+        ),
     }
 
 
@@ -68,9 +88,16 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert packet["maintenance_checklist_status"] == "ready"
     assert packet["optional_followups_count"] == 1
     assert packet["maintenance_governance_closure_status"] == "ready"
+    assert packet["external_consumer_governance_status"] == "routine"
+    assert packet["final_maintenance_archive_closure_status"] == "ready"
+    assert packet["post_freeze_handoff_seal_status"] == "sealed"
     md = render_validation_final_reviewer_packet_markdown(packet)
     assert "Reviewer Handoff" in md
     assert "Governance Closure" in md
+    assert "External Consumer Governance" in md
+    assert "External Consumer Evidence Closure" in md
+    assert "Final Maintenance Archive Closure" in md
+    assert "Post-Freeze Handoff Seal" in md
     assert "Optional Followup Queue" in md
     assert "Scope Boundary" in md
 

@@ -399,6 +399,22 @@ def test_release_readiness_includes_checklist_and_followups(tmp_path: Path) -> N
         tmp_path / "governance.json",
         {"status": "watch", "conclusion": "watch_non_blocking"},
     )
+    external_governance = _write_json(
+        tmp_path / "external_governance.json",
+        {"status": "tracked", "blocking": False, "release_readiness_impact": "none"},
+    )
+    external_evidence = _write_json(
+        tmp_path / "external_evidence_closure.json",
+        {"status": "closed_unresolved_external", "blocking": False},
+    )
+    archive = _write_json(
+        tmp_path / "archive_closure.json",
+        {"status": "ready", "blocking": False},
+    )
+    handoff = _write_json(
+        tmp_path / "handoff_seal.json",
+        {"status": "sealed", "blocking": False},
+    )
     payload = build_validation_release_readiness_report(
         milestone_packet=tmp_path / "milestone.json",
         alias_sunset_review=tmp_path / "alias.json",
@@ -422,8 +438,16 @@ def test_release_readiness_includes_checklist_and_followups(tmp_path: Path) -> N
         maintenance_checklist=checklist,
         optional_followups=followups,
         maintenance_governance_closure=governance,
+        external_consumer_governance=external_governance,
+        external_consumer_evidence_closure_report=external_evidence,
+        final_maintenance_archive_closure_report=archive,
+        post_freeze_handoff_seal_report=handoff,
     )
     assert payload["maintenance_checklist_status"] == "ready"
     assert payload["optional_followups_status"] == "open"
     assert payload["optional_followups_blocking"] is False
     assert payload["maintenance_governance_closure_status"] == "watch"
+    assert payload["external_consumer_governance_status"] == "tracked"
+    assert payload["external_consumer_evidence_closure_status"] == "closed_unresolved_external"
+    assert payload["final_maintenance_archive_closure_status"] == "ready"
+    assert payload["post_freeze_handoff_seal_status"] == "sealed"

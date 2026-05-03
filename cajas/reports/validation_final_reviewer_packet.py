@@ -27,6 +27,10 @@ def build_validation_final_reviewer_packet(
     maintenance_checklist: Path | None = None,
     optional_followups: Path | None = None,
     maintenance_governance_closure: Path | None = None,
+    external_consumer_governance: Path | None = None,
+    external_consumer_evidence_closure_report: Path | None = None,
+    final_maintenance_archive_closure_report: Path | None = None,
+    post_freeze_handoff_seal_report: Path | None = None,
 ) -> dict[str, Any]:
     final_closure = _load_json(release_ready_closure)
     alias_closure = _load_json(alias_post_removal_closure)
@@ -42,6 +46,10 @@ def build_validation_final_reviewer_packet(
     checklist = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else {}
     followups_queue = _load_json(optional_followups) if optional_followups and optional_followups.exists() else {}
     governance = _load_json(maintenance_governance_closure) if maintenance_governance_closure and maintenance_governance_closure.exists() else {}
+    external_governance = _load_json(external_consumer_governance) if external_consumer_governance and external_consumer_governance.exists() else {}
+    external_evidence_closure = _load_json(external_consumer_evidence_closure_report) if external_consumer_evidence_closure_report and external_consumer_evidence_closure_report.exists() else {}
+    final_archive_closure = _load_json(final_maintenance_archive_closure_report) if final_maintenance_archive_closure_report and final_maintenance_archive_closure_report.exists() else {}
+    post_freeze_handoff = _load_json(post_freeze_handoff_seal_report) if post_freeze_handoff_seal_report and post_freeze_handoff_seal_report.exists() else {}
 
     canonical_only = isinstance(manifest.get("history"), dict) and "history_update" not in manifest
     legacy_kept = readiness.get("legacy_read_normalization_kept") is True
@@ -98,10 +106,19 @@ def build_validation_final_reviewer_packet(
         "maintenance_checklist_mode": checklist.get("mode"),
         "maintenance_checklist_canonical_artifacts": checklist.get("canonical_artifacts", []),
         "optional_followups_status": followups_queue.get("status"),
-        "optional_followups_count": len(followups_queue.get("items", [])),
+        "optional_followups_count": len(followups_queue.get("active_items", followups_queue.get("items", []))),
         "optional_followups_blocking": followups_queue.get("blocking", False),
         "maintenance_governance_closure_status": governance.get("status"),
         "maintenance_governance_closure_conclusion": governance.get("conclusion"),
+        "external_consumer_governance_status": external_governance.get("status"),
+        "external_consumer_governance_blocking": external_governance.get("blocking"),
+        "external_consumer_governance_release_readiness_impact": external_governance.get("release_readiness_impact"),
+        "external_consumer_evidence_closure_status": external_evidence_closure.get("status"),
+        "external_consumer_evidence_closure_blocking": external_evidence_closure.get("blocking"),
+        "final_maintenance_archive_closure_status": final_archive_closure.get("status"),
+        "final_maintenance_archive_closure_blocking": final_archive_closure.get("blocking"),
+        "post_freeze_handoff_seal_status": post_freeze_handoff.get("status"),
+        "post_freeze_handoff_seal_blocking": post_freeze_handoff.get("blocking"),
         "remaining_followups": followups,
         "primary_artifacts": [
             str(release_ready_closure),
@@ -163,6 +180,27 @@ def render_validation_final_reviewer_packet_markdown(payload: dict[str, Any]) ->
             "",
             f"- status: `{payload.get('maintenance_governance_closure_status', 'not_included')}`",
             f"- conclusion: `{payload.get('maintenance_governance_closure_conclusion', 'n/a')}`",
+            "",
+            "## External Consumer Governance",
+            "",
+            f"- status: `{payload.get('external_consumer_governance_status', 'not_included')}`",
+            f"- blocking: `{payload.get('external_consumer_governance_blocking', False)}`",
+            f"- release_readiness_impact: `{payload.get('external_consumer_governance_release_readiness_impact', 'n/a')}`",
+            "",
+            "## External Consumer Evidence Closure",
+            "",
+            f"- status: `{payload.get('external_consumer_evidence_closure_status', 'not_included')}`",
+            f"- blocking: `{payload.get('external_consumer_evidence_closure_blocking', False)}`",
+            "",
+            "## Final Maintenance Archive Closure",
+            "",
+            f"- status: `{payload.get('final_maintenance_archive_closure_status', 'not_included')}`",
+            f"- blocking: `{payload.get('final_maintenance_archive_closure_blocking', False)}`",
+            "",
+            "## Post-Freeze Handoff Seal",
+            "",
+            f"- status: `{payload.get('post_freeze_handoff_seal_status', 'not_included')}`",
+            f"- blocking: `{payload.get('post_freeze_handoff_seal_blocking', False)}`",
             "",
             "## Reviewer Handoff",
             "",
