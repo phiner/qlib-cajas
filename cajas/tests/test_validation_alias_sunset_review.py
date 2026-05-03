@@ -30,6 +30,7 @@ def test_alias_sunset_unknown_is_watch(tmp_path: Path) -> None:
     )
     assert report["status"] == "watch"
     assert report["recommended_action"] == "collect_consumer_evidence"
+    assert report["evidence_complete"] is False
 
 
 def test_alias_sunset_requires_alias_is_blocked(tmp_path: Path) -> None:
@@ -54,6 +55,7 @@ def test_alias_sunset_confirmed_clear_is_ready(tmp_path: Path) -> None:
     assert report["recommended_action"] == "schedule_removal"
     assert report["decision_gate"]["status"] == "ready"
     assert report["decision_gate"]["required_evidence_complete"] is False
+    assert report["evidence_completeness_ratio"] == 0.0
 
 
 def test_alias_sunset_uses_evidence_when_cli_status_missing(tmp_path: Path) -> None:

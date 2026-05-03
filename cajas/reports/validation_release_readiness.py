@@ -20,6 +20,8 @@ def build_validation_release_readiness_report(
     runtime_edge_report: Path,
     runtime_budget_report: Path,
     alias_removal_plan: Path | None = None,
+    consumer_evidence_closure_report: Path | None = None,
+    runtime_watch_triage_report: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -28,6 +30,16 @@ def build_validation_release_readiness_report(
     runtime_edge = _load_json(runtime_edge_report)
     runtime_budget = _load_json(runtime_budget_report)
     removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else {}
+    evidence_closure = (
+        _load_json(consumer_evidence_closure_report)
+        if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
+        else {}
+    )
+    runtime_watch_triage = (
+        _load_json(runtime_watch_triage_report)
+        if runtime_watch_triage_report and runtime_watch_triage_report.exists()
+        else {}
+    )
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -39,6 +51,8 @@ def build_validation_release_readiness_report(
     milestone_status = milestone.get("overall_status", "watch")
     migration_status = (milestone.get("alias_migration_summary") or {}).get("status", "warn")
     removal_plan_status = removal_plan.get("status")
+    evidence_closure_status = evidence_closure.get("status")
+    runtime_watch_triage_status = runtime_watch_triage.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -85,6 +99,10 @@ def build_validation_release_readiness_report(
         watch_items.append("alias_migration_readiness_status=warn")
     if removal_plan_status in {"not_ready", "blocked"}:
         watch_items.append(f"alias_removal_plan_status={removal_plan_status}")
+    if evidence_closure_status in {"incomplete", "blocked"}:
+        watch_items.append(f"consumer_evidence_closure_status={evidence_closure_status}")
+    if runtime_watch_triage_status in {"watch", "warn", "fail"}:
+        watch_items.append(f"runtime_watch_triage_status={runtime_watch_triage_status}")
 
     if blocking_items:
         status = "blocked"
@@ -125,6 +143,10 @@ def build_validation_release_readiness_report(
         "alias_removal_plan_status": removal_plan_status,
         "alias_removal_plan_recommendation": removal_plan.get("recommendation"),
         "alias_removal_plan_remaining_blockers": removal_plan.get("remaining_blockers", []),
+        "consumer_evidence_closure_status": evidence_closure_status,
+        "consumer_evidence_closure_next_actions": evidence_closure.get("next_actions", []),
+        "runtime_watch_triage_status": runtime_watch_triage_status,
+        "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "required_gates": required_gates,
         "watch_items": watch_items,
         "blocking_items": blocking_items,
@@ -149,6 +171,8 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Runtime variance: `{payload.get('runtime_variance_status', 'watch')}`",
             f"- Milestone status: `{payload.get('milestone_status', 'watch')}`",
             f"- Alias removal plan: `{payload.get('alias_removal_plan_status', 'not_included')}`",
+            f"- Consumer evidence closure: `{payload.get('consumer_evidence_closure_status', 'not_included')}`",
+            f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             "",
             "## Watch Items",
             "",

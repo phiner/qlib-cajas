@@ -81,6 +81,13 @@ def build_alias_sunset_review(
         for c in consumers
         if c.get("status") not in {"confirmed_clear", "requires_alias"}
     ]
+    owners_missing_count = sum(1 for c in consumers if not c.get("owner") or c.get("owner") == "unknown")
+    consumers_requiring_action = [
+        c
+        for c in consumers
+        if c.get("status") in {"unknown", "requires_alias"} or c.get("next_action") not in {None, "none"}
+    ]
+    evidence_completeness_ratio = (confirmed_clear_count / len(consumers)) if consumers else 0.0
     consumers_requiring_alias = [
         c
         for c in consumers
@@ -140,12 +147,18 @@ def build_alias_sunset_review(
         "requires_alias_count": requires_alias_count,
         "confirmed_clear_count": confirmed_clear_count,
         "unresolved_count": unresolved_count,
+        "owners_missing_count": owners_missing_count,
+        "consumers_requiring_action_count": len(consumers_requiring_action),
+        "evidence_complete": required_evidence_complete,
+        "evidence_completeness_ratio": evidence_completeness_ratio,
         "consumers": consumers,
         "recommended_action": recommended_action,
         "decision_gate": {
             "status": status,
             "required_evidence_complete": required_evidence_complete,
             "unresolved_consumers": unresolved_consumers,
+            "owners_missing_count": owners_missing_count,
+            "consumers_requiring_action": consumers_requiring_action,
             "consumers_requiring_alias": consumers_requiring_alias,
             "ready_conditions": ready_conditions,
             "blocking_conditions": blocking_conditions,

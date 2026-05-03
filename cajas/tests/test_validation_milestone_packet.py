@@ -181,6 +181,30 @@ def test_milestone_packet_includes_alias_removal_plan_summary(tmp_path: Path) ->
     assert "Alias Removal Plan" in md
 
 
+def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path: Path) -> None:
+    p = _write_common_inputs(tmp_path)
+    evidence = tmp_path / "evidence.json"
+    triage = tmp_path / "triage.json"
+    evidence.write_text(json.dumps({"status": "incomplete", "next_actions": ["identify_owner"]}), encoding="utf-8")
+    triage.write_text(json.dumps({"status": "watch", "recommendation": "profile_slow_tests"}), encoding="utf-8")
+    packet = build_validation_milestone_packet(
+        review_bundle_root=p["default"],
+        alias_fallback_bundle_root=p["alias"],
+        runtime_edge_report=p["runtime_edge"],
+        migration_readiness_report=p["migration"],
+        runtime_budget_report=p["runtime_budget"],
+        data_source_audit_report=p["audit"],
+        fast_timing_json=p["timing"],
+        consumer_evidence_closure_report=evidence,
+        runtime_watch_triage_report=triage,
+    )
+    assert packet["consumer_evidence_closure_summary"]["status"] == "incomplete"
+    assert packet["runtime_watch_triage_summary"]["status"] == "watch"
+    md = render_validation_milestone_packet_markdown(packet)
+    assert "Consumer Evidence Closure" in md
+    assert "Runtime Watch Triage" in md
+
+
 def test_milestone_packet_warn_on_migration_warn(tmp_path: Path) -> None:
     p = _write_common_inputs(tmp_path)
     (p["migration"]).write_text(json.dumps({"status": "warn"}), encoding="utf-8")

@@ -74,6 +74,8 @@ def build_validation_milestone_packet(
     runtime_variance_report: Path | None = None,
     release_readiness_report: Path | None = None,
     alias_removal_plan: Path | None = None,
+    consumer_evidence_closure_report: Path | None = None,
+    runtime_watch_triage_report: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -94,6 +96,16 @@ def build_validation_milestone_packet(
         _load_json(release_readiness_report) if release_readiness_report and release_readiness_report.exists() else None
     )
     removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else None
+    evidence_closure = (
+        _load_json(consumer_evidence_closure_report)
+        if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
+        else None
+    )
+    runtime_watch_triage = (
+        _load_json(runtime_watch_triage_report)
+        if runtime_watch_triage_report and runtime_watch_triage_report.exists()
+        else None
+    )
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -196,6 +208,8 @@ def build_validation_milestone_packet(
         "runtime_variance_summary": runtime_variance,
         "release_readiness_summary": release_readiness,
         "alias_removal_plan_summary": removal_plan,
+        "consumer_evidence_closure_summary": evidence_closure,
+        "runtime_watch_triage_summary": runtime_watch_triage,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -286,6 +300,16 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- preconditions_met: `{(payload.get('alias_removal_plan_summary') or {}).get('preconditions_met', 'n/a')}`",
             f"- recommendation: `{(payload.get('alias_removal_plan_summary') or {}).get('recommendation', 'n/a')}`",
             f"- remaining_blockers: `{(payload.get('alias_removal_plan_summary') or {}).get('remaining_blockers', [])}`",
+            "",
+            "## Consumer Evidence Closure",
+            "",
+            f"- `{(payload.get('consumer_evidence_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- next_actions: `{(payload.get('consumer_evidence_closure_summary') or {}).get('next_actions', [])}`",
+            "",
+            "## Runtime Watch Triage",
+            "",
+            f"- `{(payload.get('runtime_watch_triage_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('runtime_watch_triage_summary') or {}).get('recommendation', 'n/a')}`",
             "",
             "## Scope Boundary",
             "",
