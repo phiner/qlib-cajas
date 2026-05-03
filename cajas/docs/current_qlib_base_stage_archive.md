@@ -2246,6 +2246,68 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2966-3025 Addendum: Approved Simulation and Canonical Evidence Update Plan
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Prove the `approved=true` simulation path and produce a concrete canonical evidence update plan without auto-applying evidence.
+
+### Implemented Changes
+
+1. Added approved simulation approval file:
+   - `cajas/data_examples/history_alias_evidence_candidate_approval.approved.example.json`
+   - explicitly marked as simulation-only.
+2. Added canonical update plan report + CLI:
+   - `cajas/reports/validation_canonical_evidence_update_plan.py`
+   - `cajas/scripts/build_canonical_evidence_update_plan.py`
+3. Added readiness/milestone integration for update plan:
+   - optional `--canonical-evidence-update-plan`
+4. Added test coverage:
+   - `cajas/tests/test_validation_canonical_evidence_update_plan.py`
+   - updated approval/readiness/milestone tests.
+
+### Real vs Approved Simulation Outcome
+
+- Real path:
+  - approval gate status: `approval_required`
+  - schedule status: `not_scheduled`
+  - release readiness: `watch`
+  - milestone: `watch`
+- Approved simulation path:
+  - approval gate status: `approved_candidate`
+  - schedule status: `ready_to_schedule`
+  - canonical evidence update plan status: `ready_to_apply`
+  - recommendation: `apply_in_dedicated_phase`
+
+### Canonical Update Plan Contract
+
+- Manual-only update path:
+  - `manual_update_required=true`
+  - `do_not_auto_apply=true`
+- Includes compact evidence diff summary:
+  - changed consumer status `unknown -> confirmed_clear` for unresolved external consumer.
+- Includes post-update validation command checklist before any fallback-removal scheduling.
+
+### Validation Snapshot
+
+- Focused phase tests: pass
+- Related suite: `209 passed, 319 deselected`
+- Fast validation: `53.22s` (`overall_status=pass`)
+- Runtime budget: `pass`
+- Data source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Non-Goals
+
+- No automatic mutation of `cajas/data_examples/history_alias_external_consumers.json`.
+- No removal of `--include-history-update-alias` in this phase.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2906-2965 Addendum: Evidence Candidate Approval Gate and Sunset Scheduling
 
 **Date**: 2026-05-03

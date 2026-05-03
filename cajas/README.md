@@ -1348,6 +1348,39 @@ Current status snapshot:
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2966-3025 Addendum: Approved Simulation and Canonical Evidence Update Plan
+
+- Added approved simulation approval example:
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.approved.example.json`
+  - explicitly marked `approval_scope=simulation_only`.
+- Added canonical evidence update planning report:
+  - `cajas/reports/validation_canonical_evidence_update_plan.py`
+  - `cajas/scripts/build_canonical_evidence_update_plan.py`
+  - outputs:
+    - `tmp/canonical-evidence-update-plan.json`
+    - `tmp/canonical-evidence-update-plan.md`
+- Added readiness/milestone optional integration:
+  - `--canonical-evidence-update-plan`
+- Approved simulation outputs:
+  - `tmp/simulated-approved/evidence-candidate-approval-report.json|md`
+  - `tmp/simulated-approved/history-alias-sunset-schedule.json|md`
+
+Current status snapshot:
+- real approval gate: `approval_required` (real path still unapproved)
+- approved simulation gate: `approved_candidate`
+- approved simulation schedule: `ready_to_schedule`
+- canonical update plan: `ready_to_apply` with `manual_update_required=true` and `do_not_auto_apply=true`
+- real release readiness remains `watch`
+- real milestone remains `watch`
+
+Runtime snapshot:
+- fast validation total: `53.22s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2906-2965 Addendum: Evidence Approval Gate and Sunset Scheduling Packet
 
 - Added evidence candidate approval gate:

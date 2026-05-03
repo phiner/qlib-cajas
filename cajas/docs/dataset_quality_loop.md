@@ -1466,6 +1466,63 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 - This phase does not remove `--include-history-update-alias`.
 
+## Phase 2966-3025 Addendum: Approval Simulation and Canonical Evidence Update Planning
+
+### Approved Simulation File
+
+- Added:
+  - `cajas/data_examples/history_alias_evidence_candidate_approval.approved.example.json`
+- Purpose:
+  - provide explicit `approved=true` simulation coverage.
+  - marked `approval_scope=simulation_only` to prevent production misuse.
+
+### Approval Transition Behavior
+
+- Approval gate now clearly demonstrates:
+  - `approved=false` => `approval_required`
+  - `approved=true` + valid candidate => `approved_candidate`
+- Simulation artifacts:
+  - `tmp/simulated-approved/evidence-candidate-approval-report.json|md`
+  - `tmp/simulated-approved/history-alias-sunset-schedule.json|md`
+
+### Canonical Evidence Update Plan
+
+- Added:
+  - `cajas/reports/validation_canonical_evidence_update_plan.py`
+  - `cajas/scripts/build_canonical_evidence_update_plan.py`
+  - output: `tmp/canonical-evidence-update-plan.json|md`
+- Plan behavior:
+  - `not_ready` when approval not explicit
+  - `ready_to_apply` when approved candidate + schedule ready
+  - `blocked` when candidate invalid
+- Includes compact diff summary (`status_changes`) and required manual steps.
+
+### Readiness/Milestone Integration
+
+- New optional input:
+  - `--canonical-evidence-update-plan`
+- Current real-state behavior:
+  - readiness remains `watch` (real evidence unchanged and unapproved path still active)
+  - milestone surfaces update-plan status for reviewer planning.
+
+### Validation Snapshot
+
+- Focused tests:
+  - approval + schedule + canonical plan + readiness + milestone: pass
+- Related suite:
+  - `209 passed, 319 deselected`
+- Fast validation:
+  - `53.22s`, `overall_status=pass`
+- Runtime budget:
+  - `overall_status=pass`
+- Data source audit:
+  - `read_csv_count=29`
+
+### Non-Goals
+
+- No automatic canonical evidence overwrite.
+- No fallback alias removal in this phase.
+
 ## Phase 2546-2605 Addendum: Pytest Runtime Profile and Fast Timing Reliability
 
 **Date**: 2026-05-03
