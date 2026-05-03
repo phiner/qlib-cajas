@@ -1277,3 +1277,14 @@ Known limitation:
   - `cajas/scripts/build_validation_runtime_edge_report.py`
   - outputs `tmp/validation-runtime-edge-report.json|md`
 - Runtime edge report is reviewer-facing and does not replace runtime budget pass/fail gate.
+
+## Phase 2126-2185 Addendum: Phase 2000+ Milestone Review Packet
+
+- Added milestone packet report and CLI:
+  - `cajas/reports/validation_milestone_packet.py`
+  - `cajas/scripts/build_validation_milestone_packet.py`
+- Milestone packet consolidates operating model, artifact map, gate/profile/runtime/alias state, risks, and next actions.
+- Generated outputs:
+  - `tmp/validation-milestone-packet.json`
+  - `tmp/validation-milestone-packet.md`
+- Latest milestone packet status: `pass`.

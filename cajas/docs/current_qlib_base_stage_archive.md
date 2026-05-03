@@ -2464,3 +2464,23 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2126-2185 Addendum: Phase 2000+ Milestone Review Packet and Longitudinal Validation Summary
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Provide a single review packet for the post-2000 validation automation state, including current operating model, artifact map, gate/profile/runtime state, risks, and next actions.
+
+### Highlights
+
+1. Added milestone packet report module and CLI.
+2. Added artifact map consolidation for core reviewer files.
+3. Added longitudinal summary block for recent phases (1886+ progression).
+4. Added milestone status synthesis (`pass|watch|warn|fail`) with reviewer-oriented semantics.
+5. Generated milestone packet artifacts under `tmp/` for direct review.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
