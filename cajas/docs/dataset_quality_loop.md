@@ -2627,3 +2627,18 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
   - post-merge mainline validation remains `mainline_validated`
   - optional followup remains `slow_test_optimization` and non-blocking (`count=1`)
 - Upstream sync evaluation is deferred to a dedicated future audit branch, only if explicitly requested.
+
+## Phase 5126-5245 EURUSD 15m Pattern Research Kickoff
+
+- Introduced a research-entry layer for raw EURUSD 15m Bid data with multi-file audit support (`--input` repeatable/comma-separated).
+- Added explicit dataset contract + audit + readiness packet workflow:
+  - `validation-eurusd-dataset-contract`
+  - `validation-eurusd-dataset-audit`
+  - `validation-eurusd-research-readiness`
+- Added deterministic non-trading feature scaffold for 15m K-line structure and multi-horizon movement (`3,5,8,13,21,34,55`).
+- Maintained boundaries:
+  - no timeframe aggregation
+  - no live trading or broker routing
+  - no order generation
+  - no production model training
+  - no Qlib core changes

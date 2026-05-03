@@ -3643,3 +3643,21 @@ Routine maintenance command additions (next release cycle):
   - optional followup remains `slow_test_optimization` only (`count=1`, non-blocking)
 - Upstream sync remains deferred; evaluate only in a dedicated future audit branch if explicitly requested.
 - No automated merge operations were performed.
+
+## Phase 5126-5245 EURUSD 15m Pattern Research Kickoff
+
+- Added EURUSD contract report artifacts:
+  - `tmp/validation-eurusd-dataset-contract.json`
+  - `tmp/validation-eurusd-dataset-contract.md`
+- Added EURUSD multi-input dataset audit artifacts:
+  - `tmp/validation-eurusd-dataset-audit.json`
+  - `tmp/validation-eurusd-dataset-audit.md`
+- Added EURUSD pattern research readiness artifacts:
+  - `tmp/validation-eurusd-research-readiness.json`
+  - `tmp/validation-eurusd-research-readiness.md`
+- Fixed research scope for this track:
+  - symbol=`EURUSD`, side=`Bid`, timeframe=`15m`
+  - no 1H/4H aggregation
+  - no trading execution, no broker routing, no Qlib core changes
+- Readiness contract:
+  - `ready_for_pattern_research` only when maintenance baseline, dataset contract, dataset audit, and feature scaffold checks are all non-blocking.

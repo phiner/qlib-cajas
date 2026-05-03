@@ -1974,3 +1974,16 @@ Scope confirmation:
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+EURUSD 15m pattern research kickoff commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_dataset_contract_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --symbol EURUSD --timeframe 15m --price-side Bid --out-json tmp/validation-eurusd-dataset-contract.json --out-md tmp/validation-eurusd-dataset-contract.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_dataset_audit_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --out-json tmp/validation-eurusd-dataset-audit.json --out-md tmp/validation-eurusd-dataset-audit.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Policy notes:
+- This track is fixed to EURUSD 15m Bid structure research.
+- No 1H/4H aggregation in this phase.
+- No live trading, broker routing, order generation, or Qlib core changes.
