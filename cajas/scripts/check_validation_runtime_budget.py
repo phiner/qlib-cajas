@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from cajas.reports.validation_runtime_budget import (
-    check_validation_runtime_budgets,
+    build_validation_runtime_budget_report,
     generate_budget_report_markdown,
     load_budget_config,
 )
@@ -28,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-json", required=True, help="Output budget report JSON path")
     parser.add_argument("--out-md", required=True, help="Output budget report Markdown path")
     parser.add_argument("--fail-on-warn", action="store_true", help="Exit non-zero on warn status")
+    parser.add_argument("--expected-tier", default="fast", help="Expected timing tier (set empty to disable check)")
+    parser.add_argument("--max-age-seconds", type=int, default=3600, help="Maximum timing age before warning")
     args = parser.parse_args(argv)
 
     budget_path = Path(args.budgets)
@@ -48,34 +50,42 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: failed to parse JSON: {e}", file=sys.stderr)
         return 1
 
-    results, overall_status = check_validation_runtime_budgets(timing_data, budget_config)
+    report_data = build_validation_runtime_budget_report(
+        timing_data,
+        budget_config,
+        expected_tier=args.expected_tier or None,
+        max_age_seconds=args.max_age_seconds,
+        timing_path=timing_path,
+    )
+    overall_status = report_data["overall_status"]
 
-    # Write JSON report
     out_json = Path(args.out_json)
     out_json.parent.mkdir(parents=True, exist_ok=True)
-
-    report_data = {
-        "overall_status": overall_status,
-        "warn_threshold_ratio": budget_config.get("warn_threshold_ratio", 1.15),
-        "results": [
-            {
-                "component": r.component,
-                "status": r.status,
-                "observed_seconds": r.observed_seconds,
-                "budget_seconds": r.budget_seconds,
-                "delta_seconds": r.delta_seconds,
-                "ratio": r.ratio,
-                "reviewer_note": r.reviewer_note,
-            }
-            for r in results
-        ],
-    }
     safe_json_write(out_json, report_data)
 
-    # Write Markdown report
     out_md = Path(args.out_md)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    markdown = generate_budget_report_markdown(results, overall_status, budget_config)
+    # Rebuild dataclass-style rows for markdown rendering.
+    from cajas.reports.validation_runtime_budget import BudgetCheckResult  # local import to avoid circular changes
+
+    rows = [
+        BudgetCheckResult(
+            component=item["component"],
+            status=item["status"],
+            observed_seconds=item.get("observed_seconds"),
+            budget_seconds=item.get("budget_seconds"),
+            delta_seconds=item.get("delta_seconds"),
+            ratio=item.get("ratio"),
+            reviewer_note=item.get("reviewer_note", ""),
+        )
+        for item in report_data.get("results", [])
+    ]
+    markdown = generate_budget_report_markdown(
+        rows,
+        overall_status,
+        budget_config,
+        timing_consistency=report_data.get("timing_consistency"),
+    )
     out_md.write_text(markdown, encoding="utf-8")
 
     # Determine exit code

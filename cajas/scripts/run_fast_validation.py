@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
 import shlex
 import subprocess
 import sys
 import time
+from uuid import uuid4
 from pathlib import Path
 
 
@@ -168,12 +170,39 @@ def build_timing_payload(
     overall_status: str,
     budget_exceeded: bool,
 ) -> dict:
+    command_tokens = [Path(__file__).resolve().as_posix(), "--tier", args.tier]
+    if args.skip_compileall:
+        command_tokens.append("--skip-compileall")
+    if args.skip_pytest:
+        command_tokens.append("--skip-pytest")
+    if args.only_pytest:
+        command_tokens.append("--only-pytest")
+    if args.only_hygiene:
+        command_tokens.append("--only-hygiene")
+    if args.pytest_expression != DEFAULT_FAST_EXPRESSION:
+        command_tokens.extend(["--pytest-expression", args.pytest_expression])
+    if args.durations is not None:
+        command_tokens.extend(["--durations", str(args.durations)])
+    if args.pytest_extra_args:
+        command_tokens.extend(["--pytest-extra-args", args.pytest_extra_args])
+    if args.max_seconds is not None:
+        command_tokens.extend(["--max-seconds", str(args.max_seconds)])
+    if args.fail_on_budget:
+        command_tokens.append("--fail-on-budget")
+    if args.timing_json:
+        command_tokens.extend(["--timing-json", str(args.timing_json)])
+
     return {
-        "schema_version": "v1",
+        "schema_version": "v2",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "run_id": str(uuid4()),
+        "command": " ".join(shlex.quote(token) for token in command_tokens),
+        "timing_source": "run_fast_validation.py",
         "tier": args.tier,
         "pytest_expression": args.pytest_expression,
         "results": [result.to_json_dict() for result in results],
         "total_seconds": round(total_seconds, 3),
+        "pytest_fast": next((round(r.elapsed_seconds, 3) for r in results if r.name == "pytest_fast"), None),
         "overall_status": overall_status,
         "budget": {
             "max_seconds": args.max_seconds,

@@ -81,6 +81,18 @@ def format_seconds(value: Any) -> str:
         return "N/A"
 
 
+def _load_json_if_exists(path: str | Path | None) -> dict[str, Any] | None:
+    if not path:
+        return None
+    p = Path(path)
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
 
 def build_review_bundle(
     bundle_name: str,
@@ -113,6 +125,7 @@ def build_review_bundle(
     commands_skipped = []
     artifacts = {}
     warnings = []
+    runtime_budget_report_data: dict[str, Any] | None = None
 
     # Step 1: Run dataset quality smoke
     smoke_cmd = [
@@ -173,6 +186,7 @@ def build_review_bundle(
         if success:
             commands_executed.append({"command": " ".join(budget_cmd), "status": "ok"})
             artifacts["runtime_budget_report"] = str(runtime_budget_json)
+            runtime_budget_report_data = _load_json_if_exists(runtime_budget_json)
         else:
             commands_executed.append({"command": " ".join(budget_cmd), "status": "fail", "error": output})
     else:
@@ -316,6 +330,22 @@ def build_review_bundle(
             bundle_manifest["delivery_packet_status"] = packet_manifest.get("overall_status")
             bundle_manifest["runtime_budget_status"] = packet_manifest.get("runtime_budget_status")
             bundle_manifest["reviewer_diff_status"] = packet_manifest.get("reviewer_diff_status")
+    if runtime_budget_report_data is None:
+        runtime_budget_report_data = _load_json_if_exists(runtime_budget_json)
+    if runtime_budget_report_data:
+        timing_consistency = runtime_budget_report_data.get("timing_consistency")
+        if isinstance(timing_consistency, dict):
+            bundle_manifest["timing_consistency"] = {
+                "status": timing_consistency.get("status", "warn"),
+                "issues": timing_consistency.get("issues", []),
+                "timing_path": timing_consistency.get("timing_path"),
+            }
+            if timing_consistency.get("status") == "warn":
+                warnings.append("timing consistency warnings detected")
+            if timing_consistency.get("status") == "fail":
+                warnings.append("timing consistency failures detected")
+                if not warn_only:
+                    raise RuntimeError("timing consistency check failed")
 
     # Step 8: Optional history update
     history_metadata: dict[str, Any] = {"requested": update_history}
@@ -618,6 +648,24 @@ def build_review_bundle(
         index_lines.append(f"- Report Markdown: `{manifest_compat.get('report_md')}`")
     else:
         index_lines.append("Manifest compatibility check was not requested for this bundle.")
+
+    index_lines.extend(["", "## Timing Consistency", ""])
+    timing_consistency = bundle_manifest.get("timing_consistency", {})
+    if timing_consistency:
+        index_lines.append(f"- Status: `{timing_consistency.get('status', 'warn')}`")
+        if artifacts.get("fast_timing_json"):
+            index_lines.append(f"- Timing JSON: `{artifacts.get('fast_timing_json')}`")
+        issues = timing_consistency.get("issues", [])
+        if issues:
+            index_lines.append("- Issues:")
+            for issue in issues:
+                index_lines.append(
+                    f"  - [{issue.get('severity', 'warning')}] {issue.get('code', 'unknown')}: {issue.get('message', '')}"
+                )
+        else:
+            index_lines.append("- Issues: none")
+    else:
+        index_lines.append("Timing consistency data not available.")
 
     index_lines.extend([
         "",
