@@ -1674,3 +1674,45 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2426-2485 Addendum: Real Evidence Closure and Runtime Watch Recovery
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Make unresolved consumer evidence fully actionable and add runtime watch triage so readiness can distinguish evidence-watch from runtime-watch.
+
+### Highlights
+
+1. Added real evidence action fields in `history_alias_external_consumers.json`.
+2. Added consumer evidence closure report:
+   - `cajas/reports/validation_consumer_evidence_closure.py`
+   - `cajas/scripts/build_consumer_evidence_closure_report.py`
+3. Added runtime watch triage report:
+   - `cajas/reports/validation_runtime_watch_triage.py`
+   - `cajas/scripts/build_validation_runtime_watch_triage_report.py`
+4. Extended release readiness with optional closure/triage summaries.
+5. Extended milestone packet with optional closure/triage summaries.
+
+### Real Current Evidence Outcome
+
+- Consumer evidence closure: `incomplete`
+- unresolved consumer count: `1`
+- next action: `identify_owner`
+- evidence completeness ratio: `0.5`
+
+### Runtime Watch Outcome
+
+- Runtime watch triage: `pass`
+- likely cause: `runtime_variance`
+- recommendation: `monitor`
+- Current run recovered edge/release-cycle from prior watch back to `pass`.
+
+### Non-Goal
+
+- No alias fallback removal is performed in this phase.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

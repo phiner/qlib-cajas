@@ -1441,3 +1441,43 @@ Runtime snapshot (latest fast run):
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2426-2485 Addendum: Real Consumer Evidence Closure and Runtime Watch Triage
+
+- Extended real consumer evidence tracking in:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+  - fields now include `review_owner`, `last_checked`, `next_action`, `due_phase`.
+- Added consumer evidence closure report + CLI:
+  - `cajas/reports/validation_consumer_evidence_closure.py`
+  - `cajas/scripts/build_consumer_evidence_closure_report.py`
+- Added runtime watch triage report + CLI:
+  - `cajas/reports/validation_runtime_watch_triage.py`
+  - `cajas/scripts/build_validation_runtime_watch_triage_report.py`
+- Extended release readiness optional integration:
+  - `--consumer-evidence-closure-report`
+  - `--runtime-watch-triage-report`
+- Extended milestone packet optional integration:
+  - `--consumer-evidence-closure-report`
+  - `--runtime-watch-triage-report`
+
+Current outputs:
+- consumer evidence closure: `tmp/history-alias-consumer-evidence-closure.json|md`
+- runtime watch triage: `tmp/validation-runtime-watch-triage-report.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- consumer evidence closure: `incomplete` (1 unresolved consumer, next action `identify_owner`)
+- alias sunset: `watch`
+- alias removal plan: `not_ready`, recommendation `keep_fallback`
+- runtime watch triage: `pass`, recommendation `monitor`
+- runtime edge/release-cycle: both `pass` in latest run
+- release readiness overall: `watch` (driven by unresolved consumer evidence, not runtime)
+
+Runtime comparison:
+- latest fast total: `88.418s`
+- vs phase_2306 baseline `88.472s`: `-0.054s`
+- vs phase_2366 baseline `94.03s`: `-5.612s`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

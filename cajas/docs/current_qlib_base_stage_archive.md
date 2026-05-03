@@ -2666,3 +2666,51 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2426-2485 Addendum: Real External Consumer Closure and Runtime Watch Triage
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Improve real evidence closure tracking and runtime watch explainability, then surface both into release-readiness and milestone packet reviews.
+
+### Implemented Changes
+
+1. Updated real consumer evidence schema usage in:
+   - `cajas/data_examples/history_alias_external_consumers.json`
+2. Added consumer evidence closure module/CLI:
+   - `cajas/reports/validation_consumer_evidence_closure.py`
+   - `cajas/scripts/build_consumer_evidence_closure_report.py`
+3. Added runtime watch triage module/CLI:
+   - `cajas/reports/validation_runtime_watch_triage.py`
+   - `cajas/scripts/build_validation_runtime_watch_triage_report.py`
+4. Extended release readiness optional inputs:
+   - `--consumer-evidence-closure-report`
+   - `--runtime-watch-triage-report`
+5. Extended milestone packet optional inputs:
+   - `--consumer-evidence-closure-report`
+   - `--runtime-watch-triage-report`
+
+### Validation Snapshot
+
+- Focused suites: pass
+- Related suites: pass (`175 passed`, `327 deselected`)
+- Fast validation: pass (`486 passed`, `16 deselected`, total `88.418s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Current Reviewer Outcomes
+
+- Consumer evidence closure: `incomplete` (one unresolved consumer with `identify_owner` action).
+- Alias sunset: `watch`.
+- Alias removal plan: `not_ready`.
+- Runtime watch triage: `pass`, recommendation `monitor`.
+- Runtime edge/release-cycle: `pass` in current run.
+- Release readiness overall: `watch` (evidence-driven, not runtime-driven).
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
