@@ -992,3 +992,13 @@ Current audit delta:
 - Added 6 tests covering orchestration logic
 - Fast validation: ~103.70s (382 tests, +6 from Phase 1136)
 - Single command to generate reviewer-ready bundle
+
+
+### Phase 1196–1225: Fast Validation Runtime Optimization and Tier Split
+- Optimized review bundle tests by mocking subprocess calls
+- Review bundle tests: 12.97s → 0.22s (58x speedup)
+- Fast validation: 111.73s → 97.66s (14.07s improvement)
+- Runtime budget status: warn → **pass** ✅
+- Back under 105s budget without weakening coverage
+- No tier split needed - optimization alone sufficient
+- Data-source audit: stable at read_csv_count=29

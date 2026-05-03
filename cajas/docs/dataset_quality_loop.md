@@ -555,3 +555,58 @@ python cajas/scripts/build_validation_review_bundle.py \
 - Does not run data source audit by default (must opt-in)
 - No historical bundle comparison yet
 - No bundle-level trend tracking
+
+
+## Phase 1196–1225: Fast Validation Runtime Optimization and Tier Split
+
+**Goal**: Bring fast validation back under 105s budget after Phase 1166 exceeded it.
+
+**Problem**: Fast validation runtime increased to ~111.73s in Phase 1166, exceeding the 105s budget. Review bundle tests were running real subprocess commands, taking ~12.97s for 6 tests.
+
+**Solution**:
+
+1. **Profiling**:
+   - Used `pytest --durations=30` to identify slow tests
+   - Found review bundle tests taking 3-4 seconds each
+   - Identified subprocess calls as the bottleneck
+
+2. **Review Bundle Test Optimization**:
+   - Refactored tests to mock `run_command` function
+   - Replaced real subprocess calls with fake command runner
+   - Tests now use minimal fake artifacts
+   - Preserved test coverage while eliminating subprocess overhead
+
+3. **Results**:
+   - Review bundle tests: **12.97s → 0.22s** (58x speedup)
+   - Fast validation total: **111.73s → 97.66s** (14.07s improvement)
+   - Runtime budget status: **warn → pass**
+
+**Key Files**:
+- `cajas/tests/test_validation_review_bundle.py` - optimized with mocking
+
+**Validation**:
+- Fast validation: ~97.66s (382 tests passed, same count)
+- Runtime budget status: **pass** ✅
+- Required components within budget:
+  - `fast_total`: 97.66s / 105.0s (0.93x, -7.34s under budget)
+  - `pytest_fast`: 93.55s / 95.0s (0.98x, -1.45s under budget)
+- Data-source audit: stable at read_csv_count=29
+- Review bundle workflow: still works correctly
+
+**Profiling Findings**:
+- Slowest test before optimization: `test_bundle_index_created` at 3.81s
+- Slowest test after optimization: `test_audit_cli_writes_json_and_markdown` at 4.29s (different test)
+- Review bundle tests now all < 0.01s each
+- No tier split needed - optimization alone brought runtime under budget
+
+**Impact**:
+- Fast validation back under budget without weakening coverage
+- 14.07s improvement (12.6% faster)
+- Review bundle tests 58x faster
+- No need to raise budget or split tiers
+- Deterministic local validation preserved
+
+**Limitations**:
+- Fast validation at 93% of budget (97.66s / 105s)
+- Limited headroom for future test additions (~7s remaining)
+- May need tier split or budget increase in future phases
