@@ -2811,3 +2811,60 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2606-2665 Addendum: Targeted Pytest Runtime Optimization and Runtime Edge Recovery
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Apply narrow runtime optimizations based on pytest profile findings and recover runtime-edge status while preserving validation semantics.
+
+### Implemented Changes
+
+1. Optimized selected CLI tests by replacing subprocess invocation with direct `main(argv)` calls.
+2. Updated related script entrypoints to accept optional `argv` for direct-call testing:
+   - `build_no_broker_dry_run_packet.py`
+   - `build_qlib_model_training_contract.py`
+   - `build_qlib_dataset_contract.py`
+   - `build_qlib_compatibility_report.py`
+   - `build_research_decision_packet.py`
+   - `build_final_readiness_summary.py`
+   - `build_qlib_integration_packet.py`
+   - `build_stable_fingerprint.py`
+3. Generated before/after profile snapshots:
+   - `tmp/validation-pytest-runtime-profile-before.json|md`
+   - `tmp/validation-pytest-runtime-profile.json|md`
+
+### Slowest-Test Findings
+
+Top profile contributors before optimization were mostly single-test CLI subprocess wrappers. The dominant cost pattern was process startup + script bootstrap, not broader data processing loops.
+
+### Validation Snapshot
+
+- Optimized CLI test batch: pass (`8 passed`)
+- Focused profile/triage/readiness/milestone/runners suites: pass
+- Related suite: pass (`189 passed`, `319 deselected`)
+- Fast validation: pass (`78.623s`, `pytest_fast=73.181s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Runtime Comparison
+
+- Phase 2426 baseline: `88.418s`
+- Phase 2546 baseline: `96.83s`
+- Current: `78.623s`
+- Result: runtime edge recovered from prior `warn` to `pass`.
+
+### Remaining Blocker
+
+- Alias fallback sunset remains blocked by unresolved external consumer evidence (`blocking_consumer_count=1`), so release readiness remains `watch` for evidence reasons.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

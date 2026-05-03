@@ -1406,6 +1406,64 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 2606-2665 Addendum: Targeted Pytest Runtime Optimization and Edge-Warn Recovery
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Use runtime-profile evidence to apply narrow, safe test-level optimizations and recover runtime-edge status without weakening validation.
+
+### Slowest-Test Findings (Profile)
+
+Initial top slow tests were dominated by one-off CLI subprocess tests, including:
+- `test_build_no_broker_dry_run_packet_cli.py`
+- `test_build_qlib_model_training_contract_cli.py`
+- `test_build_qlib_dataset_contract_cli.py`
+- `test_build_qlib_compatibility_report_cli.py`
+- `test_build_research_decision_packet_cli.py`
+- `test_build_final_readiness_summary_cli.py`
+- `test_build_qlib_integration_packet_cli.py`
+- `test_build_stable_fingerprint_cli.py`
+
+Pattern:
+- many tests spent time in Python process startup + script bootstrap rather than core assertion logic.
+
+### Optimization Applied
+
+1. Converted selected CLI tests to direct `main(argv)` calls.
+2. Updated corresponding script entrypoints so `main(argv: list[str] | None = None)` is supported.
+3. Preserved behavior assertions (output files/status checks); no gate removal and no coverage downgrading.
+
+### Validation and Runtime Outcome
+
+- Targeted optimized test set: pass (`8 passed`)
+- Focused runtime/profile/watch/readiness/milestone tests: pass
+- Related suite: pass (`189 passed`, `319 deselected`)
+- Fast validation: `78.623s` total (`pytest_fast=73.181s`)
+- Runtime budget: `pass`
+- Timing consistency: `pass`
+- Runtime edge: `pass`
+- Runtime variance: `pass`
+- Runtime watch triage: `pass` (`runtime_variance`, recommendation `monitor`)
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Before/After Snapshot
+
+- Previous phase reference: `96.83s` fast total
+- Current after optimization: `78.623s`
+- Delta: `-18.207s`
+
+### Remaining Constraints
+
+- Alias fallback removal remains blocked by unresolved external consumer evidence (`blocking_consumer_count=1`).
+- Readiness remains `watch` for consumer-evidence reasons, not runtime reasons.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
 
 **Date**: 2026-05-03

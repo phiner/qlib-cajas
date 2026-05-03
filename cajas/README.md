@@ -1557,3 +1557,30 @@ Current runtime snapshot:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2606-2665 Addendum: Targeted Pytest Runtime Optimization and Edge Recovery
+
+- Reviewed profile artifacts:
+  - `tmp/validation-pytest-runtime-profile.json|md`
+  - top slowdown pattern was repeated one-test CLI subprocess launches.
+- Applied safe optimization:
+  - converted selected CLI smoke tests from `subprocess.run([sys.executable, ...])` to direct `main(argv)` calls.
+  - updated corresponding script `main()` entrypoints to accept optional `argv` while preserving CLI behavior.
+- Generated before/after profile snapshots:
+  - `tmp/validation-pytest-runtime-profile-before.json|md`
+  - `tmp/validation-pytest-runtime-profile.json|md`
+
+Current runtime snapshot after optimization:
+- fast validation total: `78.623s`
+- pytest_fast: `73.181s`
+- runtime budget: `pass`
+- runtime edge: `pass`
+- runtime variance: `pass`
+- runtime watch triage: `pass`, recommendation `monitor`
+
+Status impact:
+- runtime edge recovered from prior `warn` to `pass`.
+- release readiness remains `watch` because alias consumer evidence remains incomplete (`blocking_consumer_count=1`), not because runtime health.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
