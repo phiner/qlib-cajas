@@ -16,10 +16,17 @@ def build_validation_optional_followups(
     release_readiness_report: Path,
     final_reviewer_packet: Path,
     maintenance_cadence: Path,
+    external_consumer_evidence_closure_report: Path | None = None,
 ) -> dict[str, Any]:
     readiness = _load_json(release_readiness_report)
     reviewer = _load_json(final_reviewer_packet)
     cadence = _load_json(maintenance_cadence)
+
+    external_closure = (
+        _load_json(external_consumer_evidence_closure_report)
+        if external_consumer_evidence_closure_report and external_consumer_evidence_closure_report.exists()
+        else {}
+    )
 
     items = [
         {
@@ -37,6 +44,12 @@ def build_validation_optional_followups(
             "reason": "Pytest runtime profile may keep warn-level hotspots without blocking release readiness.",
         },
     ]
+    if external_closure.get("status") in {"closed_confirmed", "closed_unresolved_external"} and external_closure.get(
+        "blocking"
+    ) is not True:
+        items[0]["status"] = "closed"
+        items[0]["recommended_timing"] = "moved to external-tracking-only cadence"
+        items[0]["reason"] = "External consumer governance closure artifact confirms non-blocking maintenance tracking."
 
     blockers = []
     if readiness.get("status") == "blocked":
@@ -59,6 +72,8 @@ def build_validation_optional_followups(
         "blocking": False,
         "blocking_reasons": blockers,
         "items": items,
+        "closed_items": [item for item in items if item.get("status") == "closed"],
+        "active_items": [item for item in items if item.get("status") != "closed"],
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
     }
 
@@ -69,6 +84,8 @@ def render_validation_optional_followups_markdown(payload: dict[str, Any]) -> st
         "",
         f"- Status: `{payload.get('status')}`",
         f"- blocking: `{payload.get('blocking')}`",
+        f"- active_count: `{len(payload.get('active_items', []))}`",
+        f"- closed_count: `{len(payload.get('closed_items', []))}`",
         "",
         "## Items",
         "",
