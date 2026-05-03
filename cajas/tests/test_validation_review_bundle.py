@@ -351,6 +351,9 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertFalse(manifest["history"]["enabled"])
             self.assertEqual(manifest["history"]["status"], "not_requested")
             self.assertIn("note", manifest["history"])
+            self.assertIn("manifest_compatibility", manifest)
+            self.assertFalse(manifest["manifest_compatibility"]["enabled"])
+            self.assertEqual(manifest["manifest_compatibility"]["status"], "not_requested")
             self.assertFalse((tmp_path / "history" / "history.jsonl").exists())
 
     def test_update_history_writes_manifest_and_index_paths(self) -> None:
@@ -697,6 +700,97 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
             self.assertIn("history_update", manifest)
             self.assertTrue(manifest["history_update"]["deprecated"])
+
+    def test_manifest_compatibility_report_enabled(self) -> None:
+        """Compatibility check should write report metadata and index section."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+            history_jsonl = tmp_path / "history" / "history.jsonl"
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=history_jsonl,
+                    history_last_n=10,
+                    check_manifest_compatibility=True,
+                    warn_only=True,
+                )
+
+            compat = manifest["manifest_compatibility"]
+            self.assertTrue(compat["enabled"])
+            self.assertIn(compat["status"], ("pass", "warn"))
+            self.assertIn("report_json", compat)
+            self.assertIn("report_md", compat)
+            self.assertTrue(Path(compat["report_json"]).exists())
+            self.assertTrue(Path(compat["report_md"]).exists())
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("Manifest Compatibility", index_text)
+            self.assertIn("Report JSON", index_text)
+
+    def test_manifest_compatibility_not_requested_note(self) -> None:
+        """Index should contain clean note when compatibility check is not requested."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=False,
+                    history_jsonl=None,
+                    history_last_n=10,
+                    warn_only=True,
+                )
+
+            self.assertEqual(manifest["manifest_compatibility"]["status"], "not_requested")
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("Manifest compatibility check was not requested for this bundle.", index_text)
 
 
 if __name__ == "__main__":

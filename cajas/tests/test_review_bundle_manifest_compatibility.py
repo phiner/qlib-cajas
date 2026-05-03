@@ -9,7 +9,11 @@ from cajas.reports.validation_review_bundle_metadata import (
     normalize_history_metadata,
     validate_history_metadata_compatibility,
 )
-from cajas.scripts.check_review_bundle_manifest_compatibility import main as compat_main
+from cajas.scripts.check_review_bundle_manifest_compatibility import (
+    build_compatibility_report,
+    main as compat_main,
+    render_compatibility_markdown,
+)
 
 
 class ReviewBundleManifestCompatibilityTests(unittest.TestCase):
@@ -73,6 +77,17 @@ class ReviewBundleManifestCompatibilityTests(unittest.TestCase):
             self.assertTrue(out_md.exists())
             report = json.loads(out_json.read_text(encoding="utf-8"))
             self.assertIn(report["status"], ("pass", "warn"))
+
+    def test_report_builder_and_markdown_renderer(self) -> None:
+        manifest = {
+            "history": {"enabled": True, "status": "pass"},
+            "history_update": {"deprecated": True, "use": "history", "requested": True, "status": "ok"},
+        }
+        report = build_compatibility_report(manifest, "dummy.json")
+        self.assertEqual(report["manifest_path"], "dummy.json")
+        self.assertIn(report["status"], ("pass", "warn"))
+        markdown = render_compatibility_markdown(report)
+        self.assertIn("Review Bundle Manifest Compatibility", markdown)
 
 
 if __name__ == "__main__":
