@@ -1523,6 +1523,66 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - No automatic canonical evidence overwrite.
 - No fallback alias removal in this phase.
 
+## Phase 3026-3085 Addendum: Canonical Evidence Apply Guard and Rollback Plan
+
+### Guarded Apply CLI
+
+- Added:
+  - `cajas/scripts/apply_canonical_evidence_update.py`
+  - `cajas/reports/validation_canonical_evidence_apply.py`
+- Default behavior:
+  - dry-run/non-destructive mode by default.
+  - writes candidate output/report artifacts for reviewer audit.
+  - no fallback removal in this phase.
+
+### Backup / Rollback Guard
+
+- Apply report now includes:
+  - `backup_file`
+  - `rollback_plan`
+  - `post_apply_validation_commands`
+- Rollback guidance includes:
+  - restore backup
+  - regenerate evidence/readiness artifacts
+  - verify pre-apply watch state is restored if needed.
+
+### Post-Apply Validation Checklist
+
+- Embedded commands cover:
+  - evidence closure
+  - alias sunset review
+  - alias removal plan
+  - release readiness
+  - milestone packet
+  - fast validation
+  - runtime budget
+  - data-source audit
+  - hygiene checks
+
+### Readiness / Milestone Integration
+
+- New optional input:
+  - `--canonical-evidence-apply-report`
+- Reports now surface apply status and non-removal guard fields.
+- Real readiness remains governed by real evidence and remains `watch`.
+
+### Validation Snapshot
+
+- Focused tests:
+  - apply guard + update plan + readiness + milestone: pass
+- Related suite:
+  - `213 passed, 319 deselected`
+- Fast validation:
+  - `55.92s`, `overall_status=pass`
+- Runtime budget:
+  - `overall_status=pass`
+- Data source audit:
+  - `read_csv_count=29`
+
+### Non-Goal
+
+- This phase does not remove `--include-history-update-alias`.
+
 ## Phase 2546-2605 Addendum: Pytest Runtime Profile and Fast Timing Reliability
 
 **Date**: 2026-05-03

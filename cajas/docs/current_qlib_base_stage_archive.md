@@ -2246,6 +2246,69 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 3026-3085 Addendum: Canonical Evidence Apply Dry-Run Guard and Rollback
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Add a guarded, auditable canonical evidence apply path with dry-run default, backup/rollback guidance, and explicit non-removal of alias fallback.
+
+### Implemented Changes
+
+1. Added canonical evidence apply guard report + CLI:
+   - `cajas/reports/validation_canonical_evidence_apply.py`
+   - `cajas/scripts/apply_canonical_evidence_update.py`
+2. Added apply dry-run artifact generation:
+   - `tmp/canonical-evidence-apply-dry-run.json|md`
+3. Added readiness/milestone optional integration:
+   - `--canonical-evidence-apply-report`
+4. Added tests:
+   - `cajas/tests/test_validation_canonical_evidence_apply.py`
+   - updated release-readiness/milestone tests for apply-report summaries.
+
+### Apply Guard Behavior
+
+- Dry-run path:
+  - status: `dry_run_ready` only when approval is explicit and update plan is ready.
+  - writes candidate-applied output artifact for review without mutating canonical evidence.
+- Block conditions:
+  - approval not true
+  - update plan not ready
+  - invalid candidate inputs
+- Alias fallback removal:
+  - explicitly disallowed in this phase (`alias_fallback_removal_allowed=false`).
+
+### Rollback / Post-Apply Contract
+
+- Report includes rollback plan:
+  1. restore backup
+  2. regenerate evidence + readiness artifacts
+  3. confirm pre-apply watch posture if rollback is needed
+- Report includes post-apply validation command checklist across:
+  - evidence closure
+  - sunset review
+  - removal plan
+  - readiness/milestone
+  - fast validation/runtime budget/data-source audit/hygiene
+
+### Current Status Snapshot
+
+- Apply dry-run report: `dry_run_ready`
+- Real release readiness: `watch`
+- Real milestone packet: `watch`
+- Runtime budget: `pass`
+- Data source audit: `read_csv_count=29`
+
+### Non-Goal
+
+- No automatic in-place canonical evidence mutation in this phase run.
+- No alias fallback removal in this phase.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2966-3025 Addendum: Approved Simulation and Canonical Evidence Update Plan
 
 **Date**: 2026-05-03

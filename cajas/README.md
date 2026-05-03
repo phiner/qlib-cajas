@@ -1348,6 +1348,35 @@ Current status snapshot:
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 3026-3085 Addendum: Canonical Evidence Apply Dry-Run Guard
+
+- Added guarded apply workflow:
+  - `cajas/reports/validation_canonical_evidence_apply.py`
+  - `cajas/scripts/apply_canonical_evidence_update.py`
+  - output:
+    - `tmp/canonical-evidence-apply-dry-run.json`
+    - `tmp/canonical-evidence-apply-dry-run.md`
+- Guard behavior:
+  - defaults to dry-run/non-destructive behavior.
+  - requires approved approval + ready update plan + valid candidate before dry-run-ready/apply.
+  - includes backup/rollback instructions and post-apply validation command checklist.
+  - `alias_fallback_removal_allowed=false` in this phase.
+- Readiness/milestone integration:
+  - `--canonical-evidence-apply-report` optional input added to both report builders.
+
+Current status snapshot:
+- apply dry-run report: `dry_run_ready`
+- real release readiness: `watch`
+- real milestone packet: `watch`
+
+Runtime snapshot:
+- fast validation total: `55.92s`
+- runtime budget overall: `pass`
+- timing consistency: `pass`
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
 ## Phase 2966-3025 Addendum: Approved Simulation and Canonical Evidence Update Plan
 
 - Added approved simulation approval example:
