@@ -2714,3 +2714,49 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2486-2545 Addendum: Consumer Owner Resolution and Timing Test-Count Observability
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Strengthen unresolved consumer accountability and improve runtime observability with explicit test-count metadata plumbing.
+
+### Implemented Changes
+
+1. Updated real consumer evidence owner/action fields in:
+   - `cajas/data_examples/history_alias_external_consumers.json`
+2. Extended consumer evidence closure report:
+   - `action_plan`
+   - `blocking_consumer_count`
+   - `owner_missing_count`
+   - markdown action table
+3. Enhanced fast validation timing payload:
+   - added `test_summary` extraction (`passed|deselected|failed|total_reported`) when parseable.
+4. Extended runtime watch triage:
+   - `test_count`, `tests_deselected`, `seconds_per_test`, `test_count_source`.
+5. Extended readiness/milestone summaries:
+   - evidence action-plan details
+   - runtime test-count observability fields.
+
+### Validation Snapshot
+
+- Focused suites: pass
+- Related suites: pass (`185 passed`, `319 deselected`)
+- Fast validation: pass (`488 passed`, `16 deselected`, total `109.788s`)
+- Runtime budget: `warn`
+- Timing consistency: `pass`
+- Data-source audit: `read_csv_count=29`
+- Hygiene: pass
+
+### Current Reviewer Outcomes
+
+- Evidence closure: `incomplete` (owner/action unresolved for one blocking consumer).
+- Runtime triage: `warn`, likely cause `test_count_growth`, recommendation `optimize`.
+- Release readiness: `watch`.
+- Milestone packet: `watch`.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

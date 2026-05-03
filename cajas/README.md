@@ -1481,3 +1481,48 @@ Runtime comparison:
 
 Scope confirmation:
 - Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2486-2545 Addendum: Consumer Owner Resolution and Timing Observability
+
+- Updated real evidence owner/action details in:
+  - `cajas/data_examples/history_alias_external_consumers.json`
+  - unresolved consumer now explicitly uses:
+    - `owner=external-review-needed`
+    - `next_action=identify_owner`
+    - `due_phase=future`
+    - `blocking_alias_sunset=true`
+- Extended consumer evidence closure report with action tracking:
+  - `action_plan`
+  - `blocking_consumer_count`
+  - `owner_missing_count`
+  - markdown action table
+- Added fast timing test-summary extraction in:
+  - `cajas/scripts/run_fast_validation.py`
+  - emits `test_summary` with `passed|deselected|failed|total_reported` when parseable
+- Extended runtime watch triage with test-count observability:
+  - `test_count`
+  - `tests_deselected`
+  - `seconds_per_test`
+  - `test_count_source`
+- Extended readiness/milestone summaries with:
+  - consumer evidence action plan
+  - runtime test-count fields
+
+Current outputs:
+- consumer evidence closure: `tmp/history-alias-consumer-evidence-closure.json|md`
+- runtime watch triage: `tmp/validation-runtime-watch-triage-report.json|md`
+- release readiness: `tmp/validation-release-readiness.json|md`
+- milestone packet: `tmp/validation-milestone-packet.json|md`
+
+Current status snapshot:
+- consumer evidence closure: `incomplete` (one blocking unresolved consumer)
+- alias sunset/removal: `watch` / `not_ready`
+- runtime budget: `warn` in latest run (`fast_total=109.788s`, `pytest_fast=105.537s`)
+- runtime watch triage: `warn`, recommendation `optimize`
+- release readiness: `watch` (evidence + runtime warn)
+
+Known limitation:
+- `test_summary` remains `null` in real runs when pytest output is not captured by the runner environment; parser remains conservative and non-failing.
+
+Scope confirmation:
+- Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

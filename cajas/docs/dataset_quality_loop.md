@@ -1716,3 +1716,37 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 2486-2545 Addendum: Owner/Action Closure and Test-Count Observability
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Make unresolved consumer evidence explicitly owner/action-driven and add test-count observability into timing + runtime triage reports.
+
+### Highlights
+
+1. Updated unresolved consumer owner/action metadata in real evidence file.
+2. Extended consumer evidence closure report with explicit `action_plan` and blocking-owner counts.
+3. Added conservative `test_summary` extraction to fast timing JSON.
+4. Extended runtime watch triage with `test_count`, `tests_deselected`, and `seconds_per_test`.
+5. Extended release readiness and milestone packet to surface evidence action plan and runtime test-count fields.
+
+### Current Outcome
+
+- Real consumer evidence remains `incomplete`; one unresolved blocking consumer still requires owner confirmation.
+- Runtime in latest run moved to warn state due higher observed timing (`fast_total=109.788s`).
+- Runtime watch triage reports `warn` with recommendation `optimize`.
+
+### Evidence Promotion Path
+
+- Tests validate that simulated promotion to `confirmed_clear` with complete fields can reach closure-complete state without changing real evidence.
+
+### Known Limitation
+
+- `test_summary` extraction is conservative; when pytest output is not captured by the runner, test-count fields remain `null` instead of failing the run.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
