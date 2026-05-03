@@ -30,7 +30,7 @@ def _run_duration_probe(*, tests_root: str, expression: str, durations: int) -> 
     return out.stdout
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Audit validation runtime architecture.")
     p.add_argument("--tests-root", default="cajas/tests")
     p.add_argument("--fast-expression", default="not smoke and not slow and not closure and not full and not integration")
@@ -39,7 +39,7 @@ def main() -> int:
     p.add_argument("--out-md", required=True)
     p.add_argument("--run-durations", action="store_true")
     p.add_argument("--durations", type=int, default=30)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     report = build_validation_runtime_audit(
         tests_root=args.tests_root,
