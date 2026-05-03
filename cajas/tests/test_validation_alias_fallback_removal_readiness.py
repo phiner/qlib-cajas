@@ -22,7 +22,11 @@ def test_alias_fallback_removal_ready_to_schedule(tmp_path: Path) -> None:
         applied_alias_sunset_review=sunset,
     )
     assert report["status"] == "ready_to_schedule"
-    assert report["do_not_remove_in_this_phase"] is True
+    assert report["do_not_remove_in_this_phase"] is False
+    assert report["fallback_removed"] is True
+    assert report["active_alias_emission_supported"] is False
+    assert report["legacy_read_normalization_kept"] is True
+    assert report["post_removal_status"] == "pass"
     assert report["must_keep"]
     md = render_alias_fallback_removal_readiness_markdown(report)
     assert "must_keep" not in md.lower() or "Must Keep" in md

@@ -51,8 +51,12 @@ def build_alias_fallback_removal_readiness(
     return {
         "schema_version": "v1",
         "status": status,
-        "fallback_flag": "--include-history-update-alias",
-        "removal_scope": "future_phase",
+        "fallback_removed": True,
+        "active_alias_emission_supported": False,
+        "legacy_read_normalization_kept": True,
+        "post_removal_status": "pass" if compat_ok else "fail",
+        "fallback_flag": "--include-history-update-alias (sunset; fail-fast)",
+        "removal_scope": "current_phase",
         "preconditions_met": preconditions_met,
         "preconditions": preconditions,
         "code_removal_candidates": [
@@ -63,9 +67,18 @@ def build_alias_fallback_removal_readiness(
         "must_keep": [
             "legacy read normalization for archived manifests until archival cleanup is separately approved"
         ],
-        "do_not_remove_in_this_phase": True,
-        "recommended_next_phase": "remove_alias_fallback_flag_after_real_evidence_apply",
-        "scope_note": "Offline Qlib validation automation only; this phase does not remove fallback.",
+        "do_not_remove_in_this_phase": False,
+        "recommended_next_phase": "monitor_external_consumer_reports_and_keep_rollback_ready",
+        "rollback_plan": [
+            "Revert alias-emission removal commit(s).",
+            "Reintroduce controlled alias emission path only if downstream breakage is confirmed.",
+            "Regenerate review bundle and rerun compatibility, release readiness, fast validation, data-source audit, and hygiene checks.",
+        ],
+        "rollback_trigger": [
+            "External consumer reports hard dependency on history_update emission.",
+            "Manifest compatibility fails for archived supported manifests after removal.",
+        ],
+        "scope_note": "Offline Qlib validation automation only; active alias emission removal completed while legacy read normalization is preserved.",
     }
 
 
@@ -75,6 +88,10 @@ def render_alias_fallback_removal_readiness_markdown(payload: dict[str, Any]) ->
             "# Alias Fallback Removal Readiness",
             "",
             f"- Status: `{payload.get('status', 'not_ready')}`",
+            f"- fallback_removed: `{payload.get('fallback_removed')}`",
+            f"- active_alias_emission_supported: `{payload.get('active_alias_emission_supported')}`",
+            f"- legacy_read_normalization_kept: `{payload.get('legacy_read_normalization_kept')}`",
+            f"- post_removal_status: `{payload.get('post_removal_status')}`",
             f"- fallback_flag: `{payload.get('fallback_flag')}`",
             f"- preconditions_met: `{payload.get('preconditions_met', False)}`",
             f"- do_not_remove_in_this_phase: `{payload.get('do_not_remove_in_this_phase', True)}`",
@@ -95,6 +112,14 @@ def render_alias_fallback_removal_readiness_markdown(payload: dict[str, Any]) ->
             "## Scope Boundary",
             "",
             f"- {payload.get('scope_note', '')}",
+            "",
+            "## Rollback",
+            "",
+            *[f"- {x}" for x in payload.get("rollback_plan", [])],
+            "",
+            "## Rollback Triggers",
+            "",
+            *[f"- {x}" for x in payload.get("rollback_trigger", [])],
             "",
         ]
     )
