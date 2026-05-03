@@ -3440,3 +3440,32 @@ Maintenance cadence:
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3686-3805 Milestone Watch Governance Closure and Stable Maintenance Cadence
+
+Summary:
+- Audited the milestone `watch` signal and confirmed it reflects non-blocking alias-governance context rather than active release blockers.
+- Added explicit milestone review semantics (`review_state`, `blocking`, `blocking_reasons`, `non_blocking_governance_notes`, `superseded_watch_items`, `maintenance_cadence`) to make reviewer posture unambiguous.
+- Added validation maintenance cadence artifacts and integrated cadence context into reviewer/readiness/milestone surfaces.
+
+Maintenance cadence artifacts:
+- `tmp/validation-maintenance-cadence.json`
+- `tmp/validation-maintenance-cadence.md`
+
+Cadence behavior:
+- `routine` when release readiness is ready, release-ready closure is ready, reviewer packet is ready_for_review, alias post-removal closure is closed, and runtime gates pass.
+- `active` for non-blocking watch follow-up.
+- `blocked` when required runtime/release gates fail.
+
+Reviewer handoff:
+- Final reviewer packet now includes a concise handoff section with canonical `history`-only policy, alias migration closure status, runtime summary, stable data-source audit count, and next routine cadence action.
+
+Validation snapshot (phase run):
+- Focused cadence/reviewer/readiness/milestone suites: pass.
+- Related suite: pass.
+- Fast validation + runtime budget/timing consistency/runtime edge/runtime release-cycle/runtime variance: pass.
+- Data-source audit remains stable (`read_csv_count=29`).
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

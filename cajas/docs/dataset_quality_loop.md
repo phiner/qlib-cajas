@@ -2475,3 +2475,25 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Release readiness and milestone packet now include final reviewer packet status, primary artifact paths, and non-blocking follow-up visibility.
 - Maintenance cadence remains release-cycle monitoring for runtime variance watch when present.
 - Scope remains offline Qlib validation automation only; no trading execution scope.
+
+## Phase 3686-3805 Milestone Governance Closure and Maintenance Cadence
+
+- Audited milestone `watch` posture and confirmed the remaining signal is non-blocking governance context (`alias_sunset_decision_gate=watch`) rather than runtime, compatibility, or release blockers.
+- Milestone packet semantics now include explicit review/governance fields:
+  - `review_state`
+  - `blocking`
+  - `blocking_reasons`
+  - `non_blocking_governance_notes`
+  - `superseded_watch_items`
+  - `maintenance_cadence`
+- Added stable maintenance cadence artifacts:
+  - `tmp/validation-maintenance-cadence.json`
+  - `tmp/validation-maintenance-cadence.md`
+- Maintenance cadence report classifies lifecycle state as:
+  - `routine` when release/final closure/runtime gates are ready/pass
+  - `active` when only non-blocking watch remains
+  - `blocked` when required gates fail
+- Final reviewer packet now includes cadence summary and a concise reviewer handoff section.
+- Release readiness and milestone packet now surface cadence status, recommended cadence, and routine command coverage.
+- Remaining follow-up is optional governance monitoring/evidence completion; release-ready posture remains intact.
+- Scope remains offline Qlib validation automation only; no trading execution scope.

@@ -1895,3 +1895,27 @@ Scope confirmation:
   - data-source audit read count and remaining follow-up cadence
 - Release readiness and milestone packet now include final reviewer packet status and primary artifact linkage.
 - Scope remains offline Qlib validation automation only; no trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3686-3805 Milestone Watch Governance Closure and Stable Maintenance Cadence
+
+- Milestone `watch` reason was audited and classified as non-blocking governance carryover, not a release/runtime blocker.
+- Milestone packet now provides explicit reviewer-facing semantics:
+  - `review_state`
+  - `blocking`
+  - `blocking_reasons`
+  - `non_blocking_governance_notes`
+  - `superseded_watch_items`
+  - `maintenance_cadence`
+- Added maintenance cadence report and CLI:
+  - `tmp/validation-maintenance-cadence.json`
+  - `tmp/validation-maintenance-cadence.md`
+- Cadence integration added to:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Final reviewer packet now includes a concise reviewer handoff section with canonical policy, alias closure status, runtime summary, data-source audit stability, and next cadence action.
+- Maintenance mode remains routine release-cycle monitoring with explicit command list; optional governance evidence follow-up remains non-blocking.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
