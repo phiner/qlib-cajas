@@ -383,3 +383,41 @@ def test_release_readiness_includes_final_closure_fields(tmp_path: Path) -> None
         release_ready_closure=tmp_path / "release_ready_closure.json",
     )
     assert payload["release_ready_closure_status"] == "watch"
+
+
+def test_release_readiness_includes_checklist_and_followups(tmp_path: Path) -> None:
+    _build_report(tmp_path, alias_gate="ready")
+    checklist = _write_json(
+        tmp_path / "checklist.json",
+        {"status": "ready", "mode": "routine_maintenance", "optional_followup_count": 2},
+    )
+    followups = _write_json(
+        tmp_path / "followups.json",
+        {"status": "open", "blocking": False, "items": [{"id": "a"}, {"id": "b"}]},
+    )
+    payload = build_validation_release_readiness_report(
+        milestone_packet=tmp_path / "milestone.json",
+        alias_sunset_review=tmp_path / "alias.json",
+        runtime_release_cycle_report=tmp_path / "cycle.json",
+        runtime_variance_report=tmp_path / "variance.json",
+        runtime_edge_report=tmp_path / "edge.json",
+        runtime_budget_report=tmp_path / "budget.json",
+        alias_removal_plan=tmp_path / "removal.json",
+        consumer_evidence_closure_report=tmp_path / "evidence_closure.json",
+        consumer_owner_handoff=tmp_path / "owner_handoff.json",
+        consumer_owner_response_validation=tmp_path / "owner_response.json",
+        consumer_evidence_candidate_report=tmp_path / "candidate.json",
+        evidence_candidate_approval_report=tmp_path / "approval_gate.json",
+        alias_sunset_schedule=tmp_path / "schedule.json",
+        canonical_evidence_update_plan=tmp_path / "update_plan.json",
+        canonical_evidence_apply_report=tmp_path / "apply_report.json",
+        applied_evidence_readiness=tmp_path / "applied_readiness.json",
+        alias_fallback_removal_readiness=tmp_path / "fallback_removal.json",
+        runtime_watch_triage_report=tmp_path / "runtime_triage.json",
+        pytest_runtime_profile=tmp_path / "pytest_profile.json",
+        maintenance_checklist=checklist,
+        optional_followups=followups,
+    )
+    assert payload["maintenance_checklist_status"] == "ready"
+    assert payload["optional_followups_status"] == "open"
+    assert payload["optional_followups_blocking"] is False

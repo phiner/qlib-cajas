@@ -39,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--release-ready-closure", type=Path)
     parser.add_argument("--final-reviewer-packet", type=Path)
     parser.add_argument("--maintenance-cadence", type=Path)
+    parser.add_argument("--maintenance-checklist", type=Path)
+    parser.add_argument("--optional-followups", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -67,6 +69,8 @@ def main(argv: list[str] | None = None) -> int:
         release_ready_closure=args.release_ready_closure,
         final_reviewer_packet=args.final_reviewer_packet,
         maintenance_cadence=args.maintenance_cadence,
+        maintenance_checklist=args.maintenance_checklist,
+        optional_followups=args.optional_followups,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

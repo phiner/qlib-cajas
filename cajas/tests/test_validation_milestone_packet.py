@@ -427,6 +427,8 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     reviewer_packet = tmp_path / "reviewer.json"
     alias_post = tmp_path / "alias_post.json"
     cadence = tmp_path / "cadence.json"
+    checklist = tmp_path / "checklist.json"
+    followups = tmp_path / "followups.json"
     runtime_cycle = tmp_path / "runtime_cycle.json"
     runtime_variance = tmp_path / "runtime_variance.json"
     alias_sunset.write_text(json.dumps({"status": "watch"}), encoding="utf-8")
@@ -435,6 +437,8 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     reviewer_packet.write_text(json.dumps({"status": "ready_for_review"}), encoding="utf-8")
     alias_post.write_text(json.dumps({"status": "closed"}), encoding="utf-8")
     cadence.write_text(json.dumps({"status": "routine", "recommended_cadence": "next_release_cycle"}), encoding="utf-8")
+    checklist.write_text(json.dumps({"status": "ready", "mode": "routine_maintenance", "optional_followup_count": 2}), encoding="utf-8")
+    followups.write_text(json.dumps({"status": "open", "blocking": False, "items": [{"id": "x"}, {"id": "y"}]}), encoding="utf-8")
     runtime_cycle.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
     runtime_variance.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
     packet = build_validation_milestone_packet(
@@ -451,6 +455,8 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
         final_reviewer_packet=reviewer_packet,
         alias_post_removal_closure=alias_post,
         maintenance_cadence=cadence,
+        maintenance_checklist=checklist,
+        optional_followups=followups,
         runtime_release_cycle_report=runtime_cycle,
         runtime_variance_report=runtime_variance,
     )
@@ -459,6 +465,8 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     assert packet["blocking"] is False
     assert "alias_sunset_decision_gate=watch" in packet["superseded_watch_items"]
     assert packet["maintenance_cadence"] == "next_release_cycle"
+    assert packet["maintenance_checklist_summary"]["status"] == "ready"
+    assert packet["optional_followups_summary"]["status"] == "open"
 
 
 def test_cli_missing_critical_fails_without_warn_only(tmp_path: Path) -> None:

@@ -33,6 +33,22 @@ def _inputs(tmp_path: Path):
                 "watch_items": [],
             },
         ),
+        "maintenance_checklist": _write(
+            tmp_path / "checklist.json",
+            {
+                "status": "ready",
+                "mode": "routine_maintenance",
+                "canonical_artifacts": ["tmp/validation-final-reviewer-packet.md"],
+            },
+        ),
+        "optional_followups": _write(
+            tmp_path / "followups.json",
+            {
+                "status": "open",
+                "blocking": False,
+                "items": [{"id": "slow-test-optimization"}],
+            },
+        ),
     }
 
 
@@ -42,8 +58,11 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert packet["status"] == "ready_for_review"
     assert packet["summary"]["canonical_only_manifest"] is True
     assert packet["maintenance_cadence_status"] == "routine"
+    assert packet["maintenance_checklist_status"] == "ready"
+    assert packet["optional_followups_count"] == 1
     md = render_validation_final_reviewer_packet_markdown(packet)
     assert "Reviewer Handoff" in md
+    assert "Optional Followup Queue" in md
     assert "Scope Boundary" in md
 
 

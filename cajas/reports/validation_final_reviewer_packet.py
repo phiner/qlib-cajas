@@ -24,6 +24,8 @@ def build_validation_final_reviewer_packet(
     runtime_edge_report: Path,
     data_source_audit_report: Path,
     maintenance_cadence: Path | None = None,
+    maintenance_checklist: Path | None = None,
+    optional_followups: Path | None = None,
 ) -> dict[str, Any]:
     final_closure = _load_json(release_ready_closure)
     alias_closure = _load_json(alias_post_removal_closure)
@@ -36,6 +38,8 @@ def build_validation_final_reviewer_packet(
     edge = _load_json(runtime_edge_report)
     audit = _load_json(data_source_audit_report)
     cadence = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else {}
+    checklist = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else {}
+    followups_queue = _load_json(optional_followups) if optional_followups and optional_followups.exists() else {}
 
     canonical_only = isinstance(manifest.get("history"), dict) and "history_update" not in manifest
     legacy_kept = readiness.get("legacy_read_normalization_kept") is True
@@ -88,6 +92,12 @@ def build_validation_final_reviewer_packet(
         "maintenance_cadence_recommended": cadence.get("recommended_cadence"),
         "maintenance_cadence_routine_commands": cadence.get("routine_commands", []),
         "maintenance_cadence_watch_items": cadence.get("watch_items", []),
+        "maintenance_checklist_status": checklist.get("status"),
+        "maintenance_checklist_mode": checklist.get("mode"),
+        "maintenance_checklist_canonical_artifacts": checklist.get("canonical_artifacts", []),
+        "optional_followups_status": followups_queue.get("status"),
+        "optional_followups_count": len(followups_queue.get("items", [])),
+        "optional_followups_blocking": followups_queue.get("blocking", False),
         "remaining_followups": followups,
         "primary_artifacts": [
             str(release_ready_closure),
@@ -132,6 +142,18 @@ def render_validation_final_reviewer_packet_markdown(payload: dict[str, Any]) ->
             f"- recommended_cadence: `{payload.get('maintenance_cadence_recommended', 'n/a')}`",
             f"- routine_command_count: `{len(payload.get('maintenance_cadence_routine_commands', []))}`",
             f"- watch_items: `{payload.get('maintenance_cadence_watch_items', [])}`",
+            "",
+            "## Maintenance Checklist",
+            "",
+            f"- status: `{payload.get('maintenance_checklist_status', 'not_included')}`",
+            f"- mode: `{payload.get('maintenance_checklist_mode', 'n/a')}`",
+            f"- canonical_artifact_count: `{len(payload.get('maintenance_checklist_canonical_artifacts', []))}`",
+            "",
+            "## Optional Followup Queue",
+            "",
+            f"- status: `{payload.get('optional_followups_status', 'not_included')}`",
+            f"- count: `{payload.get('optional_followups_count', 0)}`",
+            f"- blocking: `{payload.get('optional_followups_blocking', False)}`",
             "",
             "## Reviewer Handoff",
             "",
