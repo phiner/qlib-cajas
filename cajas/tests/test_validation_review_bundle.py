@@ -414,6 +414,135 @@ class ValidationReviewBundleTests(unittest.TestCase):
                         warn_only=False,
                     )
 
+    def test_ci_mode_writes_final_status_artifacts(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            timing_json = tmp_path / "timing.json"
+            timing_json.write_text(json.dumps({"total_seconds": 85.0, "results": []}), encoding="utf-8")
+            budgets_json = tmp_path / "budgets.json"
+            budgets_json.write_text(
+                json.dumps({"budgets_seconds": {"fast_total": 100.0}, "required_components": ["fast_total"], "optional_components": []}),
+                encoding="utf-8",
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            def _mock_with_budget_pass(cmd: list[str], description: str) -> tuple[bool, str]:
+                if "check_validation_runtime_budget.py" in " ".join(cmd):
+                    (out_root / "validation_runtime_budget_report.json").write_text(
+                        json.dumps(
+                            {
+                                "overall_status": "pass",
+                                "budget_status": "pass",
+                                "timing_consistency": {"status": "pass", "issues": []},
+                                "results": [],
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                return True, json.dumps({"status": "ok"})
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", _mock_with_budget_pass):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=timing_json,
+                    budgets=budgets_json,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=False,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
+                    history_last_n=10,
+                    check_manifest_compatibility=True,
+                    warn_only=True,
+                    ci=True,
+                )
+
+            self.assertIn("final_status", manifest)
+            self.assertEqual(manifest["final_status"]["overall_status"], "pass")
+            self.assertTrue((out_root / "final_status.json").exists())
+            self.assertTrue((out_root / "final_status.md").exists())
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("CI Gate Summary", index_text)
+
+    def test_ci_mode_requires_timing_or_run_fast_validation(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                with self.assertRaises(RuntimeError):
+                    build_review_bundle(
+                        bundle_name="test_bundle",
+                        out_root=out_root,
+                        smoke_root=smoke_root,
+                        fast_timing_json=None,
+                        budgets=tmp_path / "budgets.json",
+                        baseline_root=None,
+                        create_baseline_from_current=False,
+                        run_fast_validation=False,
+                        skip_fast_validation=False,
+                        run_data_source_audit=False,
+                        skip_data_source_audit=True,
+                        data_root=None,
+                        build_experiment_manifest=False,
+                        copy_artifacts=False,
+                        update_history=False,
+                        history_jsonl=None,
+                        history_last_n=10,
+                        warn_only=False,
+                        ci=True,
+                    )
+
+    def test_main_fail_on_warn_returns_nonzero(self) -> None:
+        from cajas.scripts import build_validation_review_bundle as mod
+
+        with patch.object(
+            mod,
+            "build_review_bundle",
+            return_value={
+                "commands_executed": [],
+                "final_status": {"overall_status": "warn"},
+            },
+        ):
+            ret = mod.main(
+                [
+                    "--bundle-name",
+                    "bundle",
+                    "--out-root",
+                    "tmp/x-bundle",
+                    "--smoke-root",
+                    "tmp/x-smoke",
+                    "--fail-on-warn",
+                ]
+            )
+            self.assertNotEqual(ret, 0)
+
     def test_build_experiment_manifest_option(self) -> None:
         """Test build experiment manifest option adds manifest step."""
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
