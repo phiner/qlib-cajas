@@ -2246,6 +2246,76 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
 
+## Phase 3086-3205 Addendum: Approved Apply Execution and Fallback Removal Readiness Packet
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Bundle approved apply execution safeguards, applied-target readiness regeneration, and alias fallback removal scheduling readiness in one offline validation phase.
+
+### Implemented Changes
+
+1. Controlled apply semantics hardening:
+   - `--apply-in-place` applies to `--out-evidence` target.
+   - default remains dry-run/non-destructive.
+   - backup and rollback guidance tied to controlled target path.
+2. Added applied-evidence readiness report:
+   - `cajas/reports/validation_applied_evidence_readiness.py`
+   - `cajas/scripts/build_applied_evidence_readiness_report.py`
+3. Added alias fallback removal readiness packet:
+   - `cajas/reports/validation_alias_fallback_removal_readiness.py`
+   - `cajas/scripts/build_alias_fallback_removal_readiness.py`
+4. Extended release readiness + milestone packet:
+   - supports applied readiness and fallback-removal readiness inputs and summaries.
+
+### Controlled Apply Artifacts
+
+- Apply report root:
+  - `tmp/applied-canonical-evidence/`
+- Primary outputs:
+  - `canonical-evidence-apply-report.json|md`
+  - `history_alias_external_consumers.json`
+  - `history_alias_external_consumers.backup.json`
+  - `applied-evidence-readiness.json|md`
+- Fallback removal readiness outputs:
+  - `tmp/alias-fallback-removal-readiness.json|md`
+
+### Readiness Outcome
+
+- Real current status:
+  - release readiness remains `watch`
+  - alias sunset remains `watch`
+- Applied projection status:
+  - evidence closure `complete`
+  - alias sunset `ready`
+  - alias removal plan `ready_to_schedule`
+  - applied readiness `ready_for_real_apply`
+- Fallback removal readiness:
+  - `ready_to_schedule`
+  - explicitly `do_not_remove_in_this_phase=true`
+
+### Validation Snapshot
+
+- Focused tests: pass
+  - canonical apply + applied readiness + fallback removal readiness + readiness + milestone
+- Related suite:
+  - `213 passed, 319 deselected`
+- Fast validation:
+  - `50.57s` total (`pytest_fast=46.74s`)
+- Runtime budget:
+  - `pass`
+- Data source audit:
+  - `read_csv_count=29`
+- Hygiene:
+  - pass
+
+### Non-Goals
+
+- No alias fallback removal in this phase.
+- No Qlib core changes.
+- No trading/broker/live execution logic.
+
 ## Phase 3026-3085 Addendum: Canonical Evidence Apply Dry-Run Guard and Rollback
 
 **Date**: 2026-05-03

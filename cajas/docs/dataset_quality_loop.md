@@ -1466,6 +1466,79 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 
 - This phase does not remove `--include-history-update-alias`.
 
+## Phase 3086-3205 Addendum: Applied Evidence Readiness and Alias Fallback Removal Scheduling
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Execute approved evidence apply in a controlled target, regenerate downstream readiness from the applied target, and produce a future-phase alias fallback removal readiness packet without removing fallback in this phase.
+
+### Implemented Changes
+
+1. Controlled apply guard hardening:
+   - `cajas/reports/validation_canonical_evidence_apply.py`
+   - `cajas/scripts/apply_canonical_evidence_update.py`
+   - apply mode now targets `--out-evidence` under `tmp/` and keeps default dry-run non-destructive behavior.
+2. Applied-evidence readiness report:
+   - `cajas/reports/validation_applied_evidence_readiness.py`
+   - `cajas/scripts/build_applied_evidence_readiness_report.py`
+3. Alias fallback removal readiness packet:
+   - `cajas/reports/validation_alias_fallback_removal_readiness.py`
+   - `cajas/scripts/build_alias_fallback_removal_readiness.py`
+4. Release readiness and milestone integration:
+   - optional `--applied-evidence-readiness`
+   - optional `--alias-fallback-removal-readiness`
+
+### Controlled Apply Target and Safety
+
+- Controlled canonical target:
+  - `tmp/applied-canonical-evidence/history_alias_external_consumers.json`
+- Backup path:
+  - `tmp/applied-canonical-evidence/history_alias_external_consumers.backup.json`
+- Guard contract:
+  - approval must be explicit and valid.
+  - update plan must be `ready_to_apply`.
+  - candidate validity and diff checks must pass.
+  - backup output must be provided.
+
+### Real vs Applied Projection
+
+- Applied readiness:
+  - `status=ready_for_real_apply`
+  - `real_current_status.release_readiness=watch`
+  - `real_current_status.alias_sunset=watch`
+  - `applied_projection.evidence_closure=complete`
+  - `applied_projection.alias_sunset=ready`
+  - `applied_projection.alias_removal_plan=ready_to_schedule`
+  - `manual_real_apply_required=true`
+  - `do_not_remove_fallback_in_this_phase=true`
+- Alias fallback removal readiness packet:
+  - `status=ready_to_schedule`
+  - `do_not_remove_in_this_phase=true`
+
+### Validation Snapshot
+
+- Focused tests:
+  - apply guard + applied readiness + fallback removal readiness + readiness + milestone: pass
+- Related suite:
+  - `213 passed, 319 deselected`
+- Fast validation:
+  - `50.57s` total, `pytest_fast=46.74s`
+- Runtime budget:
+  - `pass`
+- Runtime edge:
+  - regenerated
+- Data source audit:
+  - `read_csv_count=29`
+- Hygiene:
+  - pass (`find cajas -path "*/init.py"` clean)
+
+### Non-Goal
+
+- No removal of `--include-history-update-alias` in this phase.
+- No direct mutation of `cajas/data_examples/history_alias_external_consumers.json` as part of controlled target apply.
+
 ## Phase 2966-3025 Addendum: Approval Simulation and Canonical Evidence Update Planning
 
 ### Approved Simulation File

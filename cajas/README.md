@@ -258,6 +258,34 @@ This phase still excludes:
 - CLI command:
   - `./.venv-qlib313/bin/python cajas/scripts/run_baseline_disabled.py --config cajas/configs/fx_eurusd_15m_lightgbm_future_direction_8.yaml`
 - Optional artifact output:
+
+## Phase 3086-3205: Controlled Apply Readiness and Alias Fallback Removal Scheduling
+
+- Added controlled canonical evidence apply hardening for:
+  - `cajas/scripts/apply_canonical_evidence_update.py`
+  - `cajas/reports/validation_canonical_evidence_apply.py`
+- In apply mode, the target is the explicit `--out-evidence` path.
+- This phase uses controlled target apply under:
+  - `tmp/applied-canonical-evidence/history_alias_external_consumers.json`
+- Added applied readiness report:
+  - `cajas/reports/validation_applied_evidence_readiness.py`
+  - `cajas/scripts/build_applied_evidence_readiness_report.py`
+- Added alias fallback removal scheduling-readiness packet:
+  - `cajas/reports/validation_alias_fallback_removal_readiness.py`
+  - `cajas/scripts/build_alias_fallback_removal_readiness.py`
+- Integrated both into release readiness and milestone packet builders.
+
+Current outcome snapshot:
+- applied readiness: `ready_for_real_apply`
+- fallback removal readiness: `ready_to_schedule`
+- real release readiness: `watch`
+- real milestone: `watch`
+
+Safety constraints:
+- manual real apply remains required
+- fallback alias removal remains out of scope for this phase
+- no Qlib core modification
+- offline validation only (no trading/broker/live execution)
   - `--write-artifacts --output-dir tmp/cajas/baseline_disabled_runs --run-name phase12_baseline_disabled`
   - files:
     - `baseline_blocked_run_report.json`
