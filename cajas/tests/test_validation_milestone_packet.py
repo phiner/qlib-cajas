@@ -266,6 +266,17 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         ),
         encoding="utf-8",
     )
+    apply_report = tmp_path / "apply_report.json"
+    apply_report.write_text(
+        json.dumps(
+            {
+                "status": "dry_run_ready",
+                "next_action": "manual_apply_in_dedicated_phase",
+                "alias_fallback_removal_allowed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
     packet = build_validation_milestone_packet(
         review_bundle_root=p["default"],
         alias_fallback_bundle_root=p["alias"],
@@ -281,6 +292,7 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         evidence_candidate_approval_report=approval,
         alias_sunset_schedule=schedule,
         canonical_evidence_update_plan=update_plan,
+        canonical_evidence_apply_report=apply_report,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=pytest_profile,
     )
@@ -292,6 +304,7 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
     assert packet["evidence_candidate_approval_summary"]["status"] == "approval_required"
     assert packet["alias_sunset_schedule_summary"]["status"] == "not_scheduled"
     assert packet["canonical_evidence_update_plan_summary"]["status"] == "not_ready"
+    assert packet["canonical_evidence_apply_report_summary"]["status"] == "dry_run_ready"
     assert packet["pytest_runtime_profile_summary"]["status"] == "watch"
     md = render_validation_milestone_packet_markdown(packet)
     assert "Consumer Evidence Closure" in md
@@ -302,6 +315,7 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
     assert "Evidence Candidate Approval Gate" in md
     assert "Alias Sunset Schedule" in md
     assert "Canonical Evidence Update Plan" in md
+    assert "Canonical Evidence Apply Report" in md
     assert "Pytest Runtime Profile" in md
 
 

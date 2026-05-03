@@ -81,6 +81,7 @@ def build_validation_milestone_packet(
     evidence_candidate_approval_report: Path | None = None,
     alias_sunset_schedule: Path | None = None,
     canonical_evidence_update_plan: Path | None = None,
+    canonical_evidence_apply_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -128,6 +129,11 @@ def build_validation_milestone_packet(
     update_plan = (
         _load_json(canonical_evidence_update_plan)
         if canonical_evidence_update_plan and canonical_evidence_update_plan.exists()
+        else None
+    )
+    apply_report = (
+        _load_json(canonical_evidence_apply_report)
+        if canonical_evidence_apply_report and canonical_evidence_apply_report.exists()
         else None
     )
     runtime_watch_triage = (
@@ -245,6 +251,7 @@ def build_validation_milestone_packet(
         "evidence_candidate_approval_summary": candidate_approval,
         "alias_sunset_schedule_summary": sunset_schedule,
         "canonical_evidence_update_plan_summary": update_plan,
+        "canonical_evidence_apply_report_summary": apply_report,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
@@ -386,6 +393,12 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('status', 'not_included')}`",
             f"- recommendation: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('recommendation', 'n/a')}`",
             f"- manual_update_required: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('manual_update_required', 'n/a')}`",
+            "",
+            "## Canonical Evidence Apply Report",
+            "",
+            f"- `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('status', 'not_included')}`",
+            f"- next_action: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('next_action', 'n/a')}`",
+            f"- alias_fallback_removal_allowed: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('alias_fallback_removal_allowed', 'n/a')}`",
             "",
             "## Pytest Runtime Profile",
             "",

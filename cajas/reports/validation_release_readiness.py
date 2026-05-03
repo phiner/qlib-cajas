@@ -27,6 +27,7 @@ def build_validation_release_readiness_report(
     evidence_candidate_approval_report: Path | None = None,
     alias_sunset_schedule: Path | None = None,
     canonical_evidence_update_plan: Path | None = None,
+    canonical_evidence_apply_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -60,6 +61,11 @@ def build_validation_release_readiness_report(
     )
     sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else {}
     update_plan = _load_json(canonical_evidence_update_plan) if canonical_evidence_update_plan and canonical_evidence_update_plan.exists() else {}
+    apply_report = (
+        _load_json(canonical_evidence_apply_report)
+        if canonical_evidence_apply_report and canonical_evidence_apply_report.exists()
+        else {}
+    )
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -85,6 +91,7 @@ def build_validation_release_readiness_report(
     candidate_approval_status = candidate_approval.get("status")
     sunset_schedule_status = sunset_schedule.get("status")
     update_plan_status = update_plan.get("status")
+    apply_report_status = apply_report.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -145,6 +152,8 @@ def build_validation_release_readiness_report(
         watch_items.append(f"alias_sunset_schedule_status={sunset_schedule_status}")
     if update_plan_status in {"not_ready", "blocked"}:
         watch_items.append(f"canonical_evidence_update_plan_status={update_plan_status}")
+    if apply_report_status in {"blocked", "invalid"}:
+        watch_items.append(f"canonical_evidence_apply_report_status={apply_report_status}")
 
     if blocking_items:
         status = "blocked"
@@ -207,6 +216,9 @@ def build_validation_release_readiness_report(
         "canonical_evidence_update_plan_status": update_plan_status,
         "canonical_evidence_update_plan_recommendation": update_plan.get("recommendation"),
         "canonical_evidence_update_plan_manual_update_required": update_plan.get("manual_update_required"),
+        "canonical_evidence_apply_report_status": apply_report_status,
+        "canonical_evidence_apply_report_next_action": apply_report.get("next_action"),
+        "canonical_evidence_apply_report_alias_fallback_removal_allowed": apply_report.get("alias_fallback_removal_allowed"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -247,6 +259,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Evidence candidate approval: `{payload.get('evidence_candidate_approval_status', 'not_included')}`",
             f"- Alias sunset schedule: `{payload.get('alias_sunset_schedule_status', 'not_included')}`",
             f"- Canonical evidence update plan: `{payload.get('canonical_evidence_update_plan_status', 'not_included')}`",
+            f"- Canonical evidence apply report: `{payload.get('canonical_evidence_apply_report_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
             f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",
