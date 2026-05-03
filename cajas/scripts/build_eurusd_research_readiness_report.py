@@ -19,6 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-maintenance-continuation-report", required=True, type=Path)
     parser.add_argument("--dataset-contract-report", required=True, type=Path)
     parser.add_argument("--dataset-audit-report", required=True, type=Path)
+    parser.add_argument("--clean-dataset-view-report", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -27,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
         base_maintenance_continuation_report=args.base_maintenance_continuation_report,
         dataset_contract_report=args.dataset_contract_report,
         dataset_audit_report=args.dataset_audit_report,
+        clean_dataset_view_report=args.clean_dataset_view_report,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

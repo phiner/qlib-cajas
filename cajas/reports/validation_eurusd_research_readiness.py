@@ -20,15 +20,18 @@ def build_validation_eurusd_research_readiness(
     base_maintenance_continuation_report: Path,
     dataset_contract_report: Path,
     dataset_audit_report: Path,
+    clean_dataset_view_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
     audit = _safe_json(dataset_audit_report)
+    clean_view = _safe_json(clean_dataset_view_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
     contract_status = contract.get("status", "missing")
     audit_status = audit.get("status", "missing")
+    clean_view_status = clean_view.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -38,8 +41,12 @@ def build_validation_eurusd_research_readiness(
         blockers.append("base_maintenance_not_ready")
     if contract_status != "ready":
         blockers.append("dataset_contract_not_ready")
-    if audit_status == "blocked":
+    raw_blocked = audit_status == "blocked"
+    clean_view_allows_research = clean_view_status in {"ready", "watch"}
+    if raw_blocked and not clean_view_allows_research:
         blockers.append("dataset_audit_blocked")
+    elif raw_blocked and clean_view_allows_research:
+        warnings.append("raw_blocked_clean_view_used")
     if feature_status != "pass":
         blockers.append("feature_scaffold_failed")
 
@@ -48,6 +55,8 @@ def build_validation_eurusd_research_readiness(
 
     if blockers:
         status = "blocked"
+    elif raw_blocked and clean_view_allows_research:
+        status = "ready_for_pattern_research_with_clean_view"
     elif warnings:
         status = "watch"
     else:
@@ -65,6 +74,11 @@ def build_validation_eurusd_research_readiness(
         "base_maintenance_status": base_status,
         "dataset_contract_status": contract_status,
         "dataset_audit_status": audit_status,
+        "raw_dataset_blocked": raw_blocked,
+        "clean_dataset_view_status": clean_view_status,
+        "clean_view_approved_for_pattern_research": clean_view_allows_research,
+        "clean_view_path": (clean_view.get("output_paths") or {}).get("clean_csv"),
+        "quarantine_count": clean_view.get("quarantined_row_count"),
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
         "scope_boundary": {
@@ -94,6 +108,11 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- base_maintenance_status: `{payload.get('base_maintenance_status')}`",
         f"- dataset_contract_status: `{payload.get('dataset_contract_status')}`",
         f"- dataset_audit_status: `{payload.get('dataset_audit_status')}`",
+        f"- raw_dataset_blocked: `{payload.get('raw_dataset_blocked')}`",
+        f"- clean_dataset_view_status: `{payload.get('clean_dataset_view_status')}`",
+        f"- clean_view_approved_for_pattern_research: `{payload.get('clean_view_approved_for_pattern_research')}`",
+        f"- clean_view_path: `{payload.get('clean_view_path')}`",
+        f"- quarantine_count: `{payload.get('quarantine_count')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",
         "## Scope Boundary",

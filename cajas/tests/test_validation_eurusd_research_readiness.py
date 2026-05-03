@@ -30,6 +30,21 @@ def test_readiness_watch_for_non_blocking_audit_watch(tmp_path: Path) -> None:
     assert payload["status"] == "watch"
 
 
+def test_readiness_with_clean_view_when_raw_blocked(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        clean_dataset_view_report=_write(
+            tmp_path / "clean_view.json",
+            {"status": "ready", "quarantined_row_count": 10, "output_paths": {"clean_csv": "tmp/eurusd/clean.csv"}},
+        ),
+    )
+    assert payload["status"] == "ready_for_pattern_research_with_clean_view"
+    assert payload["raw_dataset_blocked"] is True
+    assert payload["clean_view_approved_for_pattern_research"] is True
+
+
 def test_readiness_blocked_for_blocking_inputs(tmp_path: Path) -> None:
     payload = build_validation_eurusd_research_readiness(
         base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "watch"}),
