@@ -20,6 +20,11 @@ from cajas.reports.validation_review_bundle_history import (
     generate_history_summary_markdown,
     read_snapshots,
 )
+from cajas.reports.validation_gate_summary import (
+    ValidationGate,
+    build_final_status_payload,
+    render_final_status_markdown,
+)
 from cajas.reports.validation_review_bundle_metadata import (
     HISTORY_STATUS_FAIL,
     HISTORY_STATUS_PASS,
@@ -116,6 +121,12 @@ def build_review_bundle(
     manifest_compatibility_out_json: Path | None = None,
     manifest_compatibility_out_md: Path | None = None,
     warn_only: bool = False,
+    ci: bool = False,
+    fail_on_warn: bool = False,
+    skip_history: bool = False,
+    skip_manifest_compatibility: bool = False,
+    skip_runtime_budget: bool = False,
+    max_timing_age_seconds: int = 3600,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -126,6 +137,24 @@ def build_review_bundle(
     artifacts = {}
     warnings = []
     runtime_budget_report_data: dict[str, Any] | None = None
+
+    if ci:
+        if skip_history:
+            update_history = False
+        elif not update_history:
+            update_history = True
+        if skip_manifest_compatibility:
+            check_manifest_compatibility = False
+        elif not check_manifest_compatibility:
+            check_manifest_compatibility = True
+        if skip_runtime_budget:
+            budgets = None
+        if not run_fast_validation and not fast_timing_json:
+            message = "CI mode requires --fast-timing-json or --run-fast-validation."
+            if warn_only:
+                warnings.append(message)
+            else:
+                raise RuntimeError(message)
 
     # Step 1: Run dataset quality smoke
     smoke_cmd = [
@@ -181,6 +210,8 @@ def build_review_bundle(
             str(runtime_budget_json),
             "--out-md",
             str(runtime_budget_md),
+            "--max-age-seconds",
+            str(max_timing_age_seconds),
         ]
         success, output = run_command(budget_cmd, "runtime budget check")
         if success:
@@ -529,6 +560,98 @@ def build_review_bundle(
         else:
             raise RuntimeError(msg)
 
+    # Build gate summary and final status artifacts
+    gates: list[ValidationGate] = []
+    smoke_status = "pass" if any(
+        c["status"] == "ok" and "run_dataset_quality_smoke.py" in c["command"] for c in commands_executed
+    ) else "fail"
+    gates.append(ValidationGate("dataset_quality_smoke", True, smoke_status, "dataset quality smoke run", None, None))
+
+    if runtime_budget_report_data:
+        gates.append(
+            ValidationGate(
+                "runtime_budget",
+                True,
+                runtime_budget_report_data.get("budget_status", runtime_budget_report_data.get("overall_status", "warn")),
+                "runtime budget report",
+                str(runtime_budget_json),
+                str(runtime_budget_md),
+            )
+        )
+        timing = runtime_budget_report_data.get("timing_consistency", {})
+        gates.append(
+            ValidationGate(
+                "timing_consistency",
+                True if ci else False,
+                timing.get("status", "warn") if isinstance(timing, dict) else "warn",
+                "timing freshness/consistency",
+                str(runtime_budget_json),
+                str(runtime_budget_md),
+            )
+        )
+    else:
+        gates.append(ValidationGate("runtime_budget", True, "not_run", "runtime budget report not available", None, None))
+
+    if check_manifest_compatibility:
+        gates.append(
+            ValidationGate(
+                "manifest_compatibility",
+                True if ci else False,
+                compat_meta.get("status", "warn"),
+                "manifest compatibility report",
+                compat_meta.get("report_json"),
+                compat_meta.get("report_md"),
+            )
+        )
+    else:
+        gates.append(ValidationGate("manifest_compatibility", False, "not_run", "compatibility check not requested", None, None))
+
+    history_status = stable_history.get("status", "not_run") if isinstance(stable_history, dict) else "not_run"
+    gates.append(
+        ValidationGate(
+            "history",
+            True if (ci and update_history) else False,
+            history_status,
+            "review bundle history update",
+            stable_history.get("summary_json") if isinstance(stable_history, dict) else None,
+            stable_history.get("summary_md") if isinstance(stable_history, dict) else None,
+        )
+    )
+
+    packet_status = bundle_manifest.get("delivery_packet_status", "not_run")
+    gates.append(ValidationGate("delivery_packet", True, packet_status, "validation delivery packet", str(packet_dir / "packet_manifest.json"), None))
+    reviewer_diff_status = bundle_manifest.get("reviewer_diff_status", "not_run")
+    gates.append(ValidationGate("reviewer_diff", False, reviewer_diff_status, "reviewer diff report", str(reviewer_diff_json) if reviewer_diff_json.exists() else None, str(reviewer_diff_md) if reviewer_diff_md.exists() else None))
+
+    if artifacts.get("data_source_audit"):
+        audit_data = _load_json_if_exists(artifacts.get("data_source_audit"))
+        read_count = audit_data.get("read_csv_count") if isinstance(audit_data, dict) else None
+        summary = f"data-source audit completed (read_csv_count={read_count})" if read_count is not None else "data-source audit completed"
+        gates.append(ValidationGate("data_source_audit", False, "pass", summary, artifacts.get("data_source_audit"), str(audit_md) if audit_md.exists() else None))
+    elif run_data_source_audit:
+        gates.append(ValidationGate("data_source_audit", True if ci else False, "fail", "data-source audit requested but not produced", None, None))
+    else:
+        gates.append(ValidationGate("data_source_audit", False, "not_run", "data-source audit not requested", None, None))
+
+    final_status_payload = build_final_status_payload(
+        gates=gates,
+        bundle_name=bundle_name,
+        created_at=bundle_manifest["created_at"],
+        git_branch=git_info["branch"],
+        git_commit=git_info["commit"],
+    )
+    final_status_json = out_root / "final_status.json"
+    final_status_md = out_root / "final_status.md"
+    final_status_json.write_text(json.dumps(final_status_payload, indent=2), encoding="utf-8")
+    final_status_md.write_text(render_final_status_markdown(final_status_payload), encoding="utf-8")
+    artifacts["final_status_json"] = str(final_status_json)
+    artifacts["final_status_md"] = str(final_status_md)
+    bundle_manifest["final_status"] = {
+        "overall_status": final_status_payload["overall_status"],
+        "json": str(final_status_json),
+        "md": str(final_status_md),
+    }
+
     # Write bundle manifest
     manifest_path = out_root / "review_bundle_manifest.json"
     with open(manifest_path, "w", encoding="utf-8") as f:
@@ -540,6 +663,22 @@ def build_review_bundle(
         "",
         "**Important**: This bundle summarizes offline Qlib research infrastructure validation artifacts only.",
         "",
+        f"Overall status: `{final_status_payload['overall_status']}`",
+        "",
+        "## CI Gate Summary",
+        "",
+        "| Gate | Required | Status | Artifact |",
+        "|---|---:|---|---|",
+    ]
+
+    for gate in final_status_payload["gates"]:
+        artifact = gate.get("artifact_json") or gate.get("artifact_md") or ""
+        index_lines.append(
+            f"| {gate.get('name')} | {'yes' if gate.get('required') else 'no'} | {gate.get('status')} | {artifact} |"
+        )
+
+    index_lines.extend([
+        "",
         "## Bundle Summary",
         "",
         f"- bundle_name: `{bundle_name}`",
@@ -549,7 +688,7 @@ def build_review_bundle(
         "",
         "## Commands Executed",
         "",
-    ]
+    ])
 
     for cmd_info in commands_executed:
         status_icon = "✅" if cmd_info["status"] == "ok" else "❌"
@@ -730,6 +869,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Output markdown path for manifest compatibility report",
     )
     parser.add_argument("--warn-only", action="store_true", help="Don't fail on warnings")
+    parser.add_argument("--ci", action="store_true", help="Enable CI-friendly standard gating mode")
+    parser.add_argument("--fail-on-warn", action="store_true", help="Exit non-zero when final overall status is warn")
+    parser.add_argument("--skip-history", action="store_true", help="Skip history update in CI mode")
+    parser.add_argument("--skip-manifest-compatibility", action="store_true", help="Skip manifest compatibility in CI mode")
+    parser.add_argument("--skip-runtime-budget", action="store_true", help="Skip runtime budget check in CI mode")
+    parser.add_argument("--max-timing-age-seconds", type=int, default=3600, help="Maximum accepted timing age for runtime budget checks")
 
     args = parser.parse_args(argv)
 
@@ -756,6 +901,12 @@ def main(argv: list[str] | None = None) -> int:
             manifest_compatibility_out_json=args.manifest_compatibility_out_json,
             manifest_compatibility_out_md=args.manifest_compatibility_out_md,
             warn_only=args.warn_only,
+            ci=args.ci,
+            fail_on_warn=args.fail_on_warn,
+            skip_history=args.skip_history,
+            skip_manifest_compatibility=args.skip_manifest_compatibility,
+            skip_runtime_budget=args.skip_runtime_budget,
+            max_timing_age_seconds=args.max_timing_age_seconds,
         )
 
         print(json.dumps({"status": "ok", "bundle_manifest": str(args.out_root / "review_bundle_manifest.json")}))
@@ -763,6 +914,11 @@ def main(argv: list[str] | None = None) -> int:
         # Check if any commands failed
         failed_commands = [cmd for cmd in bundle_manifest["commands_executed"] if cmd["status"] == "fail"]
         if failed_commands and not args.warn_only:
+            return 1
+        overall = (bundle_manifest.get("final_status") or {}).get("overall_status")
+        if overall == "fail" and not args.warn_only:
+            return 1
+        if overall == "warn" and args.fail_on_warn:
             return 1
 
         return 0
