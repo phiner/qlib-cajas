@@ -32,6 +32,7 @@ def build_validation_release_readiness_report(
     alias_fallback_removal_readiness: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
+    alias_post_removal_closure: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -40,46 +41,19 @@ def build_validation_release_readiness_report(
     runtime_edge = _load_json(runtime_edge_report)
     runtime_budget = _load_json(runtime_budget_report)
     removal_plan = _load_json(alias_removal_plan) if alias_removal_plan and alias_removal_plan.exists() else {}
-    evidence_closure = (
-        _load_json(consumer_evidence_closure_report)
-        if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
-        else {}
-    )
+    evidence_closure = _load_json(consumer_evidence_closure_report) if consumer_evidence_closure_report and consumer_evidence_closure_report.exists() else {}
     owner_handoff = _load_json(consumer_owner_handoff) if consumer_owner_handoff and consumer_owner_handoff.exists() else {}
-    owner_response_validation = (
-        _load_json(consumer_owner_response_validation)
-        if consumer_owner_response_validation and consumer_owner_response_validation.exists()
-        else {}
-    )
-    evidence_candidate = (
-        _load_json(consumer_evidence_candidate_report)
-        if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists()
-        else {}
-    )
-    candidate_approval = (
-        _load_json(evidence_candidate_approval_report)
-        if evidence_candidate_approval_report and evidence_candidate_approval_report.exists()
-        else {}
-    )
+    owner_response_validation = _load_json(consumer_owner_response_validation) if consumer_owner_response_validation and consumer_owner_response_validation.exists() else {}
+    evidence_candidate = _load_json(consumer_evidence_candidate_report) if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists() else {}
+    candidate_approval = _load_json(evidence_candidate_approval_report) if evidence_candidate_approval_report and evidence_candidate_approval_report.exists() else {}
     sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else {}
     update_plan = _load_json(canonical_evidence_update_plan) if canonical_evidence_update_plan and canonical_evidence_update_plan.exists() else {}
-    apply_report = (
-        _load_json(canonical_evidence_apply_report)
-        if canonical_evidence_apply_report and canonical_evidence_apply_report.exists()
-        else {}
-    )
+    apply_report = _load_json(canonical_evidence_apply_report) if canonical_evidence_apply_report and canonical_evidence_apply_report.exists() else {}
     applied_readiness = _load_json(applied_evidence_readiness) if applied_evidence_readiness and applied_evidence_readiness.exists() else {}
-    fallback_removal_readiness = (
-        _load_json(alias_fallback_removal_readiness)
-        if alias_fallback_removal_readiness and alias_fallback_removal_readiness.exists()
-        else {}
-    )
-    runtime_watch_triage = (
-        _load_json(runtime_watch_triage_report)
-        if runtime_watch_triage_report and runtime_watch_triage_report.exists()
-        else {}
-    )
+    fallback_removal_readiness = _load_json(alias_fallback_removal_readiness) if alias_fallback_removal_readiness and alias_fallback_removal_readiness.exists() else {}
+    runtime_watch_triage = _load_json(runtime_watch_triage_report) if runtime_watch_triage_report and runtime_watch_triage_report.exists() else {}
     runtime_profile = _load_json(pytest_runtime_profile) if pytest_runtime_profile and pytest_runtime_profile.exists() else {}
+    post_removal_closure = _load_json(alias_post_removal_closure) if alias_post_removal_closure and alias_post_removal_closure.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -90,6 +64,7 @@ def build_validation_release_readiness_report(
     timing_consistency_status = (runtime_budget.get("timing_consistency") or {}).get("status", "warn")
     milestone_status = milestone.get("overall_status", "watch")
     migration_status = (milestone.get("alias_migration_summary") or {}).get("status", "warn")
+
     removal_plan_status = removal_plan.get("status")
     evidence_closure_status = evidence_closure.get("status")
     runtime_watch_triage_status = runtime_watch_triage.get("status")
@@ -101,11 +76,32 @@ def build_validation_release_readiness_report(
     update_plan_status = update_plan.get("status")
     apply_report_status = apply_report.get("status")
     applied_readiness_status = applied_readiness.get("status")
+
     fallback_removal_status = fallback_removal_readiness.get("status")
     fallback_removed = fallback_removal_readiness.get("fallback_removed")
     active_alias_emission_supported = fallback_removal_readiness.get("active_alias_emission_supported")
     legacy_read_normalization_kept = fallback_removal_readiness.get("legacy_read_normalization_kept")
     fallback_post_removal_status = fallback_removal_readiness.get("post_removal_status")
+
+    closure_status = post_removal_closure.get("status")
+    closure_release_readiness_status = post_removal_closure.get("release_readiness_status")
+
+    post_removal_mode = (
+        fallback_removed is True
+        and fallback_post_removal_status == "pass"
+        and legacy_read_normalization_kept is True
+    )
+
+    supersedable_watch_items = {
+        "alias_sunset_decision_gate=watch",
+        "alias_removal_plan_status=not_ready",
+        "consumer_evidence_closure_status=incomplete",
+        "consumer_owner_handoff_status=open",
+        "consumer_owner_response_status=incomplete",
+        "evidence_candidate_approval_status=approval_required",
+        "alias_sunset_schedule_status=not_scheduled",
+        "canonical_evidence_update_plan_status=not_ready",
+    }
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -135,13 +131,17 @@ def build_validation_release_readiness_report(
         blocking_items.append("alias_migration_readiness_status=fail")
     if alias_gate_status == "blocked":
         blocking_items.append("alias_sunset_decision_gate=blocked")
+    if fallback_post_removal_status == "fail":
+        blocking_items.append("alias_fallback_post_removal_status=fail")
+    if post_removal_mode and closure_status == "blocked":
+        blocking_items.append("alias_post_removal_closure_status=blocked")
 
     if alias_gate_status == "watch":
         watch_items.append("alias_sunset_decision_gate=watch")
-    if runtime_cycle_status == "watch":
-        watch_items.append("runtime_release_cycle_status=watch")
-    if runtime_variance_status == "watch":
-        watch_items.append("runtime_variance_status=watch")
+    if runtime_cycle_status in {"watch", "warn"}:
+        watch_items.append(f"runtime_release_cycle_status={runtime_cycle_status}")
+    if runtime_variance_status in {"watch", "warn"}:
+        watch_items.append(f"runtime_variance_status={runtime_variance_status}")
     if runtime_edge_status == "watch":
         watch_items.append("runtime_edge_status=watch")
     if runtime_budget_status == "warn":
@@ -172,19 +172,36 @@ def build_validation_release_readiness_report(
         watch_items.append(f"applied_evidence_readiness_status={applied_readiness_status}")
     if fallback_removal_status in {"not_ready", "blocked"}:
         watch_items.append(f"alias_fallback_removal_readiness_status={fallback_removal_status}")
-    if fallback_post_removal_status == "fail":
-        blocking_items.append("alias_fallback_post_removal_status=fail")
+
+    superseded_watch_items: list[str] = []
+    if post_removal_mode:
+        superseded_watch_items = [x for x in watch_items if x in supersedable_watch_items]
+        watch_items = [x for x in watch_items if x not in supersedable_watch_items]
+
+    remaining_watch_items = list(watch_items)
 
     if blocking_items:
         status = "blocked"
         release_readiness_reason = "; ".join(blocking_items)
         next_actions.extend(["resolve_blocking_gates", "keep_fallback"])
-    elif watch_items or milestone_status == "watch":
+    elif watch_items:
         status = "watch"
-        release_readiness_reason = "; ".join(watch_items or ["milestone_status=watch"])
+        release_readiness_reason = "; ".join(watch_items)
         next_actions.extend((alias.get("decision_gate") or {}).get("next_actions", []))
         if not next_actions:
             next_actions.extend(["collect_consumer_evidence", "keep_fallback"])
+    elif post_removal_mode and closure_release_readiness_status == "ready":
+        status = "ready"
+        release_readiness_reason = "post-removal closure indicates release ready; pre-removal watch items superseded"
+        next_actions.append("proceed_release_cycle_review")
+    elif milestone_status == "watch" and post_removal_mode:
+        status = "ready"
+        release_readiness_reason = "post-removal mode active with no remaining watch/blocking gates"
+        next_actions.append("proceed_release_cycle_review")
+    elif milestone_status == "watch":
+        status = "watch"
+        release_readiness_reason = "milestone_status=watch"
+        next_actions.extend(["collect_consumer_evidence", "keep_fallback"])
     else:
         status = "ready"
         release_readiness_reason = "all required gates pass and alias sunset decision gate is ready"
@@ -246,10 +263,13 @@ def build_validation_release_readiness_report(
         "active_alias_emission_supported": active_alias_emission_supported,
         "legacy_read_normalization_kept": legacy_read_normalization_kept,
         "alias_fallback_post_removal_status": fallback_post_removal_status,
+        "post_removal_mode": post_removal_mode,
+        "superseded_watch_items": superseded_watch_items,
+        "remaining_watch_items": remaining_watch_items,
+        "release_ready_after_post_removal": bool(post_removal_mode and status == "ready" and not blocking_items),
+        "alias_post_removal_closure_status": closure_status,
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
-        "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get(
-            "do_not_remove_in_this_phase"
-        ),
+        "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -277,29 +297,24 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             "",
             f"- Status: `{payload.get('status', 'watch')}`",
             f"- Reason: `{payload.get('release_readiness_reason', '')}`",
-            f"- Alias sunset: `{payload.get('alias_sunset_status', 'watch')}`",
-            f"- Alias decision gate: `{payload.get('alias_sunset_decision_gate_status', 'watch')}`",
+            f"- Alias sunset decision gate: `{payload.get('alias_sunset_decision_gate_status', 'watch')}`",
             f"- Runtime release-cycle: `{payload.get('runtime_release_cycle_status', 'watch')}`",
             f"- Runtime variance: `{payload.get('runtime_variance_status', 'watch')}`",
-            f"- Milestone status: `{payload.get('milestone_status', 'watch')}`",
-            f"- Alias removal plan: `{payload.get('alias_removal_plan_status', 'not_included')}`",
-            f"- Consumer evidence closure: `{payload.get('consumer_evidence_closure_status', 'not_included')}`",
-            f"- Consumer owner handoff: `{payload.get('consumer_owner_handoff_status', 'not_included')}`",
-            f"- Consumer owner response: `{payload.get('consumer_owner_response_status', 'not_included')}`",
-            f"- Consumer evidence candidate: `{payload.get('consumer_evidence_candidate_status', 'not_included')}`",
-            f"- Evidence candidate approval: `{payload.get('evidence_candidate_approval_status', 'not_included')}`",
-            f"- Alias sunset schedule: `{payload.get('alias_sunset_schedule_status', 'not_included')}`",
-            f"- Canonical evidence update plan: `{payload.get('canonical_evidence_update_plan_status', 'not_included')}`",
-            f"- Canonical evidence apply report: `{payload.get('canonical_evidence_apply_report_status', 'not_included')}`",
-            f"- Applied evidence readiness: `{payload.get('applied_evidence_readiness_status', 'not_included')}`",
-            f"- Alias fallback removal readiness: `{payload.get('alias_fallback_removal_readiness_status', 'not_included')}`",
-            f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
-            f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
-            f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",
+            f"- Post-removal mode: `{payload.get('post_removal_mode')}`",
+            f"- Alias post-removal closure status: `{payload.get('alias_post_removal_closure_status')}`",
+            f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",
             "",
             *([f"- {item}" for item in watch_items] if watch_items else ["- none"]),
+            "",
+            "## Superseded Watch Items",
+            "",
+            *([f"- {item}" for item in payload.get("superseded_watch_items", [])] if payload.get("superseded_watch_items") else ["- none"]),
+            "",
+            "## Remaining Watch Items",
+            "",
+            *([f"- {item}" for item in payload.get("remaining_watch_items", [])] if payload.get("remaining_watch_items") else ["- none"]),
             "",
             "## Blocking Items",
             "",
@@ -308,14 +323,6 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             "## Next Actions",
             "",
             *[f"- {item}" for item in payload.get("next_actions", [])],
-            *[
-                f"- removal_plan_blocker: {item}"
-                for item in payload.get("alias_removal_plan_remaining_blockers", [])
-            ],
-            "",
-            "## Primary Artifacts",
-            "",
-            *[f"- `{item}`" for item in payload.get("primary_artifacts", [])],
             "",
             "## Scope Boundary",
             "",

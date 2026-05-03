@@ -35,6 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--alias-fallback-removal-readiness", type=Path)
     parser.add_argument("--runtime-watch-triage-report", type=Path)
     parser.add_argument("--pytest-runtime-profile", type=Path)
+    parser.add_argument("--alias-post-removal-closure", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -59,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         alias_fallback_removal_readiness=args.alias_fallback_removal_readiness,
         runtime_watch_triage_report=args.runtime_watch_triage_report,
         pytest_runtime_profile=args.pytest_runtime_profile,
+        alias_post_removal_closure=args.alias_post_removal_closure,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

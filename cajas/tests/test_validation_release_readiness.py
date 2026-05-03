@@ -221,3 +221,99 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["applied_evidence_readiness_status"] == "watch"
     assert report["alias_fallback_removal_readiness_status"] == "not_ready"
     assert report["fallback_removed"] is False
+
+
+def test_post_removal_mode_supersedes_pre_removal_watch_items(tmp_path: Path) -> None:
+    milestone = _write_json(tmp_path / "milestone.json", {"overall_status": "watch", "alias_migration_summary": {"status": "pass"}})
+    alias = _write_json(tmp_path / "alias.json", {"status": "watch", "decision_gate": {"status": "watch", "next_actions": ["collect_consumer_evidence"]}})
+    cycle = _write_json(tmp_path / "cycle.json", {"status": "pass"})
+    variance = _write_json(tmp_path / "variance.json", {"status": "pass"})
+    edge = _write_json(tmp_path / "edge.json", {"status": "pass"})
+    budget = _write_json(tmp_path / "budget.json", {"overall_status": "pass", "timing_consistency": {"status": "pass"}})
+    removal = _write_json(tmp_path / "removal.json", {"status": "not_ready"})
+    evidence = _write_json(tmp_path / "evidence_closure.json", {"status": "incomplete"})
+    handoff = _write_json(tmp_path / "owner_handoff.json", {"status": "open"})
+    owner_response = _write_json(tmp_path / "owner_response.json", {"status": "incomplete"})
+    candidate = _write_json(tmp_path / "candidate.json", {"status": "ready_candidate"})
+    approval = _write_json(tmp_path / "approval.json", {"status": "approval_required"})
+    schedule = _write_json(tmp_path / "schedule.json", {"status": "not_scheduled"})
+    update_plan = _write_json(tmp_path / "update_plan.json", {"status": "not_ready"})
+    apply_report = _write_json(tmp_path / "apply_report.json", {"status": "dry_run_ready"})
+    applied_readiness = _write_json(tmp_path / "applied_readiness.json", {"status": "ready_for_real_apply"})
+    fallback = _write_json(
+        tmp_path / "fallback.json",
+        {
+            "status": "ready_to_schedule",
+            "fallback_removed": True,
+            "active_alias_emission_supported": False,
+            "legacy_read_normalization_kept": True,
+            "post_removal_status": "pass",
+        },
+    )
+    closure = _write_json(tmp_path / "closure.json", {"status": "closed", "release_readiness_status": "ready"})
+    report = build_validation_release_readiness_report(
+        milestone_packet=milestone,
+        alias_sunset_review=alias,
+        runtime_release_cycle_report=cycle,
+        runtime_variance_report=variance,
+        runtime_edge_report=edge,
+        runtime_budget_report=budget,
+        alias_removal_plan=removal,
+        consumer_evidence_closure_report=evidence,
+        consumer_owner_handoff=handoff,
+        consumer_owner_response_validation=owner_response,
+        consumer_evidence_candidate_report=candidate,
+        evidence_candidate_approval_report=approval,
+        alias_sunset_schedule=schedule,
+        canonical_evidence_update_plan=update_plan,
+        canonical_evidence_apply_report=apply_report,
+        applied_evidence_readiness=applied_readiness,
+        alias_fallback_removal_readiness=fallback,
+        alias_post_removal_closure=closure,
+    )
+    assert report["status"] == "ready"
+    assert report["post_removal_mode"] is True
+    assert report["release_ready_after_post_removal"] is True
+    assert "alias_sunset_decision_gate=watch" in report["superseded_watch_items"]
+    assert not report["remaining_watch_items"]
+
+
+def test_post_removal_runtime_fail_still_blocks(tmp_path: Path) -> None:
+    report = _build_report(tmp_path, alias_gate="ready")
+    # Rebuild with runtime fail and post-removal closure
+    _write_json(tmp_path / "budget.json", {"overall_status": "fail", "timing_consistency": {"status": "pass"}})
+    _write_json(
+        tmp_path / "fallback_removal.json",
+        {
+            "status": "ready_to_schedule",
+            "fallback_removed": True,
+            "active_alias_emission_supported": False,
+            "legacy_read_normalization_kept": True,
+            "post_removal_status": "pass",
+        },
+    )
+    _write_json(tmp_path / "closure.json", {"status": "closed", "release_readiness_status": "ready"})
+    blocked = build_validation_release_readiness_report(
+        milestone_packet=tmp_path / "milestone.json",
+        alias_sunset_review=tmp_path / "alias.json",
+        runtime_release_cycle_report=tmp_path / "cycle.json",
+        runtime_variance_report=tmp_path / "variance.json",
+        runtime_edge_report=tmp_path / "edge.json",
+        runtime_budget_report=tmp_path / "budget.json",
+        alias_removal_plan=tmp_path / "removal.json",
+        consumer_evidence_closure_report=tmp_path / "evidence_closure.json",
+        consumer_owner_handoff=tmp_path / "owner_handoff.json",
+        consumer_owner_response_validation=tmp_path / "owner_response.json",
+        consumer_evidence_candidate_report=tmp_path / "candidate.json",
+        evidence_candidate_approval_report=tmp_path / "approval_gate.json",
+        alias_sunset_schedule=tmp_path / "schedule.json",
+        canonical_evidence_update_plan=tmp_path / "update_plan.json",
+        canonical_evidence_apply_report=tmp_path / "apply_report.json",
+        applied_evidence_readiness=tmp_path / "applied_readiness.json",
+        alias_fallback_removal_readiness=tmp_path / "fallback_removal.json",
+        runtime_watch_triage_report=tmp_path / "runtime_triage.json",
+        pytest_runtime_profile=tmp_path / "pytest_profile.json",
+        alias_post_removal_closure=tmp_path / "closure.json",
+    )
+    assert blocked["status"] == "blocked"
+    assert "runtime_budget_status=fail" in blocked["blocking_items"]
