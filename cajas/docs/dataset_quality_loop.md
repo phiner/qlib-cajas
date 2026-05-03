@@ -1352,3 +1352,38 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Validate readiness for a future canonical-only default (`history` without `history_update` alias) and confirm preset/profile behavior remains stable.
+
+### Highlights
+
+1. Added migration-readiness report generation:
+   - compares `tmp/validation-review-bundle` and `tmp/validation-review-bundle-no-alias`
+   - emits JSON + Markdown recommendation artifacts
+2. Added explicit readiness criteria:
+   - compatibility pass in both modes
+   - local/ci/strict profile status equivalence
+   - required gate equivalence
+   - optional differences tracked separately
+3. Hardened preset precedence:
+   - explicit CLI flags override preset defaults
+4. Added tests for:
+   - migration report pass/warn/fail semantics
+   - preset mapping behavior
+   - explicit CLI override precedence
+
+### Current Result
+
+- Readiness report: `pass`
+- Recommendation: `ready_for_default_no_alias_trial`
+- Profile equivalence: default and no-alias are aligned (`local=pass`, `ci=pass`, `strict=warn`)
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

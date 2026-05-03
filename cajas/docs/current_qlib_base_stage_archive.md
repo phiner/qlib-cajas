@@ -2393,3 +2393,33 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and CI Preset Regression Bundle
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Produce a conservative readiness signal for future default no-alias migration while guarding CI preset behavior and profile regression expectations.
+
+### Highlights
+
+1. Added report module: `validation_history_alias_migration.py`.
+2. Added CLI: `build_history_alias_migration_report.py`.
+3. Readiness output includes:
+   - compatibility checks for default and no-alias bundles
+   - profile status equivalence (`local/ci/strict`)
+   - required gate equivalence
+   - optional gate difference visibility
+   - recommendation and next action
+4. Preset regression hardening:
+   - explicit CLI flags override preset defaults
+   - validated mappings for `local_review`, `ci_required`, `strict_release`
+5. Validation and regression outcome:
+   - readiness status `pass`
+   - recommendation `ready_for_default_no_alias_trial`
+   - default/no-alias profile statuses matched in this phase
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

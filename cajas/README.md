@@ -1229,3 +1229,24 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
   --warn-only \
   --omit-history-update-alias
 ```
+
+## Phase 1946-2005 Addendum: Default No-Alias Migration Readiness and Preset Regression
+
+- Added history alias migration readiness report module and CLI:
+  - `cajas/reports/validation_history_alias_migration.py`
+  - `cajas/scripts/build_history_alias_migration_report.py`
+- Readiness report compares default alias bundle vs canonical-only no-alias bundle and evaluates:
+  - manifest compatibility
+  - local/ci/strict profile status equivalence
+  - required gate equivalence
+  - optional gate differences
+- Preset behavior hardening:
+  - explicit CLI flags now override preset defaults
+  - presets remain available: `local_review`, `ci_required`, `strict_release`
+- Current readiness result (`tmp/history-alias-migration-readiness.json`):
+  - `status=pass`
+  - `recommendation=ready_for_default_no_alias_trial`
+  - default/no-alias profile outcomes equivalent (`local=pass`, `ci=pass`, `strict=warn`)
+
+Known limitation:
+- Recommendation is for a controlled future default-flip phase; this phase does not flip default alias behavior.
