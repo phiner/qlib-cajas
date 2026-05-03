@@ -1919,3 +1919,23 @@ Scope confirmation:
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3806-3925 Maintenance Mode Hardening and Checklist Freeze
+
+- Added maintenance checklist report and CLI:
+  - `tmp/validation-maintenance-checklist.json`
+  - `tmp/validation-maintenance-checklist.md`
+- Added optional follow-up queue report and CLI:
+  - `tmp/validation-optional-followups.json`
+  - `tmp/validation-optional-followups.md`
+- Maintenance checklist now defines:
+  - routine release-cycle commands and expected pass states
+  - canonical artifact freeze surface
+  - generated/transient/preserved-compatibility artifact policy
+  - blocking policy vs non-blocking optional follow-up handling
+- Final reviewer packet, release readiness, and milestone packet now include checklist/follow-up summaries.
+- Maintenance mode remains review-ready while optional queue stays explicitly non-blocking.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

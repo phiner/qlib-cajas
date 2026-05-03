@@ -3469,3 +3469,37 @@ Validation snapshot (phase run):
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+## Phase 3806-3925 Maintenance Mode Hardening and Release-Cycle Checklist Freeze
+
+Summary:
+- Introduced a frozen maintenance checklist packet to make routine release-cycle operation explicit and repeatable.
+- Introduced a non-blocking optional follow-up queue packet to isolate deferred improvements from release readiness gates.
+- Integrated checklist/follow-up summaries into final reviewer packet, release readiness, and milestone packet for one-surface reviewer/operator clarity.
+
+New artifacts:
+- `tmp/validation-maintenance-checklist.json`
+- `tmp/validation-maintenance-checklist.md`
+- `tmp/validation-optional-followups.json`
+- `tmp/validation-optional-followups.md`
+
+Checklist/freeze policy:
+- Defines required routine commands and expected statuses.
+- Freezes canonical review-surface artifacts vs generated/transient artifacts.
+- Preserves compatibility policy: canonical producer output + legacy read normalization for archived manifests.
+
+Optional follow-up policy:
+- Queue is explicitly non-blocking for release readiness.
+- Current items:
+  - external consumer ownership/evidence governance completion
+  - slow-test optimization only if runtime variance/watch recurs
+
+Validation snapshot (phase run):
+- Focused checklist/follow-up/reviewer/readiness/milestone suites: pass.
+- Related suite: pass.
+- Fast validation + runtime budget/timing consistency/runtime edge/runtime release-cycle/runtime variance closure: pass.
+- Data-source audit remains stable at `read_csv_count=29`.
+
+Scope confirmation:
+- Offline Qlib validation automation only.
+- No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

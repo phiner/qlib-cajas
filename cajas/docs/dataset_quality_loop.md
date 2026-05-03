@@ -2497,3 +2497,26 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Release readiness and milestone packet now surface cadence status, recommended cadence, and routine command coverage.
 - Remaining follow-up is optional governance monitoring/evidence completion; release-ready posture remains intact.
 - Scope remains offline Qlib validation automation only; no trading execution scope.
+
+## Phase 3806-3925 Maintenance Checklist Freeze and Optional Follow-up Queue
+
+- Added maintenance checklist packet:
+  - `tmp/validation-maintenance-checklist.json`
+  - `tmp/validation-maintenance-checklist.md`
+- Checklist now freezes routine release-cycle operation with:
+  - explicit required command list and expected outcomes
+  - canonical artifact surface
+  - blocking vs non-blocking policy
+  - rollback-readiness requirement
+- Added optional follow-up queue packet:
+  - `tmp/validation-optional-followups.json`
+  - `tmp/validation-optional-followups.md`
+- Optional queue remains non-blocking and tracks:
+  - external consumer governance-evidence completion
+  - slow-test optimization follow-up if runtime variance recurs
+- Integrated maintenance checklist and optional follow-up summaries into:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Maintenance mode remains ready-for-review with routine cadence and preserved compatibility guarantees (canonical producer path + legacy read normalization).
+- Scope remains offline Qlib validation automation only; no trading execution scope.
