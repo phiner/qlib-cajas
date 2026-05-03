@@ -1145,3 +1145,73 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bu
 
 **Non-goals**:
 - No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.
+
+
+## Phase 1706–1765: Delivery Packet Warning Root-Cause Cleanup and Final Status Clarity
+
+**Goal**: Distinguish clean pass from pass-with-non-escalated warnings without hiding real warning details.
+
+**Delivery packet warning audit findings**:
+- The prior `delivery_packet_warn` came from optional artifact paths not passed to the packet builder.
+- Those optional artifacts were marked missing and produced packet `warn`, even when not requested.
+- In local profile, this warning was non-escalated, but final reason text still surfaced that warning code.
+
+**Policy decision**:
+- Keep required artifacts strict (`fail` when missing).
+- Only warn for optional artifacts when an explicit optional path was requested but missing.
+- Treat omitted optional inputs as informational notes (non-escalated).
+
+**What changed**:
+- Delivery packet now tracks required/optional counts and optional note count.
+- Final status reason selection for `overall_status=pass` now uses:
+  - `pass_with_non_escalated_warnings` when non-escalated warnings exist
+  - `all_required_gates_passed` when no warnings remain
+- Primary artifact for pass modes now points to summary artifacts (`review_bundle_index.md` / `final_status.md`) instead of low-level optional warning artifacts.
+- Gate lists still keep full warning visibility.
+
+**Recommended local command**:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile local \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility \
+  --warn-only
+```
+
+**Recommended CI command**:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile ci \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --run-fast-validation \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility
+```
+
+**Known limitations**:
+- Optional artifact visibility still depends on what is explicitly supplied to the bundle run.
+- CI/strict profiles can still escalate optional warnings by profile policy; this is intentional.
+
+**Non-goals**:
+- No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.

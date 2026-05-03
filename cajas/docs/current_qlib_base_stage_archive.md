@@ -2300,3 +2300,26 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+
+## Phase 1706–1765 Addendum: Delivery Packet Warning Cleanup and Final-Status Clarity
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Remove noisy delivery-packet warnings from pass-mode reasoning while preserving required/optional artifact transparency.
+
+### Highlights
+
+1. Audited delivery-packet warning source as optional artifacts not requested by the run.
+2. Added packet counters for required/optional presence and optional-note classification.
+3. Kept required artifact failures as blocking (`fail`).
+4. Changed pass-mode final reason selection to:
+   - `pass_with_non_escalated_warnings`
+   - `all_required_gates_passed`
+5. Updated pass-mode primary artifact selection to reviewer-facing summary files.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

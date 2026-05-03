@@ -1130,3 +1130,26 @@ Current audit delta:
   - utility: `review_utility_budget` / `optimize_utility_step`
   - core: `optimize_tests`
 - Local-profile CI review-bundle final status recovers from false fail caused by unrealistic utility budget.
+
+
+## Phase 1706–1765 Addendum: Delivery Packet Warning Cleanup and Final-Status Clarity
+
+- Audited delivery packet warning root cause:
+  - optional artifacts that were not explicitly requested were counted as missing warnings
+  - final status could remain `pass` while reason code pointed to `delivery_packet_warn`
+- Delivery packet behavior now distinguishes:
+  - required missing artifacts (fail)
+  - optional missing artifacts with explicit path input (warn)
+  - optional artifacts not requested by this run (note/info, non-escalated)
+- Added packet summary counters:
+  - `required_present_count`
+  - `required_missing_count`
+  - `optional_present_count`
+  - `optional_missing_count`
+  - `optional_note_count`
+- Final status reasoning for pass cases improved:
+  - `pass_with_non_escalated_warnings` when optional warnings exist but do not escalate
+  - `all_required_gates_passed` for clean pass
+- Primary artifact selection for pass now points to reviewer-friendly summaries:
+  - `review_bundle_index.md` for pass with notes
+  - `final_status.md` for clean pass
