@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import unittest
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cajas.reports.validation_runtime_budget import (
+    assess_timing_consistency,
+    build_validation_runtime_budget_report,
     check_component_budget,
     check_validation_runtime_budgets,
     generate_budget_report_markdown,
@@ -188,6 +191,71 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         results, overall_status = check_validation_runtime_budgets(timing_data, budget_config)
         # fast_total is measured and within budget, optional_component missing is OK
         self.assertEqual(overall_status, "pass")
+
+    def test_timing_consistency_pass_with_fresh_metadata(self) -> None:
+        timing_data = {
+            "created_at": "2026-05-02T00:00:00+00:00",
+            "run_id": "run-1",
+            "tier": "fast",
+            "timing_source": "run_fast_validation.py",
+            "results": [{"name": "pytest_fast", "seconds": 80.0}],
+            "total_seconds": 80.0,
+        }
+        budget_config = {"budgets_seconds": {"fast_total": 100.0, "pytest_fast": 90.0}, "required_components": ["fast_total", "pytest_fast"]}
+        report = assess_timing_consistency(
+            timing_data,
+            budget_config,
+            now=datetime.fromisoformat("2026-05-02T00:10:00+00:00"),
+            max_age_seconds=3600,
+            timing_path=None,
+        )
+        self.assertEqual(report["status"], "pass")
+
+    def test_timing_consistency_warns_on_legacy_metadata_missing(self) -> None:
+        timing_data = {"results": [{"name": "pytest_fast", "seconds": 80.0}], "total_seconds": 80.0}
+        budget_config = {"budgets_seconds": {"fast_total": 100.0, "pytest_fast": 90.0}, "required_components": ["fast_total", "pytest_fast"]}
+        report = assess_timing_consistency(timing_data, budget_config, max_age_seconds=None)
+        self.assertEqual(report["status"], "warn")
+
+    def test_timing_consistency_fails_on_negative_required(self) -> None:
+        timing_data = {
+            "created_at": "2026-05-02T00:00:00+00:00",
+            "run_id": "run-1",
+            "tier": "fast",
+            "timing_source": "run_fast_validation.py",
+            "results": [{"name": "pytest_fast", "seconds": -1.0}],
+            "total_seconds": 80.0,
+        }
+        budget_config = {"budgets_seconds": {"fast_total": 100.0, "pytest_fast": 90.0}, "required_components": ["fast_total", "pytest_fast"]}
+        report = assess_timing_consistency(timing_data, budget_config, max_age_seconds=None)
+        self.assertEqual(report["status"], "fail")
+
+    def test_timing_consistency_warns_on_step_total_mismatch(self) -> None:
+        timing_data = {
+            "created_at": "2026-05-02T00:00:00+00:00",
+            "run_id": "run-1",
+            "tier": "fast",
+            "timing_source": "run_fast_validation.py",
+            "results": [{"name": "pytest_fast", "seconds": 80.0}],
+            "total_seconds": 84.0,
+        }
+        budget_config = {"budgets_seconds": {"fast_total": 100.0, "pytest_fast": 90.0}, "required_components": ["fast_total", "pytest_fast"]}
+        report = assess_timing_consistency(timing_data, budget_config, max_age_seconds=None)
+        self.assertEqual(report["status"], "warn")
+
+    def test_budget_report_includes_timing_consistency(self) -> None:
+        timing_data = {
+            "created_at": "2026-05-02T00:00:00+00:00",
+            "run_id": "run-1",
+            "tier": "fast",
+            "timing_source": "run_fast_validation.py",
+            "results": [{"name": "pytest_fast", "seconds": 80.0}],
+            "total_seconds": 80.0,
+        }
+        budget_config = {"budgets_seconds": {"fast_total": 100.0, "pytest_fast": 90.0}, "required_components": ["fast_total", "pytest_fast"]}
+        report = build_validation_runtime_budget_report(timing_data, budget_config, max_age_seconds=None)
+        self.assertIn("timing_consistency", report)
+        self.assertEqual(report["timing_consistency"]["status"], "pass")
 
 
 if __name__ == "__main__":

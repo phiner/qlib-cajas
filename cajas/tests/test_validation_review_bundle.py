@@ -213,6 +213,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertIn("Commands Skipped", index_content)
             self.assertIn("Generated Artifacts", index_content)
             self.assertIn("Reviewer Next Action", index_content)
+            self.assertIn("Timing Consistency", index_content)
 
     def test_existing_timing_json_triggers_budget_check(self) -> None:
         """Test existing timing JSON triggers runtime budget check."""
@@ -267,6 +268,151 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
             executed_commands = [cmd["command"] for cmd in manifest["commands_executed"]]
             self.assertTrue(any("check_validation_runtime_budget.py" in cmd for cmd in executed_commands))
+
+    def test_review_bundle_records_timing_consistency_from_budget_report(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+
+            timing_json = tmp_path / "timing.json"
+            timing_json.write_text(json.dumps({"total_seconds": 85.0, "results": []}), encoding="utf-8")
+            budgets_json = tmp_path / "budgets.json"
+            budgets_json.write_text(
+                json.dumps(
+                    {
+                        "budgets_seconds": {"fast_total": 100.0},
+                        "required_components": ["fast_total"],
+                        "optional_components": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            out_root = tmp_path / "bundle"
+
+            def _mock_with_budget_report(cmd: list[str], description: str) -> tuple[bool, str]:
+                if "check_validation_runtime_budget.py" in " ".join(cmd):
+                    report_path = out_root / "validation_runtime_budget_report.json"
+                    report_path.write_text(
+                        json.dumps(
+                            {
+                                "overall_status": "warn",
+                                "budget_status": "pass",
+                                "timing_consistency": {
+                                    "status": "warn",
+                                    "issues": [
+                                        {"severity": "warning", "code": "legacy_missing_metadata", "message": "missing created_at"}
+                                    ],
+                                },
+                                "results": [],
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                return True, json.dumps({"status": "ok"})
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", _mock_with_budget_report):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=timing_json,
+                    budgets=budgets_json,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=False,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=False,
+                    history_jsonl=None,
+                    history_last_n=10,
+                    warn_only=True,
+                )
+
+            self.assertIn("timing_consistency", manifest)
+            self.assertEqual(manifest["timing_consistency"]["status"], "warn")
+            index_text = (out_root / "review_bundle_index.md").read_text(encoding="utf-8")
+            self.assertIn("Timing Consistency", index_text)
+
+    def test_review_bundle_fails_when_timing_consistency_fails_without_warn_only(self) -> None:
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            timing_json = tmp_path / "timing.json"
+            timing_json.write_text(json.dumps({"total_seconds": 85.0, "results": []}), encoding="utf-8")
+            budgets_json = tmp_path / "budgets.json"
+            budgets_json.write_text(
+                json.dumps(
+                    {
+                        "budgets_seconds": {"fast_total": 100.0},
+                        "required_components": ["fast_total"],
+                        "optional_components": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            out_root = tmp_path / "bundle"
+
+            def _mock_with_budget_fail(cmd: list[str], description: str) -> tuple[bool, str]:
+                if "check_validation_runtime_budget.py" in " ".join(cmd):
+                    report_path = out_root / "validation_runtime_budget_report.json"
+                    report_path.write_text(
+                        json.dumps(
+                            {
+                                "overall_status": "fail",
+                                "budget_status": "pass",
+                                "timing_consistency": {
+                                    "status": "fail",
+                                    "issues": [
+                                        {"severity": "fail", "code": "required_timing_missing", "message": "missing pytest_fast"}
+                                    ],
+                                },
+                                "results": [],
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                return True, json.dumps({"status": "ok"})
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", _mock_with_budget_fail):
+                with self.assertRaises(RuntimeError):
+                    build_review_bundle(
+                        bundle_name="test_bundle",
+                        out_root=out_root,
+                        smoke_root=smoke_root,
+                        fast_timing_json=timing_json,
+                        budgets=budgets_json,
+                        baseline_root=None,
+                        create_baseline_from_current=False,
+                        run_fast_validation=False,
+                        skip_fast_validation=False,
+                        run_data_source_audit=False,
+                        skip_data_source_audit=True,
+                        data_root=None,
+                        build_experiment_manifest=False,
+                        copy_artifacts=False,
+                        update_history=False,
+                        history_jsonl=None,
+                        history_last_n=10,
+                        warn_only=False,
+                    )
 
     def test_build_experiment_manifest_option(self) -> None:
         """Test build experiment manifest option adds manifest step."""

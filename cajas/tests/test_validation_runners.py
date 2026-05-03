@@ -89,6 +89,10 @@ class ValidationRunnersTests(unittest.TestCase):
             self.assertIn("total_seconds", payload)
             self.assertEqual(payload["overall_status"], "pass")
             self.assertEqual(len(payload["results"]), 4)
+            self.assertIn("created_at", payload)
+            self.assertIn("run_id", payload)
+            self.assertIn("timing_source", payload)
+            self.assertIn("command", payload)
 
     def test_fail_on_budget_returns_nonzero(self) -> None:
         def fake_runner(cmd: list[str], check: bool) -> object:
