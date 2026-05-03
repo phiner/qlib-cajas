@@ -2225,3 +2225,23 @@ Offline Qlib research validation observability only. No trading execution, broke
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, manual annotation, or Qlib core changes introduced.
+
+
+## Phase 1526–1585 Addendum: CI Gate Explainability, Warn Reduction, and Final Status Hardening
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Improve CI/reviewer status explainability and reduce non-actionable warning noise while preserving truthful gate-level reporting.
+
+### Highlights
+
+1. Added gate reason codes and action hints to final-status gate model.
+2. Added profile-based overall-status aggregation (`local`, `ci`, `strict`).
+3. Hardened final-status JSON/Markdown contract with run metadata and reason summaries.
+4. Clarified reviewer-first artifact path through `primary_artifact` and top-level reason fields.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.

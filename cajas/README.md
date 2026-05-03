@@ -1084,3 +1084,11 @@ Current audit delta:
 - Added `--ci` workflow mode with explicit skip/fail behavior controls (`--fail-on-warn`, skip flags, timing-age control).
 - Review bundle index now starts with an overall status and CI gate summary table.
 - Timing freshness/consistency remains integrated through runtime budget reporting and is surfaced in final status.
+
+
+## Phase 1526–1585 Addendum: CI Gate Explainability and Warn Reduction
+
+- Added explicit gate reason/action fields for reviewer and CI explainability.
+- Added profile-aware final status aggregation (`local|ci|strict`) to reduce noisy warnings in local workflows.
+- Hardened final status artifact schema with run metadata and structured reason sections.
+- Final status markdown now highlights primary reason, reviewer next action, and primary artifact.

@@ -954,3 +954,40 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Non-goals**:
 - No trading execution, broker routing, live trading, annotation, or model-performance claims.
+
+
+## Phase 1526–1585: CI Gate Explainability, Warn Reduction, and Final Status Hardening
+
+**Goal**: Make final CI/reviewer status explainable and reduce unnecessary warning noise without masking real failures.
+
+**What changed**:
+- Expanded gate model with explainability fields:
+  - `reason_code`
+  - `action`
+- Added CI profile-aware status aggregation:
+  - `local`
+  - `ci`
+  - `strict`
+- Hardened final status artifact contract:
+  - `schema_version`
+  - `run_id`
+  - `profile`
+  - `command`
+  - `overall_reason`
+  - `blocking_gates`
+  - `warning_gates`
+  - `optional_or_not_run_gates`
+  - `reviewer_next_action`
+  - `primary_artifact`
+- Improved markdown explainability:
+  - explicit top-level overall status, primary reason, reviewer action, and artifact to open first.
+
+**Warn reduction behavior**:
+- Optional gate warnings/no-run entries no longer force overall `warn` under `local` profile.
+- Required gate warning/fail behavior remains strict.
+- Gate-level statuses are preserved truthfully even when profile-level overall status becomes `pass`.
+
+**Profile semantics**:
+- `local`: optional warn/not-run do not affect overall status.
+- `ci`: optional warn affects overall status; optional not-run does not.
+- `strict`: optional warn and optional not-run both affect overall status.
