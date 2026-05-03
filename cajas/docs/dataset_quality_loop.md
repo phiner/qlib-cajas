@@ -2518,5 +2518,9 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
   - final reviewer packet
   - release readiness report
   - milestone packet
+- Added governance-closure summary layer:
+  - `tmp/validation-maintenance-governance-closure.json`
+  - `tmp/validation-maintenance-governance-closure.md`
+- Governance closure now explicitly classifies maintenance posture as routine/ready-for-review vs watch_non_blocking vs blocked.
 - Maintenance mode remains ready-for-review with routine cadence and preserved compatibility guarantees (canonical producer path + legacy read normalization).
 - Scope remains offline Qlib validation automation only; no trading execution scope.
