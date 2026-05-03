@@ -22,6 +22,7 @@ def build_validation_release_ready_closure(
     manifest_compatibility_report: Path,
     data_source_audit_report: Path,
     review_bundle_manifest: Path,
+    runtime_variance_closure: Path | None = None,
 ) -> dict[str, Any]:
     alias_closure = _load_json(alias_post_removal_closure)
     readiness = _load_json(release_readiness_report)
@@ -32,6 +33,7 @@ def build_validation_release_ready_closure(
     manifest_compat = _load_json(manifest_compatibility_report)
     audit = _load_json(data_source_audit_report)
     manifest = _load_json(review_bundle_manifest)
+    variance_closure = _load_json(runtime_variance_closure) if runtime_variance_closure and runtime_variance_closure.exists() else {}
 
     alias_status = alias_closure.get("status")
     readiness_status = readiness.get("status")
@@ -62,10 +64,6 @@ def build_validation_release_ready_closure(
         remaining_blockers.append("runtime_edge_status=fail")
     elif runtime_edge_status in {"warn", "watch"}:
         remaining_followups.append(f"runtime_edge_status={runtime_edge_status}")
-    if runtime_cycle_status == "fail":
-        remaining_blockers.append("runtime_release_cycle_status=fail")
-    elif runtime_cycle_status in {"warn", "watch"}:
-        remaining_followups.append(f"runtime_release_cycle_status={runtime_cycle_status}")
     if not canonical_only_manifest_confirmed:
         remaining_blockers.append("canonical_only_manifest_not_confirmed")
     if not legacy_read_normalization_kept:
@@ -73,19 +71,42 @@ def build_validation_release_ready_closure(
     if not isinstance(read_csv_count, int):
         remaining_blockers.append("data_source_audit_read_csv_count_missing")
 
+    variance_closure_status = variance_closure.get("status")
+    if variance_closure_status == "blocked":
+        remaining_blockers.append("runtime_variance_closure_status=blocked")
+    elif variance_closure_status == "monitoring_only":
+        remaining_followups.append("runtime_variance_closure_status=monitoring_only")
+
+    if runtime_cycle_status == "fail":
+        remaining_blockers.append("runtime_release_cycle_status=fail")
+    elif runtime_cycle_status in {"warn", "watch"} and variance_closure_status != "monitoring_only":
+        remaining_followups.append(f"runtime_release_cycle_status={runtime_cycle_status}")
+
     if remaining_blockers:
         status = "blocked"
+        review_state = "blocked"
+        blocking = True
+        ready_for_review = False
         recommendation = "resolve_blockers"
     elif remaining_followups:
         status = "watch"
+        review_state = "ready_for_review"
+        blocking = False
+        ready_for_review = True
         recommendation = "monitor_runtime_next_cycle"
     else:
         status = "ready"
+        review_state = "ready_for_review"
+        blocking = False
+        ready_for_review = True
         recommendation = "ready_for_review"
 
     return {
         "schema_version": "v1",
         "status": status,
+        "review_state": review_state,
+        "blocking": blocking,
+        "ready_for_review": ready_for_review,
         "alias_post_removal_closure_status": alias_status,
         "release_readiness_status": readiness_status,
         "milestone_status": milestone_status,
@@ -93,11 +114,13 @@ def build_validation_release_ready_closure(
         "runtime_budget_status": runtime_budget_status,
         "runtime_edge_status": runtime_edge_status,
         "manifest_compatibility_status": manifest_compat_status,
+        "runtime_variance_closure_status": variance_closure_status,
         "data_source_audit_read_csv_count": read_csv_count,
         "canonical_only_manifest_confirmed": canonical_only_manifest_confirmed,
         "legacy_read_normalization_kept": legacy_read_normalization_kept,
         "remaining_blockers": remaining_blockers,
         "remaining_followups": remaining_followups,
+        "non_blocking_followups": remaining_followups,
         "recommendation": recommendation,
         "scope_note": "Offline Qlib validation automation only; no trading execution scope.",
     }
@@ -109,12 +132,16 @@ def render_validation_release_ready_closure_markdown(payload: dict[str, Any]) ->
             "# Validation Release-Ready Closure",
             "",
             f"- Status: `{payload.get('status', 'watch')}`",
+            f"- review_state: `{payload.get('review_state')}`",
+            f"- blocking: `{payload.get('blocking')}`",
+            f"- ready_for_review: `{payload.get('ready_for_review')}`",
             f"- Alias post-removal closure: `{payload.get('alias_post_removal_closure_status')}`",
             f"- Release readiness: `{payload.get('release_readiness_status')}`",
             f"- Milestone status: `{payload.get('milestone_status')}`",
             f"- Runtime release-cycle: `{payload.get('runtime_release_cycle_status')}`",
             f"- Runtime budget: `{payload.get('runtime_budget_status')}`",
             f"- Runtime edge: `{payload.get('runtime_edge_status')}`",
+            f"- Runtime variance closure: `{payload.get('runtime_variance_closure_status')}`",
             f"- Manifest compatibility: `{payload.get('manifest_compatibility_status')}`",
             f"- data_source_audit_read_csv_count: `{payload.get('data_source_audit_read_csv_count')}`",
             f"- canonical_only_manifest_confirmed: `{payload.get('canonical_only_manifest_confirmed')}`",

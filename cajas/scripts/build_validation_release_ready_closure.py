@@ -22,6 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-release-cycle-report", required=True, type=Path)
     parser.add_argument("--runtime-budget-report", required=True, type=Path)
     parser.add_argument("--runtime-edge-report", required=True, type=Path)
+    parser.add_argument("--runtime-variance-closure", type=Path)
     parser.add_argument("--manifest-compatibility-report", required=True, type=Path)
     parser.add_argument("--data-source-audit-report", required=True, type=Path)
     parser.add_argument("--review-bundle-manifest", required=True, type=Path)
@@ -36,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
         runtime_release_cycle_report=args.runtime_release_cycle_report,
         runtime_budget_report=args.runtime_budget_report,
         runtime_edge_report=args.runtime_edge_report,
+        runtime_variance_closure=args.runtime_variance_closure,
         manifest_compatibility_report=args.manifest_compatibility_report,
         data_source_audit_report=args.data_source_audit_report,
         review_bundle_manifest=args.review_bundle_manifest,
