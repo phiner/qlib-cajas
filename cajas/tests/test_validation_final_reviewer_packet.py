@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
 
-from cajas.reports.validation_final_reviewer_packet import build_validation_final_reviewer_packet
+from cajas.reports.validation_final_reviewer_packet import (
+    build_validation_final_reviewer_packet,
+    render_validation_final_reviewer_packet_markdown,
+)
 
 
 def _write(path: Path, payload: dict) -> Path:
@@ -21,6 +24,15 @@ def _inputs(tmp_path: Path):
         "runtime_budget_report": _write(tmp_path / "budget.json", {"overall_status": "pass"}),
         "runtime_edge_report": _write(tmp_path / "edge.json", {"status": "pass"}),
         "data_source_audit_report": _write(tmp_path / "audit.json", {"summary": {"read_csv_count": 29}}),
+        "maintenance_cadence": _write(
+            tmp_path / "cadence.json",
+            {
+                "status": "routine",
+                "recommended_cadence": "next_release_cycle",
+                "routine_commands": ["run_fast_validation.py --tier fast"],
+                "watch_items": [],
+            },
+        ),
     }
 
 
@@ -29,6 +41,10 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     packet = build_validation_final_reviewer_packet(**i)
     assert packet["status"] == "ready_for_review"
     assert packet["summary"]["canonical_only_manifest"] is True
+    assert packet["maintenance_cadence_status"] == "routine"
+    md = render_validation_final_reviewer_packet_markdown(packet)
+    assert "Reviewer Handoff" in md
+    assert "Scope Boundary" in md
 
 
 def test_final_reviewer_packet_blocked_on_runtime_or_compat_fail(tmp_path: Path) -> None:

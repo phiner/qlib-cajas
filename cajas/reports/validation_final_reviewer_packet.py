@@ -23,6 +23,7 @@ def build_validation_final_reviewer_packet(
     runtime_budget_report: Path,
     runtime_edge_report: Path,
     data_source_audit_report: Path,
+    maintenance_cadence: Path | None = None,
 ) -> dict[str, Any]:
     final_closure = _load_json(release_ready_closure)
     alias_closure = _load_json(alias_post_removal_closure)
@@ -34,6 +35,7 @@ def build_validation_final_reviewer_packet(
     budget = _load_json(runtime_budget_report)
     edge = _load_json(runtime_edge_report)
     audit = _load_json(data_source_audit_report)
+    cadence = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else {}
 
     canonical_only = isinstance(manifest.get("history"), dict) and "history_update" not in manifest
     legacy_kept = readiness.get("legacy_read_normalization_kept") is True
@@ -82,6 +84,10 @@ def build_validation_final_reviewer_packet(
         "schema_version": "v1",
         "status": status,
         "summary": summary,
+        "maintenance_cadence_status": cadence.get("status"),
+        "maintenance_cadence_recommended": cadence.get("recommended_cadence"),
+        "maintenance_cadence_routine_commands": cadence.get("routine_commands", []),
+        "maintenance_cadence_watch_items": cadence.get("watch_items", []),
         "remaining_followups": followups,
         "primary_artifacts": [
             str(release_ready_closure),
@@ -119,6 +125,22 @@ def render_validation_final_reviewer_packet_markdown(payload: dict[str, Any]) ->
             "## Remaining Followups",
             "",
             *([f"- {x}" for x in payload.get("remaining_followups", [])] if payload.get("remaining_followups") else ["- none"]),
+            "",
+            "## Maintenance Cadence",
+            "",
+            f"- status: `{payload.get('maintenance_cadence_status', 'not_included')}`",
+            f"- recommended_cadence: `{payload.get('maintenance_cadence_recommended', 'n/a')}`",
+            f"- routine_command_count: `{len(payload.get('maintenance_cadence_routine_commands', []))}`",
+            f"- watch_items: `{payload.get('maintenance_cadence_watch_items', [])}`",
+            "",
+            "## Reviewer Handoff",
+            "",
+            f"- Status: `{'Ready for review' if payload.get('status') == 'ready_for_review' else payload.get('status')}`",
+            "- Canonical manifest policy: `history-only`",
+            f"- Alias migration: `{s.get('alias_post_removal_closure')}`",
+            f"- Runtime: `budget={s.get('runtime_budget')}; edge={s.get('runtime_edge')}; variance_closure={s.get('runtime_variance_closure')}`",
+            f"- Data-source audit: `stable at {s.get('data_source_audit_read_csv_count')} read_csv calls`",
+            f"- Next routine action: `run maintenance cadence at {payload.get('maintenance_cadence_recommended', 'next release cycle')}`",
             "",
             "## Primary Artifacts",
             "",
