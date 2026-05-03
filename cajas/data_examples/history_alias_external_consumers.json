@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "review_date": "2026-05-03",
+  "consumers": [
+    {
+      "name": "internal_review_bundle",
+      "owner": "qlib-cajas",
+      "status": "confirmed_clear",
+      "evidence": "Uses canonical history via normalize_history_metadata.",
+      "requires_history_update": false
+    },
+    {
+      "name": "external_unknown_consumer",
+      "owner": "external",
+      "status": "unknown",
+      "evidence": "No confirmation captured yet.",
+      "requires_history_update": false
+    }
+  ],
+  "external_status": "unknown",
+  "notes": [
+    "Conservative default: keep alias fallback until external consumers are confirmed clear."
+  ]
+}

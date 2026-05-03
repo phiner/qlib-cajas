@@ -20,9 +20,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--milestone-packet", required=True, type=Path)
     parser.add_argument(
         "--external-consumer-status",
-        required=True,
+        required=False,
         choices=["unknown", "confirmed_clear", "requires_alias"],
     )
+    parser.add_argument("--consumer-evidence", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -31,6 +32,7 @@ def main(argv: list[str] | None = None) -> int:
         migration_readiness_report=args.migration_readiness_report,
         milestone_packet=args.milestone_packet,
         external_consumer_status=args.external_consumer_status,
+        consumer_evidence=args.consumer_evidence,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

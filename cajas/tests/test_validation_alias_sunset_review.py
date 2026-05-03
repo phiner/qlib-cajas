@@ -52,3 +52,45 @@ def test_alias_sunset_confirmed_clear_is_ready(tmp_path: Path) -> None:
     )
     assert report["status"] == "ready"
     assert report["recommended_action"] == "schedule_removal"
+
+
+def test_alias_sunset_uses_evidence_when_cli_status_missing(tmp_path: Path) -> None:
+    migration, milestone = _write_inputs(tmp_path)
+    evidence = tmp_path / "evidence.json"
+    evidence.write_text(
+        json.dumps(
+            {
+                "external_status": "requires_alias",
+                "consumers": [{"name": "ext", "requires_history_update": True, "status": "requires_alias"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = build_alias_sunset_review(
+        migration_readiness_report=migration,
+        milestone_packet=milestone,
+        consumer_evidence=evidence,
+    )
+    assert report["status"] == "blocked"
+
+
+def test_alias_sunset_cli_status_overrides_evidence(tmp_path: Path) -> None:
+    migration, milestone = _write_inputs(tmp_path)
+    evidence = tmp_path / "evidence.json"
+    evidence.write_text(
+        json.dumps(
+            {
+                "external_status": "unknown",
+                "consumers": [{"name": "ext", "requires_history_update": False, "status": "unknown"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = build_alias_sunset_review(
+        migration_readiness_report=migration,
+        milestone_packet=milestone,
+        external_consumer_status="confirmed_clear",
+        consumer_evidence=evidence,
+    )
+    # Because one unresolved consumer remains, this remains watch despite confirmed_clear override.
+    assert report["status"] == "watch"

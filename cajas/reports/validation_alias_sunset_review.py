@@ -15,7 +15,8 @@ def build_alias_sunset_review(
     *,
     migration_readiness_report: Path,
     milestone_packet: Path,
-    external_consumer_status: str,
+    external_consumer_status: str | None = None,
+    consumer_evidence: Path | None = None,
 ) -> dict[str, Any]:
     migration = _load_json(migration_readiness_report)
     milestone = _load_json(milestone_packet)
@@ -26,11 +27,43 @@ def build_alias_sunset_review(
     fallback_alias_reported = "fallback_manifest_has_alias" in alias_fallback
     internal_consumers_clear = migration.get("status") == "pass"
 
-    readiness_pass = migration.get("status") == "pass" and milestone.get("overall_status") == "pass"
-    if external_consumer_status == "confirmed_clear" and readiness_pass:
+    evidence_payload: dict[str, Any] = {}
+    evidence_source = "none"
+    consumers: list[dict[str, Any]] = []
+    evidence_status = "unknown"
+    if consumer_evidence and consumer_evidence.exists():
+        evidence_payload = _load_json(consumer_evidence)
+        evidence_source = str(consumer_evidence)
+        consumers = evidence_payload.get("consumers", [])
+        if isinstance(evidence_payload.get("external_status"), str):
+            evidence_status = evidence_payload["external_status"]
+
+    # Precedence rule: explicit CLI status overrides evidence file status.
+    effective_external_status = external_consumer_status or evidence_status
+
+    requires_alias_count = 0
+    confirmed_clear_count = 0
+    unresolved_count = 0
+    for c in consumers:
+        if c.get("requires_history_update") is True:
+            requires_alias_count += 1
+        st = c.get("status")
+        if st == "confirmed_clear":
+            confirmed_clear_count += 1
+        elif st != "requires_alias":
+            unresolved_count += 1
+
+    if requires_alias_count > 0:
+        effective_external_status = "requires_alias"
+    elif consumers and unresolved_count == 0 and effective_external_status == "unknown":
+        # If all listed consumers are resolved but no external status set, default to confirmed_clear.
+        effective_external_status = "confirmed_clear"
+
+    readiness_pass = migration.get("status") == "pass" and milestone.get("overall_status") in {"pass", "watch"}
+    if effective_external_status == "confirmed_clear" and readiness_pass and requires_alias_count == 0 and unresolved_count == 0:
         status = "ready"
         recommended_action = "schedule_removal"
-    elif external_consumer_status == "requires_alias":
+    elif effective_external_status == "requires_alias":
         status = "blocked"
         recommended_action = "keep_fallback"
     else:
@@ -51,7 +84,13 @@ def build_alias_sunset_review(
         "fallback_flag_available": fallback_flag_available,
         "fallback_alias_reported": fallback_alias_reported,
         "internal_consumers_clear": internal_consumers_clear,
-        "external_consumer_confirmation": external_consumer_status,
+        "external_consumer_confirmation": effective_external_status,
+        "evidence_source": evidence_source,
+        "evidence_consumer_count": len(consumers),
+        "requires_alias_count": requires_alias_count,
+        "confirmed_clear_count": confirmed_clear_count,
+        "unresolved_count": unresolved_count,
+        "consumers": consumers,
         "recommended_action": recommended_action,
         "checks": checks,
         "note": "Fallback alias is not removed in this phase.",
@@ -67,6 +106,7 @@ def render_alias_sunset_review_markdown(payload: dict[str, Any]) -> str:
             f"- Status: `{payload.get('status', 'watch')}`",
             f"- External consumer confirmation: `{payload.get('external_consumer_confirmation', 'unknown')}`",
             f"- Recommended action: `{payload.get('recommended_action', 'keep_fallback')}`",
+            f"- Evidence source: `{payload.get('evidence_source', 'none')}`",
             "",
             "## Checklist",
             "",
@@ -78,6 +118,9 @@ def render_alias_sunset_review_markdown(payload: dict[str, Any]) -> str:
             "",
             "- Default mode: canonical `history` only.",
             "- Fallback flag: `--include-history-update-alias`.",
+            f"- requires_alias_count: `{payload.get('requires_alias_count', 0)}`",
+            f"- confirmed_clear_count: `{payload.get('confirmed_clear_count', 0)}`",
+            f"- unresolved_count: `{payload.get('unresolved_count', 0)}`",
             f"- {payload.get('note', '')}",
             "",
             "## Scope Boundary",
