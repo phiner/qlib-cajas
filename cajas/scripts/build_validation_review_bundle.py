@@ -9,6 +9,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from cajas.reports.validation_review_bundle_history import (
+    append_snapshot,
+    compute_delta,
+    create_snapshot_from_bundle,
+    detect_regressions,
+    generate_history_summary_markdown,
+    read_snapshots,
+)
+
 
 def get_git_info() -> dict[str, str]:
     """Get current git branch and commit."""
@@ -31,11 +43,16 @@ def get_git_info() -> dict[str, str]:
 def run_command(cmd: list[str], description: str) -> tuple[bool, str]:
     """Run a command and return success status and output."""
     try:
+        env = dict(**__import__("os").environ)
+        repo_root = str(Path(__file__).resolve().parents[2])
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = f"{repo_root}:{existing_pythonpath}" if existing_pythonpath else repo_root
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             check=True,
+            env=env,
         )
         return True, result.stdout
     except subprocess.CalledProcessError as e:
@@ -57,6 +74,9 @@ def build_review_bundle(
     data_root: Path | None,
     build_experiment_manifest: bool,
     copy_artifacts: bool,
+    update_history: bool,
+    history_jsonl: Path | None,
+    history_last_n: int,
     warn_only: bool,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
@@ -66,6 +86,7 @@ def build_review_bundle(
     commands_executed = []
     commands_skipped = []
     artifacts = {}
+    warnings = []
 
     # Step 1: Run dataset quality smoke
     smoke_cmd = [
@@ -258,6 +279,7 @@ def build_review_bundle(
         "commands_executed": commands_executed,
         "commands_skipped": commands_skipped,
         "artifacts": artifacts,
+        "warnings": warnings,
     }
 
     # Read delivery packet status if available
@@ -268,6 +290,97 @@ def build_review_bundle(
             bundle_manifest["delivery_packet_status"] = packet_manifest.get("overall_status")
             bundle_manifest["runtime_budget_status"] = packet_manifest.get("runtime_budget_status")
             bundle_manifest["reviewer_diff_status"] = packet_manifest.get("reviewer_diff_status")
+
+    # Step 8: Optional history update
+    history_metadata: dict[str, Any] = {"requested": update_history}
+    history_failed = False
+    if update_history:
+        if not history_jsonl:
+            history_failed = True
+            history_metadata.update(
+                {
+                    "status": "error",
+                    "error": "history_jsonl is required when --update-history is set",
+                }
+            )
+        else:
+            try:
+                previous_snapshots = read_snapshots(history_jsonl)
+                previous_snapshot = previous_snapshots[-1] if previous_snapshots else None
+
+                current_snapshot = create_snapshot_from_bundle(
+                    bundle_root=out_root,
+                    branch=git_info["branch"],
+                    commit=git_info["commit"],
+                    created_at=bundle_manifest["created_at"],
+                )
+                append_snapshot(history_jsonl, current_snapshot)
+                snapshots = read_snapshots(history_jsonl)
+
+                history_summary_json = history_jsonl.parent / "review_bundle_history_summary.json"
+                history_summary_md = history_jsonl.parent / "review_bundle_history_summary.md"
+
+                delta = compute_delta(current_snapshot, previous_snapshot) if previous_snapshot else {}
+                regressions = detect_regressions(current_snapshot, previous_snapshot) if previous_snapshot else []
+                recommendation = (
+                    "review_regressions"
+                    if regressions
+                    else "stable_or_improved"
+                    if current_snapshot.runtime_budget_status == "pass"
+                    and current_snapshot.delivery_packet_status in ("pass", "warn")
+                    else "review_warnings"
+                )
+
+                history_summary = {
+                    "snapshot_count": len(snapshots),
+                    "latest_snapshot": {
+                        "created_at": current_snapshot.created_at,
+                        "branch": current_snapshot.branch,
+                        "commit": current_snapshot.commit,
+                        "delivery_packet_status": current_snapshot.delivery_packet_status,
+                        "runtime_budget_status": current_snapshot.runtime_budget_status,
+                        "fast_total_seconds": current_snapshot.fast_total_seconds,
+                    },
+                    "latest_bundle_status": current_snapshot.delivery_packet_status,
+                    "delta_from_previous": delta,
+                    "regressions": regressions,
+                    "regression_count": len(regressions),
+                    "reviewer_recommendation": recommendation,
+                }
+                history_summary_json.parent.mkdir(parents=True, exist_ok=True)
+                with open(history_summary_json, "w", encoding="utf-8") as f:
+                    json.dump(history_summary, f, indent=2)
+                with open(history_summary_md, "w", encoding="utf-8") as f:
+                    f.write(generate_history_summary_markdown(snapshots, last_n=history_last_n))
+
+                history_metadata.update(
+                    {
+                        "status": "ok",
+                        "history_jsonl": str(history_jsonl),
+                        "summary_json": str(history_summary_json),
+                        "summary_md": str(history_summary_md),
+                        "latest_bundle_status": current_snapshot.delivery_packet_status,
+                        "delta_from_previous": delta,
+                        "regressions": regressions,
+                        "regression_count": len(regressions),
+                        "reviewer_recommendation": recommendation,
+                    }
+                )
+                artifacts["history_jsonl"] = str(history_jsonl)
+                artifacts["history_summary_json"] = str(history_summary_json)
+                artifacts["history_summary_md"] = str(history_summary_md)
+            except Exception as exc:
+                history_failed = True
+                history_metadata.update({"status": "error", "error": str(exc)})
+    else:
+        history_metadata["status"] = "not_requested"
+    bundle_manifest["history_update"] = history_metadata
+    if history_failed:
+        msg = f"history update failed: {history_metadata.get('error', 'unknown error')}"
+        if warn_only:
+            warnings.append(msg)
+        else:
+            raise RuntimeError(msg)
 
     # Write bundle manifest
     manifest_path = out_root / "review_bundle_manifest.json"
@@ -330,6 +443,30 @@ def build_review_bundle(
 
     index_lines.extend([
         "",
+        "## History",
+        "",
+    ])
+    history_update = bundle_manifest.get("history_update", {})
+    if history_update.get("status") == "ok":
+        index_lines.append(f"- history_jsonl: `{history_update['history_jsonl']}`")
+        index_lines.append(f"- history_summary_json: `{history_update['summary_json']}`")
+        index_lines.append(f"- history_summary_md: `{history_update['summary_md']}`")
+        if history_update.get("latest_bundle_status") is not None:
+            index_lines.append(f"- latest_bundle_status: `{history_update['latest_bundle_status']}`")
+        if history_update.get("delta_from_previous"):
+            index_lines.append(f"- runtime_delta_from_previous: `{history_update['delta_from_previous']}`")
+        if history_update.get("regressions") is not None:
+            index_lines.append(f"- regression_count: `{history_update['regression_count']}`")
+        if history_update.get("reviewer_recommendation"):
+            index_lines.append(f"- reviewer_recommendation: `{history_update['reviewer_recommendation']}`")
+    elif history_update.get("status") == "error":
+        index_lines.append(f"- history_update_status: `error`")
+        index_lines.append(f"- history_update_error: `{history_update.get('error', 'unknown error')}`")
+    else:
+        index_lines.append("History update was not requested for this bundle.")
+
+    index_lines.extend([
+        "",
         "## Reviewer Next Action",
         "",
     ])
@@ -367,6 +504,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data-root", type=Path, help="Data root for audit")
     parser.add_argument("--build-experiment-manifest", action="store_true", help="Build experiment manifest")
     parser.add_argument("--copy-artifacts", action="store_true", help="Copy artifacts to delivery packet")
+    parser.add_argument("--update-history", action="store_true", help="Append this bundle to history and write summaries")
+    parser.add_argument(
+        "--history-jsonl",
+        type=Path,
+        default=Path("tmp/validation-review-bundle/history/review_bundle_history.jsonl"),
+        help="History JSONL path used with --update-history",
+    )
+    parser.add_argument("--history-last-n", type=int, default=10, help="Number of snapshots in history markdown summary")
     parser.add_argument("--warn-only", action="store_true", help="Don't fail on warnings")
 
     args = parser.parse_args(argv)
@@ -387,6 +532,9 @@ def main(argv: list[str] | None = None) -> int:
             data_root=args.data_root,
             build_experiment_manifest=args.build_experiment_manifest,
             copy_artifacts=args.copy_artifacts,
+            update_history=args.update_history,
+            history_jsonl=args.history_jsonl,
+            history_last_n=args.history_last_n,
             warn_only=args.warn_only,
         )
 
