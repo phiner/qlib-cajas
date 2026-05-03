@@ -23,6 +23,7 @@ def build_validation_release_readiness_report(
     consumer_evidence_closure_report: Path | None = None,
     consumer_owner_handoff: Path | None = None,
     consumer_owner_response_validation: Path | None = None,
+    consumer_evidence_candidate_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -42,6 +43,11 @@ def build_validation_release_readiness_report(
     owner_response_validation = (
         _load_json(consumer_owner_response_validation)
         if consumer_owner_response_validation and consumer_owner_response_validation.exists()
+        else {}
+    )
+    evidence_candidate = (
+        _load_json(consumer_evidence_candidate_report)
+        if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists()
         else {}
     )
     runtime_watch_triage = (
@@ -65,6 +71,7 @@ def build_validation_release_readiness_report(
     runtime_watch_triage_status = runtime_watch_triage.get("status")
     owner_handoff_status = owner_handoff.get("status")
     owner_response_status = owner_response_validation.get("status")
+    evidence_candidate_status = evidence_candidate.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -169,6 +176,10 @@ def build_validation_release_readiness_report(
         "consumer_owner_response_status": owner_response_status,
         "consumer_owner_response_safe_to_update": owner_response_validation.get("safe_to_update_evidence"),
         "consumer_owner_response_issues": owner_response_validation.get("issues", []),
+        "consumer_evidence_candidate_status": evidence_candidate_status,
+        "consumer_evidence_candidate_projected_release_status": evidence_candidate.get("release_readiness_projected_status"),
+        "consumer_evidence_candidate_manual_approval_required": evidence_candidate.get("manual_approval_required"),
+        "consumer_evidence_candidate_next_action": evidence_candidate.get("next_action"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -205,6 +216,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Consumer evidence closure: `{payload.get('consumer_evidence_closure_status', 'not_included')}`",
             f"- Consumer owner handoff: `{payload.get('consumer_owner_handoff_status', 'not_included')}`",
             f"- Consumer owner response: `{payload.get('consumer_owner_response_status', 'not_included')}`",
+            f"- Consumer evidence candidate: `{payload.get('consumer_evidence_candidate_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
             f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",

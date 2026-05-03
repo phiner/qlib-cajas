@@ -222,6 +222,17 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         json.dumps({"status": "incomplete", "safe_to_update_evidence": False, "issues": ["missing_owner"]}),
         encoding="utf-8",
     )
+    candidate = tmp_path / "candidate.json"
+    candidate.write_text(
+        json.dumps(
+            {
+                "status": "ready_candidate",
+                "release_readiness_projected_status": "ready",
+                "manual_approval_required": True,
+            }
+        ),
+        encoding="utf-8",
+    )
     packet = build_validation_milestone_packet(
         review_bundle_root=p["default"],
         alias_fallback_bundle_root=p["alias"],
@@ -233,6 +244,7 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         consumer_evidence_closure_report=evidence,
         consumer_owner_handoff=owner_handoff,
         consumer_owner_response_validation=owner_response,
+        consumer_evidence_candidate_report=candidate,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=pytest_profile,
     )
@@ -240,12 +252,14 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
     assert packet["runtime_watch_triage_summary"]["status"] == "watch"
     assert packet["consumer_owner_handoff_summary"]["status"] == "open"
     assert packet["consumer_owner_response_validation_summary"]["status"] == "incomplete"
+    assert packet["consumer_evidence_candidate_summary"]["status"] == "ready_candidate"
     assert packet["pytest_runtime_profile_summary"]["status"] == "watch"
     md = render_validation_milestone_packet_markdown(packet)
     assert "Consumer Evidence Closure" in md
     assert "Runtime Watch Triage" in md
     assert "Consumer Owner Handoff" in md
     assert "Consumer Owner Response Validation" in md
+    assert "Consumer Evidence Candidate" in md
     assert "Pytest Runtime Profile" in md
 
 

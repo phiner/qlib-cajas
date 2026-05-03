@@ -77,6 +77,7 @@ def build_validation_milestone_packet(
     consumer_evidence_closure_report: Path | None = None,
     consumer_owner_handoff: Path | None = None,
     consumer_owner_response_validation: Path | None = None,
+    consumer_evidence_candidate_report: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -108,6 +109,11 @@ def build_validation_milestone_packet(
     owner_response_validation = (
         _load_json(consumer_owner_response_validation)
         if consumer_owner_response_validation and consumer_owner_response_validation.exists()
+        else None
+    )
+    evidence_candidate = (
+        _load_json(consumer_evidence_candidate_report)
+        if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists()
         else None
     )
     runtime_watch_triage = (
@@ -221,6 +227,7 @@ def build_validation_milestone_packet(
         "consumer_evidence_closure_summary": evidence_closure,
         "consumer_owner_handoff_summary": owner_handoff,
         "consumer_owner_response_validation_summary": owner_response_validation,
+        "consumer_evidence_candidate_summary": evidence_candidate,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
@@ -338,6 +345,12 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('consumer_owner_response_validation_summary') or {}).get('status', 'not_included')}`",
             f"- safe_to_update_evidence: `{(payload.get('consumer_owner_response_validation_summary') or {}).get('safe_to_update_evidence', 'n/a')}`",
             f"- issues: `{(payload.get('consumer_owner_response_validation_summary') or {}).get('issues', [])}`",
+            "",
+            "## Consumer Evidence Candidate",
+            "",
+            f"- `{(payload.get('consumer_evidence_candidate_summary') or {}).get('status', 'not_included')}`",
+            f"- projected_release_readiness: `{(payload.get('consumer_evidence_candidate_summary') or {}).get('release_readiness_projected_status', 'n/a')}`",
+            f"- manual_approval_required: `{(payload.get('consumer_evidence_candidate_summary') or {}).get('manual_approval_required', 'n/a')}`",
             "",
             "## Pytest Runtime Profile",
             "",
