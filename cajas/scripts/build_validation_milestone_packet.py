@@ -32,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--consumer-owner-handoff", type=Path)
     parser.add_argument("--consumer-owner-response-validation", type=Path)
     parser.add_argument("--consumer-evidence-candidate-report", type=Path)
+    parser.add_argument("--evidence-candidate-approval-report", type=Path)
+    parser.add_argument("--alias-sunset-schedule", type=Path)
     parser.add_argument("--runtime-watch-triage-report", type=Path)
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
@@ -70,6 +72,8 @@ def main(argv: list[str] | None = None) -> int:
         consumer_owner_handoff=args.consumer_owner_handoff,
         consumer_owner_response_validation=args.consumer_owner_response_validation,
         consumer_evidence_candidate_report=args.consumer_evidence_candidate_report,
+        evidence_candidate_approval_report=args.evidence_candidate_approval_report,
+        alias_sunset_schedule=args.alias_sunset_schedule,
         runtime_watch_triage_report=args.runtime_watch_triage_report,
         pytest_runtime_profile=args.pytest_runtime_profile,
     )

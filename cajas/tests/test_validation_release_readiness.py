@@ -35,6 +35,14 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
             "next_action": "review_candidate_evidence",
         },
     )
+    approval = _write_json(
+        tmp_path / "approval_gate.json",
+        {"status": "approval_required", "next_action": "manual_review_candidate"},
+    )
+    schedule = _write_json(
+        tmp_path / "schedule.json",
+        {"status": "not_scheduled", "reason": "manual_approval_required"},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "watch", "recommendation": "profile_slow_tests"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -52,6 +60,8 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         consumer_owner_handoff=handoff,
         consumer_owner_response_validation=owner_response,
         consumer_evidence_candidate_report=candidate,
+        evidence_candidate_approval_report=approval,
+        alias_sunset_schedule=schedule,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -101,6 +111,14 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
             "next_action": "review_candidate_evidence",
         },
     )
+    approval = _write_json(
+        tmp_path / "approval_gate.json",
+        {"status": "approved_candidate", "next_action": "apply_in_dedicated_phase"},
+    )
+    schedule = _write_json(
+        tmp_path / "schedule.json",
+        {"status": "ready_to_schedule", "reason": "approved_candidate_and_removal_plan_ready"},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "pass", "recommendation": "monitor"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -118,6 +136,8 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         consumer_owner_handoff=handoff,
         consumer_owner_response_validation=owner_response,
         consumer_evidence_candidate_report=candidate,
+        evidence_candidate_approval_report=approval,
+        alias_sunset_schedule=schedule,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -138,3 +158,5 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["consumer_owner_handoff_status"] == "open"
     assert report["consumer_owner_response_status"] == "incomplete"
     assert report["consumer_evidence_candidate_status"] == "ready_candidate"
+    assert report["evidence_candidate_approval_status"] == "approval_required"
+    assert report["alias_sunset_schedule_status"] == "not_scheduled"

@@ -24,6 +24,8 @@ def build_validation_release_readiness_report(
     consumer_owner_handoff: Path | None = None,
     consumer_owner_response_validation: Path | None = None,
     consumer_evidence_candidate_report: Path | None = None,
+    evidence_candidate_approval_report: Path | None = None,
+    alias_sunset_schedule: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -50,6 +52,12 @@ def build_validation_release_readiness_report(
         if consumer_evidence_candidate_report and consumer_evidence_candidate_report.exists()
         else {}
     )
+    candidate_approval = (
+        _load_json(evidence_candidate_approval_report)
+        if evidence_candidate_approval_report and evidence_candidate_approval_report.exists()
+        else {}
+    )
+    sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else {}
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -72,6 +80,8 @@ def build_validation_release_readiness_report(
     owner_handoff_status = owner_handoff.get("status")
     owner_response_status = owner_response_validation.get("status")
     evidence_candidate_status = evidence_candidate.get("status")
+    candidate_approval_status = candidate_approval.get("status")
+    sunset_schedule_status = sunset_schedule.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -126,6 +136,10 @@ def build_validation_release_readiness_report(
         watch_items.append(f"consumer_owner_response_status={owner_response_status}")
     if runtime_watch_triage_status in {"watch", "warn", "fail"}:
         watch_items.append(f"runtime_watch_triage_status={runtime_watch_triage_status}")
+    if candidate_approval_status in {"approval_required", "blocked", "invalid"}:
+        watch_items.append(f"evidence_candidate_approval_status={candidate_approval_status}")
+    if sunset_schedule_status in {"not_scheduled", "blocked"}:
+        watch_items.append(f"alias_sunset_schedule_status={sunset_schedule_status}")
 
     if blocking_items:
         status = "blocked"
@@ -180,6 +194,11 @@ def build_validation_release_readiness_report(
         "consumer_evidence_candidate_projected_release_status": evidence_candidate.get("release_readiness_projected_status"),
         "consumer_evidence_candidate_manual_approval_required": evidence_candidate.get("manual_approval_required"),
         "consumer_evidence_candidate_next_action": evidence_candidate.get("next_action"),
+        "evidence_candidate_approval_status": candidate_approval_status,
+        "evidence_candidate_approval_next_action": candidate_approval.get("next_action"),
+        "alias_sunset_schedule_status": sunset_schedule_status,
+        "alias_sunset_schedule_reason": sunset_schedule.get("reason"),
+        "alias_sunset_schedule_next_steps": sunset_schedule.get("schedule_steps", []),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -217,6 +236,8 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Consumer owner handoff: `{payload.get('consumer_owner_handoff_status', 'not_included')}`",
             f"- Consumer owner response: `{payload.get('consumer_owner_response_status', 'not_included')}`",
             f"- Consumer evidence candidate: `{payload.get('consumer_evidence_candidate_status', 'not_included')}`",
+            f"- Evidence candidate approval: `{payload.get('evidence_candidate_approval_status', 'not_included')}`",
+            f"- Alias sunset schedule: `{payload.get('alias_sunset_schedule_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
             f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",
