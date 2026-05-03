@@ -504,6 +504,8 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
             self.assertIn("final_status", manifest)
             self.assertEqual(manifest["final_status"]["overall_status"], "pass")
+            runtime_gate = [g for g in json.loads((out_root / "final_status.json").read_text(encoding="utf-8"))["gates"] if g["name"] == "runtime_budget"][0]
+            self.assertIn("budget", runtime_gate["reason_code"])
             self.assertEqual(manifest["final_status"]["schema_version"], "v1")
             self.assertIn("run_id", manifest["final_status"])
             self.assertEqual(manifest["final_status"]["profile"], "ci")

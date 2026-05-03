@@ -23,6 +23,7 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         result = check_component_budget("test_component", 5.0, 10.0)
         self.assertEqual(result.status, "pass")
         self.assertEqual(result.reason_code, "within_budget")
+        self.assertEqual(result.category, "unknown")
         self.assertEqual(result.observed_seconds, 5.0)
         self.assertEqual(result.budget_seconds, 10.0)
         self.assertEqual(result.delta_seconds, -5.0)
@@ -130,13 +131,15 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
 
             budget_config = {
                 "version": 1,
-                "budgets_seconds": {"fast_total": 10.0},
+                "budgets_seconds": {"fast_total": 200.0, "pytest_fast": 10.0},
                 "warn_threshold_ratio": 1.15,
+                "required_components": ["fast_total", "pytest_fast"],
+                "component_categories": {"fast_total": "core", "pytest_fast": "core"},
             }
             budget_path = tmp_path / "budgets.json"
             budget_path.write_text(json.dumps(budget_config), encoding="utf-8")
 
-            timing_data = {"results": [], "total_seconds": 50.0}
+            timing_data = {"results": [{"name": "pytest_fast", "seconds": 50.0}], "total_seconds": 50.0}
             timing_path = tmp_path / "timing.json"
             timing_path.write_text(json.dumps(timing_data), encoding="utf-8")
 
@@ -267,6 +270,34 @@ class ValidationRuntimeBudgetTests(unittest.TestCase):
         self.assertIn("timing_consistency", report)
         self.assertEqual(report["timing_consistency"]["status"], "pass")
         self.assertIn("reason_code", report["results"][0])
+
+    def test_utility_fail_is_warn_overall(self) -> None:
+        timing_data = {"results": [{"name": "path_hygiene", "seconds": 20.0}, {"name": "pytest_fast", "seconds": 85.0}], "total_seconds": 90.0}
+        budget_config = {
+            "budgets_seconds": {"fast_total": 105.0, "pytest_fast": 95.0, "path_hygiene": 12.0},
+            "required_components": ["fast_total", "pytest_fast"],
+            "optional_components": ["path_hygiene"],
+            "component_categories": {"fast_total": "core", "pytest_fast": "core", "path_hygiene": "utility"},
+            "warn_threshold_ratio": 1.15,
+        }
+        results, overall = check_validation_runtime_budgets(timing_data, budget_config)
+        self.assertEqual(overall, "warn")
+        path_row = [r for r in results if r.component == "path_hygiene"][0]
+        self.assertEqual(path_row.status, "fail")
+        self.assertEqual(path_row.category, "utility")
+        self.assertEqual(path_row.action, "optimize_utility_step")
+
+    def test_core_fail_remains_fail_overall(self) -> None:
+        timing_data = {"results": [{"name": "pytest_fast", "seconds": 130.0}], "total_seconds": 130.0}
+        budget_config = {
+            "budgets_seconds": {"fast_total": 105.0, "pytest_fast": 95.0},
+            "required_components": ["fast_total", "pytest_fast"],
+            "optional_components": [],
+            "component_categories": {"fast_total": "core", "pytest_fast": "core"},
+            "warn_threshold_ratio": 1.15,
+        }
+        _, overall = check_validation_runtime_budgets(timing_data, budget_config)
+        self.assertEqual(overall, "fail")
 
 
 if __name__ == "__main__":
