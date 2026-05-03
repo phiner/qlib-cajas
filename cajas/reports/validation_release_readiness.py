@@ -26,6 +26,7 @@ def build_validation_release_readiness_report(
     consumer_evidence_candidate_report: Path | None = None,
     evidence_candidate_approval_report: Path | None = None,
     alias_sunset_schedule: Path | None = None,
+    canonical_evidence_update_plan: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -58,6 +59,7 @@ def build_validation_release_readiness_report(
         else {}
     )
     sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else {}
+    update_plan = _load_json(canonical_evidence_update_plan) if canonical_evidence_update_plan and canonical_evidence_update_plan.exists() else {}
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -82,6 +84,7 @@ def build_validation_release_readiness_report(
     evidence_candidate_status = evidence_candidate.get("status")
     candidate_approval_status = candidate_approval.get("status")
     sunset_schedule_status = sunset_schedule.get("status")
+    update_plan_status = update_plan.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -140,6 +143,8 @@ def build_validation_release_readiness_report(
         watch_items.append(f"evidence_candidate_approval_status={candidate_approval_status}")
     if sunset_schedule_status in {"not_scheduled", "blocked"}:
         watch_items.append(f"alias_sunset_schedule_status={sunset_schedule_status}")
+    if update_plan_status in {"not_ready", "blocked"}:
+        watch_items.append(f"canonical_evidence_update_plan_status={update_plan_status}")
 
     if blocking_items:
         status = "blocked"
@@ -199,6 +204,9 @@ def build_validation_release_readiness_report(
         "alias_sunset_schedule_status": sunset_schedule_status,
         "alias_sunset_schedule_reason": sunset_schedule.get("reason"),
         "alias_sunset_schedule_next_steps": sunset_schedule.get("schedule_steps", []),
+        "canonical_evidence_update_plan_status": update_plan_status,
+        "canonical_evidence_update_plan_recommendation": update_plan.get("recommendation"),
+        "canonical_evidence_update_plan_manual_update_required": update_plan.get("manual_update_required"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -238,6 +246,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Consumer evidence candidate: `{payload.get('consumer_evidence_candidate_status', 'not_included')}`",
             f"- Evidence candidate approval: `{payload.get('evidence_candidate_approval_status', 'not_included')}`",
             f"- Alias sunset schedule: `{payload.get('alias_sunset_schedule_status', 'not_included')}`",
+            f"- Canonical evidence update plan: `{payload.get('canonical_evidence_update_plan_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
             f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",

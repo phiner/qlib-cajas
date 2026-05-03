@@ -80,6 +80,7 @@ def build_validation_milestone_packet(
     consumer_evidence_candidate_report: Path | None = None,
     evidence_candidate_approval_report: Path | None = None,
     alias_sunset_schedule: Path | None = None,
+    canonical_evidence_update_plan: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -124,6 +125,11 @@ def build_validation_milestone_packet(
         else None
     )
     sunset_schedule = _load_json(alias_sunset_schedule) if alias_sunset_schedule and alias_sunset_schedule.exists() else None
+    update_plan = (
+        _load_json(canonical_evidence_update_plan)
+        if canonical_evidence_update_plan and canonical_evidence_update_plan.exists()
+        else None
+    )
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -238,6 +244,7 @@ def build_validation_milestone_packet(
         "consumer_evidence_candidate_summary": evidence_candidate,
         "evidence_candidate_approval_summary": candidate_approval,
         "alias_sunset_schedule_summary": sunset_schedule,
+        "canonical_evidence_update_plan_summary": update_plan,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
@@ -373,6 +380,12 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('alias_sunset_schedule_summary') or {}).get('status', 'not_included')}`",
             f"- reason: `{(payload.get('alias_sunset_schedule_summary') or {}).get('reason', 'n/a')}`",
             f"- do_not_remove_in_this_phase: `{(payload.get('alias_sunset_schedule_summary') or {}).get('do_not_remove_in_this_phase', 'n/a')}`",
+            "",
+            "## Canonical Evidence Update Plan",
+            "",
+            f"- `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('status', 'not_included')}`",
+            f"- recommendation: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('recommendation', 'n/a')}`",
+            f"- manual_update_required: `{(payload.get('canonical_evidence_update_plan_summary') or {}).get('manual_update_required', 'n/a')}`",
             "",
             "## Pytest Runtime Profile",
             "",

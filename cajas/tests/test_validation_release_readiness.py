@@ -43,6 +43,10 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         tmp_path / "schedule.json",
         {"status": "not_scheduled", "reason": "manual_approval_required"},
     )
+    update_plan = _write_json(
+        tmp_path / "update_plan.json",
+        {"status": "not_ready", "manual_update_required": True, "recommendation": "wait_for_approval"},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "watch", "recommendation": "profile_slow_tests"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -62,6 +66,7 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         consumer_evidence_candidate_report=candidate,
         evidence_candidate_approval_report=approval,
         alias_sunset_schedule=schedule,
+        canonical_evidence_update_plan=update_plan,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -119,6 +124,10 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         tmp_path / "schedule.json",
         {"status": "ready_to_schedule", "reason": "approved_candidate_and_removal_plan_ready"},
     )
+    update_plan = _write_json(
+        tmp_path / "update_plan.json",
+        {"status": "ready_to_apply", "manual_update_required": True, "recommendation": "apply_in_dedicated_phase"},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "pass", "recommendation": "monitor"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -138,6 +147,7 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         consumer_evidence_candidate_report=candidate,
         evidence_candidate_approval_report=approval,
         alias_sunset_schedule=schedule,
+        canonical_evidence_update_plan=update_plan,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -160,3 +170,4 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["consumer_evidence_candidate_status"] == "ready_candidate"
     assert report["evidence_candidate_approval_status"] == "approval_required"
     assert report["alias_sunset_schedule_status"] == "not_scheduled"
+    assert report["canonical_evidence_update_plan_status"] == "not_ready"
