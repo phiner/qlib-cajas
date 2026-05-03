@@ -3565,3 +3565,18 @@ Scope confirmation:
 
 Routine maintenance command additions (next release cycle):
 - `PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_routine_release_cycle_stability.py --release-readiness-report tmp/validation-release-readiness.json --final-reviewer-packet tmp/validation-final-reviewer-packet.json --milestone-packet tmp/validation-milestone-packet.json --runtime-budget-report tmp/validation_runtime_budget_report.json --runtime-edge-report tmp/validation-runtime-edge-report.json --runtime-release-cycle-report tmp/validation-runtime-release-cycle-report.json --runtime-variance-closure-report tmp/validation-runtime-variance-closure.json --data-source-audit-report tmp/data_source_audit.json --maintenance-checklist tmp/validation-maintenance-checklist.json --maintenance-governance-closure tmp/validation-maintenance-governance-closure.json --final-maintenance-archive-closure-report tmp/validation-final-maintenance-archive-closure.json --external-consumer-evidence-closure-report tmp/validation-external-consumer-evidence-closure.json --post-freeze-handoff-seal-report tmp/validation-post-freeze-handoff-seal.json --optional-followups tmp/validation-optional-followups.json --out-json tmp/validation-routine-release-cycle-stability.json --out-md tmp/validation-routine-release-cycle-stability.md`
+
+## Phase 4646-4765 Routine Stability Watch Closure / Semantics Freeze
+
+- Added watch-closure interpretation report:
+  - `tmp/validation-routine-stability-watch-closure.json`
+  - `tmp/validation-routine-stability-watch-closure.md`
+- Integrated watch-closure summary into:
+  - final reviewer packet
+  - release readiness report
+  - milestone packet
+- Semantics freeze:
+  - routine stability may remain `watch` while still being closed as `closed_non_blocking` when release readiness is `ready`, final reviewer packet is `ready_for_review`, milestone is non-blocking, and optional followups are non-blocking.
+  - this watch signal is maintenance-only and does not block release-review posture.
+- Remaining followup (`slow_test_optimization`) remains optional and non-blocking.
+- Scope remains unchanged: offline Qlib validation automation only; no trading, broker routing, live/paper execution, or training/workflow execution.
