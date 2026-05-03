@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
             budget_seconds=item.get("budget_seconds"),
             delta_seconds=item.get("delta_seconds"),
             ratio=item.get("ratio"),
+            warn_margin_seconds=item.get("warn_margin_seconds"),
+            reason_code=item.get("reason_code", "unknown"),
             reviewer_note=item.get("reviewer_note", ""),
         )
         for item in report_data.get("results", [])

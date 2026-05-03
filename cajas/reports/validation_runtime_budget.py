@@ -19,6 +19,8 @@ class BudgetCheckResult:
     budget_seconds: float | None
     delta_seconds: float | None
     ratio: float | None
+    warn_margin_seconds: float | None
+    reason_code: str
     reviewer_note: str
 
 
@@ -32,6 +34,7 @@ def check_component_budget(
     observed_seconds: float | None,
     budget_seconds: float,
     warn_threshold_ratio: float = 1.15,
+    warn_margin_seconds: float = 0.0,
 ) -> BudgetCheckResult:
     """Check a single component against budget."""
     if observed_seconds is None:
@@ -42,6 +45,8 @@ def check_component_budget(
             budget_seconds=budget_seconds,
             delta_seconds=None,
             ratio=None,
+            warn_margin_seconds=warn_margin_seconds,
+            reason_code="missing_required_timing",
             reviewer_note=f"Component '{component}' not found in timing data",
         )
 
@@ -50,12 +55,22 @@ def check_component_budget(
 
     if observed_seconds <= budget_seconds:
         status = "pass"
+        reason_code = "within_budget"
         note = f"Within budget ({observed_seconds:.2f}s <= {budget_seconds:.2f}s)"
+    elif delta <= max(0.0, warn_margin_seconds):
+        status = "warn"
+        reason_code = "within_variance_margin"
+        note = (
+            f"Over budget but within variance margin "
+            f"({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s, margin={warn_margin_seconds:.2f}s)"
+        )
     elif ratio <= warn_threshold_ratio:
         status = "warn"
+        reason_code = "over_budget_warn"
         note = f"Slightly over budget ({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s)"
     else:
         status = "fail"
+        reason_code = "over_budget_fail"
         note = f"Significantly over budget ({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s, {ratio:.2f}x)"
 
     return BudgetCheckResult(
@@ -65,6 +80,8 @@ def check_component_budget(
         budget_seconds=budget_seconds,
         delta_seconds=delta,
         ratio=ratio,
+        warn_margin_seconds=warn_margin_seconds,
+        reason_code=reason_code,
         reviewer_note=note,
     )
 
@@ -77,6 +94,8 @@ def check_validation_runtime_budgets(
     results = []
     budgets = budget_config["budgets_seconds"]
     warn_threshold = budget_config.get("warn_threshold_ratio", 1.15)
+    warn_margins = budget_config.get("warn_margin_seconds", {})
+    global_margin = budget_config.get("global_warn_margin_seconds", 0.0)
     required_components = set(budget_config.get("required_components", []))
     optional_components = set(budget_config.get("optional_components", []))
 
@@ -96,7 +115,8 @@ def check_validation_runtime_budgets(
     # Check each budget
     for component, budget_seconds in budgets.items():
         observed = timing_map.get(component)
-        result = check_component_budget(component, observed, budget_seconds, warn_threshold)
+        margin = warn_margins.get(component, global_margin)
+        result = check_component_budget(component, observed, budget_seconds, warn_threshold, float(margin))
         results.append(result)
 
     # Determine overall status with required/optional distinction
@@ -301,6 +321,8 @@ def build_validation_runtime_budget_report(
                 "budget_seconds": r.budget_seconds,
                 "delta_seconds": r.delta_seconds,
                 "ratio": r.ratio,
+                "warn_margin_seconds": r.warn_margin_seconds,
+                "reason_code": r.reason_code,
                 "reviewer_note": r.reviewer_note,
             }
             for r in results
@@ -325,11 +347,12 @@ def generate_budget_report_markdown(
         "",
         f"- overall_status: `{overall_status}`",
         f"- warn_threshold_ratio: `{budget_config.get('warn_threshold_ratio', 1.15)}`",
+        f"- global_warn_margin_seconds: `{budget_config.get('global_warn_margin_seconds', 0.0)}`",
         "",
         "## Component Budget Status",
         "",
-        "| Component | Status | Observed (s) | Budget (s) | Delta (s) | Ratio | Type |",
-        "|-----------|--------|--------------|------------|-----------|-------|------|",
+        "| Component | Status | Reason | Observed (s) | Budget (s) | Delta (s) | Ratio | Margin (s) | Type |",
+        "|-----------|--------|--------|--------------|------------|-----------|-------|------------|------|",
     ]
 
     for result in results:
@@ -337,6 +360,7 @@ def generate_budget_report_markdown(
         budget_str = f"{result.budget_seconds:.2f}" if result.budget_seconds is not None else "N/A"
         delta_str = f"{result.delta_seconds:+.2f}" if result.delta_seconds is not None else "N/A"
         ratio_str = f"{result.ratio:.2f}x" if result.ratio is not None else "N/A"
+        margin_str = f"{result.warn_margin_seconds:.2f}" if result.warn_margin_seconds is not None else "0.00"
 
         status_icon = {"pass": "✅", "warn": "⚠️", "fail": "❌", "missing": "❓"}.get(result.status, "?")
 
@@ -349,7 +373,7 @@ def generate_budget_report_markdown(
             comp_type = "unknown"
 
         lines.append(
-            f"| {result.component} | {status_icon} {result.status} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} | {comp_type} |"
+            f"| {result.component} | {status_icon} {result.status} | {result.reason_code} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} | {margin_str} | {comp_type} |"
         )
 
     lines.extend([

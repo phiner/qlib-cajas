@@ -38,5 +38,10 @@
     "Budgets based on observed Phase 1016 baseline: fast_total ~85s, pytest_fast ~82s.",
     "required_components: must be measured, missing causes warn/fail.",
     "optional_components: nice to have, missing does not cause overall warn."
-  ]
+  ],
+  "global_warn_margin_seconds": 0.0,
+  "warn_margin_seconds": {
+    "pytest_fast": 5.0,
+    "fast_total": 5.0
+  }
 }
