@@ -78,6 +78,7 @@ def test_approved_candidate_when_approved_true(tmp_path: Path) -> None:
         approval_file=approval,
     )
     assert report["status"] == "approved_candidate"
+    assert report["next_action"] == "apply_in_dedicated_phase"
     md = render_evidence_candidate_approval_markdown(report)
     assert "Do not remove fallback in this phase." in md
 
