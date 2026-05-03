@@ -104,6 +104,26 @@ class ValidationGateSummaryTests(unittest.TestCase):
         self.assertTrue(optional_gate["escalated"])
         self.assertIn("optional_not_run_escalated_under_strict", optional_gate["profile_effect"])
 
+    def test_pass_with_non_escalated_warn_has_clear_reason(self) -> None:
+        gates = [
+            ValidationGate("required", True, "pass", "ok", "none", "required ok"),
+            ValidationGate("delivery_packet", False, "warn", "delivery_packet_warn", "review", "delivery packet warning", "pkt.json", None),
+        ]
+        payload = build_final_status_payload(
+            gates=gates,
+            bundle_name="bundle",
+            created_at="2026-05-03T00:00:00+00:00",
+            git_branch="x",
+            git_commit="y",
+            profile="local",
+        )
+        self.assertEqual(payload["overall_status"], "pass")
+        self.assertEqual(payload["overall_reason_code"], "pass_with_non_escalated_warnings")
+        self.assertEqual(payload["reviewer_next_action"], "none")
+        self.assertEqual(payload["primary_artifact"], "review_bundle_index.md")
+        md = render_final_status_markdown(payload)
+        self.assertIn("Non-escalated gates", md)
+
 
 if __name__ == "__main__":
     unittest.main()

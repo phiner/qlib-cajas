@@ -41,8 +41,8 @@ class ValidationDeliveryPacketTests(unittest.TestCase):
         self.assertIn("Reviewer Notes", markdown)
         self.assertIn("Recommended Action", markdown)
 
-    def test_missing_optional_artifact_produces_warn(self) -> None:
-        """Test missing optional artifact produces warn."""
+    def test_unspecified_optional_artifacts_do_not_produce_warn(self) -> None:
+        """Unspecified optional artifacts should be notes, not warn."""
         with TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             smoke_root = tmp_path / "smoke"
@@ -69,6 +69,30 @@ class ValidationDeliveryPacketTests(unittest.TestCase):
                 contract_report_path=contract_path,
             )
 
+            self.assertEqual(packet.overall_status, "pass")
+            self.assertTrue(any("Optional artifacts not requested" in note for note in packet.reviewer_notes))
+
+    def test_specified_missing_optional_artifact_produces_warn(self) -> None:
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            (smoke_root / "dataset_quality").mkdir(parents=True)
+            (smoke_root / "contract").mkdir(parents=True)
+            (smoke_root / "dataset_quality" / "dataset_quality_report.json").write_text(
+                json.dumps({"quality_score": {"score": 85.0}, "status": "pass"}), encoding="utf-8"
+            )
+            contract_path = smoke_root / "contract" / "dataset_quality_contract_report.json"
+            contract_path.write_text(
+                json.dumps({"status": "pass", "error_count": 0, "semantic_error_count": 0, "drift_summary": {"breaking_count": 0}}),
+                encoding="utf-8",
+            )
+            missing_optional = tmp_path / "missing_reviewer_diff.json"
+            packet = build_validation_delivery_packet(
+                packet_name="test",
+                smoke_root=smoke_root,
+                contract_report_path=contract_path,
+                reviewer_diff_report_path=missing_optional,
+            )
             self.assertEqual(packet.overall_status, "warn")
             self.assertTrue(any("Optional artifacts missing" in note for note in packet.reviewer_notes))
 
