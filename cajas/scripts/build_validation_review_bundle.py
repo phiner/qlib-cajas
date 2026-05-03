@@ -21,6 +21,7 @@ from cajas.reports.validation_review_bundle_history import (
     read_snapshots,
 )
 from cajas.reports.validation_gate_summary import (
+    DEFAULT_CI_PROFILES,
     ValidationGate,
     build_final_status_payload,
     render_final_status_markdown,
@@ -127,6 +128,7 @@ def build_review_bundle(
     skip_manifest_compatibility: bool = False,
     skip_runtime_budget: bool = False,
     max_timing_age_seconds: int = 3600,
+    ci_profile: str = "ci",
 ) -> dict[str, Any]:
     """Build validation review bundle."""
     out_root.mkdir(parents=True, exist_ok=True)
@@ -139,6 +141,8 @@ def build_review_bundle(
     runtime_budget_report_data: dict[str, Any] | None = None
 
     if ci:
+        if ci_profile not in DEFAULT_CI_PROFILES:
+            raise ValueError(f"unknown ci_profile: {ci_profile}")
         if skip_history:
             update_history = False
         elif not update_history:
@@ -565,7 +569,18 @@ def build_review_bundle(
     smoke_status = "pass" if any(
         c["status"] == "ok" and "run_dataset_quality_smoke.py" in c["command"] for c in commands_executed
     ) else "fail"
-    gates.append(ValidationGate("dataset_quality_smoke", True, smoke_status, "dataset quality smoke run", None, None))
+    gates.append(
+        ValidationGate(
+            "dataset_quality_smoke",
+            True,
+            smoke_status,
+            "smoke_ok" if smoke_status == "pass" else "smoke_failed",
+            "none" if smoke_status == "pass" else "rerun_validation",
+            "dataset quality smoke run",
+            None,
+            None,
+        )
+    )
 
     if runtime_budget_report_data:
         gates.append(
@@ -573,6 +588,8 @@ def build_review_bundle(
                 "runtime_budget",
                 True,
                 runtime_budget_report_data.get("budget_status", runtime_budget_report_data.get("overall_status", "warn")),
+                "within_budget" if runtime_budget_report_data.get("budget_status", runtime_budget_report_data.get("overall_status", "warn")) == "pass" else "budget_warning_or_fail",
+                "none" if runtime_budget_report_data.get("budget_status", runtime_budget_report_data.get("overall_status", "warn")) == "pass" else "review",
                 "runtime budget report",
                 str(runtime_budget_json),
                 str(runtime_budget_md),
@@ -584,13 +601,26 @@ def build_review_bundle(
                 "timing_consistency",
                 True if ci else False,
                 timing.get("status", "warn") if isinstance(timing, dict) else "warn",
+                "timing_consistent" if isinstance(timing, dict) and timing.get("status") == "pass" else "timing_consistency_issue",
+                "none" if isinstance(timing, dict) and timing.get("status") == "pass" else "rerun_validation",
                 "timing freshness/consistency",
                 str(runtime_budget_json),
                 str(runtime_budget_md),
             )
         )
     else:
-        gates.append(ValidationGate("runtime_budget", True, "not_run", "runtime budget report not available", None, None))
+        gates.append(
+            ValidationGate(
+                "runtime_budget",
+                True,
+                "not_run",
+                "not_requested_or_missing_input",
+                "required_input",
+                "runtime budget report not available",
+                None,
+                None,
+            )
+        )
 
     if check_manifest_compatibility:
         gates.append(
@@ -598,13 +628,26 @@ def build_review_bundle(
                 "manifest_compatibility",
                 True if ci else False,
                 compat_meta.get("status", "warn"),
+                "manifest_compatible" if compat_meta.get("status") == "pass" else "manifest_compatibility_issue",
+                "none" if compat_meta.get("status") == "pass" else "review",
                 "manifest compatibility report",
                 compat_meta.get("report_json"),
                 compat_meta.get("report_md"),
             )
         )
     else:
-        gates.append(ValidationGate("manifest_compatibility", False, "not_run", "compatibility check not requested", None, None))
+        gates.append(
+            ValidationGate(
+                "manifest_compatibility",
+                False,
+                "not_run",
+                "not_requested",
+                "none",
+                "compatibility check not requested",
+                None,
+                None,
+            )
+        )
 
     history_status = stable_history.get("status", "not_run") if isinstance(stable_history, dict) else "not_run"
     gates.append(
@@ -612,6 +655,8 @@ def build_review_bundle(
             "history",
             True if (ci and update_history) else False,
             history_status,
+            "history_ok" if history_status == "pass" else "history_warning_or_fail" if history_status in {"warn", "fail"} else "not_requested",
+            "none" if history_status == "pass" else "review" if history_status == "warn" else "fix" if history_status == "fail" else "none",
             "review bundle history update",
             stable_history.get("summary_json") if isinstance(stable_history, dict) else None,
             stable_history.get("summary_md") if isinstance(stable_history, dict) else None,
@@ -619,19 +664,75 @@ def build_review_bundle(
     )
 
     packet_status = bundle_manifest.get("delivery_packet_status", "not_run")
-    gates.append(ValidationGate("delivery_packet", True, packet_status, "validation delivery packet", str(packet_dir / "packet_manifest.json"), None))
+    delivery_required = ci and ci_profile in {"ci", "strict"}
+    gates.append(
+        ValidationGate(
+            "delivery_packet",
+            delivery_required,
+            packet_status,
+            "delivery_packet_ok" if packet_status == "pass" else "delivery_packet_warn" if packet_status == "warn" else "delivery_packet_failed_or_missing",
+            "none" if packet_status == "pass" else "review" if packet_status == "warn" else "fix",
+            "validation delivery packet",
+            str(packet_dir / "packet_manifest.json"),
+            None,
+        )
+    )
     reviewer_diff_status = bundle_manifest.get("reviewer_diff_status", "not_run")
-    gates.append(ValidationGate("reviewer_diff", False, reviewer_diff_status, "reviewer diff report", str(reviewer_diff_json) if reviewer_diff_json.exists() else None, str(reviewer_diff_md) if reviewer_diff_md.exists() else None))
+    gates.append(
+        ValidationGate(
+            "reviewer_diff",
+            False,
+            reviewer_diff_status,
+            "reviewer_diff_ok" if reviewer_diff_status == "pass" else "reviewer_diff_warn_or_fail" if reviewer_diff_status in {"warn", "fail"} else "not_run",
+            "none" if reviewer_diff_status in {"pass", "not_run"} else "review",
+            "reviewer diff report",
+            str(reviewer_diff_json) if reviewer_diff_json.exists() else None,
+            str(reviewer_diff_md) if reviewer_diff_md.exists() else None,
+        )
+    )
 
     if artifacts.get("data_source_audit"):
         audit_data = _load_json_if_exists(artifacts.get("data_source_audit"))
         read_count = audit_data.get("read_csv_count") if isinstance(audit_data, dict) else None
         summary = f"data-source audit completed (read_csv_count={read_count})" if read_count is not None else "data-source audit completed"
-        gates.append(ValidationGate("data_source_audit", False, "pass", summary, artifacts.get("data_source_audit"), str(audit_md) if audit_md.exists() else None))
+        gates.append(
+            ValidationGate(
+                "data_source_audit",
+                False,
+                "pass",
+                "audit_ok",
+                "none",
+                summary,
+                artifacts.get("data_source_audit"),
+                str(audit_md) if audit_md.exists() else None,
+            )
+        )
     elif run_data_source_audit:
-        gates.append(ValidationGate("data_source_audit", True if ci else False, "fail", "data-source audit requested but not produced", None, None))
+        gates.append(
+            ValidationGate(
+                "data_source_audit",
+                True if ci else False,
+                "fail",
+                "audit_requested_but_missing",
+                "fix",
+                "data-source audit requested but not produced",
+                None,
+                None,
+            )
+        )
     else:
-        gates.append(ValidationGate("data_source_audit", False, "not_run", "data-source audit not requested", None, None))
+        gates.append(
+            ValidationGate(
+                "data_source_audit",
+                False,
+                "not_run",
+                "not_requested",
+                "none",
+                "data-source audit not requested",
+                None,
+                None,
+            )
+        )
 
     final_status_payload = build_final_status_payload(
         gates=gates,
@@ -639,6 +740,8 @@ def build_review_bundle(
         created_at=bundle_manifest["created_at"],
         git_branch=git_info["branch"],
         git_commit=git_info["commit"],
+        profile=ci_profile if ci else "local",
+        command=" ".join(sys.argv),
     )
     final_status_json = out_root / "final_status.json"
     final_status_md = out_root / "final_status.md"
@@ -647,7 +750,13 @@ def build_review_bundle(
     artifacts["final_status_json"] = str(final_status_json)
     artifacts["final_status_md"] = str(final_status_md)
     bundle_manifest["final_status"] = {
+        "schema_version": final_status_payload["schema_version"],
+        "run_id": final_status_payload["run_id"],
+        "profile": final_status_payload["profile"],
         "overall_status": final_status_payload["overall_status"],
+        "overall_reason": final_status_payload["overall_reason"],
+        "reviewer_next_action": final_status_payload["reviewer_next_action"],
+        "primary_artifact": final_status_payload["primary_artifact"],
         "json": str(final_status_json),
         "md": str(final_status_md),
     }
@@ -667,14 +776,14 @@ def build_review_bundle(
         "",
         "## CI Gate Summary",
         "",
-        "| Gate | Required | Status | Artifact |",
-        "|---|---:|---|---|",
+        "| Gate | Required | Status | Reason | Action | Artifact |",
+        "|---|---:|---|---|---|---|",
     ]
 
     for gate in final_status_payload["gates"]:
         artifact = gate.get("artifact_json") or gate.get("artifact_md") or ""
         index_lines.append(
-            f"| {gate.get('name')} | {'yes' if gate.get('required') else 'no'} | {gate.get('status')} | {artifact} |"
+            f"| {gate.get('name')} | {'yes' if gate.get('required') else 'no'} | {gate.get('status')} | {gate.get('reason_code', '')} | {gate.get('action', '')} | {artifact} |"
         )
 
     index_lines.extend([
@@ -875,6 +984,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-manifest-compatibility", action="store_true", help="Skip manifest compatibility in CI mode")
     parser.add_argument("--skip-runtime-budget", action="store_true", help="Skip runtime budget check in CI mode")
     parser.add_argument("--max-timing-age-seconds", type=int, default=3600, help="Maximum accepted timing age for runtime budget checks")
+    parser.add_argument("--ci-profile", choices=["local", "ci", "strict"], default="ci", help="CI gate aggregation profile")
 
     args = parser.parse_args(argv)
 
@@ -907,6 +1017,7 @@ def main(argv: list[str] | None = None) -> int:
             skip_manifest_compatibility=args.skip_manifest_compatibility,
             skip_runtime_budget=args.skip_runtime_budget,
             max_timing_age_seconds=args.max_timing_age_seconds,
+            ci_profile=args.ci_profile,
         )
 
         print(json.dumps({"status": "ok", "bundle_manifest": str(args.out_root / "review_bundle_manifest.json")}))
