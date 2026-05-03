@@ -78,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
             ratio=item.get("ratio"),
             warn_margin_seconds=item.get("warn_margin_seconds"),
             reason_code=item.get("reason_code", "unknown"),
+            category=item.get("category", "unknown"),
+            action=item.get("action", "review"),
             reviewer_note=item.get("reviewer_note", ""),
         )
         for item in report_data.get("results", [])

@@ -21,6 +21,8 @@ class BudgetCheckResult:
     ratio: float | None
     warn_margin_seconds: float | None
     reason_code: str
+    category: str
+    action: str
     reviewer_note: str
 
 
@@ -35,6 +37,7 @@ def check_component_budget(
     budget_seconds: float,
     warn_threshold_ratio: float = 1.15,
     warn_margin_seconds: float = 0.0,
+    category: str = "unknown",
 ) -> BudgetCheckResult:
     """Check a single component against budget."""
     if observed_seconds is None:
@@ -47,6 +50,8 @@ def check_component_budget(
             ratio=None,
             warn_margin_seconds=warn_margin_seconds,
             reason_code="missing_required_timing",
+            category=category,
+            action="rerun_validation_if_variance",
             reviewer_note=f"Component '{component}' not found in timing data",
         )
 
@@ -56,10 +61,12 @@ def check_component_budget(
     if observed_seconds <= budget_seconds:
         status = "pass"
         reason_code = "within_budget"
+        action = "none"
         note = f"Within budget ({observed_seconds:.2f}s <= {budget_seconds:.2f}s)"
     elif delta <= max(0.0, warn_margin_seconds):
         status = "warn"
         reason_code = "within_variance_margin"
+        action = "rerun_validation_if_variance"
         note = (
             f"Over budget but within variance margin "
             f"({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s, margin={warn_margin_seconds:.2f}s)"
@@ -67,10 +74,12 @@ def check_component_budget(
     elif ratio <= warn_threshold_ratio:
         status = "warn"
         reason_code = "over_budget_warn"
+        action = "review_utility_budget" if category == "utility" else "optimize_tests"
         note = f"Slightly over budget ({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s)"
     else:
         status = "fail"
         reason_code = "over_budget_fail"
+        action = "optimize_utility_step" if category == "utility" else "optimize_tests"
         note = f"Significantly over budget ({observed_seconds:.2f}s vs {budget_seconds:.2f}s, +{delta:.2f}s, {ratio:.2f}x)"
 
     return BudgetCheckResult(
@@ -82,6 +91,8 @@ def check_component_budget(
         ratio=ratio,
         warn_margin_seconds=warn_margin_seconds,
         reason_code=reason_code,
+        category=category,
+        action=action,
         reviewer_note=note,
     )
 
@@ -96,6 +107,7 @@ def check_validation_runtime_budgets(
     warn_threshold = budget_config.get("warn_threshold_ratio", 1.15)
     warn_margins = budget_config.get("warn_margin_seconds", {})
     global_margin = budget_config.get("global_warn_margin_seconds", 0.0)
+    categories = budget_config.get("component_categories", {})
     required_components = set(budget_config.get("required_components", []))
     optional_components = set(budget_config.get("optional_components", []))
 
@@ -116,7 +128,8 @@ def check_validation_runtime_budgets(
     for component, budget_seconds in budgets.items():
         observed = timing_map.get(component)
         margin = warn_margins.get(component, global_margin)
-        result = check_component_budget(component, observed, budget_seconds, warn_threshold, float(margin))
+        category = str(categories.get(component, "core" if component in required_components else "utility"))
+        result = check_component_budget(component, observed, budget_seconds, warn_threshold, float(margin), category)
         results.append(result)
 
     # Determine overall status with required/optional distinction
@@ -132,13 +145,13 @@ def check_validation_runtime_budgets(
             elif result.status == "fail":
                 required_failing.append(result.component)
 
-    # Check if any measured component is failing
-    measured_failing = [r for r in results if r.status == "fail" and r.observed_seconds is not None]
+    core_failing = [r for r in results if r.status == "fail" and r.category == "core" and r.observed_seconds is not None]
+    utility_failing = [r for r in results if r.status == "fail" and r.category != "core" and r.observed_seconds is not None]
     measured_warning = [r for r in results if r.status == "warn" and r.observed_seconds is not None]
 
-    if required_failing or measured_failing:
+    if required_failing or core_failing:
         overall_status = "fail"
-    elif required_missing or measured_warning:
+    elif required_missing or measured_warning or utility_failing:
         overall_status = "warn"
     else:
         overall_status = "pass"
@@ -323,6 +336,8 @@ def build_validation_runtime_budget_report(
                 "ratio": r.ratio,
                 "warn_margin_seconds": r.warn_margin_seconds,
                 "reason_code": r.reason_code,
+                "category": r.category,
+                "action": r.action,
                 "reviewer_note": r.reviewer_note,
             }
             for r in results
@@ -351,8 +366,8 @@ def generate_budget_report_markdown(
         "",
         "## Component Budget Status",
         "",
-        "| Component | Status | Reason | Observed (s) | Budget (s) | Delta (s) | Ratio | Margin (s) | Type |",
-        "|-----------|--------|--------|--------------|------------|-----------|-------|------------|------|",
+        "| Component | Category | Status | Reason | Action | Observed (s) | Budget (s) | Delta (s) | Ratio | Margin (s) | Type |",
+        "|-----------|----------|--------|--------|--------|--------------|------------|-----------|-------|------------|------|",
     ]
 
     for result in results:
@@ -373,7 +388,7 @@ def generate_budget_report_markdown(
             comp_type = "unknown"
 
         lines.append(
-            f"| {result.component} | {status_icon} {result.status} | {result.reason_code} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} | {margin_str} | {comp_type} |"
+            f"| {result.component} | {result.category} | {status_icon} {result.status} | {result.reason_code} | {result.action} | {obs_str} | {budget_str} | {delta_str} | {ratio_str} | {margin_str} | {comp_type} |"
         )
 
     lines.extend([

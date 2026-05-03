@@ -4,7 +4,7 @@
     "fast_total": 105.0,
     "pytest_fast": 95.0,
     "compileall": 1.0,
-    "path_hygiene": 5.0,
+    "path_hygiene": 12.0,
     "init_py_find": 1.0,
     "git_init_py_check": 1.0,
     "dataset_quality_tests": 15.0,
@@ -31,6 +31,20 @@
     "data_source_audit"
   ],
   "warn_threshold_ratio": 1.15,
+  "component_categories": {
+    "fast_total": "core",
+    "pytest_fast": "core",
+    "compileall": "utility",
+    "path_hygiene": "utility",
+    "init_py_find": "utility",
+    "git_init_py_check": "utility",
+    "dataset_quality_tests": "utility",
+    "contract_tests": "utility",
+    "scenario_tests": "utility",
+    "manifest_tests": "utility",
+    "micro_smoke": "utility",
+    "data_source_audit": "utility"
+  },
   "notes": [
     "Budgets are guardrails for local/CI validation sustainability.",
     "They are not performance claims or trading/model performance metrics.",
@@ -42,6 +56,7 @@
   "global_warn_margin_seconds": 0.0,
   "warn_margin_seconds": {
     "pytest_fast": 5.0,
-    "fast_total": 5.0
+    "fast_total": 5.0,
+    "path_hygiene": 2.0
   }
 }
