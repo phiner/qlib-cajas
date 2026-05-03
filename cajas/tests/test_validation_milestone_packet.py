@@ -206,6 +206,17 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         ),
         encoding="utf-8",
     )
+    owner_handoff = tmp_path / "owner_handoff.json"
+    owner_handoff.write_text(
+        json.dumps(
+            {
+                "status": "open",
+                "blocking_consumer_count": 1,
+                "handoff_items": [{"consumer": "x", "owner": "external-review-needed", "next_action": "identify_owner"}],
+            }
+        ),
+        encoding="utf-8",
+    )
     packet = build_validation_milestone_packet(
         review_bundle_root=p["default"],
         alias_fallback_bundle_root=p["alias"],
@@ -215,15 +226,18 @@ def test_milestone_packet_includes_evidence_closure_and_runtime_triage(tmp_path:
         data_source_audit_report=p["audit"],
         fast_timing_json=p["timing"],
         consumer_evidence_closure_report=evidence,
+        consumer_owner_handoff=owner_handoff,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=pytest_profile,
     )
     assert packet["consumer_evidence_closure_summary"]["status"] == "incomplete"
     assert packet["runtime_watch_triage_summary"]["status"] == "watch"
+    assert packet["consumer_owner_handoff_summary"]["status"] == "open"
     assert packet["pytest_runtime_profile_summary"]["status"] == "watch"
     md = render_validation_milestone_packet_markdown(packet)
     assert "Consumer Evidence Closure" in md
     assert "Runtime Watch Triage" in md
+    assert "Consumer Owner Handoff" in md
     assert "Pytest Runtime Profile" in md
 
 

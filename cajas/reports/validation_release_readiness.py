@@ -21,6 +21,7 @@ def build_validation_release_readiness_report(
     runtime_budget_report: Path,
     alias_removal_plan: Path | None = None,
     consumer_evidence_closure_report: Path | None = None,
+    consumer_owner_handoff: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -36,6 +37,7 @@ def build_validation_release_readiness_report(
         if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
         else {}
     )
+    owner_handoff = _load_json(consumer_owner_handoff) if consumer_owner_handoff and consumer_owner_handoff.exists() else {}
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -55,6 +57,7 @@ def build_validation_release_readiness_report(
     removal_plan_status = removal_plan.get("status")
     evidence_closure_status = evidence_closure.get("status")
     runtime_watch_triage_status = runtime_watch_triage.get("status")
+    owner_handoff_status = owner_handoff.get("status")
 
     required_gates = [
         {"name": "runtime_budget", "status": runtime_budget_status},
@@ -103,6 +106,8 @@ def build_validation_release_readiness_report(
         watch_items.append(f"alias_removal_plan_status={removal_plan_status}")
     if evidence_closure_status in {"incomplete", "blocked"}:
         watch_items.append(f"consumer_evidence_closure_status={evidence_closure_status}")
+    if owner_handoff_status in {"open", "blocked"}:
+        watch_items.append(f"consumer_owner_handoff_status={owner_handoff_status}")
     if runtime_watch_triage_status in {"watch", "warn", "fail"}:
         watch_items.append(f"runtime_watch_triage_status={runtime_watch_triage_status}")
 
@@ -148,6 +153,10 @@ def build_validation_release_readiness_report(
         "consumer_evidence_closure_status": evidence_closure_status,
         "consumer_evidence_closure_next_actions": evidence_closure.get("next_actions", []),
         "consumer_evidence_action_plan": evidence_closure.get("action_plan", []),
+        "consumer_owner_handoff_status": owner_handoff_status,
+        "consumer_owner_handoff_blocking_consumer_count": owner_handoff.get("blocking_consumer_count"),
+        "consumer_owner_handoff_items": owner_handoff.get("handoff_items", []),
+        "consumer_owner_handoff_message": owner_handoff.get("recommended_message"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
         "runtime_watch_triage_recommendation": runtime_watch_triage.get("recommendation"),
         "runtime_watch_triage_test_count": runtime_watch_triage.get("test_count"),
@@ -182,6 +191,7 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Milestone status: `{payload.get('milestone_status', 'watch')}`",
             f"- Alias removal plan: `{payload.get('alias_removal_plan_status', 'not_included')}`",
             f"- Consumer evidence closure: `{payload.get('consumer_evidence_closure_status', 'not_included')}`",
+            f"- Consumer owner handoff: `{payload.get('consumer_owner_handoff_status', 'not_included')}`",
             f"- Runtime watch triage: `{payload.get('runtime_watch_triage_status', 'not_included')}`",
             f"- Runtime watch triage test_count: `{payload.get('runtime_watch_triage_test_count', 'n/a')}`",
             f"- Pytest runtime profile: `{payload.get('pytest_runtime_profile_status', 'not_included')}`",

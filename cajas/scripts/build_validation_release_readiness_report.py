@@ -24,6 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-budget-report", required=True, type=Path)
     parser.add_argument("--alias-removal-plan", type=Path)
     parser.add_argument("--consumer-evidence-closure-report", type=Path)
+    parser.add_argument("--consumer-owner-handoff", type=Path)
     parser.add_argument("--runtime-watch-triage-report", type=Path)
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
@@ -39,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
         runtime_budget_report=args.runtime_budget_report,
         alias_removal_plan=args.alias_removal_plan,
         consumer_evidence_closure_report=args.consumer_evidence_closure_report,
+        consumer_owner_handoff=args.consumer_owner_handoff,
         runtime_watch_triage_report=args.runtime_watch_triage_report,
         pytest_runtime_profile=args.pytest_runtime_profile,
     )

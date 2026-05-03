@@ -75,6 +75,7 @@ def build_validation_milestone_packet(
     release_readiness_report: Path | None = None,
     alias_removal_plan: Path | None = None,
     consumer_evidence_closure_report: Path | None = None,
+    consumer_owner_handoff: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -102,6 +103,7 @@ def build_validation_milestone_packet(
         if consumer_evidence_closure_report and consumer_evidence_closure_report.exists()
         else None
     )
+    owner_handoff = _load_json(consumer_owner_handoff) if consumer_owner_handoff and consumer_owner_handoff.exists() else None
     runtime_watch_triage = (
         _load_json(runtime_watch_triage_report)
         if runtime_watch_triage_report and runtime_watch_triage_report.exists()
@@ -211,6 +213,7 @@ def build_validation_milestone_packet(
         "release_readiness_summary": release_readiness,
         "alias_removal_plan_summary": removal_plan,
         "consumer_evidence_closure_summary": evidence_closure,
+        "consumer_owner_handoff_summary": owner_handoff,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
@@ -316,6 +319,12 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- recommendation: `{(payload.get('runtime_watch_triage_summary') or {}).get('recommendation', 'n/a')}`",
             f"- test_count: `{(payload.get('runtime_watch_triage_summary') or {}).get('test_count', 'n/a')}`",
             f"- seconds_per_test: `{(payload.get('runtime_watch_triage_summary') or {}).get('seconds_per_test', 'n/a')}`",
+            "",
+            "## Consumer Owner Handoff",
+            "",
+            f"- `{(payload.get('consumer_owner_handoff_summary') or {}).get('status', 'not_included')}`",
+            f"- blocking_consumer_count: `{(payload.get('consumer_owner_handoff_summary') or {}).get('blocking_consumer_count', 'n/a')}`",
+            f"- handoff_items: `{(payload.get('consumer_owner_handoff_summary') or {}).get('handoff_items', [])}`",
             "",
             "## Pytest Runtime Profile",
             "",
