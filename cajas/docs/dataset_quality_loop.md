@@ -895,3 +895,30 @@ python cajas/scripts/build_validation_review_bundle.py \
 **Compatibility window**:
 - Canonical source remains `history`.
 - `history_update` remains deprecated alias during migration window.
+
+
+## Phase 1436–1465: Fast Validation Timing Freshness and Consistency Guard
+
+**Goal**: Ensure runtime budget checks and review bundles consume fresh, internally consistent fast-validation timing data.
+
+**What changed**:
+- Fast-validation timing JSON (`run_fast_validation.py`) now includes freshness metadata:
+  - `created_at`, `run_id`, `command`, `timing_source`
+  - plus existing `tier`, `results`, `total_seconds`
+  - and explicit `pytest_fast` field
+- Runtime budget reporting now includes `timing_consistency` with `pass|warn|fail`:
+  - `fail`: required timing missing/non-numeric/negative
+  - `warn`: legacy metadata missing, stale timing, or total/step mismatch
+  - `pass`: timing data is fresh and numerically consistent
+- Budget checker CLI now supports timing consistency parameters:
+  - `--expected-tier`
+  - `--max-age-seconds`
+- Review bundle integration now surfaces timing consistency in manifest/index and applies guardrails:
+  - consistency `fail` blocks bundle unless `--warn-only`
+  - consistency `warn` is recorded for reviewer visibility
+
+**Why this phase**:
+- Addresses the observed risk where wall-clock runtime could diverge from stale timing JSON used by budget checks.
+
+**Known limitation**:
+- Legacy timing payloads remain supported for compatibility and are surfaced as warnings instead of hard failures unless critical numeric fields are invalid.

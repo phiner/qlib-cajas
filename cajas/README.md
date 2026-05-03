@@ -1065,3 +1065,13 @@ Current audit delta:
 - Updated compatibility CLI exit behavior and added `--fail-on-warn`
 - Added review bundle compatibility gating: fail status raises unless `--warn-only`
 - Kept canonical `history` contract and deprecated `history_update` compatibility window
+
+
+## Phase 1436–1465 Addendum: Fast Validation Timing Freshness and Consistency Guard
+
+- Added timing freshness metadata to fast validation timing JSON:
+  - `created_at`, `run_id`, `command`, `timing_source`
+- Added timing consistency assessment to runtime budget reporting with `pass|warn|fail` semantics.
+- Runtime budget reports now include a `timing_consistency` section in JSON/Markdown outputs.
+- Review bundle workflow now records timing consistency status in manifest/index and gates failure-level consistency unless `--warn-only`.
+- This improves reviewer confidence that budget checks are using fresh, internally consistent timing inputs.

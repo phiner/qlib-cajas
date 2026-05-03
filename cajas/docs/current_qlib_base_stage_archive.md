@@ -2183,3 +2183,24 @@ Readability polish only. No new workflow semantics, no Qlib core changes, and no
 3. CLI exit behavior now supports fail-level gating and `--fail-on-warn`.
 4. Review bundle compatibility integration now honors fail-level gating unless `--warn-only`.
 5. Canonical `history` remains source of truth; `history_update` remains deprecated during compatibility window.
+
+
+## Phase 1436–1465 Addendum: Fast Validation Timing Freshness and Consistency Guard
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Prevent stale/inconsistent fast-validation timing payloads from silently weakening runtime budget and review-bundle decisions.
+
+### Highlights
+
+1. Added freshness metadata to fast timing outputs (`created_at`, `run_id`, `command`, `timing_source`).
+2. Added timing consistency assessment integrated with runtime budget reporting.
+3. Added explicit timing consistency status (`pass|warn|fail`) and issue list to budget JSON/Markdown reports.
+4. Integrated timing consistency into review-bundle manifest/index reviewer surfaces.
+5. Added failure-level bundle gating for timing consistency (`--warn-only` remains override path).
+
+### Scope Confirmation
+
+Offline Qlib research validation observability only. No trading execution, broker routing, live/paper trading, annotation workflows, or Qlib core changes introduced.
