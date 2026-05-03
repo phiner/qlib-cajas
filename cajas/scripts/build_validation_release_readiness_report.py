@@ -31,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--alias-sunset-schedule", type=Path)
     parser.add_argument("--canonical-evidence-update-plan", type=Path)
     parser.add_argument("--canonical-evidence-apply-report", type=Path)
+    parser.add_argument("--applied-evidence-readiness", type=Path)
+    parser.add_argument("--alias-fallback-removal-readiness", type=Path)
     parser.add_argument("--runtime-watch-triage-report", type=Path)
     parser.add_argument("--pytest-runtime-profile", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
@@ -53,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
         alias_sunset_schedule=args.alias_sunset_schedule,
         canonical_evidence_update_plan=args.canonical_evidence_update_plan,
         canonical_evidence_apply_report=args.canonical_evidence_apply_report,
+        applied_evidence_readiness=args.applied_evidence_readiness,
+        alias_fallback_removal_readiness=args.alias_fallback_removal_readiness,
         runtime_watch_triage_report=args.runtime_watch_triage_report,
         pytest_runtime_profile=args.pytest_runtime_profile,
     )

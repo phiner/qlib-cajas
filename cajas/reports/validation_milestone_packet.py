@@ -82,6 +82,8 @@ def build_validation_milestone_packet(
     alias_sunset_schedule: Path | None = None,
     canonical_evidence_update_plan: Path | None = None,
     canonical_evidence_apply_report: Path | None = None,
+    applied_evidence_readiness: Path | None = None,
+    alias_fallback_removal_readiness: Path | None = None,
     runtime_watch_triage_report: Path | None = None,
     pytest_runtime_profile: Path | None = None,
 ) -> dict[str, Any]:
@@ -134,6 +136,16 @@ def build_validation_milestone_packet(
     apply_report = (
         _load_json(canonical_evidence_apply_report)
         if canonical_evidence_apply_report and canonical_evidence_apply_report.exists()
+        else None
+    )
+    applied_readiness = (
+        _load_json(applied_evidence_readiness)
+        if applied_evidence_readiness and applied_evidence_readiness.exists()
+        else None
+    )
+    fallback_removal_readiness = (
+        _load_json(alias_fallback_removal_readiness)
+        if alias_fallback_removal_readiness and alias_fallback_removal_readiness.exists()
         else None
     )
     runtime_watch_triage = (
@@ -252,6 +264,8 @@ def build_validation_milestone_packet(
         "alias_sunset_schedule_summary": sunset_schedule,
         "canonical_evidence_update_plan_summary": update_plan,
         "canonical_evidence_apply_report_summary": apply_report,
+        "applied_evidence_readiness_summary": applied_readiness,
+        "alias_fallback_removal_readiness_summary": fallback_removal_readiness,
         "runtime_watch_triage_summary": runtime_watch_triage,
         "pytest_runtime_profile_summary": runtime_profile,
         "alias_migration_summary": migration,
@@ -399,6 +413,17 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('status', 'not_included')}`",
             f"- next_action: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('next_action', 'n/a')}`",
             f"- alias_fallback_removal_allowed: `{(payload.get('canonical_evidence_apply_report_summary') or {}).get('alias_fallback_removal_allowed', 'n/a')}`",
+            "",
+            "## Applied Evidence Readiness",
+            "",
+            f"- `{(payload.get('applied_evidence_readiness_summary') or {}).get('status', 'not_included')}`",
+            f"- next_action: `{(payload.get('applied_evidence_readiness_summary') or {}).get('next_action', 'n/a')}`",
+            "",
+            "## Alias Fallback Removal Readiness",
+            "",
+            f"- `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('status', 'not_included')}`",
+            f"- preconditions_met: `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('preconditions_met', 'n/a')}`",
+            f"- do_not_remove_in_this_phase: `{(payload.get('alias_fallback_removal_readiness_summary') or {}).get('do_not_remove_in_this_phase', 'n/a')}`",
             "",
             "## Pytest Runtime Profile",
             "",

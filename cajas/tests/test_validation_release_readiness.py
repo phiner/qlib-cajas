@@ -51,6 +51,14 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         tmp_path / "apply_report.json",
         {"status": "dry_run_ready", "next_action": "manual_apply_in_dedicated_phase", "alias_fallback_removal_allowed": False},
     )
+    applied_readiness = _write_json(
+        tmp_path / "applied_readiness.json",
+        {"status": "watch", "next_action": "resolve_applied_projection_gaps"},
+    )
+    fallback_removal = _write_json(
+        tmp_path / "fallback_removal.json",
+        {"status": "not_ready", "preconditions_met": False, "do_not_remove_in_this_phase": True},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "watch", "recommendation": "profile_slow_tests"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -72,6 +80,8 @@ def _build_report(tmp_path: Path, *, alias_gate: str, runtime_variance: str = "p
         alias_sunset_schedule=schedule,
         canonical_evidence_update_plan=update_plan,
         canonical_evidence_apply_report=apply_report,
+        applied_evidence_readiness=applied_readiness,
+        alias_fallback_removal_readiness=fallback_removal,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -137,6 +147,14 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         tmp_path / "apply_report.json",
         {"status": "dry_run_ready", "next_action": "manual_apply_in_dedicated_phase", "alias_fallback_removal_allowed": False},
     )
+    applied_readiness = _write_json(
+        tmp_path / "applied_readiness.json",
+        {"status": "ready_for_real_apply", "next_action": "perform_real_apply_in_dedicated_phase_or_schedule_alias_removal_review"},
+    )
+    fallback_removal = _write_json(
+        tmp_path / "fallback_removal.json",
+        {"status": "ready_to_schedule", "preconditions_met": True, "do_not_remove_in_this_phase": True},
+    )
     triage = _write_json(tmp_path / "runtime_triage.json", {"status": "pass", "recommendation": "monitor"})
     profile = _write_json(
         tmp_path / "pytest_profile.json",
@@ -158,6 +176,8 @@ def test_release_readiness_ready_when_all_green(tmp_path: Path) -> None:
         alias_sunset_schedule=schedule,
         canonical_evidence_update_plan=update_plan,
         canonical_evidence_apply_report=apply_report,
+        applied_evidence_readiness=applied_readiness,
+        alias_fallback_removal_readiness=fallback_removal,
         runtime_watch_triage_report=triage,
         pytest_runtime_profile=profile,
     )
@@ -182,3 +202,5 @@ def test_release_readiness_includes_alias_removal_plan_summary(tmp_path: Path) -
     assert report["alias_sunset_schedule_status"] == "not_scheduled"
     assert report["canonical_evidence_update_plan_status"] == "not_ready"
     assert report["canonical_evidence_apply_report_status"] == "dry_run_ready"
+    assert report["applied_evidence_readiness_status"] == "watch"
+    assert report["alias_fallback_removal_readiness_status"] == "not_ready"
