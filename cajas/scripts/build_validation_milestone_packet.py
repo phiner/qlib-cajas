@@ -46,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--maintenance-cadence", type=Path)
     parser.add_argument("--maintenance-checklist", type=Path)
     parser.add_argument("--optional-followups", type=Path)
+    parser.add_argument("--maintenance-governance-closure", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     parser.add_argument("--warn-only", action="store_true")
@@ -96,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         maintenance_cadence=args.maintenance_cadence,
         maintenance_checklist=args.maintenance_checklist,
         optional_followups=args.optional_followups,
+        maintenance_governance_closure=args.maintenance_governance_closure,
     )
 
     if missing:

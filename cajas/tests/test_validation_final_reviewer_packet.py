@@ -49,6 +49,13 @@ def _inputs(tmp_path: Path):
                 "items": [{"id": "slow-test-optimization"}],
             },
         ),
+        "maintenance_governance_closure": _write(
+            tmp_path / "governance.json",
+            {
+                "status": "ready",
+                "conclusion": "routine",
+            },
+        ),
     }
 
 
@@ -60,8 +67,10 @@ def test_final_reviewer_packet_ready_for_review(tmp_path: Path) -> None:
     assert packet["maintenance_cadence_status"] == "routine"
     assert packet["maintenance_checklist_status"] == "ready"
     assert packet["optional_followups_count"] == 1
+    assert packet["maintenance_governance_closure_status"] == "ready"
     md = render_validation_final_reviewer_packet_markdown(packet)
     assert "Reviewer Handoff" in md
+    assert "Governance Closure" in md
     assert "Optional Followup Queue" in md
     assert "Scope Boundary" in md
 

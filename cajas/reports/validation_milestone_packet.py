@@ -92,6 +92,7 @@ def build_validation_milestone_packet(
     maintenance_cadence: Path | None = None,
     maintenance_checklist: Path | None = None,
     optional_followups: Path | None = None,
+    maintenance_governance_closure: Path | None = None,
 ) -> dict[str, Any]:
     default_final = _load_json(review_bundle_root / "final_status.json")
     alias_final = _load_json(alias_fallback_bundle_root / "final_status.json")
@@ -172,6 +173,7 @@ def build_validation_milestone_packet(
     cadence_packet = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else None
     checklist_packet = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else None
     followups_packet = _load_json(optional_followups) if optional_followups and optional_followups.exists() else None
+    governance_packet = _load_json(maintenance_governance_closure) if maintenance_governance_closure and maintenance_governance_closure.exists() else None
 
     default_overall = _gate_overall_from_final_status(default_final)
     alias_overall = _gate_overall_from_final_status(alias_final)
@@ -351,6 +353,7 @@ def build_validation_milestone_packet(
         "maintenance_cadence_summary": cadence_packet,
         "maintenance_checklist_summary": checklist_packet,
         "optional_followups_summary": followups_packet,
+        "maintenance_governance_closure_summary": governance_packet,
         "alias_migration_summary": migration,
         "alias_sunset_review_summary": alias_sunset,
         "data_source_audit_summary": {
@@ -476,6 +479,12 @@ def render_validation_milestone_packet_markdown(payload: dict[str, Any]) -> str:
             f"- `{(payload.get('optional_followups_summary') or {}).get('status', 'not_included')}`",
             f"- blocking: `{(payload.get('optional_followups_summary') or {}).get('blocking', 'n/a')}`",
             f"- items_count: `{len((payload.get('optional_followups_summary') or {}).get('items', []))}`",
+            "",
+            "## Maintenance Governance Closure",
+            "",
+            f"- `{(payload.get('maintenance_governance_closure_summary') or {}).get('status', 'not_included')}`",
+            f"- conclusion: `{(payload.get('maintenance_governance_closure_summary') or {}).get('conclusion', 'n/a')}`",
+            f"- milestone_watch_context_only: `{(payload.get('maintenance_governance_closure_summary') or {}).get('conclusion') in {'routine', 'ready_for_review', 'watch_non_blocking'}}`",
             "",
             "## Alias Removal Plan",
             "",

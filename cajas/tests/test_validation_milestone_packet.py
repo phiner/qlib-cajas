@@ -429,6 +429,7 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     cadence = tmp_path / "cadence.json"
     checklist = tmp_path / "checklist.json"
     followups = tmp_path / "followups.json"
+    governance = tmp_path / "governance.json"
     runtime_cycle = tmp_path / "runtime_cycle.json"
     runtime_variance = tmp_path / "runtime_variance.json"
     alias_sunset.write_text(json.dumps({"status": "watch"}), encoding="utf-8")
@@ -439,6 +440,7 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     cadence.write_text(json.dumps({"status": "routine", "recommended_cadence": "next_release_cycle"}), encoding="utf-8")
     checklist.write_text(json.dumps({"status": "ready", "mode": "routine_maintenance", "optional_followup_count": 2}), encoding="utf-8")
     followups.write_text(json.dumps({"status": "open", "blocking": False, "items": [{"id": "x"}, {"id": "y"}]}), encoding="utf-8")
+    governance.write_text(json.dumps({"status": "watch", "conclusion": "watch_non_blocking"}), encoding="utf-8")
     runtime_cycle.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
     runtime_variance.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
     packet = build_validation_milestone_packet(
@@ -457,6 +459,7 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
         maintenance_cadence=cadence,
         maintenance_checklist=checklist,
         optional_followups=followups,
+        maintenance_governance_closure=governance,
         runtime_release_cycle_report=runtime_cycle,
         runtime_variance_report=runtime_variance,
     )
@@ -467,6 +470,7 @@ def test_milestone_ready_for_review_semantics_when_non_blocking_governance_watch
     assert packet["maintenance_cadence"] == "next_release_cycle"
     assert packet["maintenance_checklist_summary"]["status"] == "ready"
     assert packet["optional_followups_summary"]["status"] == "open"
+    assert packet["maintenance_governance_closure_summary"]["status"] == "watch"
 
 
 def test_cli_missing_critical_fails_without_warn_only(tmp_path: Path) -> None:

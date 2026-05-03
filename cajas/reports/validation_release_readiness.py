@@ -38,6 +38,7 @@ def build_validation_release_readiness_report(
     maintenance_cadence: Path | None = None,
     maintenance_checklist: Path | None = None,
     optional_followups: Path | None = None,
+    maintenance_governance_closure: Path | None = None,
 ) -> dict[str, Any]:
     milestone = _load_json(milestone_packet)
     alias = _load_json(alias_sunset_review)
@@ -64,6 +65,7 @@ def build_validation_release_readiness_report(
     cadence_packet = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else {}
     checklist_packet = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else {}
     followups_packet = _load_json(optional_followups) if optional_followups and optional_followups.exists() else {}
+    governance_packet = _load_json(maintenance_governance_closure) if maintenance_governance_closure and maintenance_governance_closure.exists() else {}
 
     alias_status = alias.get("status", "watch")
     alias_gate_status = (alias.get("decision_gate") or {}).get("status", alias_status)
@@ -301,6 +303,8 @@ def build_validation_release_readiness_report(
         "optional_followups_status": followups_packet.get("status"),
         "optional_followups_count": len(followups_packet.get("items", [])),
         "optional_followups_blocking": followups_packet.get("blocking", False),
+        "maintenance_governance_closure_status": governance_packet.get("status"),
+        "maintenance_governance_closure_conclusion": governance_packet.get("conclusion"),
         "alias_fallback_removal_readiness_preconditions_met": fallback_removal_readiness.get("preconditions_met"),
         "alias_fallback_removal_readiness_do_not_remove_in_this_phase": fallback_removal_readiness.get("do_not_remove_in_this_phase"),
         "runtime_watch_triage_status": runtime_watch_triage_status,
@@ -341,6 +345,8 @@ def render_validation_release_readiness_markdown(payload: dict[str, Any]) -> str
             f"- Maintenance cadence recommended: `{payload.get('maintenance_cadence_recommended_cadence', 'n/a')}`",
             f"- Maintenance checklist status: `{payload.get('maintenance_checklist_status', 'not_included')}`",
             f"- Optional followups count: `{payload.get('optional_followups_count', 0)}`",
+            f"- Governance closure status: `{payload.get('maintenance_governance_closure_status', 'not_included')}`",
+            f"- Governance closure conclusion: `{payload.get('maintenance_governance_closure_conclusion', 'n/a')}`",
             f"- Release ready after post-removal: `{payload.get('release_ready_after_post_removal')}`",
             "",
             "## Watch Items",

@@ -395,6 +395,10 @@ def test_release_readiness_includes_checklist_and_followups(tmp_path: Path) -> N
         tmp_path / "followups.json",
         {"status": "open", "blocking": False, "items": [{"id": "a"}, {"id": "b"}]},
     )
+    governance = _write_json(
+        tmp_path / "governance.json",
+        {"status": "watch", "conclusion": "watch_non_blocking"},
+    )
     payload = build_validation_release_readiness_report(
         milestone_packet=tmp_path / "milestone.json",
         alias_sunset_review=tmp_path / "alias.json",
@@ -417,7 +421,9 @@ def test_release_readiness_includes_checklist_and_followups(tmp_path: Path) -> N
         pytest_runtime_profile=tmp_path / "pytest_profile.json",
         maintenance_checklist=checklist,
         optional_followups=followups,
+        maintenance_governance_closure=governance,
     )
     assert payload["maintenance_checklist_status"] == "ready"
     assert payload["optional_followups_status"] == "open"
     assert payload["optional_followups_blocking"] is False
+    assert payload["maintenance_governance_closure_status"] == "watch"

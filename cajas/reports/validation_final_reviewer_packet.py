@@ -26,6 +26,7 @@ def build_validation_final_reviewer_packet(
     maintenance_cadence: Path | None = None,
     maintenance_checklist: Path | None = None,
     optional_followups: Path | None = None,
+    maintenance_governance_closure: Path | None = None,
 ) -> dict[str, Any]:
     final_closure = _load_json(release_ready_closure)
     alias_closure = _load_json(alias_post_removal_closure)
@@ -40,6 +41,7 @@ def build_validation_final_reviewer_packet(
     cadence = _load_json(maintenance_cadence) if maintenance_cadence and maintenance_cadence.exists() else {}
     checklist = _load_json(maintenance_checklist) if maintenance_checklist and maintenance_checklist.exists() else {}
     followups_queue = _load_json(optional_followups) if optional_followups and optional_followups.exists() else {}
+    governance = _load_json(maintenance_governance_closure) if maintenance_governance_closure and maintenance_governance_closure.exists() else {}
 
     canonical_only = isinstance(manifest.get("history"), dict) and "history_update" not in manifest
     legacy_kept = readiness.get("legacy_read_normalization_kept") is True
@@ -98,6 +100,8 @@ def build_validation_final_reviewer_packet(
         "optional_followups_status": followups_queue.get("status"),
         "optional_followups_count": len(followups_queue.get("items", [])),
         "optional_followups_blocking": followups_queue.get("blocking", False),
+        "maintenance_governance_closure_status": governance.get("status"),
+        "maintenance_governance_closure_conclusion": governance.get("conclusion"),
         "remaining_followups": followups,
         "primary_artifacts": [
             str(release_ready_closure),
@@ -154,6 +158,11 @@ def render_validation_final_reviewer_packet_markdown(payload: dict[str, Any]) ->
             f"- status: `{payload.get('optional_followups_status', 'not_included')}`",
             f"- count: `{payload.get('optional_followups_count', 0)}`",
             f"- blocking: `{payload.get('optional_followups_blocking', False)}`",
+            "",
+            "## Governance Closure",
+            "",
+            f"- status: `{payload.get('maintenance_governance_closure_status', 'not_included')}`",
+            f"- conclusion: `{payload.get('maintenance_governance_closure_conclusion', 'n/a')}`",
             "",
             "## Reviewer Handoff",
             "",
