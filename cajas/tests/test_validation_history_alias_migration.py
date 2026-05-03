@@ -35,6 +35,7 @@ def test_history_alias_migration_pass(tmp_path: Path) -> None:
     )
     assert report["status"] == "pass"
     assert report["recommendation"] == "ready_for_default_no_alias_trial"
+    assert report["comparison_mode"] == "no-alias"
     md = render_history_alias_migration_markdown(report)
     assert "Scope Note" in md
 
@@ -86,3 +87,15 @@ def test_history_alias_migration_warn_on_optional_diff(tmp_path: Path) -> None:
     )
     assert report["status"] == "warn"
     assert report["recommendation"] == "not_ready"
+
+
+def test_history_alias_migration_alias_fallback_mode(tmp_path: Path) -> None:
+    gates = [{"name": "runtime_budget", "required": True, "status": "pass"}]
+    profiles = {"local": "pass", "ci": "pass", "strict": "warn"}
+    _write_bundle(tmp_path / "default", manifest_compat="pass", profiles=profiles, gates=gates)
+    _write_bundle(tmp_path / "alias-fallback", manifest_compat="pass", profiles=profiles, gates=gates)
+    report = build_history_alias_migration_report(
+        default_bundle_root=tmp_path / "default",
+        no_alias_bundle_root=tmp_path / "alias-fallback",
+    )
+    assert report["comparison_mode"] == "alias-fallback"

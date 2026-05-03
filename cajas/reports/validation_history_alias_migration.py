@@ -55,11 +55,12 @@ def build_history_alias_migration_report(
             "summary": f"Default manifest compatibility status is {default_compat!r}.",
         }
     )
+    compare_label = "alias-fallback" if "alias-fallback" in str(no_alias_bundle_root) else "no-alias"
     checks.append(
         {
-            "name": "no_alias_manifest_compatibility",
+            "name": f"{compare_label}_manifest_compatibility",
             "status": "pass" if no_alias_compat == "pass" else "fail",
-            "summary": f"Canonical-only manifest compatibility status is {no_alias_compat!r}.",
+            "summary": f"{compare_label} manifest compatibility status is {no_alias_compat!r}.",
         }
     )
 
@@ -115,6 +116,7 @@ def build_history_alias_migration_report(
         "status": status,
         "default_bundle_root": str(default_bundle_root),
         "no_alias_bundle_root": str(no_alias_bundle_root),
+        "comparison_mode": compare_label,
         "checks": checks,
         "profile_status_comparison": {
             "default": default_profile_status,
