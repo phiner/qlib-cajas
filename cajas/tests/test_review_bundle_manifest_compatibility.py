@@ -1,0 +1,79 @@
+"""Tests for review bundle manifest compatibility check CLI and helpers."""
+
+import json
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from cajas.reports.validation_review_bundle_metadata import (
+    normalize_history_metadata,
+    validate_history_metadata_compatibility,
+)
+from cajas.scripts.check_review_bundle_manifest_compatibility import main as compat_main
+
+
+class ReviewBundleManifestCompatibilityTests(unittest.TestCase):
+    """Validate canonical/legacy compatibility behavior."""
+
+    def test_legacy_only_manifest_emits_warning(self) -> None:
+        manifest = {
+            "runtime_budget_status": "pass",
+            "history_update": {
+                "requested": True,
+                "status": "ok",
+                "history_jsonl": "legacy.jsonl",
+                "summary_json": "legacy.json",
+                "summary_md": "legacy.md",
+                "regression_count": 0,
+            },
+        }
+        normalized = normalize_history_metadata(manifest)
+        self.assertEqual(normalized["source"], "history_update")
+
+        warnings = validate_history_metadata_compatibility(manifest)
+        self.assertTrue(any("legacy-only history_update fallback used" in w for w in warnings))
+
+    def test_cli_outputs_reports(self) -> None:
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            manifest_path = tmp_path / "review_bundle_manifest.json"
+            out_json = tmp_path / "compatibility.json"
+            out_md = tmp_path / "compatibility.md"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "history": {
+                            "enabled": False,
+                            "status": "not_requested",
+                            "note": "History update was not requested for this bundle.",
+                        },
+                        "history_update": {
+                            "deprecated": True,
+                            "use": "history",
+                            "requested": False,
+                            "status": "not_requested",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            code = compat_main(
+                [
+                    "--manifest",
+                    str(manifest_path),
+                    "--out-json",
+                    str(out_json),
+                    "--out-md",
+                    str(out_md),
+                ]
+            )
+            self.assertEqual(code, 0)
+            self.assertTrue(out_json.exists())
+            self.assertTrue(out_md.exists())
+            report = json.loads(out_json.read_text(encoding="utf-8"))
+            self.assertIn(report["status"], ("pass", "warn"))
+
+
+if __name__ == "__main__":
+    unittest.main()

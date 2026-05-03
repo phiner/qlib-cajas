@@ -584,7 +584,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
     def test_normalize_history_metadata_falls_back_to_legacy_shape(self) -> None:
         """Normalization should support old manifests with only history_update."""
-        from cajas.scripts.build_validation_review_bundle import normalize_history_metadata
+        from cajas.reports.validation_review_bundle_metadata import normalize_history_metadata
 
         legacy_manifest = {
             "runtime_budget_status": "pass",
@@ -611,7 +611,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
 
     def test_normalize_history_metadata_prefers_canonical_history(self) -> None:
         """Normalization should prioritize canonical history when both exist."""
-        from cajas.scripts.build_validation_review_bundle import normalize_history_metadata
+        from cajas.reports.validation_review_bundle_metadata import normalize_history_metadata
 
         manifest = {
             "history": {
@@ -636,6 +636,67 @@ class ValidationReviewBundleTests(unittest.TestCase):
         self.assertEqual(normalized["history_jsonl"], "canonical.jsonl")
         self.assertEqual(normalized["status"], "warn")
         self.assertEqual(normalized["snapshot_count"], 3)
+
+    def test_validate_history_metadata_compatibility_warns_on_disagreement(self) -> None:
+        """Compatibility check should detect canonical/legacy disagreement."""
+        from cajas.reports.validation_review_bundle_metadata import validate_history_metadata_compatibility
+
+        manifest = {
+            "history": {"enabled": True, "status": "pass", "history_jsonl": "a.jsonl"},
+            "history_update": {
+                "requested": False,
+                "status": "error",
+                "history_jsonl": "b.jsonl",
+                "deprecated": False,
+                "use": "legacy",
+            },
+        }
+
+        warnings = validate_history_metadata_compatibility(manifest)
+        self.assertTrue(any("deprecated flag" in warning for warning in warnings))
+        self.assertTrue(any("use should be 'history'" in warning for warning in warnings))
+        self.assertTrue(any("disagrees" in warning for warning in warnings))
+
+    def test_manifest_contains_compatibility_warnings_field(self) -> None:
+        """Generated manifest should expose compatibility warnings field when present."""
+        from cajas.scripts.build_validation_review_bundle import build_review_bundle
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            smoke_root = tmp_path / "smoke"
+            smoke_root.mkdir()
+            (smoke_root / "contract").mkdir()
+            (smoke_root / "contract" / "dataset_quality_contract_report.json").write_text(
+                json.dumps({"status": "pass"}), encoding="utf-8"
+            )
+            out_root = tmp_path / "bundle"
+            self._write_packet_manifest(out_root)
+            history_jsonl = tmp_path / "history" / "history.jsonl"
+
+            with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
+                manifest = build_review_bundle(
+                    bundle_name="test_bundle",
+                    out_root=out_root,
+                    smoke_root=smoke_root,
+                    fast_timing_json=None,
+                    budgets=None,
+                    baseline_root=None,
+                    create_baseline_from_current=False,
+                    run_fast_validation=False,
+                    skip_fast_validation=True,
+                    run_data_source_audit=False,
+                    skip_data_source_audit=True,
+                    data_root=None,
+                    build_experiment_manifest=False,
+                    copy_artifacts=False,
+                    update_history=True,
+                    history_jsonl=history_jsonl,
+                    history_last_n=10,
+                    warn_only=True,
+                )
+
+            self.assertIn("history_update", manifest)
+            self.assertTrue(manifest["history_update"]["deprecated"])
 
 
 if __name__ == "__main__":
