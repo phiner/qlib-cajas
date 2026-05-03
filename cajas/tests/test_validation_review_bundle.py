@@ -1259,7 +1259,7 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self.assertNotIn("history_update", manifest)
             self.assertEqual(manifest["manifest_compatibility"]["status"], "pass")
 
-    def test_include_history_update_alias_emits_deprecated_alias(self) -> None:
+    def test_include_history_update_alias_fails_fast_after_sunset(self) -> None:
         from cajas.scripts.build_validation_review_bundle import build_review_bundle
 
         with TemporaryDirectory() as tmp:
@@ -1274,32 +1274,30 @@ class ValidationReviewBundleTests(unittest.TestCase):
             self._write_packet_manifest(out_root)
 
             with patch("cajas.scripts.build_validation_review_bundle.run_command", self._mock_run_command):
-                manifest = build_review_bundle(
-                    bundle_name="test_bundle",
-                    out_root=out_root,
-                    smoke_root=smoke_root,
-                    fast_timing_json=None,
-                    budgets=None,
-                    baseline_root=None,
-                    create_baseline_from_current=False,
-                    run_fast_validation=False,
-                    skip_fast_validation=True,
-                    run_data_source_audit=False,
-                    skip_data_source_audit=True,
-                    data_root=None,
-                    build_experiment_manifest=False,
-                    copy_artifacts=False,
-                    update_history=True,
-                    history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
-                    history_last_n=10,
-                    check_manifest_compatibility=True,
-                    warn_only=True,
-                    ci=True,
-                    include_history_update_alias=True,
-                )
-
-            self.assertIn("history_update", manifest)
-            self.assertEqual(manifest["history_update"]["deprecation_stage"], "compatibility_alias")
+                with self.assertRaises(ValueError):
+                    build_review_bundle(
+                        bundle_name="test_bundle",
+                        out_root=out_root,
+                        smoke_root=smoke_root,
+                        fast_timing_json=None,
+                        budgets=None,
+                        baseline_root=None,
+                        create_baseline_from_current=False,
+                        run_fast_validation=False,
+                        skip_fast_validation=True,
+                        run_data_source_audit=False,
+                        skip_data_source_audit=True,
+                        data_root=None,
+                        build_experiment_manifest=False,
+                        copy_artifacts=False,
+                        update_history=True,
+                        history_jsonl=tmp_path / "history" / "review_bundle_history.jsonl",
+                        history_last_n=10,
+                        check_manifest_compatibility=True,
+                        warn_only=True,
+                        ci=True,
+                        include_history_update_alias=True,
+                    )
 
     def test_omit_flag_still_accepted_as_noop_without_include(self) -> None:
         from cajas.scripts.build_validation_review_bundle import build_review_bundle

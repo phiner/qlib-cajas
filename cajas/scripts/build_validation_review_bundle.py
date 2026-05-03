@@ -148,6 +148,11 @@ def build_review_bundle(
     include_history_update_alias: bool = False,
 ) -> dict[str, Any]:
     """Build validation review bundle."""
+    if include_history_update_alias:
+        raise ValueError(
+            "--include-history-update-alias has been sunset. "
+            "Manifests are canonical-only; legacy manifests remain readable via normalize_history_metadata."
+        )
     out_root.mkdir(parents=True, exist_ok=True)
 
     git_info = get_git_info()
@@ -531,17 +536,9 @@ def build_review_bundle(
             "note": "History update was not requested for this bundle.",
         }
     bundle_manifest["history"] = stable_history
-    # Phase 2006-2065: default manifest is canonical-only. Alias is explicit fallback.
-    should_emit_history_alias = include_history_update_alias and not omit_history_update_alias
-    if should_emit_history_alias:
-        bundle_manifest["history_update"] = {
-            "deprecated": True,
-            "use": "history",
-            "deprecation_stage": "compatibility_alias",
-            "removal_target_phase": "future",
-            "consumer_action": "Read manifest.history instead.",
-            **history_metadata,
-        }
+    # Phase 3206-3325: active alias emission is removed; manifests are canonical-only.
+    if omit_history_update_alias:
+        warnings.append("--omit-history-update-alias is deprecated and now a no-op; canonical-only output is always used.")
     compatibility_issues = validate_history_metadata_compatibility(bundle_manifest)
     if compatibility_issues:
         bundle_manifest["history_compatibility_issues"] = compatibility_issues
@@ -1111,7 +1108,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--include-history-update-alias",
         action="store_true",
-        help="Include deprecated history_update alias for compatibility fallback.",
+        help="Deprecated flag retained for compatibility; now fails fast because alias emission is sunset.",
     )
     parser.add_argument(
         "--omit-history-update-alias",
