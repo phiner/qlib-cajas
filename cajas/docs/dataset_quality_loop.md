@@ -1065,3 +1065,83 @@ python cajas/scripts/build_validation_review_bundle.py \
 
 **Non-goals**:
 - No trading execution automation, broker routing, live/paper trading, annotation workflows, or model-performance claims.
+
+
+## Phase 1646–1705: Runtime Utility Budget Calibration and CI Final-Status Recovery
+
+**Goal**: Remove false fail status driven by tight utility-step budget while preserving strict detection for core runtime regressions.
+
+**Runtime component audit findings**:
+- `run_fast_validation --tier fast` timing includes both core pytest runtime and utility guardrails.
+- `path_hygiene` scans markdown/python/yaml under `cajas/` and `tasks/`, so runtime can vary with repository text footprint.
+- Recent measured values:
+  - prior run: `path_hygiene ~9.59s`
+  - latest run: `path_hygiene ~3.38s`
+- This variance shows `5.0s` was too tight as a hard threshold for a utility scan.
+
+**Decision**:
+- Keep `fast_total` and `pytest_fast` as core required runtime gates.
+- Keep `path_hygiene` as utility budgeted component (still measured and visible).
+- Calibrate `path_hygiene` budget to `12.0s` with `2.0s` utility margin.
+- Treat utility fail as overall runtime `warn` (not `fail`) unless core required gates fail.
+
+**What changed**:
+- `validation_runtime_budgets.json`:
+  - `path_hygiene: 12.0`
+  - `warn_margin_seconds.path_hygiene: 2.0`
+  - `component_categories` mapping
+- Runtime report now includes per-component:
+  - `category`
+  - `reason_code`
+  - `action`
+- Runtime overall-status logic:
+  - core required fail => `fail`
+  - utility fail => `warn`
+  - all within calibrated guardrails => `pass`
+
+**Recommended local command**:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile local \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility \
+  --warn-only
+```
+
+**Recommended CI command**:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_validation_review_bundle.py \
+  --ci \
+  --ci-profile ci \
+  --ci-profile-config cajas/data_examples/validation_ci_profiles.json \
+  --run-fast-validation \
+  --bundle-name dataset_quality_review_bundle \
+  --out-root tmp/validation-review-bundle \
+  --smoke-root tmp/dataset-quality-smoke \
+  --fast-timing-json tmp/fast_validation_latest.json \
+  --budgets cajas/data_examples/validation_runtime_budgets.json \
+  --create-baseline-from-current \
+  --update-history \
+  --history-jsonl tmp/validation-review-bundle/history/review_bundle_history.jsonl \
+  --history-last-n 10 \
+  --check-manifest-compatibility
+```
+
+**Known limitations**:
+- Utility timings remain environment-sensitive; warnings should still be reviewed before relaxing budgets further.
+- Budget calibration improves signal quality but does not replace periodic runtime trend review.
+
+**Non-goals**:
+- No trading execution, broker routing, live/paper trading, annotation workflows, or model-performance claims.

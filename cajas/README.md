@@ -1113,3 +1113,20 @@ Current audit delta:
   - `reason_code` (`within_budget`, `within_variance_margin`, `over_budget_warn`, `over_budget_fail`, `missing_required_timing`)
   - `warn_margin_seconds`
 - Runtime variance handling improves explainability without weakening required gate semantics.
+
+
+## Phase 1646–1705 Addendum: Runtime Utility Budget Calibration and Final-Status Recovery
+
+- Audited runtime budget components into two classes:
+  - core: `fast_total`, `pytest_fast`
+  - utility: `path_hygiene`, `compileall`, `init_py_find`, `git_init_py_check`, and other optional checks
+- Calibrated `path_hygiene` budget from `5.0s` to `12.0s` with `warn_margin_seconds.path_hygiene=2.0`.
+- Added `component_categories` in `validation_runtime_budgets.json` for explicit core vs utility semantics.
+- Runtime budget aggregation now treats utility over-budget failures as overall `warn` instead of `fail` unless core required components fail.
+- Added per-component runtime output fields:
+  - `category`
+  - `action`
+- Action guidance now differentiates:
+  - utility: `review_utility_budget` / `optimize_utility_step`
+  - core: `optimize_tests`
+- Local-profile CI review-bundle final status recovers from false fail caused by unrealistic utility budget.

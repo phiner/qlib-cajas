@@ -2274,3 +2274,29 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 ### Scope Confirmation
 
 Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+
+## Phase 1646–1705 Addendum: Runtime Utility Budget Calibration and CI Final-Status Recovery
+
+**Date**: 2026-05-03
+
+**Branch**: `phase-post-merge-research-next`
+
+**Objective**: Calibrate utility-step runtime budgets to remove false `fail` status while keeping core runtime gates conservative.
+
+### Highlights
+
+1. Audited runtime components into core vs utility classes.
+2. Calibrated `path_hygiene` budget from `5.0s` to `12.0s` with utility margin `2.0s`.
+3. Added explicit `component_categories` to runtime budget config.
+4. Added runtime report fields:
+   - `category`
+   - `action`
+5. Updated runtime overall-status semantics:
+   - core required fail => `fail`
+   - utility fail => `warn`
+6. Recovered local-profile CI final status from false runtime-budget-driven `fail`.
+
+### Scope Confirmation
+
+Offline Qlib validation automation only. No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
