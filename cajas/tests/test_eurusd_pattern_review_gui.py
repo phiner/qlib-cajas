@@ -16,6 +16,9 @@ from cajas.research.eurusd_pattern_review_gui import (
     build_chart_diagnostic_summary,
     build_compact_chart_diagnostic_summary,
     get_chart_height,
+    clamp_sample_index,
+    next_sample_index,
+    should_advance_after_save,
     default_review_values,
     build_review_update_row,
     save_review_action,
@@ -483,6 +486,29 @@ def test_build_persistence_status_message_contains_expected_fields():
     assert "csv=tmp/eurusd/completed.csv" in msg
     assert "jsonl=tmp/eurusd/events.jsonl [written]" in msg
     assert "sample_index=4" in msg
+
+
+def test_sample_index_helpers():
+    assert clamp_sample_index(0, 5) == 0
+    assert clamp_sample_index(-2, 5) == 0
+    assert clamp_sample_index(99, 5) == 4
+    assert next_sample_index(0, 5) == 1
+    assert next_sample_index(4, 5) == 4
+    assert next_sample_index(8, 5) == 4
+
+
+def test_should_advance_after_save_semantics():
+    assert should_advance_after_save({"ok": True, "csv_saved": True, "jsonl_appended": True}) is True
+    assert should_advance_after_save({"ok": True, "csv_saved": True, "jsonl_appended": False, "warning": "x"}) is True
+    assert should_advance_after_save({"ok": False, "csv_saved": False}) is False
+
+
+def test_app_uses_decoupled_sample_index_keys():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert 'key="sample_idx"' not in app_source
+    assert "current_sample_idx" in app_source
+    assert "sample_idx_widget" in app_source
+    assert "pending_sample_idx" in app_source
 
 
 def test_build_chart_diagnostic_summary_contains_required_fields():

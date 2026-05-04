@@ -454,6 +454,23 @@ def build_persistence_status_message(
     )
 
 
+def clamp_sample_index(value: int, row_count: int) -> int:
+    """Clamp sample index into valid range [0, row_count-1]."""
+    if row_count <= 0:
+        return 0
+    return max(0, min(int(value), int(row_count) - 1))
+
+
+def next_sample_index(value: int, row_count: int) -> int:
+    """Return next sample index without exceeding the last row."""
+    return clamp_sample_index(int(value) + 1, row_count)
+
+
+def should_advance_after_save(action_result: Dict[str, Any]) -> bool:
+    """Save-and-next advances when CSV save succeeded, even if JSONL warned."""
+    return bool(action_result.get("ok")) and bool(action_result.get("csv_saved"))
+
+
 def save_review_action(
     *,
     batch_df: pd.DataFrame,

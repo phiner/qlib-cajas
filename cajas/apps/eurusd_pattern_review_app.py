@@ -14,6 +14,9 @@ from cajas.research.eurusd_pattern_review_gui import (
     build_chart_diagnostic_summary,
     save_review_action,
     build_persistence_status_message,
+    clamp_sample_index,
+    next_sample_index,
+    should_advance_after_save,
     default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
@@ -50,6 +53,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         unsafe_allow_html=True,
     )
     st.title("EURUSD 15m Review")
+    CANONICAL_INDEX_KEY = "current_sample_idx"
+    WIDGET_INDEX_KEY = "sample_idx_widget"
+    PENDING_INDEX_KEY = "pending_sample_idx"
     
     # Sidebar
     st.sidebar.header("Configuration")
@@ -124,17 +130,34 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     if len(filtered) == 0:
         st.warning("No samples match filters")
         return
+    row_count = len(filtered)
+
+    # Migrate legacy key safely before widget instantiation.
+    if "sample_idx" in st.session_state and CANONICAL_INDEX_KEY not in st.session_state:
+        st.session_state[CANONICAL_INDEX_KEY] = st.session_state.get("sample_idx", 0)
+    if PENDING_INDEX_KEY in st.session_state:
+        st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(
+            int(st.session_state.pop(PENDING_INDEX_KEY)),
+            row_count,
+        )
+    if CANONICAL_INDEX_KEY not in st.session_state:
+        st.session_state[CANONICAL_INDEX_KEY] = 0
+    st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(
+        int(st.session_state.get(CANONICAL_INDEX_KEY, 0)),
+        row_count,
+    )
+    st.session_state[WIDGET_INDEX_KEY] = st.session_state[CANONICAL_INDEX_KEY]
     
     # Sample selector
     st.sidebar.subheader("Sample")
-    if "sample_idx" not in st.session_state:
-        st.session_state.sample_idx = 0
     sample_idx = st.sidebar.number_input(
         "Sample Index",
         min_value=0,
-        max_value=len(filtered) - 1,
-        key="sample_idx"
+        max_value=row_count - 1,
+        key=WIDGET_INDEX_KEY
     )
+    st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(int(sample_idx), row_count)
+    sample_idx = st.session_state[CANONICAL_INDEX_KEY]
     
     # Progress
     progress = get_review_progress(batch)
@@ -145,7 +168,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     )
     
     # Current sample
-    sample = filtered.iloc[int(sample_idx)]
+    sample = filtered.iloc[sample_idx]
     sample_id = str(sample["sample_id"])
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
@@ -351,9 +374,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         st.session_state.batch = merge_completed_labels(
             st.session_state.batch, load_completed_reviews(Path(completed_path))
         )
-        if action["ok"] and advance_to_next and int(sample_idx) < len(filtered) - 1:
-            st.session_state.sample_idx = int(sample_idx) + 1
-        current_idx = int(st.session_state.get("sample_idx", int(sample_idx)))
+        if advance_to_next and should_advance_after_save(action):
+            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
+        current_idx = int(st.session_state.get(PENDING_INDEX_KEY, sample_idx))
         jsonl_status = "written" if action.get("jsonl_appended") else str(action.get("warning") or "not_written")
         st.session_state["last_action_msg"] = build_persistence_status_message(
             sample_id=sample_id,
