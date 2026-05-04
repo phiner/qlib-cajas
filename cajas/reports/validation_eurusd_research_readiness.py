@@ -22,12 +22,18 @@ def build_validation_eurusd_research_readiness(
     dataset_audit_report: Path,
     clean_dataset_view_report: Path | None = None,
     pattern_candidate_pack_report: Path | None = None,
+    pattern_review_qa_report: Path | None = None,
+    pattern_label_schema_report: Path | None = None,
+    pattern_review_template_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
     audit = _safe_json(dataset_audit_report)
     clean_view = _safe_json(clean_dataset_view_report)
     candidate_pack = _safe_json(pattern_candidate_pack_report)
+    review_qa = _safe_json(pattern_review_qa_report)
+    label_schema = _safe_json(pattern_label_schema_report)
+    review_template = _safe_json(pattern_review_template_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -35,6 +41,9 @@ def build_validation_eurusd_research_readiness(
     audit_status = audit.get("status", "missing")
     clean_view_status = clean_view.get("status", "missing")
     candidate_pack_status = candidate_pack.get("status", "missing")
+    review_qa_status = review_qa.get("status", "missing")
+    label_schema_status = label_schema.get("status", "missing")
+    review_template_status = review_template.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -54,6 +63,12 @@ def build_validation_eurusd_research_readiness(
         blockers.append("feature_scaffold_failed")
     if candidate_pack and candidate_pack_status == "blocked":
         blockers.append("pattern_candidate_pack_blocked")
+    if review_qa and review_qa_status == "blocked":
+        blockers.append("pattern_review_qa_blocked")
+    if label_schema and label_schema_status != "ready":
+        blockers.append("pattern_label_schema_not_ready")
+    if review_template and review_template_status == "blocked":
+        blockers.append("pattern_review_template_blocked")
 
     if not blockers and audit_status == "watch":
         warnings.append("dataset_audit_watch_non_blocking")
@@ -66,6 +81,17 @@ def build_validation_eurusd_research_readiness(
         status = "watch"
     else:
         status = "ready_for_pattern_research"
+
+    next_action = "build_or_review_candidate_pack"
+    if candidate_pack_status in {"ready", "watch"}:
+        next_action = "review_pattern_samples"
+    if (
+        status in {"ready_for_pattern_research_with_clean_view", "ready_for_pattern_research"}
+        and review_qa_status in {"ready", "watch"}
+        and label_schema_status == "ready"
+        and review_template_status == "ready"
+    ):
+        next_action = "begin_human_pattern_review"
 
     return {
         "schema_version": 1,
@@ -86,7 +112,10 @@ def build_validation_eurusd_research_readiness(
         "quarantine_count": clean_view.get("quarantined_row_count"),
         "pattern_candidate_pack_status": candidate_pack_status,
         "pattern_candidate_count": candidate_pack.get("candidate_count"),
-        "next_action": "review_pattern_samples" if candidate_pack_status in {"ready", "watch"} else "build_or_review_candidate_pack",
+        "review_qa_status": review_qa_status,
+        "label_schema_status": label_schema_status,
+        "review_template_status": review_template_status,
+        "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
         "scope_boundary": {
@@ -123,6 +152,9 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- quarantine_count: `{payload.get('quarantine_count')}`",
         f"- pattern_candidate_pack_status: `{payload.get('pattern_candidate_pack_status')}`",
         f"- pattern_candidate_count: `{payload.get('pattern_candidate_count')}`",
+        f"- review_qa_status: `{payload.get('review_qa_status')}`",
+        f"- label_schema_status: `{payload.get('label_schema_status')}`",
+        f"- review_template_status: `{payload.get('review_template_status')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",

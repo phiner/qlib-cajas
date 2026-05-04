@@ -83,3 +83,21 @@ def test_readiness_includes_pattern_candidate_pack_when_provided(tmp_path: Path)
     assert payload["pattern_candidate_pack_status"] == "watch"
     assert payload["pattern_candidate_count"] == 321
     assert payload["next_action"] == "review_pattern_samples"
+
+
+def test_readiness_begin_human_pattern_review_when_review_stack_ready(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        clean_dataset_view_report=_write(
+            tmp_path / "clean.json",
+            {"status": "ready", "quarantined_row_count": 10, "output_paths": {"clean_csv": "tmp/eurusd/clean.csv"}},
+        ),
+        pattern_candidate_pack_report=_write(tmp_path / "pack.json", {"status": "ready", "candidate_count": 100}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+    )
+    assert payload["status"] == "ready_for_pattern_research_with_clean_view"
+    assert payload["next_action"] == "begin_human_pattern_review"
