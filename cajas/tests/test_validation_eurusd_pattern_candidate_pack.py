@@ -74,3 +74,22 @@ def test_markdown_policy_line() -> None:
     ).lower()
     assert "review only" in md
     assert "not trading signals" in md
+
+def test_report_includes_segment_metrics(tmp_path: Path) -> None:
+    clean = _write_clean(tmp_path / "clean_segment.csv")
+    clean_df = pd.read_csv(clean)
+    candidates = detect_eurusd_pattern_candidates(clean_df, min_confidence=0.5)
+    samples = candidates.groupby("candidate_type", sort=True).head(3).reset_index(drop=True) if not candidates.empty else candidates
+
+    payload = build_validation_eurusd_pattern_candidate_pack(
+        clean_view_csv=clean,
+        candidates_df=candidates,
+        samples_df=samples,
+        output_candidates_csv=tmp_path / "candidates.csv",
+        output_samples_csv=tmp_path / "samples.csv",
+        output_samples_jsonl=tmp_path / "samples.jsonl",
+    )
+    seg = payload.get("trend_segment_metrics", {})
+    assert "raw_trend_trigger_count" in seg
+    assert "same_segment_duplicate_suppressed_count" in seg
+    assert "preferred_review_candidate_count" in seg

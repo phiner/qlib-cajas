@@ -22,10 +22,14 @@ FORBIDDEN = {"buy", "sell", "long", "short", "order", "position", "target_positi
 def _balanced_samples(candidates: pd.DataFrame, max_samples_per_type: int) -> pd.DataFrame:
     if candidates.empty:
         return candidates.copy()
+    trend_types = {"short_trend_down_candidate", "short_trend_up_candidate"}
     chunks = []
     for ctype, part in candidates.groupby("candidate_type", sort=True):
-        # Spread picks across each candidate type's full timeline to avoid early-range concentration.
         ordered = part.sort_values("timestamp").reset_index(drop=True)
+        if ctype in trend_types and "preferred_review_candidate" in ordered.columns:
+            preferred = ordered[ordered["preferred_review_candidate"].fillna(True).astype(bool)].copy()
+            if not preferred.empty:
+                ordered = preferred
         take = min(int(max_samples_per_type), len(ordered))
         if take <= 0:
             continue

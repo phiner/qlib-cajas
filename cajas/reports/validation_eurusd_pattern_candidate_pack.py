@@ -8,6 +8,9 @@ from typing import Any
 import pandas as pd
 
 
+TREND_TYPES = {"short_trend_up_candidate", "short_trend_down_candidate"}
+
+
 def build_validation_eurusd_pattern_candidate_pack(
     *,
     clean_view_csv: Path,
@@ -54,6 +57,32 @@ def build_validation_eurusd_pattern_candidate_pack(
 
     timestamps = pd.to_datetime(candidates_df["timestamp"], errors="coerce", utc=True) if candidate_count else pd.Series(dtype="datetime64[ns, UTC]")
 
+    trend_df = candidates_df[candidates_df["candidate_type"].isin(TREND_TYPES)].copy() if candidate_count and "candidate_type" in candidates_df.columns else pd.DataFrame()
+    raw_trend_trigger_count = int(trend_df["segment_raw_trigger_count"].sum()) if "segment_raw_trigger_count" in trend_df.columns else int(len(trend_df))
+    segment_count = int(trend_df["segment_id"].nunique()) if "segment_id" in trend_df.columns else 0
+    representative_candidate_count = int(trend_df["representative_anchor"].fillna(False).astype(bool).sum()) if "representative_anchor" in trend_df.columns else 0
+    same_segment_duplicate_suppressed_count = int(trend_df["segment_duplicate_suppressed_count"].sum()) if "segment_duplicate_suppressed_count" in trend_df.columns else 0
+    late_segment_filtered_count = int(trend_df["late_segment_anchor"].fillna(False).astype(bool).sum()) if "late_segment_anchor" in trend_df.columns else 0
+    rebound_filtered_count = int(trend_df["rebound_after_anchor"].fillna(False).astype(bool).sum()) if "rebound_after_anchor" in trend_df.columns else 0
+    excluded_late_reversal_anchor_count = int(trend_df["excluded_late_reversal_anchor"].fillna(False).astype(bool).sum()) if "excluded_late_reversal_anchor" in trend_df.columns else 0
+    preferred_review_candidate_count = int(trend_df["preferred_review_candidate"].fillna(True).astype(bool).sum()) if "preferred_review_candidate" in trend_df.columns else int(len(trend_df))
+    avg_candidates_per_segment = float(len(trend_df) / segment_count) if segment_count > 0 else 0.0
+
+    segment_count_by_direction: dict[str, int] = {}
+    if not trend_df.empty and "segment_direction" in trend_df.columns and "segment_id" in trend_df.columns:
+        segment_count_by_direction = {
+            str(k): int(v)
+            for k, v in trend_df.drop_duplicates(subset=["segment_id"])["segment_direction"].value_counts().to_dict().items()
+        }
+
+    trend_candidate_quality_distribution = {
+        "preferred_review_candidate_true": preferred_review_candidate_count,
+        "preferred_review_candidate_false": int(len(trend_df) - preferred_review_candidate_count),
+        "excluded_late_reversal_anchor_true": excluded_late_reversal_anchor_count,
+        "late_segment_anchor_true": late_segment_filtered_count,
+        "rebound_after_anchor_true": rebound_filtered_count,
+    }
+
     return {
         "schema_version": 1,
         "status": status,
@@ -68,6 +97,20 @@ def build_validation_eurusd_pattern_candidate_pack(
         },
         "horizons": [3, 5, 8, 13, 21, 34, 55],
         "pattern_candidate_count": candidate_count,
+        "trend_segment_metrics": {
+            "raw_trend_trigger_count": raw_trend_trigger_count,
+            "segment_count": segment_count,
+            "representative_candidate_count": representative_candidate_count,
+            "same_segment_duplicate_suppressed_count": same_segment_duplicate_suppressed_count,
+            "late_segment_filtered_count": late_segment_filtered_count,
+            "rebound_filtered_count": rebound_filtered_count,
+            "excluded_late_reversal_anchor_count": excluded_late_reversal_anchor_count,
+            "preferred_review_candidate_count": preferred_review_candidate_count,
+            "average_candidates_per_segment": round(avg_candidates_per_segment, 6),
+            "segment_count_by_direction": segment_count_by_direction,
+            "trend_candidate_quality_distribution": trend_candidate_quality_distribution,
+            "late_rebound_filtered_count": int(late_segment_filtered_count + rebound_filtered_count),
+        },
         "scope_boundary": {
             "candidate_review_only": True,
             "trading_signals": False,
@@ -96,6 +139,26 @@ def render_validation_eurusd_pattern_candidate_pack_markdown(payload: dict[str, 
     ]
     for k, v in sorted((payload.get("candidate_count_by_type") or {}).items()):
         lines.append(f"- `{k}`: `{v}`")
+    lines.extend(
+        [
+            "",
+            "## Segment Metrics",
+            "",
+        ]
+    )
+    seg = payload.get("trend_segment_metrics", {}) or {}
+    for key in [
+        "raw_trend_trigger_count",
+        "segment_count",
+        "representative_candidate_count",
+        "same_segment_duplicate_suppressed_count",
+        "late_segment_filtered_count",
+        "rebound_filtered_count",
+        "excluded_late_reversal_anchor_count",
+        "preferred_review_candidate_count",
+        "late_rebound_filtered_count",
+    ]:
+        lines.append(f"- `{key}`: `{seg.get(key)}`")
     lines.extend(
         [
             "",
