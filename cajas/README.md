@@ -11,8 +11,15 @@ Qlib-based Market Recognition Research for FX K-line data.
 
 Current focus:
 - EURUSD 15m K-line market recognition research
+- Local/offline GUI-assisted human review (`./scripts/run_eurusd_review_gui.sh`)
 
 Current scope is research-only and is **not** a trading system.
+
+Optional GUI dependencies are managed separately:
+
+```bash
+./.venv-qlib313/bin/python -m pip install streamlit plotly
+```
 
 ## Maintenance Mode (Phase 4166-4525)
 
@@ -2108,4 +2115,3 @@ Review feedback policy:
 - Completed review file path: `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`.
 - Missing completed-review file is normal and non-blocking (`awaiting_review_input`).
 - Feedback/summary artifacts are review-only and produce no trading signals/orders/model training.
-

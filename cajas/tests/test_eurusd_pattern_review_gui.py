@@ -10,9 +10,10 @@ from cajas.research.eurusd_pattern_review_gui import (
     load_review_batch,
     merge_completed_labels,
     extract_chart_window,
+    create_candlestick_figure,
     save_completed_review,
     get_review_progress,
-    FORBIDDEN_TRADING_COLUMNS
+    sanitize_output_columns,
 )
 
 
@@ -136,6 +137,33 @@ def test_save_blocks_forbidden_columns(batch_fixture, temp_dir):
     completed = pd.read_csv(output_path)
     assert "buy" not in completed.columns
     assert "sell" not in completed.columns
+
+
+def test_save_completed_review_deduplicates_sample_id(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    output_path = temp_dir / "completed.csv"
+    existing = batch_df.copy()
+    existing = pd.concat([existing, existing.iloc[[0]]], ignore_index=True)
+    existing.to_csv(output_path, index=False)
+
+    save_completed_review(batch_df, "s1", {"review_status": "reviewed"}, output_path)
+    completed = pd.read_csv(output_path)
+    assert completed["sample_id"].value_counts().get("s1", 0) == 1
+
+
+def test_sanitize_output_columns():
+    df = pd.DataFrame({"sample_id": ["s1"], "buy": [1], "review_status": ["pending"]})
+    out = sanitize_output_columns(df)
+    assert "buy" not in out.columns
+    assert "review_status" in out.columns
+
+
+def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    sample_timestamp = clean_view.iloc[10]["timestamp"]
+    window = extract_chart_window(clean_view, sample_timestamp, lookback=5, forward=5)
+    fig = create_candlestick_figure(window, sample_timestamp)
+    assert fig is None or hasattr(fig, "to_dict")
 
 
 def test_get_review_progress(batch_fixture):

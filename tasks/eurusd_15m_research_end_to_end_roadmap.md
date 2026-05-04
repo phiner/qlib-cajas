@@ -49,6 +49,13 @@ Non-negotiable constraints:
 - CSV/JSONL remain durable storage/interchange formats.
 - GitHub merge must be manual by the human user.
 
+Local GUI run commands:
+
+```bash
+./scripts/run_eurusd_review_gui.sh
+./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+```
+
 ## 3. Repository Posture
 
 The repository currently remains forked from `microsoft/qlib`.

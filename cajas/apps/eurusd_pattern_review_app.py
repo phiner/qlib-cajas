@@ -1,14 +1,6 @@
 """EURUSD 15m pattern review GUI app."""
 from pathlib import Path
 
-try:
-    import streamlit as st
-    STREAMLIT_AVAILABLE = True
-except ImportError:
-    STREAMLIT_AVAILABLE = False
-    print("Streamlit not available. Install with: pip install streamlit plotly")
-    exit(1)
-
 from cajas.research.eurusd_pattern_review_gui import (
     load_clean_view,
     load_review_batch,
@@ -23,6 +15,13 @@ from cajas.research.eurusd_pattern_review_gui import (
 
 
 def main():
+    try:
+        import streamlit as st
+    except ImportError:
+        raise RuntimeError(
+            "Streamlit is not available. Install with: ./.venv-qlib313/bin/python -m pip install streamlit plotly"
+        )
+
     st.set_page_config(page_title="EURUSD Pattern Review", layout="wide")
     st.title("EURUSD 15m Pattern Review")
     
