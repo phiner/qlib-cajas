@@ -461,6 +461,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
 
     st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
     with st.expander("Chart Debug Info (click to expand)", expanded=False):
+        figure_meta = {}
+        if fig is not None and getattr(fig.layout, "meta", None):
+            figure_meta = dict(fig.layout.meta)
         st.json(
             {
                 "sample_id": str(sample["sample_id"]),
@@ -484,6 +487,11 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 "sample_timestamp": chart_diag.get("sample_timestamp"),
                 "sample_is_near_full_source_start": chart_diag.get("sample_is_near_full_source_start"),
                 "framing_source_kind": chart_diag.get("framing_source_kind"),
+                "sample_display_x": figure_meta.get("sample_display_x"),
+                "sample_guide_line_x": figure_meta.get("sample_guide_line_x"),
+                "sample_guide_line_offset": figure_meta.get("sample_guide_line_offset"),
+                "sample_guide_line_side": figure_meta.get("sample_guide_line_side"),
+                "sample_marker_mode": figure_meta.get("sample_marker_mode"),
                 "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
                 "display_axis": axis_summary.get("display_axis"),
                 "raw_time_axis_preserved_in_hover": axis_summary.get("raw_time_axis_preserved_in_hover"),

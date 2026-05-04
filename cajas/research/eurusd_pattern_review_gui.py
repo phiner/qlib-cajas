@@ -326,6 +326,40 @@ def compute_sample_marker_y(
     return float(min(max(candidate, floor), ceiling))
 
 
+def compute_sample_guide_line_x(
+    sample_display_x: float,
+    *,
+    direction: str = "left",
+    offset: float = 0.45,
+    min_x: float = 0.0,
+    max_x: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Compute adjacent guide-line x with boundary-safe side switching."""
+    sample_x = float(sample_display_x)
+    step = abs(float(offset))
+    preferred_side = "left" if str(direction).lower() == "left" else "right"
+    chosen_side = preferred_side
+    if preferred_side == "left":
+        guide_x = sample_x - step
+        if guide_x < float(min_x):
+            chosen_side = "right"
+            guide_x = sample_x + step
+    else:
+        guide_x = sample_x + step
+        if max_x is not None and guide_x > float(max_x):
+            chosen_side = "left"
+            guide_x = sample_x - step
+    if max_x is not None:
+        guide_x = min(float(max_x), max(float(min_x), guide_x))
+    else:
+        guide_x = max(float(min_x), guide_x)
+    return {
+        "guide_line_x": float(guide_x),
+        "side": chosen_side,
+        "offset": step,
+    }
+
+
 def create_candlestick_figure(
     window_df: pd.DataFrame,
     sample_timestamp: Any,
@@ -383,16 +417,24 @@ def create_candlestick_figure(
         marker_y = compute_sample_marker_y(sample_high, y_max, y_min, offset_ratio=0.04)
         annotation_top_y = y_max + (0.09 * y_span)
         marker_x_base = float(sample_x)
+        guide = compute_sample_guide_line_x(
+            marker_x_base,
+            direction="left",
+            offset=0.45,
+            min_x=float(display_x[0]) if display_x else 0.0,
+            max_x=float(display_x[-1]) if display_x else None,
+        )
+        guide_x = float(guide["guide_line_x"])
+        fig.add_shape(
+            type="line",
+            x0=guide_x,
+            x1=guide_x,
+            y0=y_min,
+            y1=y_max,
+            line={"color": marker_color, "dash": "dot", "width": 1.1},
+        )
         if mode == "offset_line_with_arrow":
             marker_x = float(sample_x) + float(marker_cfg.get("offset_x", 0.35))
-            fig.add_shape(
-                type="line",
-                x0=marker_x,
-                x1=marker_x,
-                y0=y_min,
-                y1=y_max,
-                line={"color": marker_color, "dash": "dash", "width": 1.4},
-            )
             fig.add_annotation(
                 x=marker_x_base,
                 y=marker_y,
@@ -437,6 +479,15 @@ def create_candlestick_figure(
                     hoverinfo="skip",
                 )
             )
+        fig.update_layout(
+            meta={
+                "sample_display_x": float(marker_x_base),
+                "sample_guide_line_x": float(guide_x),
+                "sample_guide_line_offset": float(guide["offset"]),
+                "sample_guide_line_side": str(guide["side"]),
+                "sample_marker_mode": str(mode),
+            }
+        )
     for gap in axis_info.get("gap_markers", []):
         gx = gap.get("display_x")
         if gx is None:

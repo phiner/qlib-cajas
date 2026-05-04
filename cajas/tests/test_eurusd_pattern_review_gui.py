@@ -16,6 +16,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     format_compact_tick_label,
     build_sample_marker_config,
     compute_sample_marker_y,
+    compute_sample_guide_line_x,
     create_candlestick_figure,
     detect_time_axis_gaps,
     build_compressed_gap_axis,
@@ -413,6 +414,19 @@ def test_compute_sample_marker_y_near_top_clamped():
     assert y <= 1.1060 + ((1.1060 - 1.1000) * 0.12)
 
 
+def test_compute_sample_guide_line_x_default_left():
+    guide = compute_sample_guide_line_x(72.0, direction="left", offset=0.45, min_x=0.0, max_x=120.0)
+    assert abs(guide["guide_line_x"] - 71.55) < 1e-9
+    assert guide["side"] == "left"
+    assert abs(guide["offset"] - 0.45) < 1e-9
+
+
+def test_compute_sample_guide_line_x_left_boundary_switch_to_right():
+    guide = compute_sample_guide_line_x(0.2, direction="left", offset=0.45, min_x=0.0, max_x=120.0)
+    assert guide["guide_line_x"] > 0.2
+    assert guide["side"] == "right"
+
+
 def test_create_candlestick_figure_marker_is_offset_for_normal_type(clean_view_fixture):
     clean_view = load_clean_view(clean_view_fixture)
     sample_timestamp = clean_view.iloc[20]["timestamp"]
@@ -429,9 +443,13 @@ def test_create_candlestick_figure_marker_is_offset_for_normal_type(clean_view_f
     sample_x = sample_idx
     xs = [float(s.x0) for s in fig.layout.shapes] if fig.layout.shapes else []
     assert any(abs(x - sample_x) > 0.2 for x in xs)
+    assert all(abs(x - sample_x) > 1e-9 for x in xs)
     sample_marker_traces = [t for t in fig.data if getattr(t, "name", "") == "Sample marker"]
     assert len(sample_marker_traces) == 1
     assert str(fig.layout.annotations[0].text) == "Sample"
+    assert fig.layout.meta is not None
+    assert "sample_guide_line_x" in fig.layout.meta
+    assert float(fig.layout.meta["sample_guide_line_x"]) != float(fig.layout.meta["sample_display_x"])
 
 
 def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive(clean_view_fixture):
@@ -449,15 +467,21 @@ def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive
     # No sample line shape should be drawn for wick-sensitive markers (only optional gap markers).
     sample_ts = str(sample_timestamp)
     sample_shapes = []
+    guide_shapes = []
     for s in list(fig.layout.shapes):
         s_json = s.to_plotly_json()
         if s_json.get("type") == "line" and s_json.get("line", {}).get("dash") == "dash":
             sample_shapes.append(s_json)
+        if s_json.get("type") == "line" and s_json.get("line", {}).get("dash") == "dot":
+            guide_shapes.append(s_json)
     assert len(sample_shapes) == 0
+    assert len(guide_shapes) >= 1
     assert len(fig.layout.annotations) >= 1
     assert str(fig.layout.annotations[0].text) == "Sample"
     sample_marker_traces = [t for t in fig.data if getattr(t, "name", "") == "Sample marker"]
     assert len(sample_marker_traces) == 1
+    assert fig.layout.meta is not None
+    assert fig.layout.meta.get("sample_marker_mode") == "annotation_only"
 
 
 def test_get_review_progress(batch_fixture):
