@@ -124,6 +124,28 @@ def test_progress_missing_completed_csv(tmp_path: Path):
         label_schema_json=schema,
     )
     assert report["status"] == "awaiting_review_input"
+    assert report["blocking"] is False
+    assert report["completed_count"] == 0
+    assert report["pending_count"] == 3
+    assert report["csv_schema_status"] == "not_applicable"
+    assert report["jsonl_audit_status"] == "not_applicable"
+    assert report["csv_jsonl_value_compare"] == "not_applicable"
+    assert report["preliminary_summary_status"] == "not_applicable"
+    assert report["next_action"] == "begin_human_review"
+
+
+def test_progress_missing_batch_csv_is_blocked(tmp_path: Path):
+    schema = tmp_path / "schema.json"
+    _schema(schema)
+    report = build_completed_review_progress_report(
+        batch_csv=tmp_path / "missing_batch.csv",
+        completed_csv=tmp_path / "missing_completed.csv",
+        events_jsonl=tmp_path / "missing_events.jsonl",
+        label_schema_json=schema,
+    )
+    assert report["status"] == "blocked"
+    assert report["reason"] == "batch_csv_missing"
+    assert report["blocking"] is True
 
 
 def test_progress_jsonl_malformed_warning(tmp_path: Path):

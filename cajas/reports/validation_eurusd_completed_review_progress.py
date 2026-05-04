@@ -125,10 +125,10 @@ def build_completed_review_progress_report(
         "completed_sample_ids": [],
         "pending_sample_ids": [],
         "latest_review_updated_at_utc": None,
-        "csv_schema_status": "blocked",
-        "jsonl_audit_status": "blocked",
-        "csv_jsonl_value_compare": "skipped_payload_shape_not_stable",
-        "preliminary_summary_status": "not_built",
+        "csv_schema_status": "not_evaluated",
+        "jsonl_audit_status": "not_evaluated",
+        "csv_jsonl_value_compare": "not_evaluated",
+        "preliminary_summary_status": "not_evaluated",
         "next_action": "continue_human_review",
     }
     if not batch_csv.exists():
@@ -153,10 +153,17 @@ def build_completed_review_progress_report(
             **base,
             "status": "awaiting_review_input",
             "batch_count": len(batch_ids),
+            "completed_count": 0,
             "pending_count": len(batch_ids),
+            "completion_ratio": 0.0,
             "pending_sample_ids": batch_ids,
             "reason": "completed_csv_missing",
             "blocking": False,
+            "csv_schema_status": "not_applicable",
+            "jsonl_audit_status": "not_applicable",
+            "csv_jsonl_value_compare": "not_applicable",
+            "preliminary_summary_status": "not_applicable",
+            "next_action": "begin_human_review",
         }
 
     batch_df, batch_err = _safe_csv(batch_csv)
@@ -388,6 +395,16 @@ def build_completed_review_progress_report(
 
 
 def render_completed_review_progress_markdown(payload: dict[str, Any]) -> str:
+    fresh_start_note = []
+    if payload.get("status") == "awaiting_review_input":
+        fresh_start_note = [
+            "",
+            "## Fresh Start",
+            "",
+            "- CSV schema: `not_applicable` (no completed review rows yet)",
+            "- JSONL audit: `not_applicable` (no review events yet)",
+            "- Next action: `begin_human_review`",
+        ]
     lines = [
         "# EURUSD Completed Review Progress",
         "",
@@ -424,4 +441,4 @@ def render_completed_review_progress_markdown(payload: dict[str, Any]) -> str:
         f"- jsonl_without_completed: `{payload.get('jsonl_without_completed')}`",
         f"- jsonl_without_batch: `{payload.get('jsonl_without_batch')}`",
     ]
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines + fresh_start_note) + "\n"
