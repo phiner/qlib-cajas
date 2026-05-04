@@ -531,6 +531,9 @@ Expected GUI behavior:
 - fill label schema fields
 - save/update completed CSV
 - resume progress from existing completed CSV
+- provide compact mode (enabled by default) for high-frequency manual review
+- allow compact chart height adjustment from sidebar controls
+- show compact one-line chart diagnostics with expandable detailed debug info
 
 Completed output path:
 

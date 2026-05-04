@@ -126,6 +126,8 @@ Optional local GUI dependencies (manual install only):
 - NaN optional text values (for example `review_notes`) are sanitized to empty text in the UI
 - Blank `review_notes` indicates no note has been entered yet (optional field)
 - Streamlit chart width uses the new API path with compatibility fallback for older versions
+- Compact mode is enabled by default for high-frequency manual review
+- Chart height is adjustable from the sidebar in compact mode
 - Fully offline operation
 
 **Workflow**:

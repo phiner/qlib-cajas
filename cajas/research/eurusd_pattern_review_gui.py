@@ -283,6 +283,24 @@ def build_chart_diagnostic_summary(diagnostics: Dict[str, Any], trace_count: int
     )
 
 
+def get_chart_height(compact_mode: bool, compact_height: int) -> int:
+    """Return chart height for compact and normal modes."""
+    return int(compact_height) if compact_mode else 600
+
+
+def build_compact_chart_diagnostic_summary(diagnostics: Dict[str, Any], trace_count: int) -> str:
+    """Build concise one-line diagnostics for compact mode."""
+    exact = "✓" if bool(diagnostics.get("exact_timestamp_match_found", False)) else "✗"
+    fallback = "✓" if bool(diagnostics.get("nearest_fallback_used", False)) else "✗"
+    return (
+        f"Window {int(diagnostics.get('chart_window_row_count', 0))} bars"
+        f" | traces {int(trace_count)}"
+        f" | exact match {exact}"
+        f" | fallback {fallback}"
+        f" | target index {diagnostics.get('target_index_in_window')}"
+    )
+
+
 def save_completed_review(
     batch_df: pd.DataFrame,
     sample_id: str,

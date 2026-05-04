@@ -2090,6 +2090,9 @@ GUI features:
 - Form-based label entry
 - Automatic save to `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
 - Resume progress from existing completed file
+- Compact mode enabled by default for high-frequency manual review
+- Adjustable compact chart height from sidebar controls
+- Compact chart diagnostics line plus expandable detailed debug info
 - Fully offline operation
 
 GUI workflow:

@@ -13,6 +13,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
     build_chart_diagnostic_summary,
+    build_compact_chart_diagnostic_summary,
+    get_chart_height,
     save_completed_review,
     get_review_progress,
     sanitize_output_columns,
@@ -239,6 +241,26 @@ def test_build_chart_diagnostic_summary_contains_required_fields():
     assert "exact match: True" in summary
     assert "fallback: False" in summary
     assert "target index: 33" in summary
+
+
+def test_build_compact_chart_diagnostic_summary_contains_required_fields():
+    diag = {
+        "chart_window_row_count": 91,
+        "exact_timestamp_match_found": True,
+        "nearest_fallback_used": False,
+        "target_index_in_window": 60,
+    }
+    summary = build_compact_chart_diagnostic_summary(diag, trace_count=1)
+    assert "Window 91 bars" in summary
+    assert "traces 1" in summary
+    assert "exact match ✓" in summary
+    assert "fallback ✗" in summary
+    assert "target index 60" in summary
+
+
+def test_get_chart_height_defaults():
+    assert get_chart_height(compact_mode=True, compact_height=420) == 420
+    assert get_chart_height(compact_mode=False, compact_height=420) == 600
 
 
 def test_render_plotly_chart_prefers_width_stretch_and_falls_back():

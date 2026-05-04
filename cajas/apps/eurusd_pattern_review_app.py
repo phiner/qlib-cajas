@@ -9,6 +9,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     merge_completed_labels,
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
+    get_chart_height,
+    build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
     save_completed_review,
     get_review_progress,
@@ -32,11 +34,31 @@ def main():
             "Streamlit is not available. Install with: ./.venv-qlib313/bin/python -m pip install streamlit plotly"
         )
 
-    st.set_page_config(page_title="EURUSD Pattern Review", layout="wide")
-    st.title("EURUSD 15m Pattern Review")
+    st.set_page_config(page_title="EURUSD 15m Review", layout="wide")
+    st.markdown(
+        """
+<style>
+.block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 1500px; }
+h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
+[data-testid="stMetricValue"] { font-size: 1.4rem; }
+[data-testid="stVerticalBlock"] { gap: 0.4rem; }
+.stTextInput, .stSelectbox, .stTextArea { margin-bottom: 0.25rem; }
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.title("EURUSD 15m Review")
     
     # Sidebar
     st.sidebar.header("Configuration")
+    compact_mode = st.sidebar.checkbox("Compact mode", value=True)
+    compact_chart_height = st.sidebar.slider(
+        "Compact chart height",
+        min_value=320,
+        max_value=700,
+        value=420,
+        step=10,
+    )
     
     clean_view_path = st.sidebar.text_input(
         "Clean View CSV",
@@ -78,7 +100,7 @@ def main():
     schema = st.session_state.schema
     
     # Filters
-    st.sidebar.header("Filters")
+    st.sidebar.subheader("Filters")
     
     candidate_types = ["All"] + sorted(batch["candidate_type"].unique().tolist())
     selected_type = st.sidebar.selectbox("Candidate Type", candidate_types)
@@ -98,7 +120,7 @@ def main():
         return
     
     # Sample selector
-    st.sidebar.header("Sample Navigation")
+    st.sidebar.subheader("Sample")
     sample_idx = st.sidebar.number_input(
         "Sample Index",
         min_value=0,
@@ -108,31 +130,32 @@ def main():
     
     # Progress
     progress = get_review_progress(batch)
-    st.sidebar.header("Progress")
-    st.sidebar.metric("Total", progress["total"])
-    st.sidebar.metric("Reviewed", progress["reviewed"])
-    st.sidebar.metric("Pending", progress["pending"])
-    st.sidebar.metric("Skipped", progress["skipped"])
+    st.sidebar.subheader("Progress")
+    st.sidebar.caption(
+        f"Reviewed {progress['reviewed']} / Total {progress['total']} | "
+        f"Pending {progress['pending']} | Skipped {progress['skipped']}"
+    )
     
     # Current sample
     sample = filtered.iloc[sample_idx]
 
-    st.header(f"Sample: {sample['sample_id']}")
-    st.subheader(f"{sample['timestamp']} - {sample['candidate_type']}")
+    if compact_mode:
+        st.subheader(f"Sample {sample['sample_id']}")
+    else:
+        st.header(f"Sample: {sample['sample_id']}")
+        st.subheader(f"{sample['timestamp']} - {sample['candidate_type']}")
 
-    # Sample metadata near chart
-    st.caption(
-        " | ".join(
-            [
-                f"sample_id={sample['sample_id']}",
-                f"timestamp={sample['timestamp']}",
-                f"candidate_type={sample['candidate_type']}",
-                f"confidence_score={sample['confidence_score']:.4f}",
-                f"review_priority={sample['review_priority']}",
-                f"reason_codes={sample['reason_codes']}",
-            ]
-        )
+    meta_line = " | ".join(
+        [
+            f"sample_id={sample['sample_id']}",
+            f"timestamp={sample['timestamp']}",
+            f"type={sample['candidate_type']}",
+            f"confidence={sample['confidence_score']:.4f}",
+            f"priority={sample['review_priority']}",
+            f"reasons={sample['reason_codes']}",
+        ]
     )
+    st.caption(meta_line)
 
     # Chart
     st.subheader("Candlestick Chart")
@@ -145,6 +168,7 @@ def main():
     )
 
     fig = None
+    chart_height = get_chart_height(compact_mode, compact_chart_height)
     if chart_diag.get("chart_window_row_count", 0) > 0:
         fig = create_candlestick_figure(
             window,
@@ -152,6 +176,8 @@ def main():
             sample_id=str(sample["sample_id"]),
             candidate_type=str(sample["candidate_type"]),
         )
+        if fig is not None:
+            fig.update_layout(height=chart_height)
 
     with chart_container:
         if fig is None:
@@ -162,11 +188,17 @@ def main():
                 )
             else:
                 st.warning("No chart data available for the selected sample/timestamp.")
-            st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=0))
+            if compact_mode:
+                st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=0))
+            else:
+                st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=0))
             st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
         else:
             render_plotly_chart(st, fig)
-            st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
+            if compact_mode:
+                st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
+            else:
+                st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
             st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
 
     with st.expander("Chart Debug Info (click to expand)", expanded=False):
@@ -184,19 +216,26 @@ def main():
         )
     
     # Metadata
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Confidence Score", f"{sample['confidence_score']:.4f}")
-        st.metric("Review Priority", sample["review_priority"])
-    with col2:
-        st.text(f"Reason Codes: {sample['reason_codes']}")
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.caption("Confidence")
+        st.write(f"{sample['confidence_score']:.4f}")
+    with m2:
+        st.caption("Priority")
+        st.write(str(sample["review_priority"]))
+    with m3:
+        st.caption("Candidate Type")
+        st.write(str(sample["candidate_type"]))
+    with m4:
+        st.caption("Reason Codes")
+        st.write(str(sample["reason_codes"]))
     
     # Review form
-    st.header("Review Labels")
+    st.subheader("Review Labels")
     
     allowed = schema.get("allowed_values", {})
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3 if compact_mode else 2)
     
     with col1:
         human_pattern_label = st.selectbox(
@@ -206,7 +245,7 @@ def main():
                 sample.get("human_pattern_label", "unclear")
             ) if sample.get("human_pattern_label") in allowed.get("human_pattern_label", []) else 0
         )
-        
+    with col2:
         market_context = st.selectbox(
             "Market Context",
             allowed.get("market_context", ["unclear"]),
@@ -214,7 +253,7 @@ def main():
                 sample.get("market_context", "unclear")
             ) if sample.get("market_context") in allowed.get("market_context", []) else 0
         )
-        
+    with col3 if compact_mode else col1:
         direction_context = st.selectbox(
             "Direction Context",
             allowed.get("direction_context", ["unclear"]),
@@ -223,15 +262,19 @@ def main():
             ) if sample.get("direction_context") in allowed.get("direction_context", []) else 0
         )
     
-    with col2:
+    s1, s2, s3 = st.columns(3 if compact_mode else 2)
+    with s1:
         structure_quality = st.slider("Structure Quality", 1, 5, int(sample.get("structure_quality", 3)))
+    with s2:
         follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(sample.get("follow_through_quality", 3)))
+    with s3 if compact_mode else s1:
         review_confidence = st.slider("Review Confidence", 1, 5, int(sample.get("review_confidence", 3)))
     
     review_notes = st.text_area(
         "Review Notes",
         sanitize_optional_text_value(sample.get("review_notes", "")),
         placeholder="Optional notes...",
+        height=80 if compact_mode else None,
     )
     
     review_status = st.selectbox(
