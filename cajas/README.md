@@ -2029,3 +2029,16 @@ Review policy:
 - No trading signal/order fields are allowed in review exports.
 - Scope remains EURUSD 15m Bid clean view only.
 
+EURUSD 15m review feedback intake commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_feedback_report.py --template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-feedback.json --output-md tmp/validation-eurusd-pattern-review-feedback.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_summary_report.py --feedback-report tmp/validation-eurusd-pattern-review-feedback.json --completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --output-json tmp/validation-eurusd-pattern-review-summary.json --output-md tmp/validation-eurusd-pattern-review-summary.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-feedback-report tmp/validation-eurusd-pattern-review-feedback.json --review-summary-report tmp/validation-eurusd-pattern-review-summary.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Review feedback policy:
+- Completed review file path: `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`.
+- Missing completed-review file is normal and non-blocking (`awaiting_review_input`).
+- Feedback/summary artifacts are review-only and produce no trading signals/orders/model training.
+

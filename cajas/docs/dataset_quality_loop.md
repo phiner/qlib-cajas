@@ -2672,3 +2672,11 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
 - Added deterministic review template exports (`csv` + `jsonl`) with pending-review defaults and schema version stamping.
 - Updated research readiness to surface review stack status and recommend `begin_human_pattern_review` when all review artifacts are ready.
 - Maintained boundaries: no trading signals/orders, no broker/live/paper trading, no 1H/4H aggregation, no Qlib core changes.
+
+## Phase 5606-5725 EURUSD 15m Review Feedback Intake
+
+- Added deterministic review feedback validator for completed review files against schema `eurusd_15m_pattern_review_v1`.
+- Added feedback summary layer for reviewed-label distribution and candidate-type quality signals.
+- Added non-blocking awaiting-input semantics when completed review file is absent.
+- Updated readiness integration to consume feedback/summary reports and route next action accordingly.
+- Boundaries unchanged: review-only/offline; no trading signals/orders/model training; no timeframe aggregation.

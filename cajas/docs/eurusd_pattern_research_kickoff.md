@@ -112,12 +112,27 @@ Review template artifacts:
 - `tmp/validation-eurusd-pattern-review-template.json`
 - `tmp/validation-eurusd-pattern-review-template.md`
 
-Human review flow:
+## Human review feedback intake and summary
 
-1. confirm review QA status is `ready` or non-blocking `watch`
-2. use the label schema and template outputs
-3. keep `review_status=pending` until manual labeling is completed
-4. produce reviewed outputs without adding trading/order actions
+Expected completed review input path:
+
+- `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`
+
+Feedback artifacts:
+
+- `tmp/validation-eurusd-pattern-review-feedback.json`
+- `tmp/validation-eurusd-pattern-review-feedback.md`
+
+Summary artifacts:
+
+- `tmp/validation-eurusd-pattern-review-summary.json`
+- `tmp/validation-eurusd-pattern-review-summary.md`
+
+Behavior notes:
+
+- missing completed review file is a normal non-blocking state (`awaiting_review_input`)
+- feedback/summary remain strictly review-only and non-trading
+- no model training is enabled in this phase
 
 ## Out of scope
 
@@ -133,6 +148,6 @@ Human review flow:
 2. triage and quarantine anomaly rows
 3. generate clean-view candidate sample pack
 4. run review QA and build label template
-5. begin human pattern review
-6. test non-execution strategy hypotheses offline
+5. begin human pattern review and feedback intake
+6. summarize reviewed labels and refine research priorities
 7. evaluate ML labels/model training only in later phases

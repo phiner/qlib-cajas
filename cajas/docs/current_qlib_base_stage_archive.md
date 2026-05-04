@@ -3714,3 +3714,18 @@ Routine maintenance command additions (next release cycle):
 - Readiness now surfaces review-layer statuses and can recommend:
   - `next_action=begin_human_pattern_review` when candidate pack + QA + schema + template are ready/non-blocking.
 - Scope unchanged: clean view remains approved input; no aggregation; no trading/order execution semantics.
+
+## Phase 5606-5725 EURUSD 15m Human Review Feedback Intake and Summary
+
+- Added feedback intake validation artifacts:
+  - `tmp/validation-eurusd-pattern-review-feedback.json`
+  - `tmp/validation-eurusd-pattern-review-feedback.md`
+- Added review feedback summary artifacts:
+  - `tmp/validation-eurusd-pattern-review-summary.json`
+  - `tmp/validation-eurusd-pattern-review-summary.md`
+- Added example synthetic completed-review fixture:
+  - `cajas/data_examples/eurusd_pattern_review_completed.example.csv`
+- Missing completed review input is treated as normal non-blocking state:
+  - `status=awaiting_review_input`
+  - `next_action=complete_human_review_template`
+- Readiness now surfaces feedback/summary statuses and can switch next actions accordingly without introducing trading/model behavior.
