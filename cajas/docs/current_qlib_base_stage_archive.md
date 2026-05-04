@@ -3729,3 +3729,4 @@ Routine maintenance command additions (next release cycle):
   - `status=awaiting_review_input`
   - `next_action=complete_human_review_template`
 - Readiness now surfaces feedback/summary statuses and can switch next actions accordingly without introducing trading/model behavior.
+For full archive of tasks, see [Tasks Archive](../tasks/archive/README.md).

@@ -2,6 +2,9 @@
 
 `cajas/` is the independent research layer in this `qlib-cajas` fork.
 
+- [Project Roadmap](../tasks/eurusd_15m_research_end_to_end_roadmap.md)
+- [Tasks Archive](../tasks/archive/README.md)
+
 ## Goal
 
 Qlib-based Market Recognition Research for FX K-line data.

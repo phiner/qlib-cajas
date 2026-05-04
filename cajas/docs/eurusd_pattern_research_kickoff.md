@@ -247,3 +247,4 @@ Behavior notes:
 5. begin human pattern review and feedback intake
 6. summarize reviewed labels and refine research priorities
 7. evaluate ML labels/model training only in later phases
+For full archive of tasks, see [Tasks Archive](../tasks/archive/README.md).
