@@ -16,6 +16,9 @@ def main():
     parser.add_argument("--batch-id", default="eurusd_15m_pattern_review_batch_001")
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--per-type-target", type=int, default=10)
+    parser.add_argument("--min-gap-bars", type=int, default=8)
+    parser.add_argument("--max-samples-per-day", type=int, default=8)
+    parser.add_argument("--disable-time-diversity", action="store_true")
     parser.add_argument("--output-batch-csv", type=Path, required=True)
     parser.add_argument("--output-batch-jsonl", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
@@ -29,6 +32,9 @@ def main():
         batch_id=args.batch_id,
         batch_size=args.batch_size,
         per_type_target=args.per_type_target,
+        min_gap_bars_between_samples=args.min_gap_bars,
+        max_samples_per_day=args.max_samples_per_day,
+        prefer_time_diversity=not args.disable_time_diversity,
         output_batch_csv=args.output_batch_csv,
         output_batch_jsonl=args.output_batch_jsonl
     )

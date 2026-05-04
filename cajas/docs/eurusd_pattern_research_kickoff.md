@@ -70,10 +70,21 @@ The review workflow consists of:
 The first review batch (`eurusd_15m_pattern_review_batch_001`) contains 100 samples selected from the 500-row template:
 
 - 10 samples per candidate type (balanced selection)
-- Sorted by review priority, confidence score, and timestamp
+- Time-diversified by default (best effort):
+  - `balanced_by_candidate_type=true`
+  - `min_gap_bars_between_samples=8` (about 2 hours on 15m bars)
+  - `max_samples_per_day=8`
+  - `prefer_time_diversity=true`
+- Deterministic priority order remains based on review priority, confidence score, and timestamp
+- If strict gap/day-cap constraints cannot fill the target size, the batch builder degrades gracefully and fills from available candidates
 - Output paths:
   - `tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv`
   - `tmp/eurusd/EURUSD_15m_pattern_review_batch_001.jsonl`
+
+Batch report metadata now includes:
+
+- `diversification_settings`
+- `diversity_summary` with `unique_days`, `min_gap_minutes`, `median_gap_minutes`, and `cluster_warning_count`
 
 Human reviewer workflow:
 

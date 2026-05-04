@@ -449,9 +449,17 @@ cajas/tests/test_validation_eurusd_pattern_review_batch_completion.py
 
 Current state:
 
-- first review batch status: `ready`
+- first review batch status: `ready` or `watch` (watch is non-blocking when diversity fallback is used)
 - batch row count: `100`
 - 10 samples per candidate type
+- default diversification policy:
+  - `balanced_by_candidate_type=true`
+  - `min_gap_bars_between_samples=8`
+  - `max_samples_per_day=8`
+  - `prefer_time_diversity=true`
+- review batch report includes:
+  - `diversification_settings`
+  - `diversity_summary` (`unique_days`, `cluster_warning_count`, min/median time gaps)
 - guide status: `ready`
 - schema version: `eurusd_15m_pattern_review_v1`
 - batch completion status: `awaiting_completed_batch`
