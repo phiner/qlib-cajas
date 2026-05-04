@@ -272,6 +272,17 @@ def create_candlestick_figure(
     return fig
 
 
+def build_chart_diagnostic_summary(diagnostics: Dict[str, Any], trace_count: int) -> str:
+    """Build a compact always-visible diagnostic summary for chart rendering."""
+    return (
+        f"Chart window: {int(diagnostics.get('chart_window_row_count', 0))} rows"
+        f" | traces: {int(trace_count)}"
+        f" | exact match: {bool(diagnostics.get('exact_timestamp_match_found', False))}"
+        f" | fallback: {bool(diagnostics.get('nearest_fallback_used', False))}"
+        f" | target index: {diagnostics.get('target_index_in_window')}"
+    )
+
+
 def save_completed_review(
     batch_df: pd.DataFrame,
     sample_id: str,

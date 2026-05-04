@@ -121,8 +121,11 @@ Optional local GUI dependencies (manual install only):
 - Automatic save to completed CSV
 - Resume progress from existing completed file
 - Explicit chart warning messages when chart window extraction fails or has no data
+- Always-visible compact chart diagnostics summary (window rows, trace count, exact/fallback status, target index)
 - Lightweight `Chart Debug Info` expander for timestamp/window/trace diagnostics
 - NaN optional text values (for example `review_notes`) are sanitized to empty text in the UI
+- Blank `review_notes` indicates no note has been entered yet (optional field)
+- Streamlit chart width uses the new API path with compatibility fallback for older versions
 - Fully offline operation
 
 **Workflow**:

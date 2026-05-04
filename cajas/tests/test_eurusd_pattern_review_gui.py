@@ -12,11 +12,13 @@ from cajas.research.eurusd_pattern_review_gui import (
     extract_chart_window,
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
+    build_chart_diagnostic_summary,
     save_completed_review,
     get_review_progress,
     sanitize_output_columns,
     sanitize_optional_text_value,
 )
+from cajas.apps.eurusd_pattern_review_app import render_plotly_chart
 
 
 @pytest.fixture
@@ -222,3 +224,38 @@ def test_save_completed_review_sanitizes_nan_notes(batch_fixture, temp_dir):
     completed = pd.read_csv(output_path)
     row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
     assert sanitize_optional_text_value(row["review_notes"]) == ""
+
+
+def test_build_chart_diagnostic_summary_contains_required_fields():
+    diag = {
+        "chart_window_row_count": 61,
+        "exact_timestamp_match_found": True,
+        "nearest_fallback_used": False,
+        "target_index_in_window": 33,
+    }
+    summary = build_chart_diagnostic_summary(diag, trace_count=1)
+    assert "61 rows" in summary
+    assert "traces: 1" in summary
+    assert "exact match: True" in summary
+    assert "fallback: False" in summary
+    assert "target index: 33" in summary
+
+
+def test_render_plotly_chart_prefers_width_stretch_and_falls_back():
+    calls = []
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.raise_on_width = True
+
+        def plotly_chart(self, fig, **kwargs):
+            calls.append(kwargs)
+            if self.raise_on_width and "width" in kwargs:
+                self.raise_on_width = False
+                raise TypeError("width not supported")
+
+    fake_st = FakeStreamlit()
+    render_plotly_chart(fake_st, fig=object())
+    assert len(calls) == 2
+    assert calls[0].get("width") == "stretch"
+    assert calls[1].get("use_container_width") is True
