@@ -101,3 +101,39 @@ def test_readiness_begin_human_pattern_review_when_review_stack_ready(tmp_path: 
     )
     assert payload["status"] == "ready_for_pattern_research_with_clean_view"
     assert payload["next_action"] == "begin_human_pattern_review"
+
+
+def test_readiness_with_awaiting_feedback_is_non_blocking(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        clean_dataset_view_report=_write(
+            tmp_path / "clean.json",
+            {"status": "ready", "quarantined_row_count": 10, "output_paths": {"clean_csv": "tmp/eurusd/clean.csv"}},
+        ),
+        review_feedback_report=_write(
+            tmp_path / "feedback.json",
+            {"status": "awaiting_review_input", "reviewed_count": 0, "pending_count": 500},
+        ),
+    )
+    assert payload["status"] == "ready_for_pattern_research_with_clean_view"
+    assert payload["next_action"] == "complete_human_review_template"
+
+
+def test_readiness_blocked_when_feedback_blocked(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        clean_dataset_view_report=_write(
+            tmp_path / "clean.json",
+            {"status": "ready", "quarantined_row_count": 10, "output_paths": {"clean_csv": "tmp/eurusd/clean.csv"}},
+        ),
+        review_feedback_report=_write(
+            tmp_path / "feedback.json",
+            {"status": "blocked"},
+        ),
+    )
+    assert payload["status"] == "blocked"
+    assert "review_feedback_blocked" in payload["blocking_reasons"]

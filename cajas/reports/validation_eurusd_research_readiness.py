@@ -25,6 +25,8 @@ def build_validation_eurusd_research_readiness(
     pattern_review_qa_report: Path | None = None,
     pattern_label_schema_report: Path | None = None,
     pattern_review_template_report: Path | None = None,
+    review_feedback_report: Path | None = None,
+    review_summary_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
@@ -34,6 +36,8 @@ def build_validation_eurusd_research_readiness(
     review_qa = _safe_json(pattern_review_qa_report)
     label_schema = _safe_json(pattern_label_schema_report)
     review_template = _safe_json(pattern_review_template_report)
+    review_feedback = _safe_json(review_feedback_report)
+    review_summary = _safe_json(review_summary_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -44,6 +48,8 @@ def build_validation_eurusd_research_readiness(
     review_qa_status = review_qa.get("status", "missing")
     label_schema_status = label_schema.get("status", "missing")
     review_template_status = review_template.get("status", "missing")
+    review_feedback_status = review_feedback.get("status", "missing")
+    review_summary_status = review_summary.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -69,6 +75,8 @@ def build_validation_eurusd_research_readiness(
         blockers.append("pattern_label_schema_not_ready")
     if review_template and review_template_status == "blocked":
         blockers.append("pattern_review_template_blocked")
+    if review_feedback and review_feedback_status == "blocked":
+        blockers.append("review_feedback_blocked")
 
     if not blockers and audit_status == "watch":
         warnings.append("dataset_audit_watch_non_blocking")
@@ -92,6 +100,11 @@ def build_validation_eurusd_research_readiness(
         and review_template_status == "ready"
     ):
         next_action = "begin_human_pattern_review"
+    if review_feedback:
+        if review_feedback_status == "awaiting_review_input":
+            next_action = "complete_human_review_template"
+        elif review_feedback_status in {"ready", "watch"}:
+            next_action = str(review_summary.get("recommendation") or review_feedback.get("next_action") or "summarize_review_feedback")
 
     return {
         "schema_version": 1,
@@ -115,6 +128,11 @@ def build_validation_eurusd_research_readiness(
         "review_qa_status": review_qa_status,
         "label_schema_status": label_schema_status,
         "review_template_status": review_template_status,
+        "review_feedback_status": review_feedback_status,
+        "review_feedback_reviewed_count": review_feedback.get("reviewed_count"),
+        "review_feedback_pending_count": review_feedback.get("pending_count"),
+        "review_summary_status": review_summary_status,
+        "review_summary_recommendation": review_summary.get("recommendation"),
         "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
@@ -155,6 +173,11 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- review_qa_status: `{payload.get('review_qa_status')}`",
         f"- label_schema_status: `{payload.get('label_schema_status')}`",
         f"- review_template_status: `{payload.get('review_template_status')}`",
+        f"- review_feedback_status: `{payload.get('review_feedback_status')}`",
+        f"- review_feedback_reviewed_count: `{payload.get('review_feedback_reviewed_count')}`",
+        f"- review_feedback_pending_count: `{payload.get('review_feedback_pending_count')}`",
+        f"- review_summary_status: `{payload.get('review_summary_status')}`",
+        f"- review_summary_recommendation: `{payload.get('review_summary_recommendation')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",
