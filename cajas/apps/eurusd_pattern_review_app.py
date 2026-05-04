@@ -245,6 +245,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         lookback=72,
         forward=48,
         pre_context_ratio=0.6,
+        full_ohlc_source=st.session_state.clean_view,
     )
 
     fig = None
@@ -476,6 +477,13 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 "sample_position_ratio": chart_diag.get("sample_position_ratio"),
                 "boundary_clamp_start": chart_diag.get("boundary_clamp_start"),
                 "boundary_clamp_end": chart_diag.get("boundary_clamp_end"),
+                "full_source_row_count": chart_diag.get("full_source_row_count"),
+                "chart_source_row_count": chart_diag.get("chart_source_row_count"),
+                "source_min_timestamp": chart_diag.get("source_min_timestamp"),
+                "source_max_timestamp": chart_diag.get("source_max_timestamp"),
+                "sample_timestamp": chart_diag.get("sample_timestamp"),
+                "sample_is_near_full_source_start": chart_diag.get("sample_is_near_full_source_start"),
+                "framing_source_kind": chart_diag.get("framing_source_kind"),
                 "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
                 "display_axis": axis_summary.get("display_axis"),
                 "raw_time_axis_preserved_in_hover": axis_summary.get("raw_time_axis_preserved_in_hover"),

@@ -173,8 +173,11 @@ def extract_chart_window_with_diagnostics(
     forward: int = 30,
     nearest_tolerance: str = "15min",
     pre_context_ratio: float = 0.6,
+    full_ohlc_source: Optional[pd.DataFrame] = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Extract chart window around sample timestamp with diagnostics."""
+    source_df = full_ohlc_source if full_ohlc_source is not None else clean_view
+    framing_source_kind = "full_ohlc_source" if full_ohlc_source is not None else "clean_view_source"
     diagnostics: Dict[str, Any] = {
         "selected_timestamp": str(sample_timestamp),
         "normalized_timestamp": None,
@@ -191,16 +194,26 @@ def extract_chart_window_with_diagnostics(
         "sample_position_ratio": None,
         "boundary_clamp_start": False,
         "boundary_clamp_end": False,
+        "full_source_row_count": int(len(source_df)) if isinstance(source_df, pd.DataFrame) else 0,
+        "chart_source_row_count": int(len(clean_view)) if isinstance(clean_view, pd.DataFrame) else 0,
+        "source_min_timestamp": None,
+        "source_max_timestamp": None,
+        "sample_timestamp": str(sample_timestamp),
+        "sample_is_near_full_source_start": None,
+        "framing_source_kind": framing_source_kind,
         "error": None,
     }
 
-    if "timestamp" not in clean_view.columns or clean_view.empty:
+    if "timestamp" not in source_df.columns or source_df.empty:
         diagnostics["error"] = "clean_view_missing_timestamp_or_empty"
         return pd.DataFrame(), diagnostics
 
-    df = clean_view.copy()
+    df = source_df.copy()
     df["timestamp"] = normalize_timestamp_series(df["timestamp"])
     df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
+    if not df.empty:
+        diagnostics["source_min_timestamp"] = str(df["timestamp"].iloc[0])
+        diagnostics["source_max_timestamp"] = str(df["timestamp"].iloc[-1])
     target_ts = normalize_timestamp_value(sample_timestamp)
     diagnostics["normalized_timestamp"] = str(target_ts)
     if pd.isna(target_ts):
@@ -247,6 +260,7 @@ def extract_chart_window_with_diagnostics(
     )
     diagnostics["boundary_clamp_start"] = bool(start_idx == 0)
     diagnostics["boundary_clamp_end"] = bool(end_idx == len(df))
+    diagnostics["sample_is_near_full_source_start"] = bool(idx <= int(max(1, window_bars // 4)))
 
     return window, diagnostics
 

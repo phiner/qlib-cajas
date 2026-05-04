@@ -136,6 +136,7 @@ def test_extract_chart_window_with_diagnostics_valid_timestamp(clean_view_fixtur
     assert diag["window_start"] is not None
     assert diag["window_end"] is not None
     assert diag["sample_position_ratio"] is not None
+    assert diag["framing_source_kind"] in {"clean_view_source", "full_ohlc_source"}
     assert abs(diag["target_index_in_window"] - int(round((len(window) - 1) * 0.6))) <= 2
 
 
@@ -220,6 +221,94 @@ def test_extract_chart_window_with_diagnostics_sample_position_ratio_not_left_no
     assert diag["boundary_clamp_start"] is False
     assert diag["sample_position_ratio"] is not None
     assert float(diag["sample_position_ratio"]) > 0.4
+
+
+def test_extract_chart_window_full_source_framing_and_debug_fields():
+    dates = pd.date_range("2020-01-01", periods=300, freq="15min")
+    full_df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": [1.2 + i * 0.0001 for i in range(300)],
+            "high": [1.2 + i * 0.0001 + 0.0002 for i in range(300)],
+            "low": [1.2 + i * 0.0001 - 0.0001 for i in range(300)],
+            "close": [1.2 + i * 0.0001 + 0.0001 for i in range(300)],
+        }
+    )
+    sample_ts = full_df.iloc[150]["timestamp"]
+    window, diag = extract_chart_window_with_diagnostics(
+        full_df,
+        sample_ts,
+        lookback=72,
+        forward=48,
+        pre_context_ratio=0.6,
+        full_ohlc_source=full_df,
+    )
+    assert not window.empty
+    assert diag["framing_source_kind"] == "full_ohlc_source"
+    assert diag["full_source_row_count"] == 300
+    assert diag["window_start"] == 77
+    assert diag["window_end"] == 198
+    assert diag["target_index_in_window"] == 73
+    assert 0.55 <= float(diag["sample_position_ratio"]) <= 0.7
+    assert diag["boundary_clamp_start"] is False
+    assert diag["source_min_timestamp"] is not None
+    assert diag["source_max_timestamp"] is not None
+
+
+def test_extract_chart_window_prefers_full_source_over_pre_sliced_source():
+    dates = pd.date_range("2020-01-01", periods=300, freq="15min")
+    full_df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": [1.3 + i * 0.0001 for i in range(300)],
+            "high": [1.3 + i * 0.0001 + 0.0002 for i in range(300)],
+            "low": [1.3 + i * 0.0001 - 0.0001 for i in range(300)],
+            "close": [1.3 + i * 0.0001 + 0.0001 for i in range(300)],
+        }
+    )
+    sample_ts = full_df.iloc[150]["timestamp"]
+    pre_sliced = full_df.iloc[150:220].reset_index(drop=True)
+    _, diag = extract_chart_window_with_diagnostics(
+        pre_sliced,
+        sample_ts,
+        lookback=72,
+        forward=48,
+        pre_context_ratio=0.6,
+        full_ohlc_source=full_df,
+    )
+    assert diag["framing_source_kind"] == "full_ohlc_source"
+    assert diag["target_index_in_window"] > 0
+    assert float(diag["sample_position_ratio"]) > 0.4
+    assert diag["boundary_clamp_start"] is False
+
+
+def test_extract_chart_window_string_timestamp_and_fallback_flag():
+    dates = pd.date_range("2020-01-01", periods=300, freq="15min")
+    full_df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": [1.4 + i * 0.0001 for i in range(300)],
+            "high": [1.4 + i * 0.0001 + 0.0002 for i in range(300)],
+            "low": [1.4 + i * 0.0001 - 0.0001 for i in range(300)],
+            "close": [1.4 + i * 0.0001 + 0.0001 for i in range(300)],
+        }
+    )
+    exact_ts = str(full_df.iloc[100]["timestamp"])
+    _, exact_diag = extract_chart_window_with_diagnostics(
+        full_df,
+        exact_ts,
+        full_ohlc_source=full_df,
+    )
+    assert exact_diag["exact_timestamp_match_found"] is True
+    assert exact_diag["nearest_fallback_used"] is False
+    off_grid = pd.Timestamp(full_df.iloc[100]["timestamp"]) + pd.Timedelta(minutes=1)
+    _, near_diag = extract_chart_window_with_diagnostics(
+        full_df,
+        off_grid,
+        full_ohlc_source=full_df,
+    )
+    assert near_diag["exact_timestamp_match_found"] is False
+    assert near_diag["nearest_fallback_used"] is True
 
 
 def test_save_completed_review(batch_fixture, temp_dir):
