@@ -64,11 +64,11 @@ Root `tasks/` should normally contain only:
 
 ```text
 tasks/eurusd_15m_research_end_to_end_roadmap.md
-tasks/phase_6086_6205_eurusd_15m_local_review_gui_prompt.md
-tasks/phase_6326_6445_tasks_prompt_cleanup_archive_prompt.md
+tasks/README.md
+tasks/prompts/001_eurusd_gui_sample_index_state_fix.md
 ```
 
-Future active phase prompts may temporarily live at root while they are being used. After the phase is completed, move them into the appropriate archive directory.
+Future prompts should live under `tasks/prompts/` with sequential naming. Stale prompts should be deleted or archived after completion.
 
 ## Master Roadmap
 

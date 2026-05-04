@@ -75,6 +75,6 @@ Real-data access rules:
 - `cajas/docs/post_github_merge_sanity_report.md`
 - `cajas/docs/post_merge_next_workstream_plan.md`
 
-## Next Phase Prompt
+## Next Prompt
 
-- `tasks/phase_746_775_dataset_quality_feature_research_prompt.md`
+- `tasks/prompts/001_eurusd_gui_sample_index_state_fix.md`

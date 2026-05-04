@@ -104,7 +104,7 @@ Delivered:
 
 Reference:
 
-- prompt: `tasks/phase_776_805_dataset_quality_modular_cli_smoke_prompt.md`
+- prompt: `tasks/prompts/001_eurusd_gui_sample_index_state_fix.md`
 - details: `cajas/docs/dataset_quality_loop.md`
 
 ## Explicit Non-Goals
