@@ -607,7 +607,7 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     review_values = {
         "human_pattern_label": "weak_pattern",
         "market_context": "range",
-        "direction_context": "sideways",
+        "direction_context": "neutral",
         "structure_quality": 2,
         "follow_through_quality": 2,
         "review_confidence": 3,

@@ -11,6 +11,12 @@ import pandas as pd
 FORBIDDEN = {"buy", "sell", "long", "short", "order", "position", "target_position", "signal", "entry", "exit"}
 
 
+def _allowed_with_legacy(schema: dict[str, Any], field: str) -> set[str]:
+    allowed = {str(v) for v in schema.get("allowed_values", {}).get(field, [])}
+    legacy = {str(v) for v in schema.get("legacy_allowed_values", {}).get(field, [])}
+    return allowed | legacy
+
+
 def _load_table(path: Path) -> pd.DataFrame:
     if path.suffix.lower() == ".jsonl":
         rows = [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
@@ -29,7 +35,9 @@ def build_validation_eurusd_pattern_review_feedback(
 
     template = _load_table(template_csv)
     schema = json.loads(label_schema.read_text(encoding="utf-8"))
-    schema_version = schema.get("schema_version")
+    schema_version = str(schema.get("schema_version", ""))
+    compatible_versions = {str(v) for v in schema.get("compatible_schema_versions", [])}
+    compatible_versions.add(schema_version)
 
     if not completed_review_csv.exists():
         return {
@@ -80,15 +88,15 @@ def build_validation_eurusd_pattern_review_feedback(
         blockers.append("forbidden_trading_columns")
 
     if "schema_version" in completed.columns:
-        bad_schema = int((completed["schema_version"].astype(str) != str(schema_version)).sum())
+        bad_schema = int((~completed["schema_version"].astype(str).isin(compatible_versions)).sum())
         if bad_schema > 0:
             invalid_rows += bad_schema
             blockers.append("schema_version_mismatch")
 
-    allowed = schema.get("allowed_values", {})
     for col in ["human_pattern_label", "market_context", "direction_context", "review_status"]:
-        if col in completed.columns and col in allowed:
-            bad = ~completed[col].astype(str).isin(set(allowed[col]))
+        if col in completed.columns:
+            allowed_vals = _allowed_with_legacy(schema, col)
+            bad = ~completed[col].astype(str).isin(allowed_vals)
             c = int(bad.sum())
             if c > 0:
                 invalid_rows += c

@@ -12,6 +12,12 @@ FORBIDDEN_TRADING_COLUMNS = [
 ]
 
 
+def _allowed_with_legacy(schema: Dict[str, Any], field: str) -> set[str]:
+    allowed = {str(v) for v in schema.get("allowed_values", {}).get(field, [])}
+    legacy = {str(v) for v in schema.get("legacy_allowed_values", {}).get(field, [])}
+    return allowed | legacy
+
+
 def build_batch_merge_report(
     batch_completion_report_json: Path,
     completed_batch_csv: Path,
@@ -74,9 +80,9 @@ def build_batch_merge_report(
         }
     
     # Validate schema
-    allowed_labels = schema.get("allowed_values", {}).get("human_pattern_label", [])
-    allowed_market = schema.get("allowed_values", {}).get("market_context", [])
-    allowed_direction = schema.get("allowed_values", {}).get("direction_context", [])
+    allowed_labels = _allowed_with_legacy(schema, "human_pattern_label")
+    allowed_market = _allowed_with_legacy(schema, "market_context")
+    allowed_direction = _allowed_with_legacy(schema, "direction_context")
     
     invalid_rows = []
     for idx, row in completed_batch_df.iterrows():

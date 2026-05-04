@@ -7,7 +7,8 @@ from typing import Any
 
 def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
     return {
-        "schema_version": "eurusd_15m_pattern_review_v1",
+        "schema_version": "eurusd_15m_pattern_review_v2",
+        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
         "status": "ready",
         "required_fields": [
             "sample_id",
@@ -23,9 +24,32 @@ def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
         ],
         "allowed_values": {
             "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": ["trend", "range", "transition", "high_volatility", "low_volatility", "unclear"],
-            "direction_context": ["up", "down", "sideways", "mixed", "unclear"],
-            "review_status": ["pending", "reviewed"],
+            "market_context": [
+                "trend",
+                "range",
+                "pullback",
+                "transition",
+                "breakout",
+                "reversal_attempt",
+                "high_volatility",
+                "low_volatility",
+                "unclear",
+            ],
+            "direction_context": [
+                "up",
+                "down",
+                "neutral",
+                "mixed",
+                "up_pullback",
+                "down_pullback",
+                "reversal_up",
+                "reversal_down",
+                "unclear",
+            ],
+            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
+        },
+        "legacy_allowed_values": {
+            "direction_context": ["sideways"],
         },
         "numeric_ranges": {
             "structure_quality": {"min": 1, "max": 5},

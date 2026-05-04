@@ -16,13 +16,15 @@ def temp_dir(tmp_path):
 @pytest.fixture
 def label_schema(temp_dir):
     schema = {
-        "schema_version": "eurusd_15m_pattern_review_v1",
+        "schema_version": "eurusd_15m_pattern_review_v2",
+        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
         "status": "ready",
         "allowed_values": {
             "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": ["trend", "range", "transition", "high_volatility", "low_volatility", "unclear"],
-            "direction_context": ["up", "down", "sideways", "mixed", "unclear"]
-        }
+            "market_context": ["trend", "range", "pullback", "transition", "breakout", "reversal_attempt", "high_volatility", "low_volatility", "unclear"],
+            "direction_context": ["up", "down", "neutral", "mixed", "up_pullback", "down_pullback", "reversal_up", "reversal_down", "unclear"]
+        },
+        "legacy_allowed_values": {"direction_context": ["sideways"]},
     }
     path = temp_dir / "schema.json"
     path.write_text(json.dumps(schema))

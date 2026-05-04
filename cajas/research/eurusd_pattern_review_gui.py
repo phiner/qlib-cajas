@@ -34,7 +34,7 @@ DEFAULT_REVIEW_VALUES = {
     "review_notes": "",
     "review_status": "pending",
 }
-REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v1"
+REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v2"
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
 WICK_SENSITIVE_CANDIDATE_TYPES = {
     "lower_wick_rejection_candidate",
@@ -79,13 +79,37 @@ def load_label_schema(path: Path) -> Dict[str, Any]:
 def get_default_schema() -> Dict[str, Any]:
     """Get default label schema."""
     return {
-        "schema_version": "eurusd_15m_pattern_review_v1",
+        "schema_version": "eurusd_15m_pattern_review_v2",
+        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
         "allowed_values": {
             "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": ["trend", "range", "transition", "high_volatility", "low_volatility", "unclear"],
-            "direction_context": ["up", "down", "sideways", "mixed", "unclear"],
-            "review_status": ["pending", "reviewed"]
-        }
+            "market_context": [
+                "trend",
+                "range",
+                "pullback",
+                "transition",
+                "breakout",
+                "reversal_attempt",
+                "high_volatility",
+                "low_volatility",
+                "unclear",
+            ],
+            "direction_context": [
+                "up",
+                "down",
+                "neutral",
+                "mixed",
+                "up_pullback",
+                "down_pullback",
+                "reversal_up",
+                "reversal_down",
+                "unclear",
+            ],
+            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
+        },
+        "legacy_allowed_values": {
+            "direction_context": ["sideways"],
+        },
     }
 
 

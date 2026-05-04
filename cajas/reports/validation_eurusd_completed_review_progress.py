@@ -101,6 +101,12 @@ def _keyword_counts(values: list[str]) -> dict[str, int]:
     return out
 
 
+def _allowed_with_legacy(schema: dict[str, Any], field: str) -> set[str]:
+    allowed = {str(v) for v in schema.get("allowed_values", {}).get(field, [])}
+    legacy = {str(v) for v in schema.get("legacy_allowed_values", {}).get(field, [])}
+    return allowed | legacy
+
+
 def build_completed_review_progress_report(
     *,
     batch_csv: Path,
@@ -208,7 +214,7 @@ def build_completed_review_progress_report(
                 invalid_score_rows.extend(bad)
         for field in REVIEW_ENUM_FIELDS:
             if field in dedup.columns and field in allowed:
-                allowed_vals = {str(v) for v in allowed.get(field, [])}
+                allowed_vals = _allowed_with_legacy(schema, field)
                 for _, row in dedup.iterrows():
                     if pd.isna(row[field]):
                         continue

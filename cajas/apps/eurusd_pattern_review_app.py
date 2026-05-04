@@ -169,7 +169,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     candidate_types = ["All"] + sorted(batch["candidate_type"].unique().tolist())
     selected_type = st.sidebar.selectbox("Candidate Type", candidate_types)
     
-    review_statuses = ["All", "pending", "reviewed"]
+    review_statuses = ["All"] + list(schema.get("allowed_values", {}).get("review_status", ["pending", "reviewed"]))
     selected_status = st.sidebar.selectbox("Review Status", review_statuses)
     
     # Filter summary only; global sample navigation always uses full batch order.
@@ -262,8 +262,8 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         st.session_state["review_market_context"] = allowed.get("market_context", ["unclear"])[0]
     if st.session_state.get("review_direction_context") not in allowed.get("direction_context", ["unclear"]):
         st.session_state["review_direction_context"] = allowed.get("direction_context", ["unclear"])[0]
-    if st.session_state.get("review_status") not in allowed.get("review_status", ["pending", "reviewed"]):
-        st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed"])[0]
+    if st.session_state.get("review_status") not in allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]):
+        st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"])[0]
 
     if compact_mode:
         st.subheader(f"Sample {sample['sample_id']}")
@@ -381,7 +381,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     if compact_mode:
         review_status = col4.selectbox(
             "Review Status",
-            allowed.get("review_status", ["pending", "reviewed"]),
+            allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
             key="review_status",
         )
 
@@ -413,7 +413,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         )
         review_status = st.selectbox(
             "Review Status",
-            allowed.get("review_status", ["pending", "reviewed"]),
+            allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
             key="review_status",
         )
     

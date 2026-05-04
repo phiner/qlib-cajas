@@ -54,18 +54,20 @@ def _invalid_score_rows(df: pd.DataFrame) -> list[str]:
 
 def _invalid_enum_rows(df: pd.DataFrame, schema: dict[str, Any]) -> list[str]:
     allowed = (schema.get("allowed_values") or {})
+    legacy = (schema.get("legacy_allowed_values") or {})
     bad: list[str] = []
     enum_fields = ("human_pattern_label", "market_context", "direction_context", "review_status")
     for field in enum_fields:
         if field not in df.columns:
             continue
-        allowed_values = allowed.get(field)
+        allowed_values = {str(x) for x in (allowed.get(field) or [])}
+        allowed_values |= {str(x) for x in (legacy.get(field) or [])}
         if not allowed_values:
             continue
         for idx, value in df[field].items():
             if pd.isna(value):
                 continue
-            if str(value) not in {str(x) for x in allowed_values}:
+            if str(value) not in allowed_values:
                 sid = str(df.loc[idx, "sample_id"]) if "sample_id" in df.columns else f"row_{idx}"
                 bad.append(sid)
     return sorted(set(bad))

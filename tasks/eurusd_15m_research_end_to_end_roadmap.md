@@ -377,7 +377,10 @@ Allowed `market_context` values:
 
 - `trend`
 - `range`
+- `pullback`
 - `transition`
+- `breakout`
+- `reversal_attempt`
 - `high_volatility`
 - `low_volatility`
 - `unclear`
@@ -386,9 +389,17 @@ Allowed `direction_context` values:
 
 - `up`
 - `down`
-- `sideways`
+- `neutral`
 - `mixed`
+- `up_pullback`
+- `down_pullback`
+- `reversal_up`
+- `reversal_down`
 - `unclear`
+
+Legacy compatibility:
+
+- existing `direction_context=sideways` remains accepted during transition
 
 Numeric ratings:
 
@@ -400,7 +411,8 @@ Allowed `review_status` values:
 
 - `pending`
 - `reviewed`
-- `skipped`
+- `needs_recheck`
+- `skip`
 
 ## 9. Review Feedback Intake and Summary
 

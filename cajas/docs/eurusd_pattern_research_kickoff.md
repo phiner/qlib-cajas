@@ -93,13 +93,13 @@ Human reviewer workflow:
 3. Optionally inspect nearby bars in charting software
 4. Fill human review fields:
    - `human_pattern_label`: valid_pattern, weak_pattern, false_positive, unclear, skip_bad_context
-   - `market_context`: trend, range, transition, high_volatility, low_volatility, unclear
-   - `direction_context`: up, down, sideways, mixed, unclear
+   - `market_context`: trend, range, pullback, transition, breakout, reversal_attempt, high_volatility, low_volatility, unclear
+   - `direction_context`: up, down, neutral, mixed, up_pullback, down_pullback, reversal_up, reversal_down, unclear
    - `structure_quality`: 1-5 rating
    - `follow_through_quality`: 1-5 rating
    - `review_confidence`: 1-5 rating
    - `review_notes`: free text
-   - `review_status`: reviewed (when complete)
+   - `review_status`: pending, reviewed, needs_recheck, skip
 5. Save completed batch as: `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
 6. Later merge completed batch into: `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`
 
@@ -256,7 +256,7 @@ Label schema artifacts:
 
 - `tmp/validation-eurusd-pattern-label-schema.json`
 - `tmp/validation-eurusd-pattern-label-schema.md`
-- schema version: `eurusd_15m_pattern_review_v1`
+- schema version: `eurusd_15m_pattern_review_v2` (compatible with `v1`)
 
 Review template artifacts:
 

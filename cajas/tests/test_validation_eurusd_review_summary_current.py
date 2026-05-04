@@ -27,7 +27,7 @@ def test_summary_current_deterministic(tmp_path: Path):
             "review_status": ["reviewed", "pending", "reviewed"],
             "human_pattern_label": ["valid_pattern", "unclear", "weak_pattern"],
             "market_context": ["trend", "unclear", "range"],
-            "direction_context": ["up", "unclear", "sideways"],
+            "direction_context": ["up", "unclear", "neutral"],
             "structure_quality": [4, 3, 2],
             "follow_through_quality": [4, 3, 2],
             "review_confidence": [5, 3, 2],

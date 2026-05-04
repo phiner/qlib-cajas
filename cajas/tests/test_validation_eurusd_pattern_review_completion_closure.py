@@ -10,13 +10,15 @@ from cajas.reports.validation_eurusd_pattern_review_completion_closure import (
 
 def _schema(path: Path) -> Path:
     payload = {
-        "schema_version": "eurusd_15m_pattern_review_v1",
+        "schema_version": "eurusd_15m_pattern_review_v2",
+        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
         "allowed_values": {
             "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": ["trend", "range", "transition", "high_volatility", "low_volatility", "unclear"],
-            "direction_context": ["up", "down", "sideways", "mixed", "unclear"],
-            "review_status": ["pending", "reviewed"],
+            "market_context": ["trend", "range", "pullback", "transition", "breakout", "reversal_attempt", "high_volatility", "low_volatility", "unclear"],
+            "direction_context": ["up", "down", "neutral", "mixed", "up_pullback", "down_pullback", "reversal_up", "reversal_down", "unclear"],
+            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
         },
+        "legacy_allowed_values": {"direction_context": ["sideways"]},
     }
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
