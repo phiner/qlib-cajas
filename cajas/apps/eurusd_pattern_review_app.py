@@ -81,6 +81,15 @@ def global_index_to_sample_number(global_index: int) -> int:
     return int(global_index) + 1
 
 
+def apply_pending_global_sample_index(state, pending_key: str, current_key: str, input_key: str, batch_count: int) -> None:
+    """Apply staged global sample navigation before rendering sample-dependent widgets."""
+    if pending_key not in state:
+        return
+    idx = clamp_sample_index(int(state.pop(pending_key)), batch_count)
+    state[current_key] = idx
+    state[input_key] = global_index_to_sample_number(idx)
+
+
 def main():
     try:
         import streamlit as st
@@ -104,7 +113,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     )
     st.title("EURUSD 15m Review")
     CANONICAL_INDEX_KEY = "current_global_sample_idx"
-    WIDGET_INDEX_KEY = "sample_number_widget"
+    WIDGET_INDEX_KEY = "sample_number_input"
     PENDING_INDEX_KEY = "pending_global_sample_idx"
 
     consume_pending_toast_once(st, st.session_state)
@@ -187,18 +196,21 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         st.session_state[CANONICAL_INDEX_KEY] = st.session_state.get("sample_idx", 0)
     if "current_sample_idx" in st.session_state and CANONICAL_INDEX_KEY not in st.session_state:
         st.session_state[CANONICAL_INDEX_KEY] = st.session_state.get("current_sample_idx", 0)
-    if PENDING_INDEX_KEY in st.session_state:
-        st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(
-            int(st.session_state.pop(PENDING_INDEX_KEY)),
-            row_count,
-        )
+    apply_pending_global_sample_index(
+        st.session_state,
+        pending_key=PENDING_INDEX_KEY,
+        current_key=CANONICAL_INDEX_KEY,
+        input_key=WIDGET_INDEX_KEY,
+        batch_count=row_count,
+    )
     if CANONICAL_INDEX_KEY not in st.session_state:
         st.session_state[CANONICAL_INDEX_KEY] = 0
     st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(
         int(st.session_state.get(CANONICAL_INDEX_KEY, 0)),
         row_count,
     )
-    st.session_state[WIDGET_INDEX_KEY] = global_index_to_sample_number(st.session_state[CANONICAL_INDEX_KEY])
+    if WIDGET_INDEX_KEY not in st.session_state:
+        st.session_state[WIDGET_INDEX_KEY] = global_index_to_sample_number(st.session_state[CANONICAL_INDEX_KEY])
     
     # Sample selector
     st.sidebar.subheader("Sample")
@@ -208,9 +220,11 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         max_value=row_count,
         key=WIDGET_INDEX_KEY
     )
+    if st.sidebar.button("Go to Sample"):
+        st.session_state[PENDING_INDEX_KEY] = sample_number_to_global_index(int(sample_number), row_count)
+        st.rerun()
     st.sidebar.caption("Global position in full review batch; ignores filters.")
-    st.session_state[CANONICAL_INDEX_KEY] = sample_number_to_global_index(int(sample_number), row_count)
-    sample_idx = st.session_state[CANONICAL_INDEX_KEY]
+    sample_idx = int(st.session_state[CANONICAL_INDEX_KEY])
     st.sidebar.caption(f"Sample {global_index_to_sample_number(sample_idx)} / {row_count}")
     
     # Progress
@@ -226,8 +240,13 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             "Filters are active; direct Sample Number jump uses full batch order."
         )
         st.sidebar.caption(f"Filtered matches: {filtered_count}")
+        st.sidebar.caption(
+            f"Showing global sample {global_index_to_sample_number(sample_idx)}; current filters may not match this sample."
+        )
     if filtered_count == 0:
         st.sidebar.warning("No rows match current filters; global sample display is unchanged.")
+
+    st.sidebar.caption(f"sample_id={sample['sample_id']} | global_index={sample_idx}")
 
     # Current sample (always from full batch order)
     sample = batch.iloc[sample_idx]

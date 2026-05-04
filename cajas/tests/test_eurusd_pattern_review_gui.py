@@ -47,6 +47,7 @@ from cajas.apps.eurusd_pattern_review_app import (
     consume_pending_toast_once,
     sample_number_to_global_index,
     global_index_to_sample_number,
+    apply_pending_global_sample_index,
 )
 
 
@@ -780,7 +781,7 @@ def test_app_uses_decoupled_sample_index_keys():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert 'key="sample_idx"' not in app_source
     assert "current_global_sample_idx" in app_source
-    assert "sample_number_widget" in app_source
+    assert "sample_number_input" in app_source
     assert "pending_global_sample_idx" in app_source
     assert "Previous Sample" in app_source
     assert "Next Sample" in app_source
@@ -1013,6 +1014,41 @@ def test_pending_navigation_can_coexist_with_pending_toast():
     assert "pending_toast_message" not in state
 
 
+def test_apply_pending_global_sample_index_updates_current_and_input_and_clears_pending():
+    state = {
+        "pending_global_sample_idx": 33,
+        "current_global_sample_idx": 0,
+        "sample_number_input": 1,
+    }
+    apply_pending_global_sample_index(
+        state,
+        pending_key="pending_global_sample_idx",
+        current_key="current_global_sample_idx",
+        input_key="sample_number_input",
+        batch_count=100,
+    )
+    assert state["current_global_sample_idx"] == 33
+    assert state["sample_number_input"] == 34
+    assert "pending_global_sample_idx" not in state
+
+
+def test_apply_pending_global_sample_index_clamps_out_of_range():
+    state = {
+        "pending_global_sample_idx": 999,
+        "current_global_sample_idx": 0,
+        "sample_number_input": 1,
+    }
+    apply_pending_global_sample_index(
+        state,
+        pending_key="pending_global_sample_idx",
+        current_key="current_global_sample_idx",
+        input_key="sample_number_input",
+        batch_count=10,
+    )
+    assert state["current_global_sample_idx"] == 9
+    assert state["sample_number_input"] == 10
+
+
 def test_app_source_uses_pending_toast_consume_pattern():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "pending_toast_message" in app_source
@@ -1050,8 +1086,9 @@ def test_direct_jump_resolution_uses_global_batch_order_ignoring_filters():
 def test_app_source_uses_global_sample_number_wording_and_keys():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "Sample Number" in app_source
+    assert "Go to Sample" in app_source
     assert "Global position in full review batch; ignores filters." in app_source
     assert "Filters are active; direct Sample Number jump uses full batch order." in app_source
     assert "current_global_sample_idx" in app_source
     assert "pending_global_sample_idx" in app_source
-    assert "sample_number_widget" in app_source
+    assert "sample_number_input" in app_source
