@@ -33,6 +33,8 @@ def build_validation_eurusd_research_readiness(
     review_completion_closure_report: Path | None = None,
     review_batch_merge_report: Path | None = None,
     pattern_review_gui_report: Path | None = None,
+    completed_review_progress_report: Path | None = None,
+    review_summary_current_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
@@ -50,6 +52,8 @@ def build_validation_eurusd_research_readiness(
     completion_closure = _safe_json(review_completion_closure_report)
     batch_merge = _safe_json(review_batch_merge_report)
     review_gui = _safe_json(pattern_review_gui_report)
+    completed_review_progress = _safe_json(completed_review_progress_report)
+    review_summary_current = _safe_json(review_summary_current_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -68,6 +72,8 @@ def build_validation_eurusd_research_readiness(
     completion_closure_status = completion_closure.get("status", "missing")
     batch_merge_status = batch_merge.get("status", "missing")
     review_gui_status = review_gui.get("status", "missing")
+    completed_review_progress_status = completed_review_progress.get("status", "missing")
+    review_summary_current_status = review_summary_current.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -162,6 +168,10 @@ def build_validation_eurusd_research_readiness(
             next_action = "continue_human_review"
         elif closure_next:
             next_action = str(closure_next)
+    if completed_review_progress:
+        c_next = completed_review_progress.get("next_action")
+        if c_next:
+            next_action = str(c_next)
 
     return {
         "schema_version": 1,
@@ -206,6 +216,13 @@ def build_validation_eurusd_research_readiness(
         "batch_merge_reviewed_count_total": batch_merge.get("reviewed_count_total"),
         "pattern_review_gui_status": review_gui_status,
         "review_app_run_command": review_gui.get("launcher_command") or review_gui.get("run_command"),
+        "completed_review_progress_status": completed_review_progress_status,
+        "completed_review_progress_completed_count": completed_review_progress.get("completed_count"),
+        "completed_review_progress_pending_count": completed_review_progress.get("pending_count"),
+        "completed_review_progress_completion_ratio": completed_review_progress.get("completion_ratio"),
+        "completed_review_progress_csv_schema_status": completed_review_progress.get("csv_schema_status"),
+        "completed_review_progress_jsonl_audit_status": completed_review_progress.get("jsonl_audit_status"),
+        "review_summary_current_status": review_summary_current_status,
         "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
@@ -267,6 +284,13 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- batch_merge_reviewed_count_total: `{payload.get('batch_merge_reviewed_count_total')}`",
         f"- pattern_review_gui_status: `{payload.get('pattern_review_gui_status')}`",
         f"- review_app_run_command: `{payload.get('review_app_run_command')}`",
+        f"- completed_review_progress_status: `{payload.get('completed_review_progress_status')}`",
+        f"- completed_review_progress_completed_count: `{payload.get('completed_review_progress_completed_count')}`",
+        f"- completed_review_progress_pending_count: `{payload.get('completed_review_progress_pending_count')}`",
+        f"- completed_review_progress_completion_ratio: `{payload.get('completed_review_progress_completion_ratio')}`",
+        f"- completed_review_progress_csv_schema_status: `{payload.get('completed_review_progress_csv_schema_status')}`",
+        f"- completed_review_progress_jsonl_audit_status: `{payload.get('completed_review_progress_jsonl_audit_status')}`",
+        f"- review_summary_current_status: `{payload.get('review_summary_current_status')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",

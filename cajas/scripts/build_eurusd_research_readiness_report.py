@@ -37,6 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--review-batch-merge-report", type=Path)
     parser.add_argument("--pattern-review-batch-merge-report", type=Path)
     parser.add_argument("--pattern-review-gui-report", type=Path)
+    parser.add_argument("--completed-review-progress-report", type=Path)
+    parser.add_argument("--review-summary-current-report", type=Path)
     parser.add_argument("--out-json", type=Path)
     parser.add_argument("--output-json", type=Path)
     parser.add_argument("--out-md", type=Path)
@@ -73,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         review_completion_closure_report=review_completion_closure_report,
         review_batch_merge_report=review_batch_merge_report,
         pattern_review_gui_report=args.pattern_review_gui_report,
+        completed_review_progress_report=args.completed_review_progress_report,
+        review_summary_current_report=args.review_summary_current_report,
     )
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

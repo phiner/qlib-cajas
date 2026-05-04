@@ -13,6 +13,7 @@ Current focus:
 - EURUSD 15m K-line market recognition research
 - Local/offline GUI-assisted human review (`./scripts/run_eurusd_review_gui.sh`)
 - Explicit fresh-start review reset (`./scripts/reset_eurusd_review_batch.sh`)
+- Consolidated read-only progress validation (`./scripts/validate_eurusd_review_progress.sh`)
 - GUI chart visibility hardening with explicit no-data warnings, always-visible compact diagnostics, expandable detailed debug info, and NaN-to-empty review note sanitization (blank notes mean optional/unset)
 - Streamlit chart width deprecation addressed via `width="stretch"` with backward-compatible fallback
 

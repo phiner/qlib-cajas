@@ -287,3 +287,28 @@ def test_readiness_uses_completion_closure_next_action(tmp_path: Path) -> None:
     assert payload["review_completion_closure_status"] == "in_progress"
     assert payload["review_completion_closure_pending_count"] == 3
     assert payload["next_action"] == "continue_human_review"
+
+
+def test_readiness_includes_completed_progress_and_summary_current(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        completed_review_progress_report=_write(
+            tmp_path / "progress.json",
+            {
+                "status": "valid_in_progress",
+                "completed_count": 21,
+                "pending_count": 79,
+                "completion_ratio": 0.21,
+                "csv_schema_status": "valid",
+                "jsonl_audit_status": "valid",
+                "next_action": "continue_human_review",
+            },
+        ),
+        review_summary_current_report=_write(tmp_path / "summary_current.json", {"status": "ready"}),
+    )
+    assert payload["completed_review_progress_status"] == "valid_in_progress"
+    assert payload["completed_review_progress_completed_count"] == 21
+    assert payload["review_summary_current_status"] == "ready"
+    assert payload["next_action"] == "continue_human_review"

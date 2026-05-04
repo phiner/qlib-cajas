@@ -54,12 +54,14 @@ Local GUI run commands:
 ```bash
 ./scripts/reset_eurusd_review_batch.sh
 ./scripts/run_eurusd_review_gui.sh
+./scripts/validate_eurusd_review_progress.sh
 ./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
 ```
 
 Reset policy:
 - reset only runs when `./scripts/reset_eurusd_review_batch.sh` is explicitly invoked
 - `./scripts/run_eurusd_review_gui.sh` does not reset/delete review files on startup
+- `./scripts/validate_eurusd_review_progress.sh` is read-only and must not reset/regenerate review artifacts
 
 ## 3. Repository Posture
 

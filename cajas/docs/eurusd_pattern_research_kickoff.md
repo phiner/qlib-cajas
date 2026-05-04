@@ -125,6 +125,17 @@ Fresh-start reset command (explicit/manual only):
 ```
 This reset command rebuilds diversified `batch_001` and removes old completed CSV/JSONL by default. GUI startup does not reset any files.
 
+Consolidated read-only review validation command:
+```bash
+./scripts/validate_eurusd_review_progress.sh
+```
+This command does not reset or regenerate batches and does not modify completed CSV/JSONL review data.
+Primary artifacts:
+- `tmp/validation-eurusd-completed-review-progress.json`
+- `tmp/validation-eurusd-completed-review-progress.md`
+- `tmp/validation-eurusd-review-summary-current.json`
+- `tmp/validation-eurusd-review-summary-current.md`
+
 Optional local GUI dependencies (manual install only):
 ```bash
 ./.venv-qlib313/bin/python -m pip install streamlit plotly
