@@ -551,6 +551,12 @@ def test_compact_chart_status_line_is_single_line():
     assert "time_gap_count=0" in line
 
 
+def test_app_imports_default_review_values_when_used():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "default_review_values()" in app_source
+    assert "default_review_values," in app_source
+
+
 def test_detect_time_axis_gaps_no_gap():
     timestamps = pd.date_range("2020-01-03 00:00:00", periods=10, freq="15min")
     gaps = detect_time_axis_gaps(list(timestamps))

@@ -20,6 +20,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     previous_sample_index,
     should_advance_after_save,
     build_compact_save_feedback_message,
+    default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
 )
