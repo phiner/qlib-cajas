@@ -1092,3 +1092,12 @@ def test_app_source_uses_global_sample_number_wording_and_keys():
     assert "current_global_sample_idx" in app_source
     assert "pending_global_sample_idx" in app_source
     assert "sample_number_input" in app_source
+
+
+def test_app_source_resolves_sample_before_sidebar_sample_id_caption():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    sample_assign = app_source.find("sample = batch.iloc[sample_idx]")
+    sidebar_caption = app_source.find("st.sidebar.caption(f\"sample_id={sample['sample_id']} | global_index={sample_idx}\")")
+    assert sample_assign != -1
+    assert sidebar_caption != -1
+    assert sample_assign < sidebar_caption

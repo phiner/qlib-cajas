@@ -246,10 +246,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     if filtered_count == 0:
         st.sidebar.warning("No rows match current filters; global sample display is unchanged.")
 
-    st.sidebar.caption(f"sample_id={sample['sample_id']} | global_index={sample_idx}")
-
     # Current sample (always from full batch order)
     sample = batch.iloc[sample_idx]
+    st.sidebar.caption(f"sample_id={sample['sample_id']} | global_index={sample_idx}")
     sample_id = str(sample["sample_id"])
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
