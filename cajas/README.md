@@ -2029,6 +2029,25 @@ Review policy:
 - No trading signal/order fields are allowed in review exports.
 - Scope remains EURUSD 15m Bid clean view only.
 
+EURUSD 15m first review batch commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch.py --template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --batch-id eurusd_15m_pattern_review_batch_001 --batch-size 100 --per-type-target 10 --output-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv --output-batch-jsonl tmp/eurusd/EURUSD_15m_pattern_review_batch_001.jsonl --output-json tmp/validation-eurusd-pattern-review-batch-001.json --output-md tmp/validation-eurusd-pattern-review-batch-001.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_guide.py --label-schema tmp/validation-eurusd-pattern-label-schema.json --batch-report tmp/validation-eurusd-pattern-review-batch-001.json --output-json tmp/validation-eurusd-pattern-review-guide.json --output-md tmp/validation-eurusd-pattern-review-guide.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch_completion_report.py --batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv --completed-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-batch-001-completion.json --output-md tmp/validation-eurusd-pattern-review-batch-001-completion.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-batch-report tmp/validation-eurusd-pattern-review-batch-001.json --review-guide-report tmp/validation-eurusd-pattern-review-guide.json --review-batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+First review batch policy:
+- Batch contains 100 samples (10 per candidate type) selected from 500-row template.
+- Selection is deterministic: sorted by review_priority, confidence_score, timestamp.
+- Review guide provides human-friendly instructions for filling review fields.
+- Completed batch path: `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`.
+- Missing completed batch is normal and non-blocking (`awaiting_completed_batch`).
+- Batch completion tracks reviewed/pending/skipped counts.
+- Candidate tags are NOT trading actions - focus on structure clarity and follow-through quality.
+- This is pattern structure review, not strategy validation.
+
 EURUSD 15m review feedback intake commands:
 
 ```bash
