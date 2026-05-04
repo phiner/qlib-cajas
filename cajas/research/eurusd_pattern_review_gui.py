@@ -134,12 +134,41 @@ def sanitize_optional_text_fields(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def compute_sample_window_bounds(
+    target_index: int,
+    total_rows: int,
+    window_bars: int,
+    pre_context_ratio: float = 0.6,
+) -> Tuple[int, int]:
+    """Compute stable chart window bounds with configurable pre-context."""
+    if total_rows <= 0:
+        return (0, 0)
+    bars = max(1, int(window_bars))
+    bars = min(bars, int(total_rows))
+    pre_ratio = float(min(max(pre_context_ratio, 0.0), 1.0))
+    target = max(0, min(int(target_index), int(total_rows) - 1))
+    pre_bars = int(round((bars - 1) * pre_ratio))
+    pre_bars = max(0, min(pre_bars, bars - 1))
+    start = target - pre_bars
+    end = start + bars
+    if start < 0:
+        end += -start
+        start = 0
+    if end > total_rows:
+        start -= (end - total_rows)
+        end = total_rows
+        if start < 0:
+            start = 0
+    return (int(start), int(end))
+
+
 def extract_chart_window_with_diagnostics(
     clean_view: pd.DataFrame,
     sample_timestamp: Any,
     lookback: int = 60,
     forward: int = 30,
     nearest_tolerance: str = "15min",
+    pre_context_ratio: float = 0.6,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Extract chart window around sample timestamp with diagnostics."""
     diagnostics: Dict[str, Any] = {
@@ -184,8 +213,13 @@ def extract_chart_window_with_diagnostics(
         diagnostics["error"] = "timestamp_not_found_within_tolerance"
         return pd.DataFrame(), diagnostics
 
-    start_idx = max(0, idx - lookback)
-    end_idx = min(len(df), idx + forward + 1)
+    window_bars = int(max(1, lookback + forward + 1))
+    start_idx, end_idx = compute_sample_window_bounds(
+        target_index=idx,
+        total_rows=len(df),
+        window_bars=window_bars,
+        pre_context_ratio=pre_context_ratio,
+    )
     window = df.iloc[start_idx:end_idx].copy()
     target_index_in_window = idx - start_idx
     diagnostics["target_index_global"] = idx
@@ -208,8 +242,17 @@ def extract_chart_window(
         sample_timestamp,
         lookback=lookback,
         forward=forward,
+        pre_context_ratio=0.6,
     )
     return window
+
+
+def format_compact_tick_label(ts: Any) -> str:
+    """Format timestamp for compact horizontal x-axis labels."""
+    normalized = normalize_timestamp_value(ts)
+    if pd.isna(normalized):
+        return str(ts)
+    return normalized.strftime("%m-%d %H:%M")
 
 
 def create_candlestick_figure(
@@ -312,8 +355,16 @@ def create_candlestick_figure(
         plot_bgcolor="#0f1720",
         paper_bgcolor="#0f1720",
         font={"color": "#e5edf7"},
+        margin={"l": 30, "r": 18, "t": 54, "b": 28},
     )
-    fig.update_xaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor="rgba(148, 163, 184, 0.25)",
+        tickangle=0,
+        ticks="outside",
+        tickfont={"size": 10},
+        automargin=True,
+    )
     tickvals = axis_info.get("tickvals", [])
     ticktext = axis_info.get("ticktext", [])
     if tickvals and ticktext:
@@ -385,13 +436,13 @@ def build_compressed_gap_axis(timestamps: list[Any]) -> Dict[str, Any]:
     tickvals: list[int] = []
     ticktext: list[str] = []
     if normalized:
-        step = max(1, len(normalized) // 6)
+        step = max(1, len(normalized) // 8)
         for i in range(0, len(normalized), step):
             tickvals.append(i)
-            ticktext.append(str(normalized[i])[:16])
+            ticktext.append(format_compact_tick_label(normalized[i]))
         if tickvals[-1] != len(normalized) - 1:
             tickvals.append(len(normalized) - 1)
-            ticktext.append(str(normalized[-1])[:16])
+            ticktext.append(format_compact_tick_label(normalized[-1]))
     gap_markers = []
     for g in gaps:
         marker = dict(g)

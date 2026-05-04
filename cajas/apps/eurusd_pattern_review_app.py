@@ -242,8 +242,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     window, chart_diag = extract_chart_window_with_diagnostics(
         st.session_state.clean_view,
         sample["timestamp"],
-        lookback=60,
-        forward=30
+        lookback=72,
+        forward=48,
+        pre_context_ratio=0.6,
     )
 
     fig = None

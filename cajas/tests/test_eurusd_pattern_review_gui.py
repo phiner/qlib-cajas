@@ -12,6 +12,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     merge_completed_labels,
     extract_chart_window,
     extract_chart_window_with_diagnostics,
+    compute_sample_window_bounds,
+    format_compact_tick_label,
     create_candlestick_figure,
     detect_time_axis_gaps,
     build_compressed_gap_axis,
@@ -129,6 +131,7 @@ def test_extract_chart_window_with_diagnostics_valid_timestamp(clean_view_fixtur
     assert diag["nearest_fallback_used"] is False
     assert diag["chart_window_row_count"] > 0
     assert diag["target_index_in_window"] is not None
+    assert abs(diag["target_index_in_window"] - int(round((len(window) - 1) * 0.6))) <= 2
 
 
 def test_extract_chart_window_with_diagnostics_missing_timestamp(clean_view_fixture):
@@ -148,6 +151,22 @@ def test_extract_chart_window_with_diagnostics_nearest_fallback(clean_view_fixtu
     assert diag["exact_timestamp_match_found"] is False
     assert diag["nearest_fallback_used"] is True
     assert diag["target_index_in_window"] is not None
+
+
+def test_compute_sample_window_bounds_middle():
+    start, end = compute_sample_window_bounds(100, 200, 101, pre_context_ratio=0.6)
+    assert (end - start) == 101
+    assert 0 <= start < end <= 200
+    assert (100 - start) in {60, 59, 61}
+
+
+def test_compute_sample_window_bounds_edges():
+    start_a, end_a = compute_sample_window_bounds(1, 30, 21, pre_context_ratio=0.6)
+    assert start_a == 0
+    assert end_a == 21
+    start_b, end_b = compute_sample_window_bounds(28, 30, 21, pre_context_ratio=0.6)
+    assert start_b == 9
+    assert end_b == 30
 
 
 def test_save_completed_review(batch_fixture, temp_dir):
@@ -224,6 +243,7 @@ def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
     if fig is not None:
         assert len(fig.data) >= 1
         assert "timestamp=" in str(fig.data[0].hovertemplate)
+        assert fig.layout.xaxis.tickangle == 0
 
 
 def test_get_review_progress(batch_fixture):
@@ -587,6 +607,13 @@ def test_build_compressed_gap_axis_with_marker():
     assert axis["display_axis"] == "compressed_gap_axis"
     assert len(axis["gap_markers"]) == 1
     assert axis["gap_markers"][0]["display_x"] == 0.5
+    assert all("\n" not in t for t in axis["ticktext"])
+    assert all(len(t) <= 11 for t in axis["ticktext"])
+
+
+def test_format_compact_tick_label():
+    label = format_compact_tick_label("2020-01-02T03:15:00+00:00")
+    assert label == "01-02 03:15"
 
 
 def test_summarize_compressed_gap_axis():
