@@ -46,6 +46,31 @@ def build_compact_chart_status_line(base_line: str, axis_summary: dict) -> str:
     return f"{base_line} | " + " | ".join(extra)
 
 
+def enqueue_pending_toast(state, message: str, kind: str = "success", icon: str = "✅") -> None:
+    """Store one-shot toast payload to be consumed on next rerun."""
+    state["pending_toast_message"] = message
+    state["pending_toast_kind"] = kind
+    state["pending_toast_icon"] = icon
+
+
+def consume_pending_toast_once(st_module, state) -> None:
+    """Display one-shot toast exactly once, then clear pending keys."""
+    msg = state.pop("pending_toast_message", None)
+    if not msg:
+        state.pop("pending_toast_kind", None)
+        state.pop("pending_toast_icon", None)
+        return
+    kind = state.pop("pending_toast_kind", "success")
+    icon = state.pop("pending_toast_icon", "✅")
+    if kind == "warning":
+        st_module.sidebar.warning(msg)
+        return
+    if hasattr(st_module, "toast"):
+        st_module.toast(msg, icon=icon)
+    else:
+        st_module.sidebar.success(msg)
+
+
 def main():
     try:
         import streamlit as st
@@ -71,6 +96,8 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     CANONICAL_INDEX_KEY = "current_sample_idx"
     WIDGET_INDEX_KEY = "sample_idx_widget"
     PENDING_INDEX_KEY = "pending_sample_idx"
+
+    consume_pending_toast_once(st, st.session_state)
     
     # Sidebar
     st.sidebar.header("Configuration")
@@ -405,7 +432,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             st.session_state[PENDING_INDEX_KEY] = moved_to_idx
         current_idx = int(st.session_state.get(PENDING_INDEX_KEY, moved_to_idx))
         jsonl_status = "written" if action.get("jsonl_appended") else str(action.get("warning") or "not_written")
-        st.session_state["last_action_msg"] = build_compact_save_feedback_message(
+        feedback_message = build_compact_save_feedback_message(
             sample_id=sample_id,
             action_type=action_type,
             moved_to_human_index=(current_idx + 1) if action_type == "save_and_next" else None,
@@ -421,7 +448,11 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             "sample_index": current_idx,
             "warning": action.get("warning"),
         }
-        st.session_state["last_action_kind"] = "warning" if action.get("warning") else "success"
+        enqueue_pending_toast(
+            st.session_state,
+            feedback_message,
+            kind="warning" if action.get("warning") else "success",
+        )
         st.rerun()
     
     with col1:
@@ -446,15 +477,6 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
             st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
             st.rerun()
-
-    if st.session_state.get("last_action_msg"):
-        if st.session_state.get("last_action_kind") == "warning":
-            st.sidebar.warning(st.session_state["last_action_msg"])
-        else:
-            if hasattr(st, "toast"):
-                st.toast(st.session_state["last_action_msg"], icon="✅")
-            else:
-                st.sidebar.success(st.session_state["last_action_msg"])
 
     with st.expander("Last Save Details", expanded=False):
         st.json(st.session_state.get("last_save_details", {}))

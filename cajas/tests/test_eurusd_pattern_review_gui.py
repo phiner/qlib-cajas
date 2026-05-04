@@ -40,7 +40,12 @@ from cajas.research.eurusd_pattern_review_gui import (
     sanitize_output_columns,
     sanitize_optional_text_value,
 )
-from cajas.apps.eurusd_pattern_review_app import render_plotly_chart, build_compact_chart_status_line
+from cajas.apps.eurusd_pattern_review_app import (
+    render_plotly_chart,
+    build_compact_chart_status_line,
+    enqueue_pending_toast,
+    consume_pending_toast_once,
+)
 
 
 @pytest.fixture
@@ -922,3 +927,93 @@ def test_render_plotly_chart_prefers_width_stretch_and_falls_back():
     assert len(calls) == 2
     assert calls[0].get("width") == "stretch"
     assert calls[1].get("use_container_width") is True
+
+
+def test_pending_toast_enqueue_and_consume_once():
+    state = {}
+    enqueue_pending_toast(state, "Saved s1", kind="success", icon="✅")
+    assert state["pending_toast_message"] == "Saved s1"
+    assert state["pending_toast_kind"] == "success"
+    assert state["pending_toast_icon"] == "✅"
+
+    calls = []
+
+    class FakeSidebar:
+        def warning(self, msg):
+            calls.append(("warning", msg))
+
+        def success(self, msg):
+            calls.append(("success", msg))
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.sidebar = FakeSidebar()
+
+        def toast(self, msg, icon=None):
+            calls.append(("toast", msg, icon))
+
+    fake_st = FakeStreamlit()
+    consume_pending_toast_once(fake_st, state)
+    assert calls == [("toast", "Saved s1", "✅")]
+    assert "pending_toast_message" not in state
+    assert "pending_toast_kind" not in state
+    assert "pending_toast_icon" not in state
+
+    consume_pending_toast_once(fake_st, state)
+    assert calls == [("toast", "Saved s1", "✅")]
+
+
+def test_last_save_details_persists_after_toast_consume():
+    state = {
+        "last_save_details": {"sample_id": "s1", "action_type": "save"},
+    }
+    enqueue_pending_toast(state, "Saved s1")
+
+    class FakeSidebar:
+        def warning(self, _msg):
+            raise AssertionError("warning should not be called in this test")
+
+        def success(self, _msg):
+            raise AssertionError("sidebar.success should not be called in this test")
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.sidebar = FakeSidebar()
+
+        def toast(self, _msg, icon=None):
+            assert icon == "✅"
+
+    consume_pending_toast_once(FakeStreamlit(), state)
+    assert state["last_save_details"] == {"sample_id": "s1", "action_type": "save"}
+    assert "pending_toast_message" not in state
+
+
+def test_pending_navigation_can_coexist_with_pending_toast():
+    state = {"pending_sample_idx": 12}
+    enqueue_pending_toast(state, "Saved s2 -> moved to sample 13/100")
+
+    class FakeSidebar:
+        def warning(self, _msg):
+            raise AssertionError("warning should not be called in this test")
+
+        def success(self, _msg):
+            raise AssertionError("sidebar.success should not be called in this test")
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.sidebar = FakeSidebar()
+
+        def toast(self, _msg, icon=None):
+            assert icon == "✅"
+
+    consume_pending_toast_once(FakeStreamlit(), state)
+    assert state["pending_sample_idx"] == 12
+    assert "pending_toast_message" not in state
+
+
+def test_app_source_uses_pending_toast_consume_pattern():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "pending_toast_message" in app_source
+    assert "consume_pending_toast_once(st, st.session_state)" in app_source
+    assert 'st.toast(st.session_state["last_action_msg"]' not in app_source
+    assert "last_action_msg" not in app_source
