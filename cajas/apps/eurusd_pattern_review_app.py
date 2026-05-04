@@ -20,7 +20,6 @@ from cajas.research.eurusd_pattern_review_gui import (
     previous_sample_index,
     should_advance_after_save,
     build_compact_save_feedback_message,
-    default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
 )
@@ -32,6 +31,18 @@ def render_plotly_chart(st_module, fig):
         st_module.plotly_chart(fig, width="stretch", theme=None)
     except TypeError:
         st_module.plotly_chart(fig, use_container_width=True, theme=None)
+
+
+def build_compact_chart_status_line(base_line: str, axis_summary: dict) -> str:
+    """Merge chart diagnostics and axis metadata into one compact line."""
+    extra = [
+        f"display_axis={axis_summary.get('display_axis', 'real_time_axis')}",
+        f"time_gap_count={axis_summary.get('time_gap_count', 0)}",
+    ]
+    if axis_summary.get("time_gap_count", 0) > 0:
+        extra.append(f"gap_markers={axis_summary.get('gap_markers', 0)}")
+        extra.append(f"largest_gap_hours={axis_summary.get('largest_gap_hours', 0.0):.1f}")
+    return f"{base_line} | " + " | ".join(extra)
 
 
 def main():
@@ -261,23 +272,18 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             else:
                 st.warning("No chart data available for the selected sample/timestamp.")
             if compact_mode:
-                st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=0))
+                base = build_compact_chart_diagnostic_summary(chart_diag, trace_count=0)
             else:
-                st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=0))
+                base = build_chart_diagnostic_summary(chart_diag, trace_count=0)
+            st.caption(build_compact_chart_status_line(base, axis_summary))
             st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
         else:
             render_plotly_chart(st, fig)
             if compact_mode:
-                st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
+                base = build_compact_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data))
             else:
-                st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
-            if axis_summary.get("time_gap_count", 0) > 0:
-                st.caption(
-                    "Chart gap compressed: weekend/market-closed intervals were collapsed and marked. "
-                    "Original timestamps remain available in hover/debug info."
-                )
-            else:
-                st.caption("display_axis=real_time_axis | time_gap_count=0")
+                base = build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data))
+            st.caption(build_compact_chart_status_line(base, axis_summary))
     
     # Metadata
     m1, m2, m3, m4 = st.columns(4)
@@ -363,17 +369,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     # Save buttons
     st.caption("Use Save or Save and Next to persist edits before navigating.")
-    n1, n2 = st.columns(2)
-    with n1:
-        if st.button("Previous Sample", disabled=sample_idx <= 0):
-            st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
-            st.rerun()
-    with n2:
-        if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
-            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
-            st.rerun()
-
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns([1, 1.2, 1.2, 1])
 
     def build_review_labels() -> dict:
         return {
@@ -440,11 +436,12 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 st.error(f"Save and Next failed for sample_id={sample_id}: {exc}")
     
     with col3:
-        if st.button("Reset Form"):
-            defaults = default_review_values()
-            for field, key in review_key_map.items():
-                st.session_state[key] = defaults[field]
-            st.session_state["last_action_msg"] = f"Form reset for sample_id={sample_id}"
+        if st.button("Previous Sample", disabled=sample_idx <= 0):
+            st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
+            st.rerun()
+    with col4:
+        if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
+            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
             st.rerun()
 
     if st.session_state.get("last_action_msg"):

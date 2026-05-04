@@ -35,7 +35,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     sanitize_output_columns,
     sanitize_optional_text_value,
 )
-from cajas.apps.eurusd_pattern_review_app import render_plotly_chart
+from cajas.apps.eurusd_pattern_review_app import render_plotly_chart, build_compact_chart_status_line
 
 
 @pytest.fixture
@@ -520,6 +520,7 @@ def test_app_uses_decoupled_sample_index_keys():
     assert "Previous Sample" in app_source
     assert "Next Sample" in app_source
     assert "Last Save Details" in app_source
+    assert "Reset Form" not in app_source
 
 
 def test_compact_save_feedback_message_does_not_include_paths():
@@ -537,6 +538,17 @@ def test_compact_save_feedback_message_does_not_include_paths():
     assert save_next_msg == "Saved eurusd15m_000030 -> moved to sample 31/500"
     assert "csv=" not in save_next_msg
     assert "jsonl=" not in save_next_msg
+
+
+def test_compact_chart_status_line_is_single_line():
+    base = "Window 91 bars | traces 1 | exact match ✓ | fallback ✗ | target index 60"
+    line = build_compact_chart_status_line(
+        base,
+        {"display_axis": "real_time_axis", "time_gap_count": 0, "gap_markers": 0, "largest_gap_hours": 0.0},
+    )
+    assert "\n" not in line
+    assert "display_axis=real_time_axis" in line
+    assert "time_gap_count=0" in line
 
 
 def test_detect_time_axis_gaps_no_gap():
