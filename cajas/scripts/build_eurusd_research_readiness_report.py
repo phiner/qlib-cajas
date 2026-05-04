@@ -26,6 +26,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pattern-review-template-report", type=Path)
     parser.add_argument("--review-feedback-report", type=Path)
     parser.add_argument("--review-summary-report", type=Path)
+    parser.add_argument("--review-batch-report", type=Path)
+    parser.add_argument("--review-guide-report", type=Path)
+    parser.add_argument("--review-batch-completion-report", type=Path)
     parser.add_argument("--out-json", required=True, type=Path)
     parser.add_argument("--out-md", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -41,6 +44,9 @@ def main(argv: list[str] | None = None) -> int:
         pattern_review_template_report=args.pattern_review_template_report,
         review_feedback_report=args.review_feedback_report,
         review_summary_report=args.review_summary_report,
+        review_batch_report=args.review_batch_report,
+        review_guide_report=args.review_guide_report,
+        review_batch_completion_report=args.review_batch_completion_report,
     )
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")

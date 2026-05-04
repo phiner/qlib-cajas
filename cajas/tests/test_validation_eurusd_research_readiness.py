@@ -49,9 +49,57 @@ def test_readiness_blocked_for_blocking_inputs(tmp_path: Path) -> None:
     payload = build_validation_eurusd_research_readiness(
         base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "watch"}),
         dataset_contract_report=_write(tmp_path / "contract.json", {"status": "blocked"}),
-        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "blocked"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
     )
     assert payload["status"] == "blocked"
+    assert payload["blocking"] is True
+
+
+
+def test_readiness_with_batch_and_guide_ready(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+        review_batch_report=_write(tmp_path / "batch.json", {"status": "ready", "batch_row_count": 100}),
+        review_guide_report=_write(tmp_path / "guide.json", {"status": "ready"}),
+    )
+    assert payload["next_action"] == "review_batch_001"
+    assert payload["review_batch_status"] == "ready"
+    assert payload["review_guide_status"] == "ready"
+
+
+def test_readiness_with_awaiting_batch_completion(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+        review_batch_report=_write(tmp_path / "batch.json", {"status": "ready", "batch_row_count": 100}),
+        review_guide_report=_write(tmp_path / "guide.json", {"status": "ready"}),
+        review_batch_completion_report=_write(
+            tmp_path / "completion.json",
+            {"status": "awaiting_completed_batch", "blocking": False, "reviewed_count": 0, "pending_count": 100}
+        ),
+    )
+    assert payload["next_action"] == "fill_batch_001_review"
+    assert payload["batch_completion_status"] == "awaiting_completed_batch"
+
+
+def test_readiness_blocked_on_batch_completion(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        review_batch_completion_report=_write(tmp_path / "completion.json", {"status": "blocked"}),
+    )
+    assert payload["status"] == "blocked"
+    assert "review_batch_completion_blocked" in payload["blocking_reasons"]
 
 
 def test_readiness_markdown_policy(tmp_path: Path) -> None:

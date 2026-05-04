@@ -27,6 +27,9 @@ def build_validation_eurusd_research_readiness(
     pattern_review_template_report: Path | None = None,
     review_feedback_report: Path | None = None,
     review_summary_report: Path | None = None,
+    review_batch_report: Path | None = None,
+    review_guide_report: Path | None = None,
+    review_batch_completion_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
@@ -38,6 +41,9 @@ def build_validation_eurusd_research_readiness(
     review_template = _safe_json(pattern_review_template_report)
     review_feedback = _safe_json(review_feedback_report)
     review_summary = _safe_json(review_summary_report)
+    review_batch = _safe_json(review_batch_report)
+    review_guide = _safe_json(review_guide_report)
+    batch_completion = _safe_json(review_batch_completion_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -50,6 +56,9 @@ def build_validation_eurusd_research_readiness(
     review_template_status = review_template.get("status", "missing")
     review_feedback_status = review_feedback.get("status", "missing")
     review_summary_status = review_summary.get("status", "missing")
+    review_batch_status = review_batch.get("status", "missing")
+    review_guide_status = review_guide.get("status", "missing")
+    batch_completion_status = batch_completion.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -77,6 +86,8 @@ def build_validation_eurusd_research_readiness(
         blockers.append("pattern_review_template_blocked")
     if review_feedback and review_feedback_status == "blocked":
         blockers.append("review_feedback_blocked")
+    if batch_completion and batch_completion_status == "blocked":
+        blockers.append("review_batch_completion_blocked")
 
     if not blockers and audit_status == "watch":
         warnings.append("dataset_audit_watch_non_blocking")
@@ -99,7 +110,15 @@ def build_validation_eurusd_research_readiness(
         and label_schema_status == "ready"
         and review_template_status == "ready"
     ):
-        next_action = "begin_human_pattern_review"
+        if review_batch_status in {"ready", "watch"} and review_guide_status == "ready":
+            if batch_completion_status == "awaiting_completed_batch":
+                next_action = "fill_batch_001_review"
+            elif batch_completion_status in {"ready", "watch"}:
+                next_action = "merge_completed_batch"
+            else:
+                next_action = "review_batch_001"
+        else:
+            next_action = "begin_human_pattern_review"
     if review_feedback:
         if review_feedback_status == "awaiting_review_input":
             next_action = "complete_human_review_template"
@@ -133,6 +152,12 @@ def build_validation_eurusd_research_readiness(
         "review_feedback_pending_count": review_feedback.get("pending_count"),
         "review_summary_status": review_summary_status,
         "review_summary_recommendation": review_summary.get("recommendation"),
+        "review_batch_status": review_batch_status,
+        "review_batch_row_count": review_batch.get("batch_row_count"),
+        "review_guide_status": review_guide_status,
+        "batch_completion_status": batch_completion_status,
+        "batch_completion_reviewed_count": batch_completion.get("reviewed_count"),
+        "batch_completion_pending_count": batch_completion.get("pending_count"),
         "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
@@ -178,6 +203,12 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- review_feedback_pending_count: `{payload.get('review_feedback_pending_count')}`",
         f"- review_summary_status: `{payload.get('review_summary_status')}`",
         f"- review_summary_recommendation: `{payload.get('review_summary_recommendation')}`",
+        f"- review_batch_status: `{payload.get('review_batch_status')}`",
+        f"- review_batch_row_count: `{payload.get('review_batch_row_count')}`",
+        f"- review_guide_status: `{payload.get('review_guide_status')}`",
+        f"- batch_completion_status: `{payload.get('batch_completion_status')}`",
+        f"- batch_completion_reviewed_count: `{payload.get('batch_completion_reviewed_count')}`",
+        f"- batch_completion_pending_count: `{payload.get('batch_completion_pending_count')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",
