@@ -36,6 +36,10 @@ DEFAULT_REVIEW_VALUES = {
 }
 REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v1"
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
+WICK_SENSITIVE_CANDIDATE_TYPES = {
+    "lower_wick_rejection_candidate",
+    "upper_wick_rejection_candidate",
+}
 
 
 def load_clean_view(path: Path) -> pd.DataFrame:
@@ -255,6 +259,24 @@ def format_compact_tick_label(ts: Any) -> str:
     return normalized.strftime("%m-%d %H:%M")
 
 
+def build_sample_marker_config(candidate_type: Optional[str]) -> Dict[str, Any]:
+    """Build marker style config based on candidate type readability needs."""
+    ctype = str(candidate_type or "")
+    if ctype in WICK_SENSITIVE_CANDIDATE_TYPES:
+        return {
+            "mode": "annotation_only",
+            "offset_x": 0.0,
+            "color": "#ff8c42",
+            "label": "Sample",
+        }
+    return {
+        "mode": "offset_line_with_arrow",
+        "offset_x": 0.35,
+        "color": "#ff8c42",
+        "label": "Sample",
+    }
+
+
 def create_candlestick_figure(
     window_df: pd.DataFrame,
     sample_timestamp: Any,
@@ -301,20 +323,50 @@ def create_candlestick_figure(
     if not sample_row.empty:
         sample_idx = int(sample_row.index[0]) - int(window.index[0])
         sample_x = display_x[sample_idx]
-        fig.add_shape(
-            type="line",
-            x0=sample_x,
-            x1=sample_x,
-            y0=float(window["low"].min()),
-            y1=float(window["high"].max()),
-            line={"color": "#ff5a36", "dash": "dash", "width": 2},
-        )
-        fig.add_annotation(
-            x=sample_x,
-            y=float(window["high"].max()),
-            text=f"Sample ({target_ts})",
-            showarrow=False,
-        )
+        y_min = float(window["low"].min())
+        y_max = float(window["high"].max())
+        y_span = max(y_max - y_min, 1e-9)
+        marker_cfg = build_sample_marker_config(candidate_type)
+        mode = marker_cfg["mode"]
+        marker_color = marker_cfg["color"]
+        label_text = f"{marker_cfg['label']} ({target_ts})"
+        if mode == "offset_line_with_arrow":
+            marker_x = float(sample_x) + float(marker_cfg.get("offset_x", 0.35))
+            fig.add_shape(
+                type="line",
+                x0=marker_x,
+                x1=marker_x,
+                y0=y_min,
+                y1=y_max,
+                line={"color": marker_color, "dash": "dash", "width": 1.4},
+            )
+            fig.add_annotation(
+                x=float(sample_x),
+                y=y_max + (0.02 * y_span),
+                ax=marker_x,
+                ay=y_max + (0.09 * y_span),
+                text=label_text,
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=0.9,
+                arrowwidth=1.2,
+                arrowcolor=marker_color,
+                font={"size": 10, "color": marker_color},
+            )
+        else:
+            fig.add_annotation(
+                x=float(sample_x),
+                y=y_max + (0.02 * y_span),
+                ax=float(sample_x) + 0.45,
+                ay=y_max + (0.09 * y_span),
+                text=label_text,
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=0.9,
+                arrowwidth=1.2,
+                arrowcolor=marker_color,
+                font={"size": 10, "color": marker_color},
+            )
     for gap in axis_info.get("gap_markers", []):
         gx = gap.get("display_x")
         if gx is None:

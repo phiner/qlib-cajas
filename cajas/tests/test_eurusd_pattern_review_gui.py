@@ -14,6 +14,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     extract_chart_window_with_diagnostics,
     compute_sample_window_bounds,
     format_compact_tick_label,
+    build_sample_marker_config,
     create_candlestick_figure,
     detect_time_axis_gaps,
     build_compressed_gap_axis,
@@ -244,6 +245,54 @@ def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
         assert len(fig.data) >= 1
         assert "timestamp=" in str(fig.data[0].hovertemplate)
         assert fig.layout.xaxis.tickangle == 0
+
+
+def test_build_sample_marker_config_wick_sensitive():
+    cfg = build_sample_marker_config("lower_wick_rejection_candidate")
+    assert cfg["mode"] == "annotation_only"
+    assert cfg["offset_x"] == 0.0
+
+
+def test_build_sample_marker_config_default_offset():
+    cfg = build_sample_marker_config("short_trend_up_candidate")
+    assert cfg["mode"] == "offset_line_with_arrow"
+    assert abs(float(cfg["offset_x"]) - 0.35) < 1e-9
+
+
+def test_create_candlestick_figure_marker_is_offset_for_normal_type(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    sample_timestamp = clean_view.iloc[20]["timestamp"]
+    window = extract_chart_window(clean_view, sample_timestamp, lookback=10, forward=5)
+    fig = create_candlestick_figure(
+        window,
+        sample_timestamp,
+        sample_id="s1",
+        candidate_type="short_trend_up_candidate",
+    )
+    if fig is None:
+        return
+    sample_idx = int(window.index[window["timestamp"] == sample_timestamp][0]) - int(window.index[0])
+    sample_x = sample_idx
+    xs = [float(s.x0) for s in fig.layout.shapes] if fig.layout.shapes else []
+    assert any(abs(x - sample_x) > 0.2 for x in xs)
+
+
+def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    sample_timestamp = clean_view.iloc[22]["timestamp"]
+    window = extract_chart_window(clean_view, sample_timestamp, lookback=10, forward=5)
+    fig = create_candlestick_figure(
+        window,
+        sample_timestamp,
+        sample_id="s2",
+        candidate_type="lower_wick_rejection_candidate",
+    )
+    if fig is None:
+        return
+    # No sample line shape should be drawn for wick-sensitive markers.
+    assert len(fig.layout.shapes) == 0
+    assert len(fig.layout.annotations) >= 1
+    assert "Sample (" in str(fig.layout.annotations[0].text)
 
 
 def test_get_review_progress(batch_fixture):
