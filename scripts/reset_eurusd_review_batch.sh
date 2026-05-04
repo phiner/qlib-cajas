@@ -66,12 +66,23 @@ done
 
 TEMPLATE_CSV="tmp/eurusd/EURUSD_15m_pattern_review_template.csv"
 LABEL_SCHEMA="tmp/validation-eurusd-pattern-label-schema.json"
+PATTERN_CANDIDATES_CSV="tmp/eurusd/EURUSD_15m_pattern_candidates.csv"
+PATTERN_SAMPLES_CSV="tmp/eurusd/EURUSD_15m_pattern_review_samples.csv"
+PATTERN_SAMPLES_JSONL="tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl"
+PATTERN_CANDIDATE_PACK_JSON="tmp/validation-eurusd-pattern-candidate-pack.json"
+PATTERN_CANDIDATE_PACK_MD="tmp/validation-eurusd-pattern-candidate-pack.md"
+TEMPLATE_JSON="tmp/validation-eurusd-pattern-review-template.json"
+TEMPLATE_MD="tmp/validation-eurusd-pattern-review-template.md"
 OUTPUT_BATCH_CSV="tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv"
 OUTPUT_BATCH_JSONL="tmp/eurusd/EURUSD_15m_pattern_review_batch_001.jsonl"
 OUTPUT_JSON="tmp/validation-eurusd-pattern-review-batch-001.json"
 OUTPUT_MD="tmp/validation-eurusd-pattern-review-batch-001.md"
 COMPLETED_CSV="tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv"
 COMPLETED_EVENTS_JSONL="tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed_events.jsonl"
+COMPLETED_PROGRESS_JSON="tmp/validation-eurusd-completed-review-progress.json"
+COMPLETED_PROGRESS_MD="tmp/validation-eurusd-completed-review-progress.md"
+SUMMARY_CURRENT_JSON="tmp/validation-eurusd-review-summary-current.json"
+SUMMARY_CURRENT_MD="tmp/validation-eurusd-review-summary-current.md"
 RESET_JSON="tmp/validation-eurusd-review-batch-reset.json"
 RESET_MD="tmp/validation-eurusd-review-batch-reset.md"
 
@@ -82,6 +93,10 @@ TARGET_FILES=(
   "${OUTPUT_MD}"
   "${COMPLETED_CSV}"
   "${COMPLETED_EVENTS_JSONL}"
+  "${COMPLETED_PROGRESS_JSON}"
+  "${COMPLETED_PROGRESS_MD}"
+  "${SUMMARY_CURRENT_JSON}"
+  "${SUMMARY_CURRENT_MD}"
 )
 
 if [[ ! -f "${TEMPLATE_CSV}" ]]; then
@@ -107,7 +122,7 @@ if [[ "${DRY_RUN}" -eq 1 ]]; then
   for f in "${TARGET_FILES[@]}"; do
     echo "  - ${f}"
   done
-  echo "[dry-run] would run batch build with:"
+  echo "[dry-run] would rebuild candidates/template/batch with:"
   echo "  --batch-size ${BATCH_SIZE} --per-type-target ${PER_TYPE_TARGET} --min-gap-bars ${MIN_GAP_BARS} --max-samples-per-day ${MAX_SAMPLES_PER_DAY}"
   mkdir -p "$(dirname "${RESET_JSON}")"
   PYTHONPATH=. "${PYTHON_BIN}" - <<'PY' "${RESET_JSON}" "${RESET_MD}" "${BACKUP_OLD}" "${BACKUP_DIR}" "${MIN_GAP_BARS}" "${MAX_SAMPLES_PER_DAY}" "${OUTPUT_BATCH_CSV}" "${OUTPUT_BATCH_JSONL}"
@@ -169,6 +184,24 @@ done
 
 mkdir -p tmp/eurusd tmp
 
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_pattern_candidate_pack \
+  --clean-view-csv "tmp/eurusd/EURUSD_15m_Bid_clean_view.csv" \
+  --output-candidates-csv "${PATTERN_CANDIDATES_CSV}" \
+  --output-samples-csv "${PATTERN_SAMPLES_CSV}" \
+  --output-samples-jsonl "${PATTERN_SAMPLES_JSONL}" \
+  --output-json "${PATTERN_CANDIDATE_PACK_JSON}" \
+  --output-md "${PATTERN_CANDIDATE_PACK_MD}" \
+  --max-samples-per-type 50 \
+  --min-confidence 0.6
+
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_pattern_review_template \
+  --samples-csv "${PATTERN_SAMPLES_CSV}" \
+  --label-schema "${LABEL_SCHEMA}" \
+  --output-template-csv "${TEMPLATE_CSV}" \
+  --output-template-jsonl "tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl" \
+  --output-json "${TEMPLATE_JSON}" \
+  --output-md "${TEMPLATE_MD}"
+
 PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_pattern_review_batch \
   --template-csv "${TEMPLATE_CSV}" \
   --label-schema "${LABEL_SCHEMA}" \
@@ -223,6 +256,15 @@ payload = {
     "backup_dir": backup_dir if backup_old == "1" else None,
     "removed_files": removed_files,
     "generated_files": [
+        "tmp/eurusd/EURUSD_15m_pattern_candidates.csv",
+        "tmp/eurusd/EURUSD_15m_pattern_review_samples.csv",
+        "tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl",
+        "tmp/validation-eurusd-pattern-candidate-pack.json",
+        "tmp/validation-eurusd-pattern-candidate-pack.md",
+        "tmp/eurusd/EURUSD_15m_pattern_review_template.csv",
+        "tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl",
+        "tmp/validation-eurusd-pattern-review-template.json",
+        "tmp/validation-eurusd-pattern-review-template.md",
         batch_csv,
         batch_jsonl,
         "tmp/validation-eurusd-pattern-review-batch-001.json",
