@@ -2027,6 +2027,23 @@ Policy notes:
 - No buy/sell/order/position outputs are allowed.
 - Clean view remains the approved source; raw files remain immutable.
 - Scope remains EURUSD 15m Bid with no 1H/4H aggregation.
+- Candidate sampling should span each candidate type timeline (not just earliest rows) when generating new review samples.
+
+EURUSD 15m sampling source-range audit (read-only):
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_sampling_source_range_report
+./scripts/validate_eurusd_sampling_source_range.sh
+```
+
+Artifacts:
+- `tmp/validation-eurusd-sampling-source-range.json`
+- `tmp/validation-eurusd-sampling-source-range.md`
+
+Notes:
+- expected primary raw source: `/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv`
+- GUI usage does not reset/regenerate review artifacts
+- resets/rebuilds remain explicit/manual only
 
 EURUSD 15m pattern review QA and label schema commands:
 

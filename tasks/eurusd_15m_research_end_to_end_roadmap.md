@@ -424,6 +424,25 @@ cajas/scripts/build_eurusd_pattern_review_feedback_report.py
 cajas/tests/test_validation_eurusd_pattern_review_feedback.py
 
 cajas/reports/validation_eurusd_pattern_review_summary.py
+
+## Sampling Source Range Audit
+
+Expected source scope for this research track:
+
+- raw EURUSD 15m Bid source should cover years 2020–2024
+- path: `/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv`
+
+Read-only source lineage audit:
+
+- `PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_sampling_source_range_report`
+- outputs:
+  - `tmp/validation-eurusd-sampling-source-range.json`
+  - `tmp/validation-eurusd-sampling-source-range.md`
+
+Coverage warnings should be treated as rebuild diagnostics only:
+
+- do not auto-reset or auto-regenerate active review batch artifacts
+- any rebuild remains explicit/manual
 cajas/scripts/build_eurusd_pattern_review_summary_report.py
 cajas/tests/test_validation_eurusd_pattern_review_summary.py
 ```

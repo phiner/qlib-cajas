@@ -37,6 +37,7 @@ done
 
 PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_completed_review_progress_report
 PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_review_summary_current_report
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_sampling_source_range_report
 
 if [[ -f tmp/validation-routine-maintenance-continuation.json && -f tmp/validation-eurusd-dataset-contract.json && -f tmp/validation-eurusd-dataset-audit.json ]]; then
   PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_research_readiness_report \

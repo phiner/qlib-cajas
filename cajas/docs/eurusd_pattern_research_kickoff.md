@@ -286,6 +286,12 @@ Behavior notes:
 - missing completed review file is a normal non-blocking state (`awaiting_review_input`)
 - feedback/summary remain strictly review-only and non-trading
 - no model training is enabled in this phase
+- Sampling lineage for review artifacts should be audited against the full 2020–2024 source before rebuilding candidates/templates/batches.
+- Read-only source-range audit command:
+  - `PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_sampling_source_range_report`
+  - outputs `tmp/validation-eurusd-sampling-source-range.json` and `tmp/validation-eurusd-sampling-source-range.md`
+- GUI startup and normal review flow do not reset/regenerate batch files.
+- Any reset/rebuild remains explicit/manual only via dedicated scripts.
 
 ## Out of scope
 
