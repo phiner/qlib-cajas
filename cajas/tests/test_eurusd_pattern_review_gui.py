@@ -133,6 +133,9 @@ def test_extract_chart_window_with_diagnostics_valid_timestamp(clean_view_fixtur
     assert diag["nearest_fallback_used"] is False
     assert diag["chart_window_row_count"] > 0
     assert diag["target_index_in_window"] is not None
+    assert diag["window_start"] is not None
+    assert diag["window_end"] is not None
+    assert diag["sample_position_ratio"] is not None
     assert abs(diag["target_index_in_window"] - int(round((len(window) - 1) * 0.6))) <= 2
 
 
@@ -159,7 +162,7 @@ def test_compute_sample_window_bounds_middle():
     start, end = compute_sample_window_bounds(100, 200, 101, pre_context_ratio=0.6)
     assert (end - start) == 101
     assert 0 <= start < end <= 200
-    assert (100 - start) in {60, 59, 61}
+    assert (100 - start) in {60, 61}
 
 
 def test_compute_sample_window_bounds_edges():
@@ -169,6 +172,54 @@ def test_compute_sample_window_bounds_edges():
     start_b, end_b = compute_sample_window_bounds(28, 30, 21, pre_context_ratio=0.6)
     assert start_b == 9
     assert end_b == 30
+
+
+def test_compute_sample_window_bounds_spec_normal_case():
+    start, end = compute_sample_window_bounds(500, 1000, 120, pre_context_ratio=0.6)
+    assert start == 428
+    assert end == 548
+    sample_display_index = 500 - start
+    assert sample_display_index == 72
+    ratio = sample_display_index / (120 - 1)
+    assert 0.55 <= ratio <= 0.65
+
+
+def test_compute_sample_window_bounds_spec_near_start_case():
+    start, end = compute_sample_window_bounds(10, 1000, 120, pre_context_ratio=0.6)
+    assert start == 0
+    assert end == 120
+    assert (10 - start) == 10
+
+
+def test_compute_sample_window_bounds_spec_near_end_case():
+    start, end = compute_sample_window_bounds(980, 1000, 120, pre_context_ratio=0.6)
+    assert start == 880
+    assert end == 1000
+    assert (980 - start) == 100
+
+
+def test_extract_chart_window_with_diagnostics_sample_position_ratio_not_left_non_boundary(clean_view_fixture):
+    dates = pd.date_range("2020-01-01", periods=1000, freq="15min")
+    clean_view = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": [1.1 + i * 0.0001 for i in range(1000)],
+            "high": [1.1 + i * 0.0001 + 0.0002 for i in range(1000)],
+            "low": [1.1 + i * 0.0001 - 0.0001 for i in range(1000)],
+            "close": [1.1 + i * 0.0001 + 0.0001 for i in range(1000)],
+        }
+    )
+    sample_timestamp = clean_view.iloc[500]["timestamp"]
+    _, diag = extract_chart_window_with_diagnostics(
+        clean_view,
+        sample_timestamp,
+        lookback=72,
+        forward=48,
+        pre_context_ratio=0.6,
+    )
+    assert diag["boundary_clamp_start"] is False
+    assert diag["sample_position_ratio"] is not None
+    assert float(diag["sample_position_ratio"]) > 0.4
 
 
 def test_save_completed_review(batch_fixture, temp_dir):

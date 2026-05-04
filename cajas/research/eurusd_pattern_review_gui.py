@@ -151,7 +151,7 @@ def compute_sample_window_bounds(
     bars = min(bars, int(total_rows))
     pre_ratio = float(min(max(pre_context_ratio, 0.0), 1.0))
     target = max(0, min(int(target_index), int(total_rows) - 1))
-    pre_bars = int(round((bars - 1) * pre_ratio))
+    pre_bars = int(round(bars * pre_ratio))
     pre_bars = max(0, min(pre_bars, bars - 1))
     start = target - pre_bars
     end = start + bars
@@ -184,6 +184,13 @@ def extract_chart_window_with_diagnostics(
         "target_index_in_window": None,
         "target_timestamp_used": None,
         "target_index_global": None,
+        "window_start": None,
+        "window_end": None,
+        "window_bars": None,
+        "pre_context_ratio": float(pre_context_ratio),
+        "sample_position_ratio": None,
+        "boundary_clamp_start": False,
+        "boundary_clamp_end": False,
         "error": None,
     }
 
@@ -230,6 +237,16 @@ def extract_chart_window_with_diagnostics(
     diagnostics["target_index_in_window"] = int(target_index_in_window)
     diagnostics["chart_window_row_count"] = int(len(window))
     diagnostics["target_timestamp_used"] = str(df.iloc[idx]["timestamp"])
+    diagnostics["window_start"] = int(start_idx)
+    diagnostics["window_end"] = int(end_idx)
+    diagnostics["window_bars"] = int(window_bars)
+    diagnostics["sample_position_ratio"] = (
+        float(target_index_in_window) / float(max(1, len(window) - 1))
+        if len(window) > 0
+        else None
+    )
+    diagnostics["boundary_clamp_start"] = bool(start_idx == 0)
+    diagnostics["boundary_clamp_end"] = bool(end_idx == len(df))
 
     return window, diagnostics
 
