@@ -854,3 +854,26 @@ The final practical target is:
 This is the bridge from raw market data to research evidence.
 
 It is not a trading execution system.
+
+
+## Candidate Audit Layer
+
+Before scaling manual review, run a read-only candidate audit that validates:
+- causality vs future-aware review-sampling filters
+- selection explainability fields
+- same-timestamp multi-label conflicts
+- same-region/near-duplicate concentration
+- year/month/session/volatility coverage
+
+Commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_candidate_audit_report
+./scripts/validate_eurusd_candidate_audit.sh
+```
+
+Audit outputs:
+- `tmp/validation-eurusd-candidate-audit.json`
+- `tmp/validation-eurusd-candidate-audit.md`
+
+This audit is read-only and does not reset or rebuild active review artifacts.

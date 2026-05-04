@@ -311,3 +311,21 @@ Behavior notes:
 6. summarize reviewed labels and refine research priorities
 7. evaluate ML labels/model training only in later phases
 For full archive of tasks, see [Tasks Archive](../tasks/archive/README.md).
+
+
+## Candidate Causality And Coverage Audit
+
+Use the read-only candidate audit before large manual review waves:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_candidate_audit_report
+./scripts/validate_eurusd_candidate_audit.sh
+```
+
+The audit separates:
+- causal candidate logic (past-only)
+- future-aware review sampling filters (quality control only)
+- human label/follow-through visibility
+
+The report includes causality flags, multi-label timestamp conflicts, duplicate-region checks, and year/session/volatility coverage.
+Future-aware review filters are explicitly marked as not-for-live-signal.
