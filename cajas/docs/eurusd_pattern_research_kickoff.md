@@ -92,6 +92,33 @@ Candidate review scope:
 - candidate tags are not trading signals
 - no buy/sell/order/position outputs are produced
 
+## Pattern review QA and label schema workflow
+
+Review QA artifacts:
+
+- `tmp/validation-eurusd-pattern-review-qa.json`
+- `tmp/validation-eurusd-pattern-review-qa.md`
+
+Label schema artifacts:
+
+- `tmp/validation-eurusd-pattern-label-schema.json`
+- `tmp/validation-eurusd-pattern-label-schema.md`
+- schema version: `eurusd_15m_pattern_review_v1`
+
+Review template artifacts:
+
+- `tmp/eurusd/EURUSD_15m_pattern_review_template.csv`
+- `tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl`
+- `tmp/validation-eurusd-pattern-review-template.json`
+- `tmp/validation-eurusd-pattern-review-template.md`
+
+Human review flow:
+
+1. confirm review QA status is `ready` or non-blocking `watch`
+2. use the label schema and template outputs
+3. keep `review_status=pending` until manual labeling is completed
+4. produce reviewed outputs without adding trading/order actions
+
 ## Out of scope
 
 - no live trading
@@ -105,7 +132,7 @@ Candidate review scope:
 1. validate EURUSD dataset contract and audit
 2. triage and quarantine anomaly rows
 3. generate clean-view candidate sample pack
-4. review candidate samples manually
-5. create manual label/review examples
+4. run review QA and build label template
+5. begin human pattern review
 6. test non-execution strategy hypotheses offline
 7. evaluate ML labels/model training only in later phases

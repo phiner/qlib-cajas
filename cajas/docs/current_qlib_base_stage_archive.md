@@ -3696,3 +3696,21 @@ Routine maintenance command additions (next release cycle):
   - `pattern_candidate_count`
   - `next_action=review_pattern_samples`
 - Fixed timeframe remains EURUSD 15m Bid only.
+
+## Phase 5486-5605 EURUSD 15m Pattern Review Pack QA and Label Schema
+
+- Added pattern review QA report artifacts:
+  - `tmp/validation-eurusd-pattern-review-qa.json`
+  - `tmp/validation-eurusd-pattern-review-qa.md`
+- Added stable label schema artifacts:
+  - `tmp/validation-eurusd-pattern-label-schema.json`
+  - `tmp/validation-eurusd-pattern-label-schema.md`
+  - `schema_version=eurusd_15m_pattern_review_v1`
+- Added review template artifacts:
+  - `tmp/eurusd/EURUSD_15m_pattern_review_template.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl`
+  - `tmp/validation-eurusd-pattern-review-template.json`
+  - `tmp/validation-eurusd-pattern-review-template.md`
+- Readiness now surfaces review-layer statuses and can recommend:
+  - `next_action=begin_human_pattern_review` when candidate pack + QA + schema + template are ready/non-blocking.
+- Scope unchanged: clean view remains approved input; no aggregation; no trading/order execution semantics.

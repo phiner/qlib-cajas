@@ -2014,3 +2014,18 @@ Policy notes:
 - Clean view remains the approved source; raw files remain immutable.
 - Scope remains EURUSD 15m Bid with no 1H/4H aggregation.
 
+EURUSD 15m pattern review QA and label schema commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_qa_report.py --candidates-csv tmp/eurusd/EURUSD_15m_pattern_candidates.csv --samples-csv tmp/eurusd/EURUSD_15m_pattern_review_samples.csv --candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --clean-view-csv tmp/eurusd/EURUSD_15m_Bid_clean_view.csv --output-json tmp/validation-eurusd-pattern-review-qa.json --output-md tmp/validation-eurusd-pattern-review-qa.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_label_schema_report.py --output-json tmp/validation-eurusd-pattern-label-schema.json --output-md tmp/validation-eurusd-pattern-label-schema.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_template.py --samples-csv tmp/eurusd/EURUSD_15m_pattern_review_samples.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --output-template-jsonl tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl --output-json tmp/validation-eurusd-pattern-review-template.json --output-md tmp/validation-eurusd-pattern-review-template.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Review policy:
+- Candidate samples are QA-reviewed and label-schema-governed before manual annotation.
+- Template rows default to `review_status=pending` under schema `eurusd_15m_pattern_review_v1`.
+- No trading signal/order fields are allowed in review exports.
+- Scope remains EURUSD 15m Bid clean view only.
+
