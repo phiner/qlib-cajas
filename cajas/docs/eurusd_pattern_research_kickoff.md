@@ -94,6 +94,23 @@ Human reviewer workflow:
 
 **Important**: Candidate tags are NOT trading actions. Do not label based on hindsight profit only. Focus on structure clarity and follow-through quality. This is pattern structure review, not strategy validation.
 
+### Completed batch merge workflow
+
+After completing the first review batch, the merge workflow integrates reviewed samples into the full completed review file:
+
+1. **Batch completion report**: Validates completed batch and tracks reviewed/pending counts
+2. **Batch merge report**: Merges completed batch into full completed review file
+   - Creates `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv` if it doesn't exist
+   - Merges by `sample_id` to avoid duplicates
+   - Updates existing rows with same `sample_id` if valid
+   - Creates backup before overwriting: `tmp/eurusd/EURUSD_15m_pattern_review_completed.backup.csv`
+3. **Review feedback report**: Validates full completed review and reports reviewed/pending counts
+4. **Review summary report**: Summarizes pattern distribution and review progress
+
+Missing completed batch is normal and non-blocking. The workflow reports `awaiting_completed_batch` until the human reviewer saves the completed file.
+
+No labels are invented by automation. All labels must be provided by human reviewers following the label schema.
+
 Current raw-data finding:
 
 - the 2020-2024 file has `10` OHLC anomaly rows violating raw-bar consistency checks

@@ -2048,6 +2048,21 @@ First review batch policy:
 - Candidate tags are NOT trading actions - focus on structure clarity and follow-through quality.
 - This is pattern structure review, not strategy validation.
 
+EURUSD 15m completed batch merge commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch_merge_report.py --batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --completed-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv --full-completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-batch-001-merge.json --output-md tmp/validation-eurusd-pattern-review-batch-001-merge.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-batch-report tmp/validation-eurusd-pattern-review-batch-001.json --review-guide-report tmp/validation-eurusd-pattern-review-guide.json --review-batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --review-batch-merge-report tmp/validation-eurusd-pattern-review-batch-001-merge.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Completed batch merge policy:
+- Merge report validates completed batch and merges into full completed review file.
+- Creates `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv` if missing.
+- Merges by `sample_id` to avoid duplicates.
+- Creates backup before overwriting: `tmp/eurusd/EURUSD_15m_pattern_review_completed.backup.csv`.
+- Missing completed batch is normal and non-blocking (`awaiting_completed_batch`).
+- No labels are invented by automation - all labels must be human-provided.
+
 EURUSD 15m review feedback intake commands:
 
 ```bash
