@@ -45,6 +45,8 @@ from cajas.apps.eurusd_pattern_review_app import (
     build_compact_chart_status_line,
     enqueue_pending_toast,
     consume_pending_toast_once,
+    sample_number_to_global_index,
+    global_index_to_sample_number,
 )
 
 
@@ -777,9 +779,9 @@ def test_should_advance_after_save_semantics():
 def test_app_uses_decoupled_sample_index_keys():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert 'key="sample_idx"' not in app_source
-    assert "current_sample_idx" in app_source
-    assert "sample_idx_widget" in app_source
-    assert "pending_sample_idx" in app_source
+    assert "current_global_sample_idx" in app_source
+    assert "sample_number_widget" in app_source
+    assert "pending_global_sample_idx" in app_source
     assert "Previous Sample" in app_source
     assert "Next Sample" in app_source
     assert "Last Save Details" in app_source
@@ -989,7 +991,7 @@ def test_last_save_details_persists_after_toast_consume():
 
 
 def test_pending_navigation_can_coexist_with_pending_toast():
-    state = {"pending_sample_idx": 12}
+    state = {"pending_global_sample_idx": 12}
     enqueue_pending_toast(state, "Saved s2 -> moved to sample 13/100")
 
     class FakeSidebar:
@@ -1007,7 +1009,7 @@ def test_pending_navigation_can_coexist_with_pending_toast():
             assert icon == "✅"
 
     consume_pending_toast_once(FakeStreamlit(), state)
-    assert state["pending_sample_idx"] == 12
+    assert state["pending_global_sample_idx"] == 12
     assert "pending_toast_message" not in state
 
 
@@ -1017,3 +1019,39 @@ def test_app_source_uses_pending_toast_consume_pattern():
     assert "consume_pending_toast_once(st, st.session_state)" in app_source
     assert 'st.toast(st.session_state["last_action_msg"]' not in app_source
     assert "last_action_msg" not in app_source
+
+
+def test_global_sample_number_conversion_and_clamp():
+    assert sample_number_to_global_index(1, 100) == 0
+    assert sample_number_to_global_index(34, 100) == 33
+    assert sample_number_to_global_index(100, 100) == 99
+    assert sample_number_to_global_index(0, 100) == 0
+    assert sample_number_to_global_index(999, 100) == 99
+    assert global_index_to_sample_number(0) == 1
+    assert global_index_to_sample_number(33) == 34
+    assert global_index_to_sample_number(99) == 100
+
+
+def test_direct_jump_resolution_uses_global_batch_order_ignoring_filters():
+    batch = pd.DataFrame(
+        {
+            "sample_id": ["s1", "s2", "s3", "s4"],
+            "candidate_type": ["A", "A", "B", "A"],
+            "review_status": ["pending", "reviewed", "pending", "pending"],
+        }
+    )
+    filtered = batch[(batch["candidate_type"] == "A") & (batch["review_status"] == "pending")]
+    assert list(filtered["sample_id"]) == ["s1", "s4"]
+    global_idx = sample_number_to_global_index(3, len(batch))
+    sample = batch.iloc[global_idx]
+    assert sample["sample_id"] == "s3"
+
+
+def test_app_source_uses_global_sample_number_wording_and_keys():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "Sample Number" in app_source
+    assert "Global position in full review batch; ignores filters." in app_source
+    assert "Filters are active; direct Sample Number jump uses full batch order." in app_source
+    assert "current_global_sample_idx" in app_source
+    assert "pending_global_sample_idx" in app_source
+    assert "sample_number_widget" in app_source

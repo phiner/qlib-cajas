@@ -71,6 +71,16 @@ def consume_pending_toast_once(st_module, state) -> None:
         st_module.sidebar.success(msg)
 
 
+def sample_number_to_global_index(sample_number: int, batch_count: int) -> int:
+    """Convert 1-based sample number to clamped 0-based global index."""
+    return clamp_sample_index(int(sample_number) - 1, batch_count)
+
+
+def global_index_to_sample_number(global_index: int) -> int:
+    """Convert 0-based global index to 1-based sample number."""
+    return int(global_index) + 1
+
+
 def main():
     try:
         import streamlit as st
@@ -93,9 +103,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         unsafe_allow_html=True,
     )
     st.title("EURUSD 15m Review")
-    CANONICAL_INDEX_KEY = "current_sample_idx"
-    WIDGET_INDEX_KEY = "sample_idx_widget"
-    PENDING_INDEX_KEY = "pending_sample_idx"
+    CANONICAL_INDEX_KEY = "current_global_sample_idx"
+    WIDGET_INDEX_KEY = "sample_number_widget"
+    PENDING_INDEX_KEY = "pending_global_sample_idx"
 
     consume_pending_toast_once(st, st.session_state)
     
@@ -162,21 +172,21 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     review_statuses = ["All", "pending", "reviewed"]
     selected_status = st.sidebar.selectbox("Review Status", review_statuses)
     
-    # Filter batch
+    # Filter summary only; global sample navigation always uses full batch order.
     filtered = batch.copy()
     if selected_type != "All":
         filtered = filtered[filtered["candidate_type"] == selected_type]
     if selected_status != "All":
         filtered = filtered[filtered["review_status"] == selected_status]
     
-    if len(filtered) == 0:
-        st.warning("No samples match filters")
-        return
-    row_count = len(filtered)
+    filtered_count = len(filtered)
+    row_count = len(batch)
 
     # Migrate legacy key safely before widget instantiation.
     if "sample_idx" in st.session_state and CANONICAL_INDEX_KEY not in st.session_state:
         st.session_state[CANONICAL_INDEX_KEY] = st.session_state.get("sample_idx", 0)
+    if "current_sample_idx" in st.session_state and CANONICAL_INDEX_KEY not in st.session_state:
+        st.session_state[CANONICAL_INDEX_KEY] = st.session_state.get("current_sample_idx", 0)
     if PENDING_INDEX_KEY in st.session_state:
         st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(
             int(st.session_state.pop(PENDING_INDEX_KEY)),
@@ -188,18 +198,20 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         int(st.session_state.get(CANONICAL_INDEX_KEY, 0)),
         row_count,
     )
-    st.session_state[WIDGET_INDEX_KEY] = st.session_state[CANONICAL_INDEX_KEY]
+    st.session_state[WIDGET_INDEX_KEY] = global_index_to_sample_number(st.session_state[CANONICAL_INDEX_KEY])
     
     # Sample selector
     st.sidebar.subheader("Sample")
-    sample_idx = st.sidebar.number_input(
-        "Sample Index",
-        min_value=0,
-        max_value=row_count - 1,
+    sample_number = st.sidebar.number_input(
+        "Sample Number",
+        min_value=1,
+        max_value=row_count,
         key=WIDGET_INDEX_KEY
     )
-    st.session_state[CANONICAL_INDEX_KEY] = clamp_sample_index(int(sample_idx), row_count)
+    st.sidebar.caption("Global position in full review batch; ignores filters.")
+    st.session_state[CANONICAL_INDEX_KEY] = sample_number_to_global_index(int(sample_number), row_count)
     sample_idx = st.session_state[CANONICAL_INDEX_KEY]
+    st.sidebar.caption(f"Sample {global_index_to_sample_number(sample_idx)} / {row_count}")
     
     # Progress
     progress = get_review_progress(batch)
@@ -209,8 +221,16 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         f"Pending {progress['pending']} | Skipped {progress['skipped']}"
     )
     
-    # Current sample
-    sample = filtered.iloc[sample_idx]
+    if selected_type != "All" or selected_status != "All":
+        st.sidebar.info(
+            "Filters are active; direct Sample Number jump uses full batch order."
+        )
+        st.sidebar.caption(f"Filtered matches: {filtered_count}")
+    if filtered_count == 0:
+        st.sidebar.warning("No rows match current filters; global sample display is unchanged.")
+
+    # Current sample (always from full batch order)
+    sample = batch.iloc[sample_idx]
     sample_id = str(sample["sample_id"])
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
@@ -446,6 +466,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             "jsonl_path": events_jsonl_path,
             "jsonl_status": jsonl_status,
             "sample_index": current_idx,
+            "sample_number": global_index_to_sample_number(current_idx),
             "warning": action.get("warning"),
         }
         enqueue_pending_toast(
