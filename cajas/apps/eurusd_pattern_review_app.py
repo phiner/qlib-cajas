@@ -15,10 +15,11 @@ from cajas.research.eurusd_pattern_review_gui import (
     build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
     save_review_action,
-    build_persistence_status_message,
     clamp_sample_index,
     next_sample_index,
+    previous_sample_index,
     should_advance_after_save,
+    build_compact_save_feedback_message,
     default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
@@ -361,6 +362,17 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         )
     
     # Save buttons
+    st.caption("Use Save or Save and Next to persist edits before navigating.")
+    n1, n2 = st.columns(2)
+    with n1:
+        if st.button("Previous Sample", disabled=sample_idx <= 0):
+            st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
+            st.rerun()
+    with n2:
+        if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
+            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
+            st.rerun()
+
     col1, col2, col3 = st.columns(3)
 
     def build_review_labels() -> dict:
@@ -388,19 +400,28 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         st.session_state.batch = merge_completed_labels(
             st.session_state.batch, load_completed_reviews(Path(completed_path))
         )
+        moved_to_idx = sample_idx
         if advance_to_next and should_advance_after_save(action):
-            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
-        current_idx = int(st.session_state.get(PENDING_INDEX_KEY, sample_idx))
+            moved_to_idx = next_sample_index(sample_idx, row_count)
+            st.session_state[PENDING_INDEX_KEY] = moved_to_idx
+        current_idx = int(st.session_state.get(PENDING_INDEX_KEY, moved_to_idx))
         jsonl_status = "written" if action.get("jsonl_appended") else str(action.get("warning") or "not_written")
-        st.session_state["last_action_msg"] = build_persistence_status_message(
+        st.session_state["last_action_msg"] = build_compact_save_feedback_message(
             sample_id=sample_id,
-            action_result=str(action.get("action_result", "unknown")),
             action_type=action_type,
-            completed_csv_path=completed_path,
-            jsonl_path=events_jsonl_path,
-            jsonl_status=jsonl_status,
-            sample_index=current_idx,
+            moved_to_human_index=(current_idx + 1) if action_type == "save_and_next" else None,
+            total_count=row_count if action_type == "save_and_next" else None,
         )
+        st.session_state["last_save_details"] = {
+            "sample_id": sample_id,
+            "action_type": action_type,
+            "action_result": str(action.get("action_result", "unknown")),
+            "completed_csv_path": completed_path,
+            "jsonl_path": events_jsonl_path,
+            "jsonl_status": jsonl_status,
+            "sample_index": current_idx,
+            "warning": action.get("warning"),
+        }
         st.session_state["last_action_kind"] = "warning" if action.get("warning") else "success"
         st.rerun()
     
@@ -428,9 +449,15 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
 
     if st.session_state.get("last_action_msg"):
         if st.session_state.get("last_action_kind") == "warning":
-            st.warning(st.session_state["last_action_msg"])
+            st.sidebar.warning(st.session_state["last_action_msg"])
         else:
-            st.success(st.session_state["last_action_msg"])
+            if hasattr(st, "toast"):
+                st.toast(st.session_state["last_action_msg"], icon="✅")
+            else:
+                st.sidebar.success(st.session_state["last_action_msg"])
+
+    with st.expander("Last Save Details", expanded=False):
+        st.json(st.session_state.get("last_save_details", {}))
 
     st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
     with st.expander("Chart Debug Info (click to expand)", expanded=False):

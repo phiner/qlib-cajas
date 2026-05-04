@@ -603,9 +603,27 @@ def next_sample_index(value: int, row_count: int) -> int:
     return clamp_sample_index(int(value) + 1, row_count)
 
 
+def previous_sample_index(value: int, row_count: int) -> int:
+    """Return previous sample index without going below zero."""
+    return clamp_sample_index(int(value) - 1, row_count)
+
+
 def should_advance_after_save(action_result: Dict[str, Any]) -> bool:
     """Save-and-next advances when CSV save succeeded, even if JSONL warned."""
     return bool(action_result.get("ok")) and bool(action_result.get("csv_saved"))
+
+
+def build_compact_save_feedback_message(
+    *,
+    sample_id: str,
+    action_type: str,
+    moved_to_human_index: Optional[int] = None,
+    total_count: Optional[int] = None,
+) -> str:
+    """Build compact user-facing save feedback without file paths."""
+    if action_type == "save_and_next" and moved_to_human_index is not None and total_count is not None:
+        return f"Saved {sample_id} -> moved to sample {moved_to_human_index}/{total_count}"
+    return f"Saved {sample_id}"
 
 
 def save_review_action(

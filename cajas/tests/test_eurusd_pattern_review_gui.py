@@ -21,7 +21,9 @@ from cajas.research.eurusd_pattern_review_gui import (
     get_chart_height,
     clamp_sample_index,
     next_sample_index,
+    previous_sample_index,
     should_advance_after_save,
+    build_compact_save_feedback_message,
     default_review_values,
     build_review_update_row,
     save_review_action,
@@ -499,6 +501,8 @@ def test_sample_index_helpers():
     assert next_sample_index(0, 5) == 1
     assert next_sample_index(4, 5) == 4
     assert next_sample_index(8, 5) == 4
+    assert previous_sample_index(5, 10) == 4
+    assert previous_sample_index(0, 10) == 0
 
 
 def test_should_advance_after_save_semantics():
@@ -513,6 +517,26 @@ def test_app_uses_decoupled_sample_index_keys():
     assert "current_sample_idx" in app_source
     assert "sample_idx_widget" in app_source
     assert "pending_sample_idx" in app_source
+    assert "Previous Sample" in app_source
+    assert "Next Sample" in app_source
+    assert "Last Save Details" in app_source
+
+
+def test_compact_save_feedback_message_does_not_include_paths():
+    save_msg = build_compact_save_feedback_message(sample_id="eurusd15m_000030", action_type="save")
+    assert save_msg == "Saved eurusd15m_000030"
+    assert "csv=" not in save_msg
+    assert "jsonl=" not in save_msg
+
+    save_next_msg = build_compact_save_feedback_message(
+        sample_id="eurusd15m_000030",
+        action_type="save_and_next",
+        moved_to_human_index=31,
+        total_count=500,
+    )
+    assert save_next_msg == "Saved eurusd15m_000030 -> moved to sample 31/500"
+    assert "csv=" not in save_next_msg
+    assert "jsonl=" not in save_next_msg
 
 
 def test_detect_time_axis_gaps_no_gap():
