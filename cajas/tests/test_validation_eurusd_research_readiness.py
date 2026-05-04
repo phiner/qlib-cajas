@@ -272,3 +272,18 @@ def test_readiness_prefers_run_local_review_app_when_gui_available(tmp_path: Pat
     assert payload["pattern_review_gui_status"] == "watch"
     assert payload["next_action"] == "run_local_review_app"
     assert payload["review_app_run_command"] == "./scripts/run_eurusd_review_gui.sh"
+
+
+def test_readiness_uses_completion_closure_next_action(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        review_completion_closure_report=_write(
+            tmp_path / "closure.json",
+            {"status": "in_progress", "review_state": "in_progress", "completed_count": 10, "pending_count": 3, "next_action": "continue_human_review"},
+        ),
+    )
+    assert payload["review_completion_closure_status"] == "in_progress"
+    assert payload["review_completion_closure_pending_count"] == 3
+    assert payload["next_action"] == "continue_human_review"

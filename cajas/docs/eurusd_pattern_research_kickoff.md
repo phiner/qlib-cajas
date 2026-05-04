@@ -152,6 +152,7 @@ Optional local GUI dependencies (manual install only):
 - JSONL is append-only save event history for audit/interchange recovery
 - CSV save remains authoritative; JSONL append errors are surfaced explicitly in GUI status without silently discarding CSV updates
 - SQLite is intentionally deferred in this phase
+- Completion closure reporting now validates CSV/JSONL consistency and emits `awaiting_review_input|in_progress|ready_for_summary|warning|blocked` with explicit `next_action`
 - GUI is the primary human review interface
 - No live market data, broker integration, or order execution
 - No labels are invented by automation

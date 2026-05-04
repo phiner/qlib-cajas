@@ -540,6 +540,7 @@ Expected GUI behavior:
 - persistence status contract: after save/save-and-next, GUI status must show sample id, CSV path, JSONL path, insert/update result, and current sample index
 - storage split contract: CSV is latest duplicate-safe completed state by `sample_id`; JSONL is append-friendly save-event history for audit/interchange
 - JSONL append errors must be surfaced explicitly and must not silently invalidate successful CSV writes
+- review completion closure contract: publish completion status (`awaiting_review_input|in_progress|ready_for_summary|warning|blocked`) with completed/pending sample ids, CSV/JSONL consistency checks, and explicit reviewer next action
 
 Completed output path:
 

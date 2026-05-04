@@ -2114,6 +2114,7 @@ GUI policy:
 - JSONL captures append-only save action history for audit/interchange
 - CSV save remains authoritative; JSONL append failures are shown explicitly in GUI status
 - SQLite persistence is intentionally deferred
+- Completion closure report (`validation-eurusd-pattern-review-completion-closure`) summarizes completed/pending counts, CSV schema validity, JSONL audit consistency, and reviewer `next_action`
 - GUI is the primary human review interface
 - No live market data, broker integration, order execution, or model training
 - No labels are invented by automation

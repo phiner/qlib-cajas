@@ -32,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--review-guide-report", type=Path)
     parser.add_argument("--review-batch-completion-report", type=Path)
     parser.add_argument("--pattern-review-batch-completion-report", type=Path)
+    parser.add_argument("--review-completion-closure-report", type=Path)
+    parser.add_argument("--pattern-review-completion-closure-report", type=Path)
     parser.add_argument("--review-batch-merge-report", type=Path)
     parser.add_argument("--pattern-review-batch-merge-report", type=Path)
     parser.add_argument("--pattern-review-gui-report", type=Path)
@@ -49,6 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     review_batch_completion_report = (
         args.review_batch_completion_report or args.pattern_review_batch_completion_report
     )
+    review_completion_closure_report = (
+        args.review_completion_closure_report or args.pattern_review_completion_closure_report
+    )
     review_batch_merge_report = args.review_batch_merge_report or args.pattern_review_batch_merge_report
 
     payload = build_validation_eurusd_research_readiness(
@@ -65,6 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         review_batch_report=args.review_batch_report,
         review_guide_report=args.review_guide_report,
         review_batch_completion_report=review_batch_completion_report,
+        review_completion_closure_report=review_completion_closure_report,
         review_batch_merge_report=review_batch_merge_report,
         pattern_review_gui_report=args.pattern_review_gui_report,
     )

@@ -30,6 +30,7 @@ def build_validation_eurusd_research_readiness(
     review_batch_report: Path | None = None,
     review_guide_report: Path | None = None,
     review_batch_completion_report: Path | None = None,
+    review_completion_closure_report: Path | None = None,
     review_batch_merge_report: Path | None = None,
     pattern_review_gui_report: Path | None = None,
 ) -> dict[str, Any]:
@@ -46,6 +47,7 @@ def build_validation_eurusd_research_readiness(
     review_batch = _safe_json(review_batch_report)
     review_guide = _safe_json(review_guide_report)
     batch_completion = _safe_json(review_batch_completion_report)
+    completion_closure = _safe_json(review_completion_closure_report)
     batch_merge = _safe_json(review_batch_merge_report)
     review_gui = _safe_json(pattern_review_gui_report)
     feature = validate_feature_scaffold_contract()
@@ -63,6 +65,7 @@ def build_validation_eurusd_research_readiness(
     review_batch_status = review_batch.get("status", "missing")
     review_guide_status = review_guide.get("status", "missing")
     batch_completion_status = batch_completion.get("status", "missing")
+    completion_closure_status = completion_closure.get("status", "missing")
     batch_merge_status = batch_merge.get("status", "missing")
     review_gui_status = review_gui.get("status", "missing")
     feature_status = feature.get("status", "fail")
@@ -94,6 +97,8 @@ def build_validation_eurusd_research_readiness(
         blockers.append("review_feedback_blocked")
     if batch_completion and batch_completion_status == "blocked":
         blockers.append("review_batch_completion_blocked")
+    if completion_closure and completion_closure_status == "blocked":
+        blockers.append("review_completion_closure_blocked")
     if batch_merge and batch_merge_status == "blocked":
         blockers.append("review_batch_merge_blocked")
     if review_gui and review_gui_status == "blocked":
@@ -146,6 +151,17 @@ def build_validation_eurusd_research_readiness(
         and (batch_completion_status == "awaiting_completed_batch" or batch_merge_status == "awaiting_completed_batch")
     ):
         next_action = "run_local_review_app"
+    if completion_closure:
+        closure_next = completion_closure.get("next_action")
+        closure_state = completion_closure.get("review_state")
+        if closure_state == "in_progress":
+            next_action = "continue_human_review"
+        elif closure_state == "ready_for_summary":
+            next_action = "run_review_summary"
+        elif closure_state == "awaiting_review_input":
+            next_action = "continue_human_review"
+        elif closure_next:
+            next_action = str(closure_next)
 
     return {
         "schema_version": 1,
@@ -180,6 +196,11 @@ def build_validation_eurusd_research_readiness(
         "batch_completion_status": batch_completion_status,
         "batch_completion_reviewed_count": batch_completion.get("reviewed_count"),
         "batch_completion_pending_count": batch_completion.get("pending_count"),
+        "review_completion_closure_status": completion_closure_status,
+        "review_completion_closure_review_state": completion_closure.get("review_state"),
+        "review_completion_closure_completed_count": completion_closure.get("completed_count"),
+        "review_completion_closure_pending_count": completion_closure.get("pending_count"),
+        "review_completion_closure_next_action": completion_closure.get("next_action"),
         "batch_merge_status": batch_merge_status,
         "batch_merge_reviewed_count_added": batch_merge.get("reviewed_count_added"),
         "batch_merge_reviewed_count_total": batch_merge.get("reviewed_count_total"),
@@ -236,6 +257,11 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- batch_completion_status: `{payload.get('batch_completion_status')}`",
         f"- batch_completion_reviewed_count: `{payload.get('batch_completion_reviewed_count')}`",
         f"- batch_completion_pending_count: `{payload.get('batch_completion_pending_count')}`",
+        f"- review_completion_closure_status: `{payload.get('review_completion_closure_status')}`",
+        f"- review_completion_closure_review_state: `{payload.get('review_completion_closure_review_state')}`",
+        f"- review_completion_closure_completed_count: `{payload.get('review_completion_closure_completed_count')}`",
+        f"- review_completion_closure_pending_count: `{payload.get('review_completion_closure_pending_count')}`",
+        f"- review_completion_closure_next_action: `{payload.get('review_completion_closure_next_action')}`",
         f"- batch_merge_status: `{payload.get('batch_merge_status')}`",
         f"- batch_merge_reviewed_count_added: `{payload.get('batch_merge_reviewed_count_added')}`",
         f"- batch_merge_reviewed_count_total: `{payload.get('batch_merge_reviewed_count_total')}`",
