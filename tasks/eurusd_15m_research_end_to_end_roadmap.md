@@ -536,6 +536,7 @@ Expected GUI behavior:
 - show compact one-line chart diagnostics with expandable detailed debug info
 - use one-line compact `Review Notes` input in the main control row
 - keep detailed debug info read-only and positioned below save/reset action buttons
+- save actions contract: Save writes/updates current sample by `sample_id`, Save and Next saves first then advances, Reset Form resets visible controls only and does not delete saved CSV rows
 
 Completed output path:
 

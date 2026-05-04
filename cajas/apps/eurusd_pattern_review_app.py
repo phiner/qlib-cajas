@@ -12,7 +12,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     get_chart_height,
     build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
-    save_completed_review,
+    save_or_update_completed_review,
+    default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
 )
@@ -121,11 +122,13 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     # Sample selector
     st.sidebar.subheader("Sample")
+    if "sample_idx" not in st.session_state:
+        st.session_state.sample_idx = 0
     sample_idx = st.sidebar.number_input(
         "Sample Index",
         min_value=0,
         max_value=len(filtered) - 1,
-        value=0
+        key="sample_idx"
     )
     
     # Progress
@@ -137,7 +140,30 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     )
     
     # Current sample
-    sample = filtered.iloc[sample_idx]
+    sample = filtered.iloc[int(sample_idx)]
+    sample_id = str(sample["sample_id"])
+    state_defaults = default_review_values()
+    review_key_map = {
+        "human_pattern_label": "review_pattern_label",
+        "market_context": "review_market_context",
+        "direction_context": "review_direction_context",
+        "structure_quality": "review_structure_quality",
+        "follow_through_quality": "review_follow_through_quality",
+        "review_confidence": "review_confidence",
+        "review_notes": "review_notes",
+        "review_status": "review_status",
+    }
+
+    if st.session_state.get("current_sample_id") != sample_id:
+        st.session_state["current_sample_id"] = sample_id
+        for field, key in review_key_map.items():
+            value = sample.get(field, state_defaults[field])
+            if field == "review_notes":
+                value = sanitize_optional_text_value(value)
+            if field in {"structure_quality", "follow_through_quality", "review_confidence"}:
+                value = int(value) if value is not None else int(state_defaults[field])
+            st.session_state[key] = value if value not in (None, "") or field == "review_notes" else state_defaults[field]
+        st.session_state["review_notes"] = sanitize_optional_text_value(st.session_state.get("review_notes", ""))
 
     if compact_mode:
         st.subheader(f"Sample {sample['sample_id']}")
@@ -231,24 +257,27 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             "Pattern Label",
             allowed.get("human_pattern_label", ["unclear"]),
             index=allowed.get("human_pattern_label", ["unclear"]).index(
-                sample.get("human_pattern_label", "unclear")
-            ) if sample.get("human_pattern_label") in allowed.get("human_pattern_label", []) else 0
+                st.session_state.get("review_pattern_label", "unclear")
+            ) if st.session_state.get("review_pattern_label") in allowed.get("human_pattern_label", []) else 0,
+            key="review_pattern_label",
         )
     with col2:
         market_context = st.selectbox(
             "Market Context",
             allowed.get("market_context", ["unclear"]),
             index=allowed.get("market_context", ["unclear"]).index(
-                sample.get("market_context", "unclear")
-            ) if sample.get("market_context") in allowed.get("market_context", []) else 0
+                st.session_state.get("review_market_context", "unclear")
+            ) if st.session_state.get("review_market_context") in allowed.get("market_context", []) else 0,
+            key="review_market_context",
         )
     with col3 if compact_mode else col1:
         direction_context = st.selectbox(
             "Direction Context",
             allowed.get("direction_context", ["unclear"]),
             index=allowed.get("direction_context", ["unclear"]).index(
-                sample.get("direction_context", "unclear")
-            ) if sample.get("direction_context") in allowed.get("direction_context", []) else 0
+                st.session_state.get("review_direction_context", "unclear")
+            ) if st.session_state.get("review_direction_context") in allowed.get("direction_context", []) else 0,
+            key="review_direction_context",
         )
 
     if compact_mode:
@@ -256,8 +285,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             "Review Status",
             allowed.get("review_status", ["pending", "reviewed"]),
             index=allowed.get("review_status", ["pending"]).index(
-                sample.get("review_status", "pending")
-            ) if sample.get("review_status") in allowed.get("review_status", []) else 0
+                st.session_state.get("review_status", "pending")
+            ) if st.session_state.get("review_status") in allowed.get("review_status", []) else 0,
+            key="review_status",
         )
 
     s_cols = st.columns(4) if compact_mode else st.columns(2)
@@ -267,31 +297,34 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     s4 = s_cols[3] if compact_mode else s_cols[1]
 
     with s1:
-        structure_quality = st.slider("Structure Quality", 1, 5, int(sample.get("structure_quality", 3)))
+        structure_quality = st.slider("Structure Quality", 1, 5, int(st.session_state.get("review_structure_quality", 3)), key="review_structure_quality")
     with s2:
-        follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(sample.get("follow_through_quality", 3)))
+        follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(st.session_state.get("review_follow_through_quality", 3)), key="review_follow_through_quality")
     with s3 if compact_mode else s1:
-        review_confidence = st.slider("Review Confidence", 1, 5, int(sample.get("review_confidence", 3)))
+        review_confidence = st.slider("Review Confidence", 1, 5, int(st.session_state.get("review_confidence", 3)), key="review_confidence")
 
     if compact_mode:
         with s4:
             review_notes = st.text_input(
                 "Review Notes",
-                value=sanitize_optional_text_value(sample.get("review_notes", "")),
+                value=sanitize_optional_text_value(st.session_state.get("review_notes", "")),
                 placeholder="Optional notes...",
+                key="review_notes",
             )
     else:
         review_notes = st.text_area(
             "Review Notes",
-            sanitize_optional_text_value(sample.get("review_notes", "")),
+            sanitize_optional_text_value(st.session_state.get("review_notes", "")),
             placeholder="Optional notes...",
+            key="review_notes",
         )
         review_status = st.selectbox(
             "Review Status",
             allowed.get("review_status", ["pending", "reviewed"]),
             index=allowed.get("review_status", ["pending"]).index(
-                sample.get("review_status", "pending")
-            ) if sample.get("review_status") in allowed.get("review_status", []) else 0
+                st.session_state.get("review_status", "pending")
+            ) if st.session_state.get("review_status") in allowed.get("review_status", []) else 0,
+            key="review_status",
         )
     
     # Save buttons
@@ -309,9 +342,13 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 "review_notes": review_notes,
                 "review_status": review_status
             }
-            save_completed_review(batch, sample["sample_id"], labels, Path(completed_path))
-            st.success("Saved!")
-            st.rerun()
+            try:
+                save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
+                st.session_state.batch = merge_completed_labels(st.session_state.batch, load_completed_reviews(Path(completed_path)))
+                st.session_state["last_action_msg"] = f"Saved sample_id={sample_id}"
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Save failed for sample_id={sample_id}: {exc}")
     
     with col2:
         if st.button("Save and Next"):
@@ -325,15 +362,28 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 "review_notes": review_notes,
                 "review_status": review_status
             }
-            save_completed_review(batch, sample["sample_id"], labels, Path(completed_path))
-            if sample_idx < len(filtered) - 1:
-                st.session_state.sample_idx = sample_idx + 1
-            st.success("Saved!")
-            st.rerun()
+            try:
+                save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
+                st.session_state.batch = merge_completed_labels(st.session_state.batch, load_completed_reviews(Path(completed_path)))
+                if int(sample_idx) < len(filtered) - 1:
+                    st.session_state.sample_idx = int(sample_idx) + 1
+                st.session_state["last_action_msg"] = f"Saved sample_id={sample_id} and moved to next sample"
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Save and Next failed for sample_id={sample_id}: {exc}")
     
     with col3:
         if st.button("Reset Form"):
+            defaults = default_review_values()
+            for field, key in review_key_map.items():
+                st.session_state[key] = defaults[field]
+            st.session_state["last_action_msg"] = f"Form reset for sample_id={sample_id}"
             st.rerun()
+
+    if st.session_state.get("last_action_msg"):
+        st.info(
+            f"{st.session_state['last_action_msg']} | output={completed_path} | current sample_id={sample_id}"
+        )
 
     st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
     with st.expander("Chart Debug Info (click to expand)", expanded=False):

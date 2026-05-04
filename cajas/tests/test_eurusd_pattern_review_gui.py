@@ -15,6 +15,9 @@ from cajas.research.eurusd_pattern_review_gui import (
     build_chart_diagnostic_summary,
     build_compact_chart_diagnostic_summary,
     get_chart_height,
+    default_review_values,
+    build_review_update_row,
+    save_or_update_completed_review,
     save_completed_review,
     get_review_progress,
     sanitize_output_columns,
@@ -226,6 +229,57 @@ def test_save_completed_review_sanitizes_nan_notes(batch_fixture, temp_dir):
     completed = pd.read_csv(output_path)
     row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
     assert sanitize_optional_text_value(row["review_notes"]) == ""
+
+
+def test_default_review_values_match_reset_contract():
+    defaults = default_review_values()
+    assert defaults["human_pattern_label"] == "unclear"
+    assert defaults["market_context"] == "unclear"
+    assert defaults["direction_context"] == "unclear"
+    assert defaults["structure_quality"] == 3
+    assert defaults["follow_through_quality"] == 3
+    assert defaults["review_confidence"] == 3
+    assert defaults["review_notes"] == ""
+    assert defaults["review_status"] == "pending"
+
+
+def test_build_review_update_row_fills_required_fields():
+    row = build_review_update_row({"review_notes": float("nan"), "review_status": "reviewed"})
+    for field in [
+        "human_pattern_label",
+        "market_context",
+        "direction_context",
+        "structure_quality",
+        "follow_through_quality",
+        "review_confidence",
+        "review_notes",
+        "review_status",
+    ]:
+        assert field in row
+    assert row["review_notes"] == ""
+    assert row["review_status"] == "reviewed"
+
+
+def test_save_or_update_completed_review_updates_without_duplicate(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    output_path = temp_dir / "completed.csv"
+    save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id="s1",
+        review_values={"human_pattern_label": "weak_pattern", "review_notes": "first"},
+        output_path=output_path,
+    )
+    save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id="s1",
+        review_values={"human_pattern_label": "valid_pattern", "review_notes": "second", "review_status": "reviewed"},
+        output_path=output_path,
+    )
+    completed = pd.read_csv(output_path)
+    assert completed["sample_id"].value_counts().get("s1", 0) == 1
+    row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
+    assert row["human_pattern_label"] == "valid_pattern"
+    assert row["review_notes"] == "second"
 
 
 def test_build_chart_diagnostic_summary_contains_required_fields():

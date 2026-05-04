@@ -2102,6 +2102,9 @@ GUI workflow:
 2. Load clean view and review batch (default paths pre-configured)
 3. Navigate samples, inspect charts, fill labels
 4. Click Save or Save and Next
+   - Save updates current sample row by `sample_id`
+   - Save and Next saves first, then advances to the next sample
+   - Reset Form resets the current visible form only (does not delete saved CSV rows)
 5. Later run batch merge workflow to integrate completed reviews
 
 GUI policy:

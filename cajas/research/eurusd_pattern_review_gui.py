@@ -23,6 +23,16 @@ REVIEW_FIELDS = [
 OPTIONAL_TEXT_FIELDS = [
     "review_notes",
 ]
+DEFAULT_REVIEW_VALUES = {
+    "human_pattern_label": "unclear",
+    "market_context": "unclear",
+    "direction_context": "unclear",
+    "structure_quality": 3,
+    "follow_through_quality": 3,
+    "review_confidence": 3,
+    "review_notes": "",
+    "review_status": "pending",
+}
 
 
 def load_clean_view(path: Path) -> pd.DataFrame:
@@ -349,6 +359,30 @@ def save_completed_review(
     # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
     completed_df.to_csv(output_path, index=False)
+
+
+def default_review_values() -> Dict[str, Any]:
+    """Return default review values used by reset and new samples."""
+    return dict(DEFAULT_REVIEW_VALUES)
+
+
+def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a complete review payload with sanitized optional text fields."""
+    row = default_review_values()
+    row.update(overrides)
+    row["review_notes"] = sanitize_optional_text_value(row.get("review_notes", ""))
+    return {key: row[key] for key in REVIEW_FIELDS}
+
+
+def save_or_update_completed_review(
+    batch_df: pd.DataFrame,
+    sample_id: str,
+    review_values: Dict[str, Any],
+    output_path: Path,
+) -> None:
+    """Save or update one sample review by sample_id."""
+    labels = build_review_update_row(review_values)
+    save_completed_review(batch_df=batch_df, sample_id=sample_id, labels=labels, output_path=output_path)
 
 
 def sanitize_output_columns(df: pd.DataFrame) -> pd.DataFrame:

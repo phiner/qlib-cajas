@@ -140,6 +140,9 @@ Optional local GUI dependencies (manual install only):
 5. Fill review labels in form
 6. Click Save or Save and Next
 7. App writes/updates `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
+   - Save: writes/updates current sample by `sample_id`
+   - Save and Next: saves first, then advances sample index
+   - Reset Form: resets visible form fields only and does not delete saved CSV rows
 8. Later run batch merge workflow to integrate into full completed review
 
 **Design**:
