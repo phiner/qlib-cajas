@@ -199,21 +199,6 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
             else:
                 st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
-            st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
-
-    with st.expander("Chart Debug Info (click to expand)", expanded=False):
-        st.json(
-            {
-                "sample_id": str(sample["sample_id"]),
-                "selected_timestamp": str(sample["timestamp"]),
-                "exact_timestamp_match_found": bool(chart_diag.get("exact_timestamp_match_found", False)),
-                "nearest_fallback_used": bool(chart_diag.get("nearest_fallback_used", False)),
-                "chart_window_row_count": int(chart_diag.get("chart_window_row_count", 0)),
-                "target_index_in_window": chart_diag.get("target_index_in_window"),
-                "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
-                "error": chart_diag.get("error"),
-            }
-        )
     
     # Metadata
     m1, m2, m3, m4 = st.columns(4)
@@ -235,7 +220,11 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     allowed = schema.get("allowed_values", {})
     
-    col1, col2, col3 = st.columns(3 if compact_mode else 2)
+    top_cols = st.columns(4) if compact_mode else st.columns(2)
+    col1 = top_cols[0]
+    col2 = top_cols[1]
+    col3 = top_cols[2] if compact_mode else top_cols[0]
+    col4 = top_cols[3] if compact_mode else top_cols[1]
     
     with col1:
         human_pattern_label = st.selectbox(
@@ -261,29 +250,49 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 sample.get("direction_context", "unclear")
             ) if sample.get("direction_context") in allowed.get("direction_context", []) else 0
         )
-    
-    s1, s2, s3 = st.columns(3 if compact_mode else 2)
+
+    if compact_mode:
+        review_status = col4.selectbox(
+            "Review Status",
+            allowed.get("review_status", ["pending", "reviewed"]),
+            index=allowed.get("review_status", ["pending"]).index(
+                sample.get("review_status", "pending")
+            ) if sample.get("review_status") in allowed.get("review_status", []) else 0
+        )
+
+    s_cols = st.columns(4) if compact_mode else st.columns(2)
+    s1 = s_cols[0]
+    s2 = s_cols[1]
+    s3 = s_cols[2] if compact_mode else s_cols[0]
+    s4 = s_cols[3] if compact_mode else s_cols[1]
+
     with s1:
         structure_quality = st.slider("Structure Quality", 1, 5, int(sample.get("structure_quality", 3)))
     with s2:
         follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(sample.get("follow_through_quality", 3)))
     with s3 if compact_mode else s1:
         review_confidence = st.slider("Review Confidence", 1, 5, int(sample.get("review_confidence", 3)))
-    
-    review_notes = st.text_area(
-        "Review Notes",
-        sanitize_optional_text_value(sample.get("review_notes", "")),
-        placeholder="Optional notes...",
-        height=80 if compact_mode else None,
-    )
-    
-    review_status = st.selectbox(
-        "Review Status",
-        allowed.get("review_status", ["pending", "reviewed"]),
-        index=allowed.get("review_status", ["pending"]).index(
-            sample.get("review_status", "pending")
-        ) if sample.get("review_status") in allowed.get("review_status", []) else 0
-    )
+
+    if compact_mode:
+        with s4:
+            review_notes = st.text_input(
+                "Review Notes",
+                value=sanitize_optional_text_value(sample.get("review_notes", "")),
+                placeholder="Optional notes...",
+            )
+    else:
+        review_notes = st.text_area(
+            "Review Notes",
+            sanitize_optional_text_value(sample.get("review_notes", "")),
+            placeholder="Optional notes...",
+        )
+        review_status = st.selectbox(
+            "Review Status",
+            allowed.get("review_status", ["pending", "reviewed"]),
+            index=allowed.get("review_status", ["pending"]).index(
+                sample.get("review_status", "pending")
+            ) if sample.get("review_status") in allowed.get("review_status", []) else 0
+        )
     
     # Save buttons
     col1, col2, col3 = st.columns(3)
@@ -325,6 +334,21 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     with col3:
         if st.button("Reset Form"):
             st.rerun()
+
+    st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
+    with st.expander("Chart Debug Info (click to expand)", expanded=False):
+        st.json(
+            {
+                "sample_id": str(sample["sample_id"]),
+                "selected_timestamp": str(sample["timestamp"]),
+                "exact_timestamp_match_found": bool(chart_diag.get("exact_timestamp_match_found", False)),
+                "nearest_fallback_used": bool(chart_diag.get("nearest_fallback_used", False)),
+                "chart_window_row_count": int(chart_diag.get("chart_window_row_count", 0)),
+                "target_index_in_window": chart_diag.get("target_index_in_window"),
+                "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
+                "error": chart_diag.get("error"),
+            }
+        )
 
 
 if __name__ == "__main__":

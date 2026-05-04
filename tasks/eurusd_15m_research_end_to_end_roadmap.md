@@ -534,6 +534,8 @@ Expected GUI behavior:
 - provide compact mode (enabled by default) for high-frequency manual review
 - allow compact chart height adjustment from sidebar controls
 - show compact one-line chart diagnostics with expandable detailed debug info
+- use one-line compact `Review Notes` input in the main control row
+- keep detailed debug info read-only and positioned below save/reset action buttons
 
 Completed output path:
 

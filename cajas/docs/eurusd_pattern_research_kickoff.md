@@ -128,6 +128,8 @@ Optional local GUI dependencies (manual install only):
 - Streamlit chart width uses the new API path with compatibility fallback for older versions
 - Compact mode is enabled by default for high-frequency manual review
 - Chart height is adjustable from the sidebar in compact mode
+- Compact mode uses a one-line `Review Notes` input in the review control row
+- Detailed `Chart Debug Info` is read-only diagnostics and appears below action buttons
 - Fully offline operation
 
 **Workflow**:

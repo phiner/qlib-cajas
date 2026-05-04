@@ -2093,6 +2093,8 @@ GUI features:
 - Compact mode enabled by default for high-frequency manual review
 - Adjustable compact chart height from sidebar controls
 - Compact chart diagnostics line plus expandable detailed debug info
+- Compact mode uses one-line `Review Notes` and keeps notes optional
+- Debug hint and detailed debug expander are read-only and placed below action buttons
 - Fully offline operation
 
 GUI workflow:
