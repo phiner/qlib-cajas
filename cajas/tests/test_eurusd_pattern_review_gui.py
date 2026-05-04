@@ -18,6 +18,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     get_chart_height,
     default_review_values,
     build_review_update_row,
+    save_review_action,
     save_or_update_completed_review,
     append_review_event_jsonl,
     build_persistence_status_message,
@@ -384,6 +385,87 @@ def test_append_review_event_jsonl_is_append_friendly(temp_dir):
     second = json.loads(lines[1])
     assert first["action_type"] == "save"
     assert second["action_type"] == "save_and_next"
+
+
+def test_save_review_action_writes_csv_and_jsonl(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    completed_path = temp_dir / "completed.csv"
+    events_path = temp_dir / "events.jsonl"
+    action = save_review_action(
+        batch_df=batch_df,
+        sample_id="s1",
+        review_values={"review_notes": "ok", "review_status": "reviewed"},
+        completed_csv_path=completed_path,
+        audit_jsonl_path=events_path,
+        action_type="save",
+        source_batch_path="tmp/eurusd/batch.csv",
+    )
+    assert action["ok"] is True
+    assert action["csv_saved"] is True
+    assert action["jsonl_appended"] is True
+    assert action["warning"] is None
+    completed = pd.read_csv(completed_path)
+    assert completed["sample_id"].value_counts().get("s1", 0) == 1
+    lines = [line for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 1
+
+
+def test_save_review_action_duplicate_safe_with_two_events(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    completed_path = temp_dir / "completed.csv"
+    events_path = temp_dir / "events.jsonl"
+    save_review_action(
+        batch_df=batch_df,
+        sample_id="s2",
+        review_values={"review_notes": "one", "review_status": "pending"},
+        completed_csv_path=completed_path,
+        audit_jsonl_path=events_path,
+        action_type="save",
+        source_batch_path="tmp/eurusd/batch.csv",
+    )
+    save_review_action(
+        batch_df=batch_df,
+        sample_id="s2",
+        review_values={"review_notes": "two", "review_status": "reviewed"},
+        completed_csv_path=completed_path,
+        audit_jsonl_path=events_path,
+        action_type="save_and_next",
+        source_batch_path="tmp/eurusd/batch.csv",
+    )
+    completed = pd.read_csv(completed_path)
+    row = completed.loc[completed["sample_id"] == "s2"].iloc[0]
+    assert completed["sample_id"].value_counts().get("s2", 0) == 1
+    assert row["review_notes"] == "two"
+    lines = [line for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 2
+
+
+def test_save_review_action_csv_success_jsonl_warning(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    completed_path = temp_dir / "completed.csv"
+    jsonl_dir = temp_dir / "events_dir"
+    jsonl_dir.mkdir(parents=True, exist_ok=True)
+    action = save_review_action(
+        batch_df=batch_df,
+        sample_id="s3",
+        review_values={"review_notes": "warn-case", "review_status": "reviewed"},
+        completed_csv_path=completed_path,
+        audit_jsonl_path=jsonl_dir,
+        action_type="save_and_next",
+        source_batch_path="tmp/eurusd/batch.csv",
+    )
+    assert action["ok"] is True
+    assert action["csv_saved"] is True
+    assert action["jsonl_appended"] is False
+    assert action["warning"] is not None
+    completed = pd.read_csv(completed_path)
+    assert completed["sample_id"].value_counts().get("s3", 0) == 1
+
+
+def test_app_does_not_use_top_level_stale_persist_review_symbol():
+    app_path = Path("cajas/apps/eurusd_pattern_review_app.py")
+    text = app_path.read_text(encoding="utf-8")
+    assert "\nif __name__ == \"__main__\":\n    main()\n    def persist_review" not in text
 
 
 def test_build_persistence_status_message_contains_expected_fields():

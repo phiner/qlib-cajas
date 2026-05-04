@@ -12,8 +12,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     get_chart_height,
     build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
-    save_or_update_completed_review,
-    append_review_event_jsonl,
+    save_review_action,
     build_persistence_status_message,
     default_review_values,
     get_review_progress,
@@ -149,6 +148,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     sample = filtered.iloc[int(sample_idx)]
     sample_id = str(sample["sample_id"])
     state_defaults = default_review_values()
+    allowed = schema.get("allowed_values", {})
     review_key_map = {
         "human_pattern_label": "review_pattern_label",
         "market_context": "review_market_context",
@@ -170,6 +170,15 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 value = int(value) if value is not None else int(state_defaults[field])
             st.session_state[key] = value if value not in (None, "") or field == "review_notes" else state_defaults[field]
         st.session_state["review_notes"] = sanitize_optional_text_value(st.session_state.get("review_notes", ""))
+
+    if st.session_state.get("review_pattern_label") not in allowed.get("human_pattern_label", ["unclear"]):
+        st.session_state["review_pattern_label"] = allowed.get("human_pattern_label", ["unclear"])[0]
+    if st.session_state.get("review_market_context") not in allowed.get("market_context", ["unclear"]):
+        st.session_state["review_market_context"] = allowed.get("market_context", ["unclear"])[0]
+    if st.session_state.get("review_direction_context") not in allowed.get("direction_context", ["unclear"]):
+        st.session_state["review_direction_context"] = allowed.get("direction_context", ["unclear"])[0]
+    if st.session_state.get("review_status") not in allowed.get("review_status", ["pending", "reviewed"]):
+        st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed"])[0]
 
     if compact_mode:
         st.subheader(f"Sample {sample['sample_id']}")
@@ -249,9 +258,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     # Review form
     st.subheader("Review Labels")
-    
-    allowed = schema.get("allowed_values", {})
-    
+
     top_cols = st.columns(4) if compact_mode else st.columns(2)
     col1 = top_cols[0]
     col2 = top_cols[1]
@@ -262,27 +269,18 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         human_pattern_label = st.selectbox(
             "Pattern Label",
             allowed.get("human_pattern_label", ["unclear"]),
-            index=allowed.get("human_pattern_label", ["unclear"]).index(
-                st.session_state.get("review_pattern_label", "unclear")
-            ) if st.session_state.get("review_pattern_label") in allowed.get("human_pattern_label", []) else 0,
             key="review_pattern_label",
         )
     with col2:
         market_context = st.selectbox(
             "Market Context",
             allowed.get("market_context", ["unclear"]),
-            index=allowed.get("market_context", ["unclear"]).index(
-                st.session_state.get("review_market_context", "unclear")
-            ) if st.session_state.get("review_market_context") in allowed.get("market_context", []) else 0,
             key="review_market_context",
         )
     with col3 if compact_mode else col1:
         direction_context = st.selectbox(
             "Direction Context",
             allowed.get("direction_context", ["unclear"]),
-            index=allowed.get("direction_context", ["unclear"]).index(
-                st.session_state.get("review_direction_context", "unclear")
-            ) if st.session_state.get("review_direction_context") in allowed.get("direction_context", []) else 0,
             key="review_direction_context",
         )
 
@@ -290,9 +288,6 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         review_status = col4.selectbox(
             "Review Status",
             allowed.get("review_status", ["pending", "reviewed"]),
-            index=allowed.get("review_status", ["pending"]).index(
-                st.session_state.get("review_status", "pending")
-            ) if st.session_state.get("review_status") in allowed.get("review_status", []) else 0,
             key="review_status",
         )
 
@@ -303,38 +298,74 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     s4 = s_cols[3] if compact_mode else s_cols[1]
 
     with s1:
-        structure_quality = st.slider("Structure Quality", 1, 5, int(st.session_state.get("review_structure_quality", 3)), key="review_structure_quality")
+        structure_quality = st.slider("Structure Quality", 1, 5, key="review_structure_quality")
     with s2:
-        follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(st.session_state.get("review_follow_through_quality", 3)), key="review_follow_through_quality")
+        follow_through_quality = st.slider("Follow-through Quality", 1, 5, key="review_follow_through_quality")
     with s3 if compact_mode else s1:
-        review_confidence = st.slider("Review Confidence", 1, 5, int(st.session_state.get("review_confidence", 3)), key="review_confidence")
+        review_confidence = st.slider("Review Confidence", 1, 5, key="review_confidence")
 
     if compact_mode:
         with s4:
             review_notes = st.text_input(
                 "Review Notes",
-                value=sanitize_optional_text_value(st.session_state.get("review_notes", "")),
                 placeholder="Optional notes...",
                 key="review_notes",
             )
     else:
         review_notes = st.text_area(
             "Review Notes",
-            sanitize_optional_text_value(st.session_state.get("review_notes", "")),
             placeholder="Optional notes...",
             key="review_notes",
         )
         review_status = st.selectbox(
             "Review Status",
             allowed.get("review_status", ["pending", "reviewed"]),
-            index=allowed.get("review_status", ["pending"]).index(
-                st.session_state.get("review_status", "pending")
-            ) if st.session_state.get("review_status") in allowed.get("review_status", []) else 0,
             key="review_status",
         )
     
     # Save buttons
     col1, col2, col3 = st.columns(3)
+
+    def build_review_labels() -> dict:
+        return {
+            "human_pattern_label": human_pattern_label,
+            "market_context": market_context,
+            "direction_context": direction_context,
+            "structure_quality": structure_quality,
+            "follow_through_quality": follow_through_quality,
+            "review_confidence": review_confidence,
+            "review_notes": review_notes,
+            "review_status": review_status,
+        }
+
+    def persist_review(action_type: str, advance_to_next: bool) -> None:
+        action = save_review_action(
+            batch_df=batch,
+            sample_id=sample_id,
+            review_values=build_review_labels(),
+            completed_csv_path=Path(completed_path),
+            audit_jsonl_path=Path(events_jsonl_path),
+            action_type=action_type,
+            source_batch_path=batch_path,
+        )
+        st.session_state.batch = merge_completed_labels(
+            st.session_state.batch, load_completed_reviews(Path(completed_path))
+        )
+        if action["ok"] and advance_to_next and int(sample_idx) < len(filtered) - 1:
+            st.session_state.sample_idx = int(sample_idx) + 1
+        current_idx = int(st.session_state.get("sample_idx", int(sample_idx)))
+        jsonl_status = "written" if action.get("jsonl_appended") else str(action.get("warning") or "not_written")
+        st.session_state["last_action_msg"] = build_persistence_status_message(
+            sample_id=sample_id,
+            action_result=str(action.get("action_result", "unknown")),
+            action_type=action_type,
+            completed_csv_path=completed_path,
+            jsonl_path=events_jsonl_path,
+            jsonl_status=jsonl_status,
+            sample_index=current_idx,
+        )
+        st.session_state["last_action_kind"] = "warning" if action.get("warning") else "success"
+        st.rerun()
     
     with col1:
         if st.button("Save"):
@@ -382,50 +413,3 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
 
 if __name__ == "__main__":
     main()
-    def build_review_labels() -> dict:
-        return {
-            "human_pattern_label": human_pattern_label,
-            "market_context": market_context,
-            "direction_context": direction_context,
-            "structure_quality": structure_quality,
-            "follow_through_quality": follow_through_quality,
-            "review_confidence": review_confidence,
-            "review_notes": review_notes,
-            "review_status": review_status,
-        }
-
-    def persist_review(action_type: str, advance_to_next: bool) -> None:
-        labels = build_review_labels()
-        result = save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
-        st.session_state.batch = merge_completed_labels(
-            st.session_state.batch, load_completed_reviews(Path(completed_path))
-        )
-        jsonl_status = "written"
-        try:
-            append_review_event_jsonl(
-                jsonl_path=Path(events_jsonl_path),
-                sample_id=sample_id,
-                review_values=labels,
-                action_type=action_type,
-                completed_csv_path=Path(completed_path),
-                batch_path=batch_path,
-            )
-        except Exception as jsonl_exc:
-            jsonl_status = f"error: {jsonl_exc}"
-        if advance_to_next and int(sample_idx) < len(filtered) - 1:
-            st.session_state.sample_idx = int(sample_idx) + 1
-        current_idx = int(st.session_state.get("sample_idx", int(sample_idx)))
-        st.session_state["last_action_msg"] = build_persistence_status_message(
-            sample_id=sample_id,
-            action_result=result["action_result"],
-            action_type=action_type,
-            completed_csv_path=completed_path,
-            jsonl_path=events_jsonl_path,
-            jsonl_status=jsonl_status,
-            sample_index=current_idx,
-        )
-        if jsonl_status != "written":
-            st.session_state["last_action_kind"] = "warning"
-        else:
-            st.session_state["last_action_kind"] = "success"
-        st.rerun()

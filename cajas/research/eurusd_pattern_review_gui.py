@@ -454,6 +454,50 @@ def build_persistence_status_message(
     )
 
 
+def save_review_action(
+    *,
+    batch_df: pd.DataFrame,
+    sample_id: str,
+    review_values: Dict[str, Any],
+    completed_csv_path: Path,
+    audit_jsonl_path: Path,
+    action_type: str,
+    source_batch_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Persist one review action with CSV-first durability and JSONL audit append."""
+    result = save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id=sample_id,
+        review_values=review_values,
+        output_path=completed_csv_path,
+    )
+    out: Dict[str, Any] = {
+        "ok": True,
+        "sample_id": sample_id,
+        "action_type": action_type,
+        "action_result": result["action_result"],
+        "completed_csv_path": str(completed_csv_path),
+        "audit_jsonl_path": str(audit_jsonl_path),
+        "csv_saved": True,
+        "jsonl_appended": False,
+        "warning": None,
+        "error": None,
+    }
+    try:
+        append_review_event_jsonl(
+            jsonl_path=audit_jsonl_path,
+            sample_id=sample_id,
+            review_values=review_values,
+            action_type=action_type,
+            completed_csv_path=completed_csv_path,
+            batch_path=source_batch_path,
+        )
+        out["jsonl_appended"] = True
+    except Exception as exc:
+        out["warning"] = f"jsonl_append_failed: {exc}"
+    return out
+
+
 def sanitize_output_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Drop forbidden trading/action columns from output."""
     drop_cols = [col for col in df.columns if col.lower() in FORBIDDEN_TRADING_COLUMNS]
