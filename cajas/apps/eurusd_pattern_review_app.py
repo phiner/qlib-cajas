@@ -9,6 +9,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     merge_completed_labels,
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
+    build_compressed_gap_axis,
+    summarize_compressed_gap_axis,
     get_chart_height,
     build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
@@ -234,14 +236,19 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     fig = None
     chart_height = get_chart_height(compact_mode, compact_chart_height)
     if chart_diag.get("chart_window_row_count", 0) > 0:
+        axis_info = build_compressed_gap_axis(window["timestamp"].tolist())
+        axis_summary = summarize_compressed_gap_axis(axis_info)
         fig = create_candlestick_figure(
             window,
             sample["timestamp"],
             sample_id=str(sample["sample_id"]),
             candidate_type=str(sample["candidate_type"]),
+            axis_info=axis_info,
         )
         if fig is not None:
             fig.update_layout(height=chart_height)
+    else:
+        axis_summary = summarize_compressed_gap_axis({"display_axis": "real_time_axis", "gaps": [], "gap_markers": []})
 
     with chart_container:
         if fig is None:
@@ -263,6 +270,13 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 st.caption(build_compact_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
             else:
                 st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
+            if axis_summary.get("time_gap_count", 0) > 0:
+                st.caption(
+                    "Chart gap compressed: weekend/market-closed intervals were collapsed and marked. "
+                    "Original timestamps remain available in hover/debug info."
+                )
+            else:
+                st.caption("display_axis=real_time_axis | time_gap_count=0")
     
     # Metadata
     m1, m2, m3, m4 = st.columns(4)
@@ -429,6 +443,12 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
                 "chart_window_row_count": int(chart_diag.get("chart_window_row_count", 0)),
                 "target_index_in_window": chart_diag.get("target_index_in_window"),
                 "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
+                "display_axis": axis_summary.get("display_axis"),
+                "raw_time_axis_preserved_in_hover": axis_summary.get("raw_time_axis_preserved_in_hover"),
+                "time_gap_count": axis_summary.get("time_gap_count"),
+                "largest_gap_hours": axis_summary.get("largest_gap_hours"),
+                "gap_markers": axis_summary.get("gap_markers"),
+                "gaps": axis_summary.get("gaps"),
                 "error": chart_diag.get("error"),
             }
         )

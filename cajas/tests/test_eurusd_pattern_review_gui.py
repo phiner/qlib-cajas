@@ -13,6 +13,9 @@ from cajas.research.eurusd_pattern_review_gui import (
     extract_chart_window,
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
+    detect_time_axis_gaps,
+    build_compressed_gap_axis,
+    summarize_compressed_gap_axis,
     build_chart_diagnostic_summary,
     build_compact_chart_diagnostic_summary,
     get_chart_height,
@@ -218,6 +221,7 @@ def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
     assert fig is None or hasattr(fig, "to_dict")
     if fig is not None:
         assert len(fig.data) >= 1
+        assert "timestamp=" in str(fig.data[0].hovertemplate)
 
 
 def test_get_review_progress(batch_fixture):
@@ -509,6 +513,53 @@ def test_app_uses_decoupled_sample_index_keys():
     assert "current_sample_idx" in app_source
     assert "sample_idx_widget" in app_source
     assert "pending_sample_idx" in app_source
+
+
+def test_detect_time_axis_gaps_no_gap():
+    timestamps = pd.date_range("2020-01-03 00:00:00", periods=10, freq="15min")
+    gaps = detect_time_axis_gaps(list(timestamps))
+    assert gaps == []
+
+
+def test_detect_time_axis_gaps_weekend():
+    timestamps = [
+        pd.Timestamp("2020-01-03 21:45:00+00:00"),
+        pd.Timestamp("2020-01-03 22:00:00+00:00"),
+        pd.Timestamp("2020-01-05 22:15:00+00:00"),
+    ]
+    gaps = detect_time_axis_gaps(timestamps)
+    assert len(gaps) == 1
+    gap = gaps[0]
+    assert gap["classification"] == "weekend_or_market_closed_gap"
+    assert gap["gap_hours"] > 24
+
+
+def test_build_compressed_gap_axis_with_marker():
+    timestamps = [
+        pd.Timestamp("2020-01-03 22:00:00+00:00"),
+        pd.Timestamp("2020-01-06 00:00:00+00:00"),
+        pd.Timestamp("2020-01-06 00:15:00+00:00"),
+    ]
+    axis = build_compressed_gap_axis(timestamps)
+    assert axis["display_x"] == [0, 1, 2]
+    assert axis["display_axis"] == "compressed_gap_axis"
+    assert len(axis["gap_markers"]) == 1
+    assert axis["gap_markers"][0]["display_x"] == 0.5
+
+
+def test_summarize_compressed_gap_axis():
+    axis = {
+        "display_axis": "compressed_gap_axis",
+        "raw_time_axis_preserved_in_hover": True,
+        "gaps": [{"gap_hours": 48.0}],
+        "gap_markers": [{"display_x": 0.5}],
+    }
+    summary = summarize_compressed_gap_axis(axis)
+    assert summary["display_axis"] == "compressed_gap_axis"
+    assert summary["raw_time_axis_preserved_in_hover"] is True
+    assert summary["time_gap_count"] == 1
+    assert summary["largest_gap_hours"] == 48.0
+    assert summary["gap_markers"] == 1
 
 
 def test_build_chart_diagnostic_summary_contains_required_fields():

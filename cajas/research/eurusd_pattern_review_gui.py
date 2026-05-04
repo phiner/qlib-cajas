@@ -217,6 +217,7 @@ def create_candlestick_figure(
     sample_timestamp: Any,
     sample_id: Optional[str] = None,
     candidate_type: Optional[str] = None,
+    axis_info: Optional[Dict[str, Any]] = None,
 ):
     """Create Plotly candlestick figure."""
     try:
@@ -230,28 +231,67 @@ def create_candlestick_figure(
     target_ts = normalize_timestamp_value(sample_timestamp)
     window = window_df.copy()
     window["timestamp"] = normalize_timestamp_series(window["timestamp"])
+    if axis_info is None:
+        axis_info = build_compressed_gap_axis(window["timestamp"].tolist())
+    display_x = axis_info.get("display_x", list(range(len(window))))
+    custom_timestamps = [str(ts) for ts in window["timestamp"]]
 
     fig = go.Figure(data=[go.Candlestick(
-        x=window["timestamp"],
+        x=display_x,
         open=window["open"],
         high=window["high"],
         low=window["low"],
         close=window["close"],
-        name="EURUSD"
+        name="EURUSD",
+        customdata=custom_timestamps,
+        hovertemplate=(
+            "timestamp=%{customdata}<br>"
+            "open=%{open}<br>"
+            "high=%{high}<br>"
+            "low=%{low}<br>"
+            "close=%{close}<extra></extra>"
+        ),
     )])
 
     # Mark target sample
     sample_row = window[window["timestamp"] == target_ts]
     if not sample_row.empty:
+        sample_idx = int(sample_row.index[0]) - int(window.index[0])
+        sample_x = display_x[sample_idx]
         fig.add_shape(
             type="line",
-            x0=target_ts,
-            x1=target_ts,
+            x0=sample_x,
+            x1=sample_x,
             y0=float(window["low"].min()),
             y1=float(window["high"].max()),
             line={"color": "#ff5a36", "dash": "dash", "width": 2},
         )
-        fig.add_annotation(x=target_ts, y=float(window["high"].max()), text="Sample", showarrow=False)
+        fig.add_annotation(
+            x=sample_x,
+            y=float(window["high"].max()),
+            text=f"Sample ({target_ts})",
+            showarrow=False,
+        )
+    for gap in axis_info.get("gap_markers", []):
+        gx = gap.get("display_x")
+        if gx is None:
+            continue
+        fig.add_shape(
+            type="line",
+            x0=gx,
+            x1=gx,
+            y0=float(window["low"].min()),
+            y1=float(window["high"].max()),
+            line={"color": "#fbbf24", "dash": "dot", "width": 1},
+        )
+        label = str(gap.get("label", "Large time gap"))
+        fig.add_annotation(
+            x=gx,
+            y=float(window["high"].max()),
+            text=label,
+            showarrow=False,
+            font={"size": 10, "color": "#fbbf24"},
+        )
 
     title_parts = []
     if sample_id:
@@ -264,7 +304,7 @@ def create_candlestick_figure(
 
     fig.update_layout(
         title=title_text,
-        xaxis_title="Time",
+        xaxis_title="Compressed candle axis",
         yaxis_title="Price",
         xaxis_rangeslider_visible=False,
         height=600,
@@ -274,6 +314,10 @@ def create_candlestick_figure(
         font={"color": "#e5edf7"},
     )
     fig.update_xaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
+    tickvals = axis_info.get("tickvals", [])
+    ticktext = axis_info.get("ticktext", [])
+    if tickvals and ticktext:
+        fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=ticktext)
     fig.update_yaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
     fig.update_traces(
         increasing_line_color="#00d084",
@@ -283,6 +327,99 @@ def create_candlestick_figure(
     )
 
     return fig
+
+
+def detect_time_axis_gaps(
+    timestamps: list[Any],
+    expected_interval_minutes: int = 15,
+    gap_threshold_bars: int = 4,
+) -> list[Dict[str, Any]]:
+    """Detect large time gaps between consecutive bars."""
+    normalized = [normalize_timestamp_value(ts) for ts in timestamps]
+    gaps: list[Dict[str, Any]] = []
+    threshold_minutes = expected_interval_minutes * gap_threshold_bars
+    for i in range(len(normalized) - 1):
+        prev_ts = normalized[i]
+        next_ts = normalized[i + 1]
+        if pd.isna(prev_ts) or pd.isna(next_ts):
+            continue
+        delta = next_ts - prev_ts
+        gap_minutes = float(delta.total_seconds() / 60.0)
+        if gap_minutes <= threshold_minutes:
+            continue
+        prev_weekday = int(prev_ts.weekday())
+        next_weekday = int(next_ts.weekday())
+        is_weekend_gap = prev_weekday == 4 and next_weekday in {6, 0} and gap_minutes >= 24 * 60
+        if is_weekend_gap:
+            classification = "weekend_or_market_closed_gap"
+            label = "Weekend / market closed"
+        elif gap_minutes >= 24 * 60:
+            classification = "holiday_or_market_closed_gap"
+            label = "Holiday / market closed"
+        else:
+            classification = "missing_bars_or_data_gap"
+            label = "Large time gap"
+        gaps.append(
+            {
+                "prev_index": i,
+                "next_index": i + 1,
+                "start_timestamp": str(prev_ts),
+                "end_timestamp": str(next_ts),
+                "gap_minutes": gap_minutes,
+                "gap_hours": gap_minutes / 60.0,
+                "classification": classification,
+                "label": label,
+                "display_label": (
+                    f"{label}\n{str(prev_ts)} -> {str(next_ts)}\n{gap_minutes/60.0:.1f}h gap compressed"
+                ),
+            }
+        )
+    return gaps
+
+
+def build_compressed_gap_axis(timestamps: list[Any]) -> Dict[str, Any]:
+    """Build compressed display axis metadata from timestamps."""
+    normalized = [normalize_timestamp_value(ts) for ts in timestamps]
+    display_x = list(range(len(normalized)))
+    gaps = detect_time_axis_gaps(timestamps)
+    tickvals: list[int] = []
+    ticktext: list[str] = []
+    if normalized:
+        step = max(1, len(normalized) // 6)
+        for i in range(0, len(normalized), step):
+            tickvals.append(i)
+            ticktext.append(str(normalized[i])[:16])
+        if tickvals[-1] != len(normalized) - 1:
+            tickvals.append(len(normalized) - 1)
+            ticktext.append(str(normalized[-1])[:16])
+    gap_markers = []
+    for g in gaps:
+        marker = dict(g)
+        marker["display_x"] = g["prev_index"] + 0.5
+        gap_markers.append(marker)
+    return {
+        "display_axis": "compressed_gap_axis" if gaps else "real_time_axis",
+        "raw_time_axis_preserved_in_hover": True,
+        "display_x": display_x,
+        "tickvals": tickvals,
+        "ticktext": ticktext,
+        "gaps": gaps,
+        "gap_markers": gap_markers,
+    }
+
+
+def summarize_compressed_gap_axis(axis_info: Dict[str, Any]) -> Dict[str, Any]:
+    """Summarize compressed gap axis diagnostics."""
+    gaps = axis_info.get("gaps", [])
+    largest_gap_hours = max([float(g.get("gap_hours", 0.0)) for g in gaps], default=0.0)
+    return {
+        "display_axis": axis_info.get("display_axis", "real_time_axis"),
+        "raw_time_axis_preserved_in_hover": bool(axis_info.get("raw_time_axis_preserved_in_hover", True)),
+        "time_gap_count": len(gaps),
+        "largest_gap_hours": largest_gap_hours,
+        "gap_markers": len(axis_info.get("gap_markers", [])),
+        "gaps": axis_info.get("gap_markers", []),
+    }
 
 
 def build_chart_diagnostic_summary(diagnostics: Dict[str, Any], trace_count: int) -> str:
