@@ -15,6 +15,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     compute_sample_window_bounds,
     format_compact_tick_label,
     build_sample_marker_config,
+    compute_sample_marker_y,
     create_candlestick_figure,
     detect_time_axis_gaps,
     build_compressed_gap_axis,
@@ -251,12 +252,25 @@ def test_build_sample_marker_config_wick_sensitive():
     cfg = build_sample_marker_config("lower_wick_rejection_candidate")
     assert cfg["mode"] == "annotation_only"
     assert cfg["offset_x"] == 0.0
+    assert cfg["show_symbol"] is True
 
 
 def test_build_sample_marker_config_default_offset():
     cfg = build_sample_marker_config("short_trend_up_candidate")
     assert cfg["mode"] == "offset_line_with_arrow"
     assert abs(float(cfg["offset_x"]) - 0.35) < 1e-9
+    assert cfg["show_symbol"] is True
+
+
+def test_compute_sample_marker_y_above_sample_high():
+    y = compute_sample_marker_y(sample_high=1.1050, visible_high=1.1060, visible_low=1.1000, offset_ratio=0.04)
+    assert y > 1.1050
+    assert y <= 1.1060 + ((1.1060 - 1.1000) * 0.12)
+
+
+def test_compute_sample_marker_y_near_top_clamped():
+    y = compute_sample_marker_y(sample_high=1.1060, visible_high=1.1060, visible_low=1.1000, offset_ratio=0.10)
+    assert y <= 1.1060 + ((1.1060 - 1.1000) * 0.12)
 
 
 def test_create_candlestick_figure_marker_is_offset_for_normal_type(clean_view_fixture):
@@ -275,6 +289,9 @@ def test_create_candlestick_figure_marker_is_offset_for_normal_type(clean_view_f
     sample_x = sample_idx
     xs = [float(s.x0) for s in fig.layout.shapes] if fig.layout.shapes else []
     assert any(abs(x - sample_x) > 0.2 for x in xs)
+    sample_marker_traces = [t for t in fig.data if getattr(t, "name", "") == "Sample marker"]
+    assert len(sample_marker_traces) == 1
+    assert str(fig.layout.annotations[0].text) == "Sample"
 
 
 def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive(clean_view_fixture):
@@ -289,10 +306,18 @@ def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive
     )
     if fig is None:
         return
-    # No sample line shape should be drawn for wick-sensitive markers.
-    assert len(fig.layout.shapes) == 0
+    # No sample line shape should be drawn for wick-sensitive markers (only optional gap markers).
+    sample_ts = str(sample_timestamp)
+    sample_shapes = []
+    for s in list(fig.layout.shapes):
+        s_json = s.to_plotly_json()
+        if s_json.get("type") == "line" and s_json.get("line", {}).get("dash") == "dash":
+            sample_shapes.append(s_json)
+    assert len(sample_shapes) == 0
     assert len(fig.layout.annotations) >= 1
-    assert "Sample (" in str(fig.layout.annotations[0].text)
+    assert str(fig.layout.annotations[0].text) == "Sample"
+    sample_marker_traces = [t for t in fig.data if getattr(t, "name", "") == "Sample marker"]
+    assert len(sample_marker_traces) == 1
 
 
 def test_get_review_progress(batch_fixture):

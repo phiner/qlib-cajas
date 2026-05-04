@@ -268,13 +268,31 @@ def build_sample_marker_config(candidate_type: Optional[str]) -> Dict[str, Any]:
             "offset_x": 0.0,
             "color": "#ff8c42",
             "label": "Sample",
+            "show_symbol": True,
         }
     return {
         "mode": "offset_line_with_arrow",
         "offset_x": 0.35,
         "color": "#ff8c42",
         "label": "Sample",
+        "show_symbol": True,
     }
+
+
+def compute_sample_marker_y(
+    sample_high: float,
+    visible_high: float,
+    visible_low: float,
+    offset_ratio: float = 0.04,
+) -> float:
+    """Compute marker y above sample high while keeping it visible."""
+    low = float(min(visible_low, visible_high))
+    high = float(max(visible_low, visible_high))
+    span = max(high - low, 1e-9)
+    candidate = float(sample_high) + (span * float(offset_ratio))
+    ceiling = high + (span * 0.12)
+    floor = low + (span * 0.15)
+    return float(min(max(candidate, floor), ceiling))
 
 
 def create_candlestick_figure(
@@ -329,7 +347,11 @@ def create_candlestick_figure(
         marker_cfg = build_sample_marker_config(candidate_type)
         mode = marker_cfg["mode"]
         marker_color = marker_cfg["color"]
-        label_text = f"{marker_cfg['label']} ({target_ts})"
+        label_text = str(marker_cfg.get("label", "Sample"))
+        sample_high = float(sample_row["high"].iloc[0]) if "high" in sample_row.columns else y_max
+        marker_y = compute_sample_marker_y(sample_high, y_max, y_min, offset_ratio=0.04)
+        annotation_top_y = y_max + (0.09 * y_span)
+        marker_x_base = float(sample_x)
         if mode == "offset_line_with_arrow":
             marker_x = float(sample_x) + float(marker_cfg.get("offset_x", 0.35))
             fig.add_shape(
@@ -341,10 +363,10 @@ def create_candlestick_figure(
                 line={"color": marker_color, "dash": "dash", "width": 1.4},
             )
             fig.add_annotation(
-                x=float(sample_x),
-                y=y_max + (0.02 * y_span),
+                x=marker_x_base,
+                y=marker_y,
                 ax=marker_x,
-                ay=y_max + (0.09 * y_span),
+                ay=annotation_top_y,
                 text=label_text,
                 showarrow=True,
                 arrowhead=2,
@@ -355,10 +377,10 @@ def create_candlestick_figure(
             )
         else:
             fig.add_annotation(
-                x=float(sample_x),
-                y=y_max + (0.02 * y_span),
-                ax=float(sample_x) + 0.45,
-                ay=y_max + (0.09 * y_span),
+                x=marker_x_base,
+                y=marker_y,
+                ax=marker_x_base + 0.45,
+                ay=annotation_top_y,
                 text=label_text,
                 showarrow=True,
                 arrowhead=2,
@@ -366,6 +388,23 @@ def create_candlestick_figure(
                 arrowwidth=1.2,
                 arrowcolor=marker_color,
                 font={"size": 10, "color": marker_color},
+            )
+        if bool(marker_cfg.get("show_symbol", True)):
+            fig.add_trace(
+                go.Scatter(
+                    x=[marker_x_base],
+                    y=[marker_y],
+                    mode="markers",
+                    marker={
+                        "symbol": "diamond-open",
+                        "size": 10,
+                        "color": marker_color,
+                        "line": {"color": marker_color, "width": 1.5},
+                    },
+                    name="Sample marker",
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
             )
     for gap in axis_info.get("gap_markers", []):
         gx = gap.get("display_x")
@@ -407,7 +446,7 @@ def create_candlestick_figure(
         plot_bgcolor="#0f1720",
         paper_bgcolor="#0f1720",
         font={"color": "#e5edf7"},
-        margin={"l": 30, "r": 18, "t": 54, "b": 28},
+        margin={"l": 30, "r": 18, "t": 68, "b": 28},
     )
     fig.update_xaxes(
         showgrid=True,
@@ -422,11 +461,14 @@ def create_candlestick_figure(
     if tickvals and ticktext:
         fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=ticktext)
     fig.update_yaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
+    padding = max((float(window["high"].max()) - float(window["low"].min())) * 0.14, 1e-9)
+    fig.update_yaxes(range=[float(window["low"].min()) - (padding * 0.03), float(window["high"].max()) + padding])
     fig.update_traces(
         increasing_line_color="#00d084",
         increasing_fillcolor="#00d084",
         decreasing_line_color="#ff5a36",
         decreasing_fillcolor="#ff5a36",
+        selector={"type": "candlestick"},
     )
 
     return fig
