@@ -2063,6 +2063,36 @@ Completed batch merge policy:
 - Missing completed batch is normal and non-blocking (`awaiting_completed_batch`).
 - No labels are invented by automation - all labels must be human-provided.
 
+EURUSD 15m local GUI review app:
+
+Run the Streamlit-based local GUI for ergonomic pattern review:
+
+```bash
+python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+```
+
+GUI features:
+- Interactive candlestick charts with Plotly
+- Sample-by-sample navigation with filters
+- Candidate metadata display
+- Form-based label entry
+- Automatic save to `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
+- Resume progress from existing completed file
+- Fully offline operation
+
+GUI workflow:
+1. Start app with command above
+2. Load clean view and review batch (default paths pre-configured)
+3. Navigate samples, inspect charts, fill labels
+4. Click Save or Save and Next
+5. Later run batch merge workflow to integrate completed reviews
+
+GUI policy:
+- CSV/JSONL remain durable storage and interchange formats
+- GUI is the primary human review interface
+- No live market data, broker integration, order execution, or model training
+- No labels are invented by automation
+
 EURUSD 15m review feedback intake commands:
 
 ```bash

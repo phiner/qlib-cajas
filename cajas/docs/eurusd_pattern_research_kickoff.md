@@ -94,6 +94,40 @@ Human reviewer workflow:
 
 **Important**: Candidate tags are NOT trading actions. Do not label based on hindsight profit only. Focus on structure clarity and follow-through quality. This is pattern structure review, not strategy validation.
 
+### Local GUI review app
+
+A Streamlit-based local GUI app provides an ergonomic interface for pattern review:
+
+**Run command**:
+```bash
+python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+```
+
+**Features**:
+- Interactive candlestick charts with Plotly
+- Sample-by-sample navigation
+- Candidate metadata display
+- Form-based label entry
+- Automatic save to completed CSV
+- Resume progress from existing completed file
+- Fully offline operation
+
+**Workflow**:
+1. Start the GUI app
+2. Load clean view and review batch (default paths pre-configured)
+3. Navigate samples with filters and index selector
+4. Inspect chart window around sample timestamp
+5. Fill review labels in form
+6. Click Save or Save and Next
+7. App writes/updates `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
+8. Later run batch merge workflow to integrate into full completed review
+
+**Design**:
+- CSV/JSONL remain durable storage and interchange formats
+- GUI is the primary human review interface
+- No live market data, broker integration, or order execution
+- No labels are invented by automation
+
 ### Completed batch merge workflow
 
 After completing the first review batch, the merge workflow integrates reviewed samples into the full completed review file:
