@@ -1,0 +1,4 @@
+sample_id,timestamp,candidate_type,confidence_score,review_priority,reason_codes,schema_version,review_status,human_pattern_label,market_context,direction_context,structure_quality,follow_through_quality,review_confidence,review_notes
+eurusd15m_000001,2025-01-01T00:00:00+00:00,compression_candidate,0.82,high,low_short_vs_long_range,eurusd_15m_pattern_review_v1,reviewed,valid_pattern,range,sideways,4,3,4,Example only synthetic label
+eurusd15m_000002,2025-01-01T00:15:00+00:00,expansion_candidate,0.74,medium,current_range_vs_recent_atr,eurusd_15m_pattern_review_v1,reviewed,weak_pattern,transition,up,3,3,3,Example only synthetic label
+eurusd15m_000003,2025-01-01T00:30:00+00:00,upper_wick_rejection_candidate,0.68,medium,upper_wick_large|close_rejected_lower,eurusd_15m_pattern_review_v1,pending,unclear,unclear,unclear,3,3,3,
