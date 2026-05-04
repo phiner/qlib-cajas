@@ -9,10 +9,19 @@ from cajas.research.eurusd_pattern_review_gui import (
     merge_completed_labels,
     extract_chart_window_with_diagnostics,
     create_candlestick_figure,
+    build_chart_diagnostic_summary,
     save_completed_review,
     get_review_progress,
     sanitize_optional_text_value,
 )
+
+
+def render_plotly_chart(st_module, fig):
+    """Render Plotly chart with new Streamlit width API and fallback."""
+    try:
+        st_module.plotly_chart(fig, width="stretch", theme=None)
+    except TypeError:
+        st_module.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def main():
@@ -153,10 +162,14 @@ def main():
                 )
             else:
                 st.warning("No chart data available for the selected sample/timestamp.")
+            st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=0))
+            st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
         else:
-            st.plotly_chart(fig, use_container_width=True, theme=None)
+            render_plotly_chart(st, fig)
+            st.caption(build_chart_diagnostic_summary(chart_diag, trace_count=len(fig.data)))
+            st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
 
-    with st.expander("Chart Debug Info", expanded=False):
+    with st.expander("Chart Debug Info (click to expand)", expanded=False):
         st.json(
             {
                 "sample_id": str(sample["sample_id"]),
@@ -218,6 +231,7 @@ def main():
     review_notes = st.text_area(
         "Review Notes",
         sanitize_optional_text_value(sample.get("review_notes", "")),
+        placeholder="Optional notes...",
     )
     
     review_status = st.selectbox(
