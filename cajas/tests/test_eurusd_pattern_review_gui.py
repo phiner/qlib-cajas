@@ -39,6 +39,11 @@ from cajas.research.eurusd_pattern_review_gui import (
     get_review_progress,
     sanitize_output_columns,
     sanitize_optional_text_value,
+    load_rejected_samples,
+    get_rejected_sample_ids,
+    reject_sample_action,
+    next_non_rejected_sample_index,
+    previous_non_rejected_sample_index,
 )
 from cajas.apps.eurusd_pattern_review_app import (
     render_plotly_chart,
@@ -1101,3 +1106,31 @@ def test_app_source_resolves_sample_before_sidebar_sample_id_caption():
     assert sample_assign != -1
     assert sidebar_caption != -1
     assert sample_assign < sidebar_caption
+
+
+def test_reject_sample_action_and_navigation(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    rejected_csv = temp_dir / "rejected.csv"
+    rejected_events = temp_dir / "rejected_events.jsonl"
+
+    action = reject_sample_action(
+        batch_df=batch_df,
+        sample_id="s2",
+        reason="bad_context",
+        notes="bad sample",
+        rejected_csv_path=rejected_csv,
+        rejected_events_jsonl_path=rejected_events,
+        review_batch_id="batch_001",
+        source_batch_csv="batch.csv",
+    )
+    assert action["ok"] is True
+    assert rejected_csv.exists()
+    assert rejected_events.exists()
+
+    rej_df = load_rejected_samples(rejected_csv)
+    rej_ids = get_rejected_sample_ids(rej_df)
+    assert "s2" in rej_ids
+
+    sample_ids = ["s1", "s2", "s3"]
+    assert next_non_rejected_sample_index(0, 3, rej_ids, sample_ids) == 2
+    assert previous_non_rejected_sample_index(2, 3, rej_ids, sample_ids) == 0

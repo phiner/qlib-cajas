@@ -3,6 +3,8 @@ import argparse
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from cajas.reports.validation_eurusd_pattern_review_batch import (
     build_review_batch_report,
     format_batch_report_markdown
@@ -19,6 +21,8 @@ def main():
     parser.add_argument("--min-gap-bars", type=int, default=8)
     parser.add_argument("--max-samples-per-day", type=int, default=8)
     parser.add_argument("--disable-time-diversity", action="store_true")
+    parser.add_argument("--exclude-samples-csv", type=Path, default=None)
+    parser.add_argument("--exclude-samples-ignore-missing", action="store_true")
     parser.add_argument("--output-batch-csv", type=Path, required=True)
     parser.add_argument("--output-batch-jsonl", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
@@ -26,6 +30,17 @@ def main():
     
     args = parser.parse_args()
     
+    excluded_ids = set()
+    if args.exclude_samples_csv is not None:
+        if not args.exclude_samples_csv.exists():
+            if not args.exclude_samples_ignore_missing:
+                raise FileNotFoundError(f"exclude samples csv not found: {args.exclude_samples_csv}")
+        else:
+            ex_df = pd.read_csv(args.exclude_samples_csv)
+            if "sample_id" not in ex_df.columns:
+                raise ValueError("exclude samples csv must include sample_id column")
+            excluded_ids = set(ex_df["sample_id"].astype(str).tolist())
+
     report = build_review_batch_report(
         template_csv=args.template_csv,
         label_schema_json=args.label_schema,
@@ -36,7 +51,8 @@ def main():
         max_samples_per_day=args.max_samples_per_day,
         prefer_time_diversity=not args.disable_time_diversity,
         output_batch_csv=args.output_batch_csv,
-        output_batch_jsonl=args.output_batch_jsonl
+        output_batch_jsonl=args.output_batch_jsonl,
+        excluded_sample_ids=excluded_ids,
     )
     
     args.output_json.parent.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -36,6 +36,31 @@ DEFAULT_REVIEW_VALUES = {
 }
 REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v2"
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
+REJECTED_SCHEMA_VERSION = "eurusd_15m_rejected_sample_v1"
+REJECTED_FIELDS = [
+    "sample_id",
+    "timestamp",
+    "candidate_type",
+    "rejection_reason",
+    "rejection_notes",
+    "rejected_at_utc",
+    "review_batch_id",
+    "source_batch_csv",
+    "reviewer_id_optional",
+    "schema_version",
+]
+REJECT_REASON_OPTIONS = [
+    "bad_context",
+    "duplicate_region",
+    "weekend_gap",
+    "market_closed_gap",
+    "unclear_chart",
+    "bad_candidate",
+    "too_close_to_existing_sample",
+    "data_quality_issue",
+    "not_useful_for_research",
+    "other",
+]
 WICK_SENSITIVE_CANDIDATE_TYPES = {
     "lower_wick_rejection_candidate",
     "upper_wick_rejection_candidate",
@@ -857,6 +882,169 @@ def next_sample_index(value: int, row_count: int) -> int:
 def previous_sample_index(value: int, row_count: int) -> int:
     """Return previous sample index without going below zero."""
     return clamp_sample_index(int(value) - 1, row_count)
+
+
+def load_rejected_samples(path: Path) -> pd.DataFrame:
+    """Load rejected sample registry CSV if it exists."""
+    if not path.exists():
+        return pd.DataFrame(columns=REJECTED_FIELDS)
+    df = pd.read_csv(path)
+    for col in REJECTED_FIELDS:
+        if col not in df.columns:
+            df[col] = ""
+    return df[REJECTED_FIELDS].copy()
+
+
+def get_rejected_sample_ids(rejected_df: Optional[pd.DataFrame]) -> Set[str]:
+    """Return rejected sample ids from registry."""
+    if rejected_df is None or rejected_df.empty or "sample_id" not in rejected_df.columns:
+        return set()
+    return set(rejected_df["sample_id"].astype(str).tolist())
+
+
+def _build_rejection_row(
+    batch_df: pd.DataFrame,
+    sample_id: str,
+    reason: str,
+    notes: str,
+    review_batch_id: str,
+    source_batch_csv: str,
+    reviewer_id_optional: str = "",
+) -> Dict[str, Any]:
+    row = {
+        "sample_id": str(sample_id),
+        "timestamp": "",
+        "candidate_type": "",
+        "rejection_reason": str(reason),
+        "rejection_notes": sanitize_optional_text_value(notes),
+        "rejected_at_utc": datetime.now(timezone.utc).isoformat(),
+        "review_batch_id": str(review_batch_id),
+        "source_batch_csv": str(source_batch_csv),
+        "reviewer_id_optional": str(reviewer_id_optional or ""),
+        "schema_version": REJECTED_SCHEMA_VERSION,
+    }
+    if "sample_id" in batch_df.columns:
+        row_match = batch_df[batch_df["sample_id"].astype(str) == str(sample_id)]
+        if not row_match.empty:
+            src = row_match.iloc[0]
+            row["timestamp"] = str(src.get("timestamp", ""))
+            row["candidate_type"] = str(src.get("candidate_type", ""))
+    return row
+
+
+def save_or_update_rejected_sample(
+    *,
+    batch_df: pd.DataFrame,
+    sample_id: str,
+    reason: str,
+    notes: str,
+    rejected_csv_path: Path,
+    review_batch_id: str,
+    source_batch_csv: str,
+    reviewer_id_optional: str = "",
+) -> Dict[str, Any]:
+    """Insert/update one rejected sample row in CSV registry."""
+    rejected_df = load_rejected_samples(rejected_csv_path)
+    row = _build_rejection_row(
+        batch_df=batch_df,
+        sample_id=sample_id,
+        reason=reason,
+        notes=notes,
+        review_batch_id=review_batch_id,
+        source_batch_csv=source_batch_csv,
+        reviewer_id_optional=reviewer_id_optional,
+    )
+    is_update = False
+    if not rejected_df.empty and "sample_id" in rejected_df.columns:
+        is_update = bool((rejected_df["sample_id"].astype(str) == str(sample_id)).any())
+        rejected_df = rejected_df[rejected_df["sample_id"].astype(str) != str(sample_id)].copy()
+    rejected_df = pd.concat([rejected_df, pd.DataFrame([row])], ignore_index=True)
+    rejected_df = rejected_df[REJECTED_FIELDS].copy().drop_duplicates(subset=["sample_id"], keep="last")
+    rejected_csv_path.parent.mkdir(parents=True, exist_ok=True)
+    rejected_df.to_csv(rejected_csv_path, index=False)
+    return {
+        "action_result": "update" if is_update else "insert",
+        "row": row,
+    }
+
+
+def append_rejected_event_jsonl(jsonl_path: Path, payload: Dict[str, Any]) -> None:
+    """Append rejection audit event."""
+    jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+    with jsonl_path.open("a", encoding="utf-8") as fp:
+        fp.write(json.dumps(payload, ensure_ascii=True) + "\n")
+
+
+def reject_sample_action(
+    *,
+    batch_df: pd.DataFrame,
+    sample_id: str,
+    reason: str,
+    notes: str,
+    rejected_csv_path: Path,
+    rejected_events_jsonl_path: Path,
+    review_batch_id: str,
+    source_batch_csv: str,
+    reviewer_id_optional: str = "",
+) -> Dict[str, Any]:
+    """Persist reject action with CSV-first durability and JSONL audit append."""
+    result = save_or_update_rejected_sample(
+        batch_df=batch_df,
+        sample_id=sample_id,
+        reason=reason,
+        notes=notes,
+        rejected_csv_path=rejected_csv_path,
+        review_batch_id=review_batch_id,
+        source_batch_csv=source_batch_csv,
+        reviewer_id_optional=reviewer_id_optional,
+    )
+    row = result["row"]
+    payload = {
+        "event_type": "sample_rejected",
+        "sample_id": row["sample_id"],
+        "timestamp": row["timestamp"],
+        "candidate_type": row["candidate_type"],
+        "rejection_reason": row["rejection_reason"],
+        "rejection_notes": row["rejection_notes"],
+        "rejected_at_utc": row["rejected_at_utc"],
+        "review_batch_id": row["review_batch_id"],
+        "source_batch_csv": row["source_batch_csv"],
+        "schema_version": REJECTED_SCHEMA_VERSION,
+    }
+    out = {
+        "ok": True,
+        "sample_id": sample_id,
+        "action_result": result["action_result"],
+        "rejected_csv_path": str(rejected_csv_path),
+        "rejected_events_jsonl_path": str(rejected_events_jsonl_path),
+        "csv_saved": True,
+        "jsonl_appended": False,
+        "warning": None,
+    }
+    try:
+        append_rejected_event_jsonl(rejected_events_jsonl_path, payload)
+        out["jsonl_appended"] = True
+    except Exception as exc:
+        out["warning"] = f"jsonl_append_failed: {exc}"
+    return out
+
+
+def next_non_rejected_sample_index(value: int, row_count: int, rejected_ids: Set[str], sample_ids: list[str]) -> int:
+    """Advance to next non-rejected sample if available."""
+    idx = clamp_sample_index(value, row_count)
+    for i in range(idx + 1, row_count):
+        if str(sample_ids[i]) not in rejected_ids:
+            return i
+    return idx
+
+
+def previous_non_rejected_sample_index(value: int, row_count: int, rejected_ids: Set[str], sample_ids: list[str]) -> int:
+    """Move to previous non-rejected sample if available."""
+    idx = clamp_sample_index(value, row_count)
+    for i in range(idx - 1, -1, -1):
+        if str(sample_ids[i]) not in rejected_ids:
+            return i
+    return idx
 
 
 def should_advance_after_save(action_result: Dict[str, Any]) -> bool:

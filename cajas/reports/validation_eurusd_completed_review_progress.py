@@ -113,6 +113,7 @@ def build_completed_review_progress_report(
     completed_csv: Path,
     events_jsonl: Path,
     label_schema_json: Path,
+    rejected_csv: Path | None = None,
 ) -> dict[str, Any]:
     base = {
         "batch_csv": str(batch_csv),
@@ -130,6 +131,11 @@ def build_completed_review_progress_report(
         "csv_jsonl_value_compare": "not_evaluated",
         "preliminary_summary_status": "not_evaluated",
         "next_action": "continue_human_review",
+        "rejected_count": 0,
+        "rejected_sample_ids": [],
+        "active_reviewable_count": 0,
+        "usable_completed_count": 0,
+        "usable_pending_count": 0,
     }
     if not batch_csv.exists():
         return {
@@ -138,6 +144,13 @@ def build_completed_review_progress_report(
             "reason": "batch_csv_missing",
             "blocking": True,
         }
+
+    rejected_ids: set[str] = set()
+    if rejected_csv is not None and rejected_csv.exists():
+        r_df, _ = _safe_csv(rejected_csv)
+        if r_df is not None and "sample_id" in r_df.columns:
+            rejected_ids = set(r_df["sample_id"].astype(str).tolist())
+
     if not completed_csv.exists():
         batch_df, err = _safe_csv(batch_csv)
         if batch_df is None:
@@ -157,6 +170,11 @@ def build_completed_review_progress_report(
             "pending_count": len(batch_ids),
             "completion_ratio": 0.0,
             "pending_sample_ids": batch_ids,
+            "rejected_count": len(rejected_ids),
+            "rejected_sample_ids": sorted(rejected_ids),
+            "active_reviewable_count": max(0, len(batch_ids) - len(rejected_ids)),
+            "usable_completed_count": 0,
+            "usable_pending_count": len([sid for sid in batch_ids if sid not in rejected_ids]),
             "reason": "completed_csv_missing",
             "blocking": False,
             "csv_schema_status": "not_applicable",
@@ -229,6 +247,9 @@ def build_completed_review_progress_report(
                         invalid_enum_rows.append(str(row["sample_id"]))
     else:
         pending_ids = batch_ids
+
+    usable_completed_ids = sorted([sid for sid in reviewed_ids if sid not in rejected_ids])
+    usable_pending_ids = sorted([sid for sid in pending_ids if sid not in rejected_ids])
 
     latest_review_updated = None
     if "review_updated_at_utc" in completed_df.columns:
@@ -322,6 +343,8 @@ def build_completed_review_progress_report(
     completed_count = len(reviewed_ids)
     pending_count = max(0, batch_count - completed_count)
     completion_ratio = (completed_count / batch_count) if batch_count else 0.0
+    active_reviewable_count = max(0, batch_count - len(rejected_ids))
+    usable_completion_ratio = (len(usable_completed_ids) / active_reviewable_count) if active_reviewable_count else 0.0
 
     csv_schema_status = "valid"
     if missing_identity_fields or missing_review_fields or forbidden_columns or duplicate_sample_ids or completed_not_in_batch:
@@ -340,7 +363,7 @@ def build_completed_review_progress_report(
     if csv_schema_status == "blocked":
         status = "blocked"
         blocking = True
-    elif completed_count >= batch_count and batch_count > 0:
+    elif len(usable_completed_ids) >= active_reviewable_count and active_reviewable_count > 0:
         status = "valid_ready_for_summary"
     elif jsonl_audit_status == "warning" or jsonl_without_batch or completed_without_jsonl or jsonl_without_completed:
         status = "warning"
@@ -358,6 +381,12 @@ def build_completed_review_progress_report(
         "completion_ratio": completion_ratio,
         "completed_sample_ids": reviewed_ids,
         "pending_sample_ids": pending_ids,
+        "rejected_count": int(len(rejected_ids)),
+        "rejected_sample_ids": sorted(rejected_ids),
+        "active_reviewable_count": int(active_reviewable_count),
+        "usable_completed_count": int(len(usable_completed_ids)),
+        "usable_pending_count": int(len(usable_pending_ids)),
+        "usable_completion_ratio": usable_completion_ratio,
         "latest_review_updated_at_utc": latest_review_updated,
         "next_action": next_action,
         "csv_schema_status": csv_schema_status,

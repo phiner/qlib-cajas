@@ -173,3 +173,23 @@ def test_summarize_sample_time_diversity_clusters():
     assert summary["unique_days"] == 2
     assert summary["cluster_warning_count"] >= 1
     assert summary["status"] == "warning"
+
+def test_batch_builder_excludes_sample_ids(temp_dir, template_csv, label_schema):
+    output_csv = temp_dir / "batch_excluded.csv"
+    output_jsonl = temp_dir / "batch_excluded.jsonl"
+
+    report = build_review_batch_report(
+        template_csv=template_csv,
+        label_schema_json=label_schema,
+        batch_id="test_batch_excluded",
+        batch_size=20,
+        per_type_target=2,
+        output_batch_csv=output_csv,
+        output_batch_jsonl=output_jsonl,
+        excluded_sample_ids={"s000", "s001", "s002"},
+    )
+
+    built = pd.read_csv(output_csv)
+    assert "s000" not in built["sample_id"].astype(str).tolist()
+    assert report["excluded_sample_count"] == 3
+    assert report["excluded_sample_count_present_in_template"] >= 1

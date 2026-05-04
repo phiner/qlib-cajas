@@ -18,6 +18,12 @@ from cajas.research.eurusd_pattern_review_gui import (
     clamp_sample_index,
     next_sample_index,
     previous_sample_index,
+    load_rejected_samples,
+    get_rejected_sample_ids,
+    reject_sample_action,
+    REJECT_REASON_OPTIONS,
+    next_non_rejected_sample_index,
+    previous_non_rejected_sample_index,
     should_advance_after_save,
     build_compact_save_feedback_message,
     default_review_values,
@@ -145,6 +151,14 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         "Review Events JSONL",
         "tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed_events.jsonl",
     )
+    rejected_csv_path = st.sidebar.text_input(
+        "Rejected Samples CSV",
+        "tmp/eurusd/EURUSD_15m_pattern_review_rejected_samples.csv",
+    )
+    rejected_events_jsonl_path = st.sidebar.text_input(
+        "Rejected Events JSONL",
+        "tmp/eurusd/EURUSD_15m_pattern_review_rejected_samples_events.jsonl",
+    )
     schema_path = st.sidebar.text_input(
         "Label Schema JSON",
         "tmp/validation-eurusd-pattern-label-schema.json"
@@ -164,6 +178,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         
         completed = load_completed_reviews(Path(completed_path))
         st.session_state.batch = merge_completed_labels(st.session_state.batch, completed)
+        st.session_state.rejected = load_rejected_samples(Path(rejected_csv_path))
         
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -174,6 +189,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     # Filters
     st.sidebar.subheader("Filters")
+    show_rejected_samples = st.sidebar.checkbox("Show rejected samples", value=False)
     
     candidate_types = ["All"] + sorted(batch["candidate_type"].unique().tolist())
     selected_type = st.sidebar.selectbox("Candidate Type", candidate_types)
@@ -190,6 +206,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     filtered_count = len(filtered)
     row_count = len(batch)
+    sample_ids = batch["sample_id"].astype(str).tolist() if "sample_id" in batch.columns else []
+    rejected_df = st.session_state.get("rejected")
+    rejected_ids = get_rejected_sample_ids(rejected_df)
 
     # Migrate legacy key safely before widget instantiation.
     if "sample_idx" in st.session_state and CANONICAL_INDEX_KEY not in st.session_state:
@@ -232,7 +251,7 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     st.sidebar.subheader("Progress")
     st.sidebar.caption(
         f"Reviewed {progress['reviewed']} / Total {progress['total']} | "
-        f"Pending {progress['pending']} | Skipped {progress['skipped']}"
+        f"Pending {progress['pending']} | Skipped {progress['skipped']} | Rejected {len(rejected_ids)}"
     )
     
     if selected_type != "All" or selected_status != "All":
@@ -250,6 +269,9 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     sample = batch.iloc[sample_idx]
     st.sidebar.caption(f"sample_id={sample['sample_id']} | global_index={sample_idx}")
     sample_id = str(sample["sample_id"])
+    is_rejected_sample = sample_id in rejected_ids
+    if is_rejected_sample:
+        st.warning("This sample is rejected/excluded.")
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
     review_key_map = {
@@ -435,9 +457,15 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             key="review_status",
         )
     
+
+    st.subheader("Bad Sample Workflow")
+    reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
+    reject_notes = st.text_input("Reject Notes", placeholder="Optional rejection notes...", key="reject_notes")
+    confirm_reject = st.checkbox("Confirm reject current sample", key="confirm_reject_current_sample")
+
     # Save buttons
     st.caption("Use Save or Save and Next to persist edits before navigating.")
-    col1, col2, col3, col4 = st.columns([1, 1.2, 1.2, 1])
+    col1, col2, col3, col4, col5 = st.columns([1, 1.2, 1.2, 1, 1.2])
 
     def build_review_labels() -> dict:
         return {
@@ -466,7 +494,10 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         )
         moved_to_idx = sample_idx
         if advance_to_next and should_advance_after_save(action):
-            moved_to_idx = next_sample_index(sample_idx, row_count)
+            if show_rejected_samples:
+                moved_to_idx = next_sample_index(sample_idx, row_count)
+            else:
+                moved_to_idx = next_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
             st.session_state[PENDING_INDEX_KEY] = moved_to_idx
         current_idx = int(st.session_state.get(PENDING_INDEX_KEY, moved_to_idx))
         jsonl_status = "written" if action.get("jsonl_appended") else str(action.get("warning") or "not_written")
@@ -510,12 +541,48 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     with col3:
         if st.button("Previous Sample", disabled=sample_idx <= 0):
-            st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
+            if show_rejected_samples:
+                st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
+            else:
+                st.session_state[PENDING_INDEX_KEY] = previous_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
             st.rerun()
     with col4:
         if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
-            st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
+            if show_rejected_samples:
+                st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
+            else:
+                st.session_state[PENDING_INDEX_KEY] = next_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
             st.rerun()
+
+
+    with col5:
+        if st.button("Reject Sample", disabled=not confirm_reject):
+            try:
+                reject_action = reject_sample_action(
+                    batch_df=batch,
+                    sample_id=sample_id,
+                    reason=reject_reason,
+                    notes=reject_notes,
+                    rejected_csv_path=Path(rejected_csv_path),
+                    rejected_events_jsonl_path=Path(rejected_events_jsonl_path),
+                    review_batch_id="eurusd_15m_pattern_review_batch_001",
+                    source_batch_csv=batch_path,
+                )
+                st.session_state.rejected = load_rejected_samples(Path(rejected_csv_path))
+                refreshed_rejected = get_rejected_sample_ids(st.session_state.rejected)
+                next_idx = sample_idx
+                if not show_rejected_samples:
+                    next_idx = next_non_rejected_sample_index(sample_idx, row_count, refreshed_rejected, sample_ids)
+                st.session_state[PENDING_INDEX_KEY] = next_idx
+                enqueue_pending_toast(
+                    st.session_state,
+                    f"Rejected {sample_id} -> skipped from future review",
+                    kind="warning" if reject_action.get("warning") else "success",
+                    icon="⛔",
+                )
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Reject failed for sample_id={sample_id}: {exc}")
 
     with st.expander("Last Save Details", expanded=False):
         st.json(st.session_state.get("last_save_details", {}))

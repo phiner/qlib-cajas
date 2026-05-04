@@ -1,7 +1,7 @@
 """EURUSD 15m pattern review batch builder report."""
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Set
 
 import pandas as pd
 
@@ -173,6 +173,7 @@ def build_review_batch_report(
     max_samples_per_day: int = 8,
     balanced_by_candidate_type: bool = True,
     prefer_time_diversity: bool = True,
+    excluded_sample_ids: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
     """Build first review batch from template."""
     if not template_csv.exists():
@@ -193,7 +194,14 @@ def build_review_batch_report(
         schema = json.load(f)
     
     df = pd.read_csv(template_csv)
+    excluded_sample_ids = set(excluded_sample_ids or set())
+    excluded_present_count = 0
     
+    if excluded_sample_ids and "sample_id" in df.columns:
+        sid_col = df["sample_id"].astype(str)
+        excluded_present_count = int(sid_col.isin(excluded_sample_ids).sum())
+        df = df[~sid_col.isin(excluded_sample_ids)].copy()
+
     # Check forbidden columns
     forbidden_hits = [c for c in df.columns if c.lower() in FORBIDDEN_TRADING_COLUMNS]
     if forbidden_hits:
@@ -248,7 +256,10 @@ def build_review_batch_report(
         "status": status,
         "batch_id": batch_id,
         "schema_version": schema.get("schema_version", "unknown"),
-        "template_row_count": len(df),
+        "template_row_count": len(df) + excluded_present_count,
+        "template_row_count_after_exclusion": len(df),
+        "excluded_sample_count": int(len(excluded_sample_ids)),
+        "excluded_sample_count_present_in_template": int(excluded_present_count),
         "batch_row_count": len(batch_df),
         "candidate_type_count": len(batch_counts),
         "batch_count_by_type": batch_counts,

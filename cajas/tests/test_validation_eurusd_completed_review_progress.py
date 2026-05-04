@@ -165,3 +165,28 @@ def test_progress_jsonl_malformed_warning(tmp_path: Path):
     )
     assert report["jsonl_malformed_line_count"] == 1
     assert report["status"] in {"warning", "valid_in_progress"}
+
+def test_progress_rejected_counts_and_usable_completion(tmp_path: Path):
+    batch = tmp_path / "batch.csv"
+    comp = tmp_path / "completed.csv"
+    events = tmp_path / "events.jsonl"
+    schema = tmp_path / "schema.json"
+    rejected = tmp_path / "rejected.csv"
+    _batch(batch)
+    _completed(comp)
+    _events(events)
+    _schema(schema)
+    pd.DataFrame({"sample_id": ["s2", "s3"]}).to_csv(rejected, index=False)
+
+    report = build_completed_review_progress_report(
+        batch_csv=batch,
+        completed_csv=comp,
+        events_jsonl=events,
+        label_schema_json=schema,
+        rejected_csv=rejected,
+    )
+    assert report["rejected_count"] == 2
+    assert report["active_reviewable_count"] == 1
+    assert report["usable_completed_count"] == 1
+    assert report["usable_pending_count"] == 0
+    assert report["status"] == "valid_ready_for_summary"
