@@ -2,6 +2,9 @@
 
 `cajas/` is the independent research layer in this `qlib-cajas` fork.
 
+- [Project Roadmap](../tasks/eurusd_15m_research_end_to_end_roadmap.md)
+- [Tasks Archive](../tasks/archive/README.md)
+
 ## Goal
 
 Qlib-based Market Recognition Research for FX K-line data.
@@ -1974,3 +1977,135 @@ Scope confirmation:
 Scope confirmation:
 - Offline Qlib validation automation only.
 - No trading execution, broker routing, live/paper trading, annotation loops, or Qlib core modifications.
+
+EURUSD 15m pattern research kickoff commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_dataset_contract_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --symbol EURUSD --timeframe 15m --price-side Bid --out-json tmp/validation-eurusd-dataset-contract.json --out-md tmp/validation-eurusd-dataset-contract.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_dataset_audit_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --out-json tmp/validation-eurusd-dataset-audit.json --out-md tmp/validation-eurusd-dataset-audit.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Policy notes:
+- This track is fixed to EURUSD 15m Bid structure research.
+- No 1H/4H aggregation in this phase.
+- No live trading, broker routing, order generation, or Qlib core changes.
+
+EURUSD 15m anomaly triage and clean-view commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_ohlc_anomaly_triage_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --symbol EURUSD --timeframe 15m --price-side Bid --output-json tmp/validation-eurusd-ohlc-anomaly-triage.json --output-md tmp/validation-eurusd-ohlc-anomaly-triage.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_clean_dataset_view_report.py --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2020.01.01_2024.12.31.csv" --input "/home/phiner/projects/research/data/EURUSD_15 Mins_Bid_2025.01.01_2025.12.31.csv" --anomaly-triage-report tmp/validation-eurusd-ohlc-anomaly-triage.json --output-clean-csv tmp/eurusd/EURUSD_15m_Bid_clean_view.csv --output-quarantine-csv tmp/eurusd/EURUSD_15m_Bid_quarantined_rows.csv --output-json tmp/validation-eurusd-clean-dataset-view.json --output-md tmp/validation-eurusd-clean-dataset-view.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Readiness rule:
+- Keep raw audit status explicit (it may remain blocked).
+- Pattern research can proceed only with approved clean-view status (`ready` or non-blocking `watch`).
+- Raw CSV files remain immutable.
+
+EURUSD 15m pattern candidate pack commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_candidate_pack.py --clean-view-csv tmp/eurusd/EURUSD_15m_Bid_clean_view.csv --output-candidates-csv tmp/eurusd/EURUSD_15m_pattern_candidates.csv --output-samples-csv tmp/eurusd/EURUSD_15m_pattern_review_samples.csv --output-samples-jsonl tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl --output-json tmp/validation-eurusd-pattern-candidate-pack.json --output-md tmp/validation-eurusd-pattern-candidate-pack.md --max-samples-per-type 50 --min-confidence 0.6
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Policy notes:
+- Candidate tags are review labels, not trading signals.
+- No buy/sell/order/position outputs are allowed.
+- Clean view remains the approved source; raw files remain immutable.
+- Scope remains EURUSD 15m Bid with no 1H/4H aggregation.
+
+EURUSD 15m pattern review QA and label schema commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_qa_report.py --candidates-csv tmp/eurusd/EURUSD_15m_pattern_candidates.csv --samples-csv tmp/eurusd/EURUSD_15m_pattern_review_samples.csv --candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --clean-view-csv tmp/eurusd/EURUSD_15m_Bid_clean_view.csv --output-json tmp/validation-eurusd-pattern-review-qa.json --output-md tmp/validation-eurusd-pattern-review-qa.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_label_schema_report.py --output-json tmp/validation-eurusd-pattern-label-schema.json --output-md tmp/validation-eurusd-pattern-label-schema.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_template.py --samples-csv tmp/eurusd/EURUSD_15m_pattern_review_samples.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --output-template-jsonl tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl --output-json tmp/validation-eurusd-pattern-review-template.json --output-md tmp/validation-eurusd-pattern-review-template.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Review policy:
+- Candidate samples are QA-reviewed and label-schema-governed before manual annotation.
+- Template rows default to `review_status=pending` under schema `eurusd_15m_pattern_review_v1`.
+- No trading signal/order fields are allowed in review exports.
+- Scope remains EURUSD 15m Bid clean view only.
+
+EURUSD 15m first review batch commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch.py --template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --batch-id eurusd_15m_pattern_review_batch_001 --batch-size 100 --per-type-target 10 --output-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv --output-batch-jsonl tmp/eurusd/EURUSD_15m_pattern_review_batch_001.jsonl --output-json tmp/validation-eurusd-pattern-review-batch-001.json --output-md tmp/validation-eurusd-pattern-review-batch-001.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_guide.py --label-schema tmp/validation-eurusd-pattern-label-schema.json --batch-report tmp/validation-eurusd-pattern-review-batch-001.json --output-json tmp/validation-eurusd-pattern-review-guide.json --output-md tmp/validation-eurusd-pattern-review-guide.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch_completion_report.py --batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001.csv --completed-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-batch-001-completion.json --output-md tmp/validation-eurusd-pattern-review-batch-001-completion.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-batch-report tmp/validation-eurusd-pattern-review-batch-001.json --review-guide-report tmp/validation-eurusd-pattern-review-guide.json --review-batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+First review batch policy:
+- Batch contains 100 samples (10 per candidate type) selected from 500-row template.
+- Selection is deterministic: sorted by review_priority, confidence_score, timestamp.
+- Review guide provides human-friendly instructions for filling review fields.
+- Completed batch path: `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`.
+- Missing completed batch is normal and non-blocking (`awaiting_completed_batch`).
+- Batch completion tracks reviewed/pending/skipped counts.
+- Candidate tags are NOT trading actions - focus on structure clarity and follow-through quality.
+- This is pattern structure review, not strategy validation.
+
+EURUSD 15m completed batch merge commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_batch_merge_report.py --batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --completed-batch-csv tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv --full-completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-batch-001-merge.json --output-md tmp/validation-eurusd-pattern-review-batch-001-merge.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-batch-report tmp/validation-eurusd-pattern-review-batch-001.json --review-guide-report tmp/validation-eurusd-pattern-review-guide.json --review-batch-completion-report tmp/validation-eurusd-pattern-review-batch-001-completion.json --review-batch-merge-report tmp/validation-eurusd-pattern-review-batch-001-merge.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Completed batch merge policy:
+- Merge report validates completed batch and merges into full completed review file.
+- Creates `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv` if missing.
+- Merges by `sample_id` to avoid duplicates.
+- Creates backup before overwriting: `tmp/eurusd/EURUSD_15m_pattern_review_completed.backup.csv`.
+- Missing completed batch is normal and non-blocking (`awaiting_completed_batch`).
+- No labels are invented by automation - all labels must be human-provided.
+
+EURUSD 15m local GUI review app:
+
+Run the Streamlit-based local GUI for ergonomic pattern review:
+
+```bash
+python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+```
+
+GUI features:
+- Interactive candlestick charts with Plotly
+- Sample-by-sample navigation with filters
+- Candidate metadata display
+- Form-based label entry
+- Automatic save to `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
+- Resume progress from existing completed file
+- Fully offline operation
+
+GUI workflow:
+1. Start app with command above
+2. Load clean view and review batch (default paths pre-configured)
+3. Navigate samples, inspect charts, fill labels
+4. Click Save or Save and Next
+5. Later run batch merge workflow to integrate completed reviews
+
+GUI policy:
+- CSV/JSONL remain durable storage and interchange formats
+- GUI is the primary human review interface
+- No live market data, broker integration, order execution, or model training
+- No labels are invented by automation
+
+EURUSD 15m review feedback intake commands:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_feedback_report.py --template-csv tmp/eurusd/EURUSD_15m_pattern_review_template.csv --completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --label-schema tmp/validation-eurusd-pattern-label-schema.json --output-json tmp/validation-eurusd-pattern-review-feedback.json --output-md tmp/validation-eurusd-pattern-review-feedback.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_pattern_review_summary_report.py --feedback-report tmp/validation-eurusd-pattern-review-feedback.json --completed-review-csv tmp/eurusd/EURUSD_15m_pattern_review_completed.csv --candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --output-json tmp/validation-eurusd-pattern-review-summary.json --output-md tmp/validation-eurusd-pattern-review-summary.md
+PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_readiness_report.py --base-maintenance-continuation-report tmp/validation-routine-maintenance-continuation.json --dataset-contract-report tmp/validation-eurusd-dataset-contract.json --dataset-audit-report tmp/validation-eurusd-dataset-audit.json --clean-dataset-view-report tmp/validation-eurusd-clean-dataset-view.json --pattern-candidate-pack-report tmp/validation-eurusd-pattern-candidate-pack.json --pattern-review-qa-report tmp/validation-eurusd-pattern-review-qa.json --pattern-label-schema-report tmp/validation-eurusd-pattern-label-schema.json --pattern-review-template-report tmp/validation-eurusd-pattern-review-template.json --review-feedback-report tmp/validation-eurusd-pattern-review-feedback.json --review-summary-report tmp/validation-eurusd-pattern-review-summary.json --out-json tmp/validation-eurusd-research-readiness.json --out-md tmp/validation-eurusd-research-readiness.md
+```
+
+Review feedback policy:
+- Completed review file path: `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`.
+- Missing completed-review file is normal and non-blocking (`awaiting_review_input`).
+- Feedback/summary artifacts are review-only and produce no trading signals/orders/model training.
+

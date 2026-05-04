@@ -3643,3 +3643,90 @@ Routine maintenance command additions (next release cycle):
   - optional followup remains `slow_test_optimization` only (`count=1`, non-blocking)
 - Upstream sync remains deferred; evaluate only in a dedicated future audit branch if explicitly requested.
 - No automated merge operations were performed.
+
+## Phase 5126-5245 EURUSD 15m Pattern Research Kickoff
+
+- Added EURUSD contract report artifacts:
+  - `tmp/validation-eurusd-dataset-contract.json`
+  - `tmp/validation-eurusd-dataset-contract.md`
+- Added EURUSD multi-input dataset audit artifacts:
+  - `tmp/validation-eurusd-dataset-audit.json`
+  - `tmp/validation-eurusd-dataset-audit.md`
+- Added EURUSD pattern research readiness artifacts:
+  - `tmp/validation-eurusd-research-readiness.json`
+  - `tmp/validation-eurusd-research-readiness.md`
+- Fixed research scope for this track:
+  - symbol=`EURUSD`, side=`Bid`, timeframe=`15m`
+  - no 1H/4H aggregation
+  - no trading execution, no broker routing, no Qlib core changes
+- Readiness contract:
+  - `ready_for_pattern_research` only when maintenance baseline, dataset contract, dataset audit, and feature scaffold checks are all non-blocking.
+
+## Phase 5246-5365 EURUSD 15m Data Anomaly Triage and Clean Dataset View
+
+- Added OHLC anomaly triage artifacts:
+  - `tmp/validation-eurusd-ohlc-anomaly-triage.json`
+  - `tmp/validation-eurusd-ohlc-anomaly-triage.md`
+- Added clean-view generation/report artifacts:
+  - `tmp/eurusd/EURUSD_15m_Bid_clean_view.csv`
+  - `tmp/eurusd/EURUSD_15m_Bid_quarantined_rows.csv`
+  - `tmp/validation-eurusd-clean-dataset-view.json`
+  - `tmp/validation-eurusd-clean-dataset-view.md`
+- Raw dataset remains immutable; anomaly rows are quarantined for review.
+- Readiness now distinguishes raw blocked audit vs clean-view allowance:
+  - `ready_for_pattern_research_with_clean_view` is allowed when clean-view status is `ready`/`watch` and non-blocking.
+- Scope remains fixed to EURUSD 15m Bid only, with no aggregation and no trading execution behavior.
+
+## Phase 5366-5485 EURUSD 15m Pattern Candidate Sample Pack
+
+- Added deterministic pattern candidate detector over clean EURUSD 15m Bid input:
+  - `cajas/research/eurusd_pattern_candidates.py`
+- Added candidate pack artifacts:
+  - `tmp/eurusd/EURUSD_15m_pattern_candidates.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_samples.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_samples.jsonl`
+  - `tmp/validation-eurusd-pattern-candidate-pack.json`
+  - `tmp/validation-eurusd-pattern-candidate-pack.md`
+- Candidate scope is review-only and explicitly non-trading:
+  - no trading signals
+  - no order generation
+  - no aggregation
+- Readiness now surfaces candidate-pack summary when provided:
+  - `pattern_candidate_pack_status`
+  - `pattern_candidate_count`
+  - `next_action=review_pattern_samples`
+- Fixed timeframe remains EURUSD 15m Bid only.
+
+## Phase 5486-5605 EURUSD 15m Pattern Review Pack QA and Label Schema
+
+- Added pattern review QA report artifacts:
+  - `tmp/validation-eurusd-pattern-review-qa.json`
+  - `tmp/validation-eurusd-pattern-review-qa.md`
+- Added stable label schema artifacts:
+  - `tmp/validation-eurusd-pattern-label-schema.json`
+  - `tmp/validation-eurusd-pattern-label-schema.md`
+  - `schema_version=eurusd_15m_pattern_review_v1`
+- Added review template artifacts:
+  - `tmp/eurusd/EURUSD_15m_pattern_review_template.csv`
+  - `tmp/eurusd/EURUSD_15m_pattern_review_template.jsonl`
+  - `tmp/validation-eurusd-pattern-review-template.json`
+  - `tmp/validation-eurusd-pattern-review-template.md`
+- Readiness now surfaces review-layer statuses and can recommend:
+  - `next_action=begin_human_pattern_review` when candidate pack + QA + schema + template are ready/non-blocking.
+- Scope unchanged: clean view remains approved input; no aggregation; no trading/order execution semantics.
+
+## Phase 5606-5725 EURUSD 15m Human Review Feedback Intake and Summary
+
+- Added feedback intake validation artifacts:
+  - `tmp/validation-eurusd-pattern-review-feedback.json`
+  - `tmp/validation-eurusd-pattern-review-feedback.md`
+- Added review feedback summary artifacts:
+  - `tmp/validation-eurusd-pattern-review-summary.json`
+  - `tmp/validation-eurusd-pattern-review-summary.md`
+- Added example synthetic completed-review fixture:
+  - `cajas/data_examples/eurusd_pattern_review_completed.example.csv`
+- Missing completed review input is treated as normal non-blocking state:
+  - `status=awaiting_review_input`
+  - `next_action=complete_human_review_template`
+- Readiness now surfaces feedback/summary statuses and can switch next actions accordingly without introducing trading/model behavior.
+For full archive of tasks, see [Tasks Archive](../tasks/archive/README.md).

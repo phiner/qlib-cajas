@@ -2627,3 +2627,56 @@ Offline Qlib validation automation only. No trading execution, broker routing, l
   - post-merge mainline validation remains `mainline_validated`
   - optional followup remains `slow_test_optimization` and non-blocking (`count=1`)
 - Upstream sync evaluation is deferred to a dedicated future audit branch, only if explicitly requested.
+
+## Phase 5126-5245 EURUSD 15m Pattern Research Kickoff
+
+- Introduced a research-entry layer for raw EURUSD 15m Bid data with multi-file audit support (`--input` repeatable/comma-separated).
+- Added explicit dataset contract + audit + readiness packet workflow:
+  - `validation-eurusd-dataset-contract`
+  - `validation-eurusd-dataset-audit`
+  - `validation-eurusd-research-readiness`
+- Added deterministic non-trading feature scaffold for 15m K-line structure and multi-horizon movement (`3,5,8,13,21,34,55`).
+- Maintained boundaries:
+  - no timeframe aggregation
+  - no live trading or broker routing
+  - no order generation
+  - no production model training
+  - no Qlib core changes
+
+## Phase 5246-5365 EURUSD 15m Anomaly Triage and Clean View
+
+- Added explicit OHLC anomaly triage layer with row-level violation reporting and quarantine recommendation.
+- Added deterministic non-destructive clean dataset view generation from raw EURUSD 15m Bid inputs plus triage report.
+- Added clean-view gating for research readiness:
+  - raw audit can remain blocked
+  - clean-view can be ready/watch
+  - readiness can become `ready_for_pattern_research_with_clean_view` when clean-view is approved and feature scaffold remains pass
+- Raw files are not mutated; quarantine output remains reviewable and auditable.
+- Boundaries unchanged: no 1H/4H aggregation, no live trading, no broker routing, no order generation, no Qlib core changes.
+
+## Phase 5366-5485 EURUSD 15m Pattern Candidate Sample Pack
+
+- Added rule-based pattern candidate detection from the clean view for human review queues.
+- Added balanced per-type sample export (`csv` + `jsonl`) with confidence/priority/reason-code fields.
+- Added candidate-pack validation status and summary integration into EURUSD research readiness.
+- Maintained strict boundaries:
+  - no buy/sell/order/position outputs
+  - no trading execution semantics
+  - no timeframe aggregation
+  - no Qlib core changes
+
+## Phase 5486-5605 EURUSD 15m Pattern Review QA and Label Schema
+
+- Added deterministic QA checks for candidate review samples (required columns, confidence range, duplicate detection, forbidden trading columns, type coverage, reason-code coverage, priority distribution).
+- Added stable manual label schema `eurusd_15m_pattern_review_v1` for supervised annotation readiness.
+- Added deterministic review template exports (`csv` + `jsonl`) with pending-review defaults and schema version stamping.
+- Updated research readiness to surface review stack status and recommend `begin_human_pattern_review` when all review artifacts are ready.
+- Maintained boundaries: no trading signals/orders, no broker/live/paper trading, no 1H/4H aggregation, no Qlib core changes.
+
+## Phase 5606-5725 EURUSD 15m Review Feedback Intake
+
+- Added deterministic review feedback validator for completed review files against schema `eurusd_15m_pattern_review_v1`.
+- Added feedback summary layer for reviewed-label distribution and candidate-type quality signals.
+- Added non-blocking awaiting-input semantics when completed review file is absent.
+- Updated readiness integration to consume feedback/summary reports and route next action accordingly.
+- Boundaries unchanged: review-only/offline; no trading signals/orders/model training; no timeframe aggregation.
