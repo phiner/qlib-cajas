@@ -1,7 +1,7 @@
 """EURUSD 15m pattern review GUI helpers."""
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
@@ -9,6 +9,16 @@ import pandas as pd
 FORBIDDEN_TRADING_COLUMNS = [
     "buy", "sell", "long", "short", "order", "position",
     "target_position", "signal", "entry", "exit"
+]
+REVIEW_FIELDS = [
+    "human_pattern_label",
+    "market_context",
+    "direction_context",
+    "structure_quality",
+    "follow_through_quality",
+    "review_confidence",
+    "review_notes",
+    "review_status",
 ]
 
 
@@ -56,13 +66,14 @@ def merge_completed_labels(batch_df: pd.DataFrame, completed_df: Optional[pd.Dat
         return batch_df.copy()
     
     merged = batch_df.copy()
-    for idx, row in completed_df.iterrows():
+    completed_sanitized = sanitize_output_columns(completed_df).drop_duplicates(
+        subset=["sample_id"], keep="last"
+    )
+    for _, row in completed_sanitized.iterrows():
         sample_id = row["sample_id"]
         mask = merged["sample_id"] == sample_id
         if mask.any():
-            for col in ["human_pattern_label", "market_context", "direction_context",
-                       "structure_quality", "follow_through_quality", "review_confidence",
-                       "review_notes", "review_status"]:
+            for col in REVIEW_FIELDS:
                 if col in row:
                     merged.loc[mask, col] = row[col]
     
@@ -106,12 +117,15 @@ def create_candlestick_figure(window_df: pd.DataFrame, sample_timestamp: pd.Time
     # Mark target sample
     sample_row = window_df[window_df["timestamp"] == sample_timestamp]
     if not sample_row.empty:
-        fig.add_vline(
-            x=sample_timestamp,
-            line_dash="dash",
-            line_color="red",
-            annotation_text="Sample"
+        fig.add_shape(
+            type="line",
+            x0=sample_timestamp,
+            x1=sample_timestamp,
+            y0=float(window_df["low"].min()),
+            y1=float(window_df["high"].max()),
+            line={"color": "red", "dash": "dash"},
         )
+        fig.add_annotation(x=sample_timestamp, y=float(window_df["high"].max()), text="Sample", showarrow=False)
     
     fig.update_layout(
         xaxis_title="Time",
@@ -135,17 +149,43 @@ def save_completed_review(
         completed_df = pd.read_csv(output_path, parse_dates=["timestamp"])
     else:
         completed_df = batch_df.copy()
-    
+
+    completed_df = sanitize_output_columns(completed_df).drop_duplicates(
+        subset=["sample_id"], keep="last"
+    )
+
     # Update sample
     mask = completed_df["sample_id"] == sample_id
+    if not mask.any():
+        batch_row = batch_df.loc[batch_df["sample_id"] == sample_id]
+        if not batch_row.empty:
+            completed_df = pd.concat([completed_df, batch_row.iloc[[0]]], ignore_index=True)
+            completed_df = sanitize_output_columns(completed_df)
+            mask = completed_df["sample_id"] == sample_id
     for key, value in labels.items():
         if key in FORBIDDEN_TRADING_COLUMNS:
             continue
+        if key not in completed_df.columns:
+            completed_df[key] = None
+        if key == "review_notes":
+            completed_df[key] = completed_df[key].astype("object")
         completed_df.loc[mask, key] = value
-    
+
+    completed_df = sanitize_output_columns(completed_df).drop_duplicates(
+        subset=["sample_id"], keep="last"
+    )
+
     # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
     completed_df.to_csv(output_path, index=False)
+
+
+def sanitize_output_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop forbidden trading/action columns from output."""
+    drop_cols = [col for col in df.columns if col.lower() in FORBIDDEN_TRADING_COLUMNS]
+    if not drop_cols:
+        return df.copy()
+    return df.drop(columns=drop_cols).copy()
 
 
 def get_review_progress(batch_df: pd.DataFrame) -> Dict[str, int]:

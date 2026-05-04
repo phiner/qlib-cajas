@@ -31,6 +31,7 @@ def build_validation_eurusd_research_readiness(
     review_guide_report: Path | None = None,
     review_batch_completion_report: Path | None = None,
     review_batch_merge_report: Path | None = None,
+    pattern_review_gui_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
@@ -46,6 +47,7 @@ def build_validation_eurusd_research_readiness(
     review_guide = _safe_json(review_guide_report)
     batch_completion = _safe_json(review_batch_completion_report)
     batch_merge = _safe_json(review_batch_merge_report)
+    review_gui = _safe_json(pattern_review_gui_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -62,6 +64,7 @@ def build_validation_eurusd_research_readiness(
     review_guide_status = review_guide.get("status", "missing")
     batch_completion_status = batch_completion.get("status", "missing")
     batch_merge_status = batch_merge.get("status", "missing")
+    review_gui_status = review_gui.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -93,6 +96,8 @@ def build_validation_eurusd_research_readiness(
         blockers.append("review_batch_completion_blocked")
     if batch_merge and batch_merge_status == "blocked":
         blockers.append("review_batch_merge_blocked")
+    if review_gui and review_gui_status == "blocked":
+        blockers.append("pattern_review_gui_blocked")
 
     if not blockers and audit_status == "watch":
         warnings.append("dataset_audit_watch_non_blocking")
@@ -136,6 +141,11 @@ def build_validation_eurusd_research_readiness(
             next_action = "complete_human_review_template"
         elif review_feedback_status in {"ready", "watch"}:
             next_action = str(review_summary.get("recommendation") or review_feedback.get("next_action") or "summarize_review_feedback")
+    if (
+        review_gui_status in {"ready", "watch"}
+        and (batch_completion_status == "awaiting_completed_batch" or batch_merge_status == "awaiting_completed_batch")
+    ):
+        next_action = "run_local_review_app"
 
     return {
         "schema_version": 1,
@@ -173,6 +183,8 @@ def build_validation_eurusd_research_readiness(
         "batch_merge_status": batch_merge_status,
         "batch_merge_reviewed_count_added": batch_merge.get("reviewed_count_added"),
         "batch_merge_reviewed_count_total": batch_merge.get("reviewed_count_total"),
+        "pattern_review_gui_status": review_gui_status,
+        "review_app_run_command": review_gui.get("launcher_command") or review_gui.get("run_command"),
         "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
@@ -227,6 +239,8 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- batch_merge_status: `{payload.get('batch_merge_status')}`",
         f"- batch_merge_reviewed_count_added: `{payload.get('batch_merge_reviewed_count_added')}`",
         f"- batch_merge_reviewed_count_total: `{payload.get('batch_merge_reviewed_count_total')}`",
+        f"- pattern_review_gui_status: `{payload.get('pattern_review_gui_status')}`",
+        f"- review_app_run_command: `{payload.get('review_app_run_command')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",

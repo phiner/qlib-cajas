@@ -248,3 +248,27 @@ def test_readiness_blocked_when_feedback_blocked(tmp_path: Path) -> None:
     )
     assert payload["status"] == "blocked"
     assert "review_feedback_blocked" in payload["blocking_reasons"]
+
+
+def test_readiness_prefers_run_local_review_app_when_gui_available(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+        review_batch_report=_write(tmp_path / "batch.json", {"status": "ready", "batch_row_count": 100}),
+        review_guide_report=_write(tmp_path / "guide.json", {"status": "ready"}),
+        review_batch_completion_report=_write(
+            tmp_path / "completion.json",
+            {"status": "awaiting_completed_batch", "blocking": False, "reviewed_count": 0, "pending_count": 100},
+        ),
+        pattern_review_gui_report=_write(
+            tmp_path / "gui.json",
+            {"status": "watch", "launcher_command": "./scripts/run_eurusd_review_gui.sh"},
+        ),
+    )
+    assert payload["pattern_review_gui_status"] == "watch"
+    assert payload["next_action"] == "run_local_review_app"
+    assert payload["review_app_run_command"] == "./scripts/run_eurusd_review_gui.sh"

@@ -100,7 +100,17 @@ A Streamlit-based local GUI app provides an ergonomic interface for pattern revi
 
 **Run command**:
 ```bash
-python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
+```
+
+**Launcher command**:
+```bash
+./scripts/run_eurusd_review_gui.sh
+```
+
+Optional local GUI dependencies (manual install only):
+```bash
+./.venv-qlib313/bin/python -m pip install streamlit plotly
 ```
 
 **Features**:

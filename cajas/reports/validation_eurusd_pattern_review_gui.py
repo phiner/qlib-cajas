@@ -11,22 +11,50 @@ def build_gui_validation_report(
     completed_output_csv: Path
 ) -> Dict[str, Any]:
     """Build GUI validation report."""
+    launcher_path = Path("scripts/run_eurusd_review_gui.sh")
+    helper_path = Path("cajas/research/eurusd_pattern_review_gui.py")
+    run_command = "./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py"
+    launcher_command = "./scripts/run_eurusd_review_gui.sh"
+
     # Check app exists
     if not app_path.exists():
         return {
             "status": "blocked",
             "reason": "app_path_missing",
             "app_path": str(app_path),
+            "helper_path": str(helper_path),
+            "launcher_path": str(launcher_path),
+            "streamlit_available": False,
+            "plotly_available": False,
+            "clean_view_path": str(clean_view_csv),
+            "review_batch_path": str(review_batch_csv),
+            "completed_output_path": str(completed_output_csv),
+            "can_import_app": False,
+            "can_import_helper": False,
+            "forbidden_trading_column_policy": "blocked_on_save",
+            "run_command": run_command,
+            "launcher_command": launcher_command,
             "recommendation": "create_gui_app"
         }
-    
+
     # Check helper module
-    helper_path = Path("cajas/research/eurusd_pattern_review_gui.py")
     if not helper_path.exists():
         return {
             "status": "blocked",
             "reason": "helper_path_missing",
+            "app_path": str(app_path),
             "helper_path": str(helper_path),
+            "launcher_path": str(launcher_path),
+            "streamlit_available": False,
+            "plotly_available": False,
+            "clean_view_path": str(clean_view_csv),
+            "review_batch_path": str(review_batch_csv),
+            "completed_output_path": str(completed_output_csv),
+            "can_import_app": False,
+            "can_import_helper": False,
+            "forbidden_trading_column_policy": "blocked_on_save",
+            "run_command": run_command,
+            "launcher_command": launcher_command,
             "recommendation": "create_gui_helper"
         }
     
@@ -51,7 +79,19 @@ def build_gui_validation_report(
         return {
             "status": "blocked",
             "reason": "cannot_import_helper",
+            "app_path": str(app_path),
             "helper_path": str(helper_path),
+            "launcher_path": str(launcher_path),
+            "streamlit_available": False,
+            "plotly_available": False,
+            "clean_view_path": str(clean_view_csv),
+            "review_batch_path": str(review_batch_csv),
+            "completed_output_path": str(completed_output_csv),
+            "can_import_app": can_import_app,
+            "can_import_helper": can_import_helper,
+            "forbidden_trading_column_policy": "blocked_on_save",
+            "run_command": run_command,
+            "launcher_command": launcher_command,
             "recommendation": "fix_helper_imports"
         }
     
@@ -76,15 +116,39 @@ def build_gui_validation_report(
         return {
             "status": "blocked",
             "reason": "clean_view_missing",
+            "app_path": str(app_path),
+            "helper_path": str(helper_path),
+            "launcher_path": str(launcher_path),
+            "streamlit_available": streamlit_available,
+            "plotly_available": plotly_available,
             "clean_view_path": str(clean_view_csv),
+            "review_batch_path": str(review_batch_csv),
+            "completed_output_path": str(completed_output_csv),
+            "can_import_app": can_import_app,
+            "can_import_helper": can_import_helper,
+            "forbidden_trading_column_policy": "blocked_on_save",
+            "run_command": run_command,
+            "launcher_command": launcher_command,
             "recommendation": "generate_clean_view"
         }
-    
+
     if not review_batch_csv.exists():
         return {
             "status": "blocked",
             "reason": "review_batch_missing",
+            "app_path": str(app_path),
+            "helper_path": str(helper_path),
+            "launcher_path": str(launcher_path),
+            "streamlit_available": streamlit_available,
+            "plotly_available": plotly_available,
+            "clean_view_path": str(clean_view_csv),
             "review_batch_path": str(review_batch_csv),
+            "completed_output_path": str(completed_output_csv),
+            "can_import_app": can_import_app,
+            "can_import_helper": can_import_helper,
+            "forbidden_trading_column_policy": "blocked_on_save",
+            "run_command": run_command,
+            "launcher_command": launcher_command,
             "recommendation": "generate_review_batch"
         }
     
@@ -100,22 +164,22 @@ def build_gui_validation_report(
         status = "ready"
         missing_deps = []
     
-    run_command = "python -m streamlit run cajas/apps/eurusd_pattern_review_app.py"
-    
     return {
         "status": status,
         "app_path": str(app_path),
         "helper_path": str(helper_path),
+        "launcher_path": str(launcher_path),
         "streamlit_available": streamlit_available,
         "plotly_available": plotly_available,
         "missing_dependencies": missing_deps,
-        "input_batch_path": str(review_batch_csv),
         "clean_view_path": str(clean_view_csv),
+        "review_batch_path": str(review_batch_csv),
         "completed_output_path": str(completed_output_csv),
         "can_import_app": can_import_app,
         "can_import_helper": can_import_helper,
         "forbidden_trading_column_policy": "blocked_on_save",
         "run_command": run_command,
+        "launcher_command": launcher_command,
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }
 
@@ -132,7 +196,8 @@ def format_gui_validation_markdown(report: Dict[str, Any]) -> str:
         f"- App: `{report['app_path']}`",
         f"- Helper: `{report['helper_path']}`",
         f"- Clean view: `{report['clean_view_path']}`",
-        f"- Review batch: `{report['input_batch_path']}`",
+        f"- Launcher: `{report['launcher_path']}`",
+        f"- Review batch: `{report['review_batch_path']}`",
         f"- Completed output: `{report['completed_output_path']}`",
         "",
         "## Dependencies",
@@ -163,6 +228,10 @@ def format_gui_validation_markdown(report: Dict[str, Any]) -> str:
         "",
         "```bash",
         report['run_command'],
+        "```",
+        "",
+        "```bash",
+        report["launcher_command"],
         "```",
         "",
         "## Policy",
