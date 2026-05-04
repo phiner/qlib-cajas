@@ -30,6 +30,7 @@ def build_validation_eurusd_research_readiness(
     review_batch_report: Path | None = None,
     review_guide_report: Path | None = None,
     review_batch_completion_report: Path | None = None,
+    review_batch_merge_report: Path | None = None,
 ) -> dict[str, Any]:
     base = _safe_json(base_maintenance_continuation_report)
     contract = _safe_json(dataset_contract_report)
@@ -44,6 +45,7 @@ def build_validation_eurusd_research_readiness(
     review_batch = _safe_json(review_batch_report)
     review_guide = _safe_json(review_guide_report)
     batch_completion = _safe_json(review_batch_completion_report)
+    batch_merge = _safe_json(review_batch_merge_report)
     feature = validate_feature_scaffold_contract()
 
     base_status = base.get("status", "missing")
@@ -59,6 +61,7 @@ def build_validation_eurusd_research_readiness(
     review_batch_status = review_batch.get("status", "missing")
     review_guide_status = review_guide.get("status", "missing")
     batch_completion_status = batch_completion.get("status", "missing")
+    batch_merge_status = batch_merge.get("status", "missing")
     feature_status = feature.get("status", "fail")
 
     blockers: list[str] = []
@@ -88,6 +91,8 @@ def build_validation_eurusd_research_readiness(
         blockers.append("review_feedback_blocked")
     if batch_completion and batch_completion_status == "blocked":
         blockers.append("review_batch_completion_blocked")
+    if batch_merge and batch_merge_status == "blocked":
+        blockers.append("review_batch_merge_blocked")
 
     if not blockers and audit_status == "watch":
         warnings.append("dataset_audit_watch_non_blocking")
@@ -111,7 +116,14 @@ def build_validation_eurusd_research_readiness(
         and review_template_status == "ready"
     ):
         if review_batch_status in {"ready", "watch"} and review_guide_status == "ready":
-            if batch_completion_status == "awaiting_completed_batch":
+            if batch_merge_status == "awaiting_completed_batch":
+                next_action = "fill_batch_001_review"
+            elif batch_merge_status in {"ready", "watch"}:
+                if review_feedback_status in {"ready", "watch"}:
+                    next_action = str(review_summary.get("recommendation") or "review_feedback_summary")
+                else:
+                    next_action = "regenerate_review_feedback_summary"
+            elif batch_completion_status == "awaiting_completed_batch":
                 next_action = "fill_batch_001_review"
             elif batch_completion_status in {"ready", "watch"}:
                 next_action = "merge_completed_batch"
@@ -158,6 +170,9 @@ def build_validation_eurusd_research_readiness(
         "batch_completion_status": batch_completion_status,
         "batch_completion_reviewed_count": batch_completion.get("reviewed_count"),
         "batch_completion_pending_count": batch_completion.get("pending_count"),
+        "batch_merge_status": batch_merge_status,
+        "batch_merge_reviewed_count_added": batch_merge.get("reviewed_count_added"),
+        "batch_merge_reviewed_count_total": batch_merge.get("reviewed_count_total"),
         "next_action": next_action,
         "feature_scaffold_status": feature_status,
         "feature_scaffold_details": feature,
@@ -209,6 +224,9 @@ def render_validation_eurusd_research_readiness_markdown(payload: dict[str, Any]
         f"- batch_completion_status: `{payload.get('batch_completion_status')}`",
         f"- batch_completion_reviewed_count: `{payload.get('batch_completion_reviewed_count')}`",
         f"- batch_completion_pending_count: `{payload.get('batch_completion_pending_count')}`",
+        f"- batch_merge_status: `{payload.get('batch_merge_status')}`",
+        f"- batch_merge_reviewed_count_added: `{payload.get('batch_merge_reviewed_count_added')}`",
+        f"- batch_merge_reviewed_count_total: `{payload.get('batch_merge_reviewed_count_total')}`",
         f"- next_action: `{payload.get('next_action')}`",
         f"- feature_scaffold_status: `{payload.get('feature_scaffold_status')}`",
         "",

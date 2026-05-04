@@ -113,6 +113,69 @@ def test_readiness_markdown_policy(tmp_path: Path) -> None:
     assert "no qlib core changes" in md
 
 
+
+def test_readiness_with_merge_awaiting(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+        review_batch_report=_write(tmp_path / "batch.json", {"status": "ready", "batch_row_count": 100}),
+        review_guide_report=_write(tmp_path / "guide.json", {"status": "ready"}),
+        review_batch_merge_report=_write(
+            tmp_path / "merge.json",
+            {"status": "awaiting_completed_batch", "blocking": False, "reviewed_count_added": 0}
+        ),
+    )
+    assert payload["next_action"] == "fill_batch_001_review"
+    assert payload["batch_merge_status"] == "awaiting_completed_batch"
+
+
+def test_readiness_with_merge_ready(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        pattern_review_qa_report=_write(tmp_path / "qa.json", {"status": "ready"}),
+        pattern_label_schema_report=_write(tmp_path / "schema.json", {"status": "ready"}),
+        pattern_review_template_report=_write(tmp_path / "template.json", {"status": "ready"}),
+        review_batch_report=_write(tmp_path / "batch.json", {"status": "ready", "batch_row_count": 100}),
+        review_guide_report=_write(tmp_path / "guide.json", {"status": "ready"}),
+        review_batch_merge_report=_write(
+            tmp_path / "merge.json",
+            {"status": "ready", "blocking": False, "reviewed_count_added": 10, "reviewed_count_total": 10}
+        ),
+    )
+    assert payload["next_action"] == "regenerate_review_feedback_summary"
+    assert payload["batch_merge_status"] == "ready"
+    assert payload["batch_merge_reviewed_count_added"] == 10
+    assert payload["batch_merge_reviewed_count_total"] == 10
+
+
+def test_readiness_blocked_on_merge(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+        review_batch_merge_report=_write(tmp_path / "merge.json", {"status": "blocked"}),
+    )
+    assert payload["status"] == "blocked"
+    assert "review_batch_merge_blocked" in payload["blocking_reasons"]
+
+
+def test_readiness_markdown_policy(tmp_path: Path) -> None:
+    payload = build_validation_eurusd_research_readiness(
+        base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
+        dataset_contract_report=_write(tmp_path / "contract.json", {"status": "ready"}),
+        dataset_audit_report=_write(tmp_path / "audit.json", {"status": "ready"}),
+    )
+    md = render_validation_eurusd_research_readiness_markdown(payload).lower()
+    assert "no live trading" in md
+    assert "no qlib core changes" in md
+
+
 def test_readiness_includes_pattern_candidate_pack_when_provided(tmp_path: Path) -> None:
     payload = build_validation_eurusd_research_readiness(
         base_maintenance_continuation_report=_write(tmp_path / "base.json", {"status": "routine_continues"}),
