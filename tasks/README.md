@@ -15,4 +15,4 @@ Rules:
 - Roadmaps may stay in `tasks/` root with descriptive names.
 
 Current retained prompt:
-- `tasks/prompts/001_eurusd_gui_sample_index_state_fix.md`
+- `tasks/prompts/002_eurusd_gui_manual_smoke_and_prompt_cleanup.md`
