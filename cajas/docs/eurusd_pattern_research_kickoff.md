@@ -120,6 +120,9 @@ Optional local GUI dependencies (manual install only):
 - Form-based label entry
 - Automatic save to completed CSV
 - Resume progress from existing completed file
+- Explicit chart warning messages when chart window extraction fails or has no data
+- Lightweight `Chart Debug Info` expander for timestamp/window/trace diagnostics
+- NaN optional text values (for example `review_notes`) are sanitized to empty text in the UI
 - Fully offline operation
 
 **Workflow**:

@@ -1,7 +1,7 @@
 """EURUSD 15m pattern review GUI helpers."""
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -20,23 +20,35 @@ REVIEW_FIELDS = [
     "review_notes",
     "review_status",
 ]
+OPTIONAL_TEXT_FIELDS = [
+    "review_notes",
+]
 
 
 def load_clean_view(path: Path) -> pd.DataFrame:
     """Load clean view dataset."""
-    return pd.read_csv(path, parse_dates=["timestamp"])
+    df = pd.read_csv(path, parse_dates=["timestamp"])
+    if "timestamp" in df.columns:
+        df["timestamp"] = normalize_timestamp_series(df["timestamp"])
+    return df
 
 
 def load_review_batch(path: Path) -> pd.DataFrame:
     """Load review batch."""
-    return pd.read_csv(path, parse_dates=["timestamp"])
+    df = pd.read_csv(path, parse_dates=["timestamp"])
+    if "timestamp" in df.columns:
+        df["timestamp"] = normalize_timestamp_series(df["timestamp"])
+    return sanitize_optional_text_fields(df)
 
 
 def load_completed_reviews(path: Path) -> Optional[pd.DataFrame]:
     """Load completed reviews if exists."""
     if not path.exists():
         return None
-    return pd.read_csv(path, parse_dates=["timestamp"])
+    df = pd.read_csv(path, parse_dates=["timestamp"])
+    if "timestamp" in df.columns:
+        df["timestamp"] = normalize_timestamp_series(df["timestamp"])
+    return sanitize_optional_text_fields(df)
 
 
 def load_label_schema(path: Path) -> Dict[str, Any]:
@@ -77,7 +89,98 @@ def merge_completed_labels(batch_df: pd.DataFrame, completed_df: Optional[pd.Dat
                 if col in row:
                     merged.loc[mask, col] = row[col]
     
-    return merged
+    return sanitize_optional_text_fields(merged)
+
+
+def normalize_timestamp_series(series: pd.Series) -> pd.Series:
+    """Normalize timestamps to UTC-aware datetime for matching."""
+    return pd.to_datetime(series, utc=True, errors="coerce")
+
+
+def normalize_timestamp_value(value: Any) -> pd.Timestamp:
+    """Normalize a timestamp-like value to UTC-aware pandas timestamp."""
+    return pd.to_datetime(value, utc=True, errors="coerce")
+
+
+def sanitize_optional_text_value(value: Any) -> str:
+    """Convert NaN/None-like text values to empty string."""
+    if value is None or pd.isna(value):
+        return ""
+    text = str(value)
+    if text.strip().lower() == "nan":
+        return ""
+    return text
+
+
+def sanitize_optional_text_fields(df: pd.DataFrame) -> pd.DataFrame:
+    """Sanitize optional text columns that might contain NaN text."""
+    out = df.copy()
+    for field in OPTIONAL_TEXT_FIELDS:
+        if field in out.columns:
+            out[field] = out[field].map(sanitize_optional_text_value)
+    return out
+
+
+def extract_chart_window_with_diagnostics(
+    clean_view: pd.DataFrame,
+    sample_timestamp: Any,
+    lookback: int = 60,
+    forward: int = 30,
+    nearest_tolerance: str = "15min",
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    """Extract chart window around sample timestamp with diagnostics."""
+    diagnostics: Dict[str, Any] = {
+        "selected_timestamp": str(sample_timestamp),
+        "normalized_timestamp": None,
+        "exact_timestamp_match_found": False,
+        "nearest_fallback_used": False,
+        "chart_window_row_count": 0,
+        "target_index_in_window": None,
+        "target_timestamp_used": None,
+        "target_index_global": None,
+        "error": None,
+    }
+
+    if "timestamp" not in clean_view.columns or clean_view.empty:
+        diagnostics["error"] = "clean_view_missing_timestamp_or_empty"
+        return pd.DataFrame(), diagnostics
+
+    df = clean_view.copy()
+    df["timestamp"] = normalize_timestamp_series(df["timestamp"])
+    df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
+    target_ts = normalize_timestamp_value(sample_timestamp)
+    diagnostics["normalized_timestamp"] = str(target_ts)
+    if pd.isna(target_ts):
+        diagnostics["error"] = "invalid_sample_timestamp"
+        return pd.DataFrame(), diagnostics
+
+    exact_matches = df.index[df["timestamp"] == target_ts].tolist()
+    idx: Optional[int] = None
+    if exact_matches:
+        idx = int(exact_matches[0])
+        diagnostics["exact_timestamp_match_found"] = True
+    else:
+        deltas = (df["timestamp"] - target_ts).abs()
+        nearest_idx = int(deltas.idxmin())
+        tolerance = pd.Timedelta(nearest_tolerance)
+        if pd.notna(deltas.loc[nearest_idx]) and deltas.loc[nearest_idx] <= tolerance:
+            idx = nearest_idx
+            diagnostics["nearest_fallback_used"] = True
+
+    if idx is None:
+        diagnostics["error"] = "timestamp_not_found_within_tolerance"
+        return pd.DataFrame(), diagnostics
+
+    start_idx = max(0, idx - lookback)
+    end_idx = min(len(df), idx + forward + 1)
+    window = df.iloc[start_idx:end_idx].copy()
+    target_index_in_window = idx - start_idx
+    diagnostics["target_index_global"] = idx
+    diagnostics["target_index_in_window"] = int(target_index_in_window)
+    diagnostics["chart_window_row_count"] = int(len(window))
+    diagnostics["target_timestamp_used"] = str(df.iloc[idx]["timestamp"])
+
+    return window, diagnostics
 
 
 def extract_chart_window(
@@ -86,54 +189,86 @@ def extract_chart_window(
     lookback: int = 60,
     forward: int = 30
 ) -> pd.DataFrame:
-    """Extract chart window around sample timestamp."""
-    sample_idx = clean_view[clean_view["timestamp"] == sample_timestamp].index
-    if len(sample_idx) == 0:
-        return pd.DataFrame()
-    
-    idx = sample_idx[0]
-    start_idx = max(0, idx - lookback)
-    end_idx = min(len(clean_view), idx + forward + 1)
-    
-    return clean_view.iloc[start_idx:end_idx].copy()
+    """Backwards-compatible chart window extraction."""
+    window, _ = extract_chart_window_with_diagnostics(
+        clean_view,
+        sample_timestamp,
+        lookback=lookback,
+        forward=forward,
+    )
+    return window
 
 
-def create_candlestick_figure(window_df: pd.DataFrame, sample_timestamp: pd.Timestamp):
+def create_candlestick_figure(
+    window_df: pd.DataFrame,
+    sample_timestamp: Any,
+    sample_id: Optional[str] = None,
+    candidate_type: Optional[str] = None,
+):
     """Create Plotly candlestick figure."""
     try:
         import plotly.graph_objects as go
     except ImportError:
         return None
-    
+
+    if window_df.empty:
+        return None
+
+    target_ts = normalize_timestamp_value(sample_timestamp)
+    window = window_df.copy()
+    window["timestamp"] = normalize_timestamp_series(window["timestamp"])
+
     fig = go.Figure(data=[go.Candlestick(
-        x=window_df["timestamp"],
-        open=window_df["open"],
-        high=window_df["high"],
-        low=window_df["low"],
-        close=window_df["close"],
+        x=window["timestamp"],
+        open=window["open"],
+        high=window["high"],
+        low=window["low"],
+        close=window["close"],
         name="EURUSD"
     )])
-    
+
     # Mark target sample
-    sample_row = window_df[window_df["timestamp"] == sample_timestamp]
+    sample_row = window[window["timestamp"] == target_ts]
     if not sample_row.empty:
         fig.add_shape(
             type="line",
-            x0=sample_timestamp,
-            x1=sample_timestamp,
-            y0=float(window_df["low"].min()),
-            y1=float(window_df["high"].max()),
-            line={"color": "red", "dash": "dash"},
+            x0=target_ts,
+            x1=target_ts,
+            y0=float(window["low"].min()),
+            y1=float(window["high"].max()),
+            line={"color": "#ff5a36", "dash": "dash", "width": 2},
         )
-        fig.add_annotation(x=sample_timestamp, y=float(window_df["high"].max()), text="Sample", showarrow=False)
-    
+        fig.add_annotation(x=target_ts, y=float(window["high"].max()), text="Sample", showarrow=False)
+
+    title_parts = []
+    if sample_id:
+        title_parts.append(f"sample_id={sample_id}")
+    if not pd.isna(target_ts):
+        title_parts.append(f"timestamp={target_ts}")
+    if candidate_type:
+        title_parts.append(f"candidate_type={candidate_type}")
+    title_text = " | ".join(title_parts) if title_parts else "EURUSD Candlestick Window"
+
     fig.update_layout(
+        title=title_text,
         xaxis_title="Time",
         yaxis_title="Price",
         xaxis_rangeslider_visible=False,
-        height=500
+        height=600,
+        template="plotly_dark",
+        plot_bgcolor="#0f1720",
+        paper_bgcolor="#0f1720",
+        font={"color": "#e5edf7"},
     )
-    
+    fig.update_xaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
+    fig.update_yaxes(showgrid=True, gridcolor="rgba(148, 163, 184, 0.25)")
+    fig.update_traces(
+        increasing_line_color="#00d084",
+        increasing_fillcolor="#00d084",
+        decreasing_line_color="#ff5a36",
+        decreasing_fillcolor="#ff5a36",
+    )
+
     return fig
 
 
@@ -150,7 +285,9 @@ def save_completed_review(
     else:
         completed_df = batch_df.copy()
 
-    completed_df = sanitize_output_columns(completed_df).drop_duplicates(
+    completed_df = sanitize_optional_text_fields(
+        sanitize_output_columns(completed_df)
+    ).drop_duplicates(
         subset=["sample_id"], keep="last"
     )
 
@@ -160,18 +297,23 @@ def save_completed_review(
         batch_row = batch_df.loc[batch_df["sample_id"] == sample_id]
         if not batch_row.empty:
             completed_df = pd.concat([completed_df, batch_row.iloc[[0]]], ignore_index=True)
-            completed_df = sanitize_output_columns(completed_df)
+            completed_df = sanitize_optional_text_fields(
+                sanitize_output_columns(completed_df)
+            )
             mask = completed_df["sample_id"] == sample_id
     for key, value in labels.items():
         if key in FORBIDDEN_TRADING_COLUMNS:
             continue
         if key not in completed_df.columns:
             completed_df[key] = None
-        if key == "review_notes":
+        if key in OPTIONAL_TEXT_FIELDS:
+            value = sanitize_optional_text_value(value)
             completed_df[key] = completed_df[key].astype("object")
         completed_df.loc[mask, key] = value
 
-    completed_df = sanitize_output_columns(completed_df).drop_duplicates(
+    completed_df = sanitize_optional_text_fields(
+        sanitize_output_columns(completed_df)
+    ).drop_duplicates(
         subset=["sample_id"], keep="last"
     )
 

@@ -10,10 +10,12 @@ from cajas.research.eurusd_pattern_review_gui import (
     load_review_batch,
     merge_completed_labels,
     extract_chart_window,
+    extract_chart_window_with_diagnostics,
     create_candlestick_figure,
     save_completed_review,
     get_review_progress,
     sanitize_output_columns,
+    sanitize_optional_text_value,
 )
 
 
@@ -96,7 +98,37 @@ def test_extract_chart_window(clean_view_fixture):
     window = extract_chart_window(clean_view, sample_timestamp, lookback=10, forward=5)
     
     assert len(window) <= 16
-    assert sample_timestamp in window["timestamp"].values
+    assert (window["timestamp"] == sample_timestamp).any()
+
+
+def test_extract_chart_window_with_diagnostics_valid_timestamp(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    sample_timestamp = clean_view.iloc[40]["timestamp"]
+    window, diag = extract_chart_window_with_diagnostics(clean_view, sample_timestamp, lookback=8, forward=4)
+    assert not window.empty
+    assert diag["exact_timestamp_match_found"] is True
+    assert diag["nearest_fallback_used"] is False
+    assert diag["chart_window_row_count"] > 0
+    assert diag["target_index_in_window"] is not None
+
+
+def test_extract_chart_window_with_diagnostics_missing_timestamp(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    missing_timestamp = pd.Timestamp("2030-01-01 00:00:00")
+    window, diag = extract_chart_window_with_diagnostics(clean_view, missing_timestamp)
+    assert window.empty
+    assert diag["chart_window_row_count"] == 0
+    assert diag["error"] == "timestamp_not_found_within_tolerance"
+
+
+def test_extract_chart_window_with_diagnostics_nearest_fallback(clean_view_fixture):
+    clean_view = load_clean_view(clean_view_fixture)
+    off_grid_timestamp = clean_view.iloc[20]["timestamp"] + pd.Timedelta(minutes=1)
+    window, diag = extract_chart_window_with_diagnostics(clean_view, off_grid_timestamp)
+    assert not window.empty
+    assert diag["exact_timestamp_match_found"] is False
+    assert diag["nearest_fallback_used"] is True
+    assert diag["target_index_in_window"] is not None
 
 
 def test_save_completed_review(batch_fixture, temp_dir):
@@ -162,8 +194,10 @@ def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
     clean_view = load_clean_view(clean_view_fixture)
     sample_timestamp = clean_view.iloc[10]["timestamp"]
     window = extract_chart_window(clean_view, sample_timestamp, lookback=5, forward=5)
-    fig = create_candlestick_figure(window, sample_timestamp)
+    fig = create_candlestick_figure(window, sample_timestamp, sample_id="s1", candidate_type="test")
     assert fig is None or hasattr(fig, "to_dict")
+    if fig is not None:
+        assert len(fig.data) >= 1
 
 
 def test_get_review_progress(batch_fixture):
@@ -175,3 +209,16 @@ def test_get_review_progress(batch_fixture):
     assert progress["total"] == 3
     assert progress["reviewed"] == 1
     assert progress["pending"] == 2
+
+
+def test_save_completed_review_sanitizes_nan_notes(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    output_path = temp_dir / "completed.csv"
+    labels = {
+        "review_notes": float("nan"),
+        "review_status": "reviewed",
+    }
+    save_completed_review(batch_df, "s1", labels, output_path)
+    completed = pd.read_csv(output_path)
+    row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
+    assert sanitize_optional_text_value(row["review_notes"]) == ""

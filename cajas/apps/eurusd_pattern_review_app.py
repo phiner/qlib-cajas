@@ -7,10 +7,11 @@ from cajas.research.eurusd_pattern_review_gui import (
     load_completed_reviews,
     load_label_schema,
     merge_completed_labels,
-    extract_chart_window,
+    extract_chart_window_with_diagnostics,
     create_candlestick_figure,
     save_completed_review,
-    get_review_progress
+    get_review_progress,
+    sanitize_optional_text_value,
 )
 
 
@@ -106,24 +107,68 @@ def main():
     
     # Current sample
     sample = filtered.iloc[sample_idx]
-    
+
     st.header(f"Sample: {sample['sample_id']}")
     st.subheader(f"{sample['timestamp']} - {sample['candidate_type']}")
-    
+
+    # Sample metadata near chart
+    st.caption(
+        " | ".join(
+            [
+                f"sample_id={sample['sample_id']}",
+                f"timestamp={sample['timestamp']}",
+                f"candidate_type={sample['candidate_type']}",
+                f"confidence_score={sample['confidence_score']:.4f}",
+                f"review_priority={sample['review_priority']}",
+                f"reason_codes={sample['reason_codes']}",
+            ]
+        )
+    )
+
     # Chart
-    window = extract_chart_window(
+    st.subheader("Candlestick Chart")
+    chart_container = st.container()
+    window, chart_diag = extract_chart_window_with_diagnostics(
         st.session_state.clean_view,
         sample["timestamp"],
         lookback=60,
         forward=30
     )
-    
-    if not window.empty:
-        fig = create_candlestick_figure(window, sample["timestamp"])
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
+
+    fig = None
+    if chart_diag.get("chart_window_row_count", 0) > 0:
+        fig = create_candlestick_figure(
+            window,
+            sample["timestamp"],
+            sample_id=str(sample["sample_id"]),
+            candidate_type=str(sample["candidate_type"]),
+        )
+
+    with chart_container:
+        if fig is None:
+            if chart_diag.get("error"):
+                st.warning(
+                    f"Could not extract chart window for sample_id={sample['sample_id']} "
+                    f"timestamp={sample['timestamp']}"
+                )
+            else:
+                st.warning("No chart data available for the selected sample/timestamp.")
         else:
-            st.warning("Plotly not available. Install with: pip install plotly")
+            st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with st.expander("Chart Debug Info", expanded=False):
+        st.json(
+            {
+                "sample_id": str(sample["sample_id"]),
+                "selected_timestamp": str(sample["timestamp"]),
+                "exact_timestamp_match_found": bool(chart_diag.get("exact_timestamp_match_found", False)),
+                "nearest_fallback_used": bool(chart_diag.get("nearest_fallback_used", False)),
+                "chart_window_row_count": int(chart_diag.get("chart_window_row_count", 0)),
+                "target_index_in_window": chart_diag.get("target_index_in_window"),
+                "figure_trace_count": int(len(fig.data)) if fig is not None else 0,
+                "error": chart_diag.get("error"),
+            }
+        )
     
     # Metadata
     col1, col2 = st.columns(2)
@@ -170,7 +215,10 @@ def main():
         follow_through_quality = st.slider("Follow-through Quality", 1, 5, int(sample.get("follow_through_quality", 3)))
         review_confidence = st.slider("Review Confidence", 1, 5, int(sample.get("review_confidence", 3)))
     
-    review_notes = st.text_area("Review Notes", sample.get("review_notes", ""))
+    review_notes = st.text_area(
+        "Review Notes",
+        sanitize_optional_text_value(sample.get("review_notes", "")),
+    )
     
     review_status = st.selectbox(
         "Review Status",

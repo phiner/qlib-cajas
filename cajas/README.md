@@ -12,6 +12,7 @@ Qlib-based Market Recognition Research for FX K-line data.
 Current focus:
 - EURUSD 15m K-line market recognition research
 - Local/offline GUI-assisted human review (`./scripts/run_eurusd_review_gui.sh`)
+- GUI chart visibility hardening with explicit no-data warnings, chart debug diagnostics, and NaN-to-empty review note sanitization
 
 Current scope is research-only and is **not** a trading system.
 
