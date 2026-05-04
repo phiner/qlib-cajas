@@ -537,6 +537,9 @@ Expected GUI behavior:
 - use one-line compact `Review Notes` input in the main control row
 - keep detailed debug info read-only and positioned below save/reset action buttons
 - save actions contract: Save writes/updates current sample by `sample_id`, Save and Next saves first then advances, Reset Form resets visible controls only and does not delete saved CSV rows
+- persistence status contract: after save/save-and-next, GUI status must show sample id, CSV path, JSONL path, insert/update result, and current sample index
+- storage split contract: CSV is latest duplicate-safe completed state by `sample_id`; JSONL is append-friendly save-event history for audit/interchange
+- JSONL append errors must be surfaced explicitly and must not silently invalidate successful CSV writes
 
 Completed output path:
 

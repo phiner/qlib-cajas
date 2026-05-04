@@ -13,6 +13,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     build_compact_chart_diagnostic_summary,
     build_chart_diagnostic_summary,
     save_or_update_completed_review,
+    append_review_event_jsonl,
+    build_persistence_status_message,
     default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
@@ -72,6 +74,10 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     completed_path = st.sidebar.text_input(
         "Completed Output CSV",
         "tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv"
+    )
+    events_jsonl_path = st.sidebar.text_input(
+        "Review Events JSONL",
+        "tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed_events.jsonl",
     )
     schema_path = st.sidebar.text_input(
         "Label Schema JSON",
@@ -332,43 +338,15 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
     
     with col1:
         if st.button("Save"):
-            labels = {
-                "human_pattern_label": human_pattern_label,
-                "market_context": market_context,
-                "direction_context": direction_context,
-                "structure_quality": structure_quality,
-                "follow_through_quality": follow_through_quality,
-                "review_confidence": review_confidence,
-                "review_notes": review_notes,
-                "review_status": review_status
-            }
             try:
-                save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
-                st.session_state.batch = merge_completed_labels(st.session_state.batch, load_completed_reviews(Path(completed_path)))
-                st.session_state["last_action_msg"] = f"Saved sample_id={sample_id}"
-                st.rerun()
+                persist_review(action_type="save", advance_to_next=False)
             except Exception as exc:
                 st.error(f"Save failed for sample_id={sample_id}: {exc}")
     
     with col2:
         if st.button("Save and Next"):
-            labels = {
-                "human_pattern_label": human_pattern_label,
-                "market_context": market_context,
-                "direction_context": direction_context,
-                "structure_quality": structure_quality,
-                "follow_through_quality": follow_through_quality,
-                "review_confidence": review_confidence,
-                "review_notes": review_notes,
-                "review_status": review_status
-            }
             try:
-                save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
-                st.session_state.batch = merge_completed_labels(st.session_state.batch, load_completed_reviews(Path(completed_path)))
-                if int(sample_idx) < len(filtered) - 1:
-                    st.session_state.sample_idx = int(sample_idx) + 1
-                st.session_state["last_action_msg"] = f"Saved sample_id={sample_id} and moved to next sample"
-                st.rerun()
+                persist_review(action_type="save_and_next", advance_to_next=True)
             except Exception as exc:
                 st.error(f"Save and Next failed for sample_id={sample_id}: {exc}")
     
@@ -381,9 +359,10 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
             st.rerun()
 
     if st.session_state.get("last_action_msg"):
-        st.info(
-            f"{st.session_state['last_action_msg']} | output={completed_path} | current sample_id={sample_id}"
-        )
+        if st.session_state.get("last_action_kind") == "warning":
+            st.warning(st.session_state["last_action_msg"])
+        else:
+            st.success(st.session_state["last_action_msg"])
 
     st.caption('Open "Chart Debug Info (click to expand)" for timestamp/window details.')
     with st.expander("Chart Debug Info (click to expand)", expanded=False):
@@ -403,3 +382,50 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
 
 if __name__ == "__main__":
     main()
+    def build_review_labels() -> dict:
+        return {
+            "human_pattern_label": human_pattern_label,
+            "market_context": market_context,
+            "direction_context": direction_context,
+            "structure_quality": structure_quality,
+            "follow_through_quality": follow_through_quality,
+            "review_confidence": review_confidence,
+            "review_notes": review_notes,
+            "review_status": review_status,
+        }
+
+    def persist_review(action_type: str, advance_to_next: bool) -> None:
+        labels = build_review_labels()
+        result = save_or_update_completed_review(batch, sample_id, labels, Path(completed_path))
+        st.session_state.batch = merge_completed_labels(
+            st.session_state.batch, load_completed_reviews(Path(completed_path))
+        )
+        jsonl_status = "written"
+        try:
+            append_review_event_jsonl(
+                jsonl_path=Path(events_jsonl_path),
+                sample_id=sample_id,
+                review_values=labels,
+                action_type=action_type,
+                completed_csv_path=Path(completed_path),
+                batch_path=batch_path,
+            )
+        except Exception as jsonl_exc:
+            jsonl_status = f"error: {jsonl_exc}"
+        if advance_to_next and int(sample_idx) < len(filtered) - 1:
+            st.session_state.sample_idx = int(sample_idx) + 1
+        current_idx = int(st.session_state.get("sample_idx", int(sample_idx)))
+        st.session_state["last_action_msg"] = build_persistence_status_message(
+            sample_id=sample_id,
+            action_result=result["action_result"],
+            action_type=action_type,
+            completed_csv_path=completed_path,
+            jsonl_path=events_jsonl_path,
+            jsonl_status=jsonl_status,
+            sample_index=current_idx,
+        )
+        if jsonl_status != "written":
+            st.session_state["last_action_kind"] = "warning"
+        else:
+            st.session_state["last_action_kind"] = "success"
+        st.rerun()

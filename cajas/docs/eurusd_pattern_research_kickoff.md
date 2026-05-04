@@ -142,11 +142,16 @@ Optional local GUI dependencies (manual install only):
 7. App writes/updates `tmp/eurusd/EURUSD_15m_pattern_review_batch_001_completed.csv`
    - Save: writes/updates current sample by `sample_id`
    - Save and Next: saves first, then advances sample index
+   - Action status shows sample id, CSV path, JSONL path, insert/update result, and sample index
    - Reset Form: resets visible form fields only and does not delete saved CSV rows
 8. Later run batch merge workflow to integrate into full completed review
 
 **Design**:
 - CSV/JSONL remain durable storage and interchange formats
+- CSV is the latest editable completed-review state (duplicate-safe by `sample_id`)
+- JSONL is append-only save event history for audit/interchange recovery
+- CSV save remains authoritative; JSONL append errors are surfaced explicitly in GUI status without silently discarding CSV updates
+- SQLite is intentionally deferred in this phase
 - GUI is the primary human review interface
 - No live market data, broker integration, or order execution
 - No labels are invented by automation

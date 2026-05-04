@@ -1,5 +1,6 @@
 """EURUSD 15m pattern review GUI helpers."""
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -33,6 +34,8 @@ DEFAULT_REVIEW_VALUES = {
     "review_notes": "",
     "review_status": "pending",
 }
+REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v1"
+REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
 
 
 def load_clean_view(path: Path) -> pd.DataFrame:
@@ -332,14 +335,25 @@ def save_completed_review(
 
     # Update sample
     mask = completed_df["sample_id"] == sample_id
+    batch_row = batch_df.loc[batch_df["sample_id"] == sample_id]
     if not mask.any():
-        batch_row = batch_df.loc[batch_df["sample_id"] == sample_id]
         if not batch_row.empty:
             completed_df = pd.concat([completed_df, batch_row.iloc[[0]]], ignore_index=True)
             completed_df = sanitize_optional_text_fields(
                 sanitize_output_columns(completed_df)
             )
             mask = completed_df["sample_id"] == sample_id
+    if not batch_row.empty:
+        identity_values = batch_row.iloc[0].to_dict()
+        for key, value in identity_values.items():
+            if key in FORBIDDEN_TRADING_COLUMNS:
+                continue
+            if key not in completed_df.columns:
+                completed_df[key] = None
+            if key in OPTIONAL_TEXT_FIELDS:
+                value = sanitize_optional_text_value(value)
+                completed_df[key] = completed_df[key].astype("object")
+            completed_df.loc[mask, key] = value
     for key, value in labels.items():
         if key in FORBIDDEN_TRADING_COLUMNS:
             continue
@@ -349,6 +363,9 @@ def save_completed_review(
             value = sanitize_optional_text_value(value)
             completed_df[key] = completed_df[key].astype("object")
         completed_df.loc[mask, key] = value
+    if REVIEW_UPDATED_AT_COLUMN not in completed_df.columns:
+        completed_df[REVIEW_UPDATED_AT_COLUMN] = None
+    completed_df.loc[mask, REVIEW_UPDATED_AT_COLUMN] = datetime.now(timezone.utc).isoformat()
 
     completed_df = sanitize_optional_text_fields(
         sanitize_output_columns(completed_df)
@@ -379,10 +396,62 @@ def save_or_update_completed_review(
     sample_id: str,
     review_values: Dict[str, Any],
     output_path: Path,
-) -> None:
-    """Save or update one sample review by sample_id."""
+) -> Dict[str, Any]:
+    """Save or update one sample review by sample_id and return persistence metadata."""
+    existing = None
+    if output_path.exists():
+        existing = pd.read_csv(output_path)
+    is_update = bool(existing is not None and "sample_id" in existing.columns and (existing["sample_id"] == sample_id).any())
     labels = build_review_update_row(review_values)
     save_completed_review(batch_df=batch_df, sample_id=sample_id, labels=labels, output_path=output_path)
+    return {
+        "sample_id": sample_id,
+        "action_result": "update" if is_update else "insert",
+        "completed_csv_path": str(output_path),
+        "review_values": labels,
+    }
+
+
+def append_review_event_jsonl(
+    jsonl_path: Path,
+    sample_id: str,
+    review_values: Dict[str, Any],
+    action_type: str,
+    completed_csv_path: Path,
+    batch_path: Optional[str] = None,
+) -> None:
+    """Append one review event record to JSONL audit/interchange output."""
+    payload = {
+        "event_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "schema_version": REVIEW_SCHEMA_VERSION,
+        "action_type": action_type,
+        "sample_id": sample_id,
+        "completed_csv_path": str(completed_csv_path),
+        "source_batch_path": batch_path,
+        "review": build_review_update_row(review_values),
+    }
+    jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+    with jsonl_path.open("a", encoding="utf-8") as fp:
+        fp.write(json.dumps(payload, ensure_ascii=True) + "\n")
+
+
+def build_persistence_status_message(
+    *,
+    sample_id: str,
+    action_result: str,
+    action_type: str,
+    completed_csv_path: str,
+    jsonl_path: str,
+    jsonl_status: str,
+    sample_index: int,
+) -> str:
+    """Build compact user-visible persistence status text."""
+    return (
+        f"{action_type}: sample_id={sample_id} ({action_result})"
+        f" | csv={completed_csv_path}"
+        f" | jsonl={jsonl_path} [{jsonl_status}]"
+        f" | sample_index={sample_index}"
+    )
 
 
 def sanitize_output_columns(df: pd.DataFrame) -> pd.DataFrame:

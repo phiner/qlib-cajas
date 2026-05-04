@@ -2104,11 +2104,16 @@ GUI workflow:
 4. Click Save or Save and Next
    - Save updates current sample row by `sample_id`
    - Save and Next saves first, then advances to the next sample
+   - Action status shows sample id, CSV path, JSONL path, insert/update result, and current sample index
    - Reset Form resets the current visible form only (does not delete saved CSV rows)
 5. Later run batch merge workflow to integrate completed reviews
 
 GUI policy:
 - CSV/JSONL remain durable storage and interchange formats
+- CSV represents latest editable completed review state
+- JSONL captures append-only save action history for audit/interchange
+- CSV save remains authoritative; JSONL append failures are shown explicitly in GUI status
+- SQLite persistence is intentionally deferred
 - GUI is the primary human review interface
 - No live market data, broker integration, order execution, or model training
 - No labels are invented by automation

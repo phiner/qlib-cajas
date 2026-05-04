@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from cajas.research.eurusd_pattern_review_gui import (
+    REVIEW_FIELDS,
     load_clean_view,
     load_review_batch,
     merge_completed_labels,
@@ -18,6 +19,8 @@ from cajas.research.eurusd_pattern_review_gui import (
     default_review_values,
     build_review_update_row,
     save_or_update_completed_review,
+    append_review_event_jsonl,
+    build_persistence_status_message,
     save_completed_review,
     get_review_progress,
     sanitize_output_columns,
@@ -158,6 +161,12 @@ def test_save_completed_review(batch_fixture, temp_dir):
     assert output_path.exists()
     completed = pd.read_csv(output_path)
     assert completed.loc[completed["sample_id"] == "s1", "human_pattern_label"].iloc[0] == "valid_pattern"
+    row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
+    for field in REVIEW_FIELDS:
+        assert field in completed.columns
+    for field in ["sample_id", "timestamp", "candidate_type", "confidence_score", "review_updated_at_utc"]:
+        assert field in completed.columns
+    assert row["review_updated_at_utc"]
 
 
 def test_save_blocks_forbidden_columns(batch_fixture, temp_dir):
@@ -280,6 +289,118 @@ def test_save_or_update_completed_review_updates_without_duplicate(batch_fixture
     row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
     assert row["human_pattern_label"] == "valid_pattern"
     assert row["review_notes"] == "second"
+
+
+def test_save_or_update_returns_insert_then_update(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    output_path = temp_dir / "completed.csv"
+    first = save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id="s2",
+        review_values={"review_notes": "a"},
+        output_path=output_path,
+    )
+    second = save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id="s2",
+        review_values={"review_notes": "b"},
+        output_path=output_path,
+    )
+    assert first["action_result"] == "insert"
+    assert second["action_result"] == "update"
+
+
+def test_save_or_update_persists_identity_and_update_timestamp(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    output_path = temp_dir / "completed.csv"
+    save_or_update_completed_review(
+        batch_df=batch_df,
+        sample_id="s3",
+        review_values={"review_notes": "identity-check", "review_status": "reviewed"},
+        output_path=output_path,
+    )
+    completed = pd.read_csv(output_path)
+    row = completed.loc[completed["sample_id"] == "s3"].iloc[0]
+    assert row["candidate_type"] == "test"
+    assert float(row["confidence_score"]) == 0.9
+    assert row["review_updated_at_utc"]
+
+
+def test_append_review_event_jsonl_writes_required_fields(temp_dir):
+    jsonl_path = temp_dir / "events.jsonl"
+    completed_csv_path = temp_dir / "completed.csv"
+    review_values = {
+        "human_pattern_label": "weak_pattern",
+        "market_context": "range",
+        "direction_context": "sideways",
+        "structure_quality": 2,
+        "follow_through_quality": 2,
+        "review_confidence": 3,
+        "review_notes": "note",
+        "review_status": "reviewed",
+    }
+    append_review_event_jsonl(
+        jsonl_path=jsonl_path,
+        sample_id="s9",
+        review_values=review_values,
+        action_type="save",
+        completed_csv_path=completed_csv_path,
+        batch_path="tmp/eurusd/batch.csv",
+    )
+    lines = jsonl_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    record = json.loads(lines[0])
+    assert record["sample_id"] == "s9"
+    assert record["action_type"] == "save"
+    assert "event_timestamp_utc" in record
+    assert "schema_version" in record
+    assert record["completed_csv_path"] == str(completed_csv_path)
+    assert record["source_batch_path"] == "tmp/eurusd/batch.csv"
+    assert record["review"]["review_notes"] == "note"
+
+
+def test_append_review_event_jsonl_is_append_friendly(temp_dir):
+    jsonl_path = temp_dir / "events.jsonl"
+    completed_csv_path = temp_dir / "completed.csv"
+    append_review_event_jsonl(
+        jsonl_path=jsonl_path,
+        sample_id="s1",
+        review_values={"review_status": "pending"},
+        action_type="save",
+        completed_csv_path=completed_csv_path,
+        batch_path="tmp/eurusd/batch.csv",
+    )
+    append_review_event_jsonl(
+        jsonl_path=jsonl_path,
+        sample_id="s1",
+        review_values={"review_status": "reviewed"},
+        action_type="save_and_next",
+        completed_csv_path=completed_csv_path,
+        batch_path="tmp/eurusd/batch.csv",
+    )
+    lines = [line for line in jsonl_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 2
+    first = json.loads(lines[0])
+    second = json.loads(lines[1])
+    assert first["action_type"] == "save"
+    assert second["action_type"] == "save_and_next"
+
+
+def test_build_persistence_status_message_contains_expected_fields():
+    msg = build_persistence_status_message(
+        sample_id="s1",
+        action_result="update",
+        action_type="save_and_next",
+        completed_csv_path="tmp/eurusd/completed.csv",
+        jsonl_path="tmp/eurusd/events.jsonl",
+        jsonl_status="written",
+        sample_index=4,
+    )
+    assert "sample_id=s1" in msg
+    assert "save_and_next" in msg
+    assert "csv=tmp/eurusd/completed.csv" in msg
+    assert "jsonl=tmp/eurusd/events.jsonl [written]" in msg
+    assert "sample_index=4" in msg
 
 
 def test_build_chart_diagnostic_summary_contains_required_fields():
