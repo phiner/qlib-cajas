@@ -73,3 +73,4 @@ Do not introduce:
 - No trading signals, no order routing, no position sizing.
 - No model training enablement in this policy step.
 - CSV + JSONL durable storage remains unchanged.
+- Future LLM review must consume deterministic exported artifacts (not raw CSV inspection), with explicit forbidden outputs such as `trade_signal`, `entry`, `exit`, and `position_size`.
