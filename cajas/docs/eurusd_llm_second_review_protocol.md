@@ -98,3 +98,7 @@ Candidate gate to `ready_for_limited_trial` requires at minimum:
 - `ready_for_explicit_approval` means prerequisites are ready, but integration is still not approved.
 - Real provider/API integration may start only after explicit user approval.
 - Approval does not allow trading actions; human audit gate remains mandatory before any automation increase.
+- Explicit approval artifact for minimal trial boundary:
+  - `cajas/data_examples/eurusd_real_llm_integration_approval.template.json`
+- Default approval state is `not_approved`.
+- Future runner must fail closed unless approval artifact is `approved` and `live_api_calls_allowed=true`.

@@ -15,6 +15,7 @@ Language boundary policy:
 - Offline fixture drills are allowed for validator testing only and must be clearly marked non-production.
 - Human-governed `eurusd_15m_review_standard_v0` with Chinese example library is the semantic source of truth before any real LLM integration.
 - Real LLM integration may only start after readiness report is `ready_for_explicit_approval` and explicit user approval is granted.
+- Explicit approval must be recorded in a dedicated artifact (default `not_approved`) before any live API trial work.
 
 ## Expected data location
 

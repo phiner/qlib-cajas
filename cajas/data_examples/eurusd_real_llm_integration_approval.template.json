@@ -1,0 +1,17 @@
+{
+  "approval_status": "not_approved",
+  "approved_by": "",
+  "approved_at_utc": "",
+  "approved_scope": "eurusd_llm_second_review_trial",
+  "allowed_input_artifact": "tmp/eurusd/EURUSD_15m_llm_review_samples.jsonl",
+  "allowed_output_artifact": "tmp/eurusd/EURUSD_15m_llm_second_review_trial.jsonl",
+  "max_samples": 10,
+  "provider": "",
+  "model": "",
+  "live_api_calls_allowed": false,
+  "human_audit_required": true,
+  "overwrite_human_labels_allowed": false,
+  "trading_outputs_allowed": false,
+  "rollback_plan_required": true,
+  "notes": ""
+}

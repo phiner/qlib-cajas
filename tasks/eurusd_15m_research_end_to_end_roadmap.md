@@ -62,6 +62,7 @@ Non-negotiable constraints:
 - Fixture-based second-review drills are test/demo evidence only and do not count as real LLM production results.
 - Pipeline order: human standard v0 -> deterministic artifact export -> offline second-review protocol -> fixture drill -> explicit approval for real LLM integration -> human audit gate before automation increase.
 - Gate rule: real LLM integration may begin only when readiness report is `ready_for_explicit_approval` and the user explicitly approves the integration task.
+- Approval artifact rule: default state must remain `not_approved`; even limited trial approval does not permit automation escalation or any trading outputs.
 
 Local GUI run commands:
 
