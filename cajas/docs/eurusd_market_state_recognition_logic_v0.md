@@ -49,3 +49,10 @@ No Qlib core modification is required for this phase.
 - Added calibration report layer to quantify micro/structure concentration before GUI integration.
 - Added reason-code distributions for micro event, local structure, and confidence assignment to improve deterministic explainability.
 - Over-dominant catch-all classes trigger warnings and manual review priority lists; they do not create trade actions.
+
+
+## Rule Library Runtime
+
+- Added rule loader/validator/evaluator flow for 3-bar micro events.
+- Market-state report exposes `micro_pattern_rule_version`, `micro_pattern_rules_loaded`, and `micro_pattern_rule_count`.
+- If rule file is missing/invalid, runtime uses deterministic fallback `micro_noise` rule to avoid nondeterministic behavior.

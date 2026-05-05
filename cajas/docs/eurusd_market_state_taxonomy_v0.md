@@ -61,3 +61,10 @@ Enum examples:
 - Add `validation-eurusd-market-state-calibration` report before GUI wiring.
 - Catch-all warnings (`dominant_*`, `catch_all_micro_event_high`, `unknown_local_structure_high`, `low_confidence_dominant`) are review signals, not trading signals and not automatic blockers by default.
 - Calibration report remains research-only and keeps real LLM trial status at `not_approved`.
+
+
+## External 3-Bar Rule Library (Task 081 externalize)
+
+- 3-bar micro recognition now reads versioned external rules from `cajas/data_examples/eurusd_micro_pattern_rules_v0.json`.
+- Rules are evaluated by priority and are deterministic/auditable; `micro_noise` remains lowest-priority catch-all.
+- These pattern events are research context labels, not trading signals.

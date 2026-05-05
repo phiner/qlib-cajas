@@ -1,0 +1,233 @@
+{
+  "rule_version": "eurusd_micro_pattern_rules_v0",
+  "timeframe": "15m",
+  "window_bars": 3,
+  "runtime_language": "en",
+  "semantic_language": "zh",
+  "rules": [
+    {
+      "pattern_id": "lower_sweep_reclaim_v0",
+      "event": "lower_sweep_reclaim",
+      "direction": "up",
+      "strength": "medium",
+      "priority": 110,
+      "enabled": true,
+      "description_zh": "三根K线内下破前低后收回到前区间，表示下探收回。",
+      "conditions": {
+        "breaks_prior_low": true,
+        "close_returns_inside_prior_range": true,
+        "lower_wick_ratio_min": 0.35,
+        "latest_body_direction": "bull"
+      },
+      "flags": {
+        "micro_reversal_detected_3": true,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": true
+      },
+      "rationale_template_zh": "出现下破后收回，超短期存在下方拒绝与回收。"
+    },
+    {
+      "pattern_id": "upper_sweep_reject_v0",
+      "event": "upper_sweep_reject",
+      "direction": "down",
+      "strength": "medium",
+      "priority": 109,
+      "enabled": true,
+      "description_zh": "三根K线内上破前高后回落到前区间，表示上方拒绝。",
+      "conditions": {
+        "breaks_prior_high": true,
+        "close_returns_inside_prior_range": true,
+        "upper_wick_ratio_min": 0.35,
+        "latest_body_direction": "bear"
+      },
+      "flags": {
+        "micro_reversal_detected_3": true,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": true
+      },
+      "rationale_template_zh": "出现上破后回落，超短期存在上方拒绝。"
+    },
+    {
+      "pattern_id": "three_bar_reversal_up_v0",
+      "event": "three_bar_reversal_up",
+      "direction": "up",
+      "strength": "strong",
+      "priority": 105,
+      "enabled": true,
+      "description_zh": "前两根偏弱后当前阳线突破前高，形成三K向上反转。",
+      "conditions": {
+        "direction_change": "down_to_up",
+        "latest_body_direction": "bull",
+        "body_ratio_min": 0.45,
+        "breaks_prior_high": true
+      },
+      "flags": {
+        "micro_reversal_detected_3": true,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "短线方向由下转上并突破前高。"
+    },
+    {
+      "pattern_id": "three_bar_reversal_down_v0",
+      "event": "three_bar_reversal_down",
+      "direction": "down",
+      "strength": "strong",
+      "priority": 104,
+      "enabled": true,
+      "description_zh": "前两根偏强后当前阴线跌破前低，形成三K向下反转。",
+      "conditions": {
+        "direction_change": "up_to_down",
+        "latest_body_direction": "bear",
+        "body_ratio_min": 0.45,
+        "breaks_prior_low": true
+      },
+      "flags": {
+        "micro_reversal_detected_3": true,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "短线方向由上转下并跌破前低。"
+    },
+    {
+      "pattern_id": "three_bar_exhaustion_up_v0",
+      "event": "three_bar_exhaustion_up",
+      "direction": "down",
+      "strength": "medium",
+      "priority": 90,
+      "enabled": true,
+      "description_zh": "连续上推后出现上影且实体收缩，显示上行衰竭。",
+      "conditions": {
+        "consecutive_direction": "up",
+        "latest_body_direction": "bear",
+        "upper_wick_ratio_min": 0.35,
+        "body_ratio_max": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "上推后出现衰竭形态，短线回落风险增加。"
+    },
+    {
+      "pattern_id": "three_bar_exhaustion_down_v0",
+      "event": "three_bar_exhaustion_down",
+      "direction": "up",
+      "strength": "medium",
+      "priority": 89,
+      "enabled": true,
+      "description_zh": "连续下压后出现下影且实体收缩，显示下行衰竭。",
+      "conditions": {
+        "consecutive_direction": "down",
+        "latest_body_direction": "bull",
+        "lower_wick_ratio_min": 0.35,
+        "body_ratio_max": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "下压后出现衰竭形态，短线反抽概率提升。"
+    },
+    {
+      "pattern_id": "failed_followthrough_up_v0",
+      "event": "failed_followthrough_up",
+      "direction": "down",
+      "strength": "medium",
+      "priority": 80,
+      "enabled": true,
+      "description_zh": "尝试上破但收盘未延续，属于上破失败。",
+      "conditions": {
+        "breaks_prior_high": true,
+        "latest_body_direction": "bear",
+        "latest_close_position_max": 0.55
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "上破后缺乏跟随，短线回落压力增加。"
+    },
+    {
+      "pattern_id": "failed_followthrough_down_v0",
+      "event": "failed_followthrough_down",
+      "direction": "up",
+      "strength": "medium",
+      "priority": 79,
+      "enabled": true,
+      "description_zh": "尝试下破但收盘未延续，属于下破失败。",
+      "conditions": {
+        "breaks_prior_low": true,
+        "latest_body_direction": "bull",
+        "latest_close_position_min": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "下破后缺乏跟随，短线反抽概率增加。"
+    },
+    {
+      "pattern_id": "micro_pause_v0",
+      "event": "micro_pause",
+      "direction": "neutral",
+      "strength": "weak",
+      "priority": 20,
+      "enabled": true,
+      "description_zh": "实体很小且变化有限，属于短线暂停。",
+      "conditions": {
+        "body_ratio_max": 0.25,
+        "three_bar_return_abs_max": 0.0006
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "波动收敛且实体偏小，短线节奏暂停。"
+    },
+    {
+      "pattern_id": "micro_compression_v0",
+      "event": "micro_compression",
+      "direction": "neutral",
+      "strength": "weak",
+      "priority": 15,
+      "enabled": true,
+      "description_zh": "三K区间明显压缩并处于区间内部。",
+      "conditions": {
+        "volatility_state_3": "compressed",
+        "close_returns_inside_prior_range": true,
+        "range_ratio_3_8_max": 0.45,
+        "three_bar_return_abs_max": 0.0005,
+        "body_ratio_max": 0.2,
+        "max_wick_ratio_max": 0.4
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "区间压缩且缺乏方向延续，属于微压缩状态。"
+    },
+    {
+      "pattern_id": "micro_noise_v0",
+      "event": "micro_noise",
+      "direction": "mixed",
+      "strength": "weak",
+      "priority": 1,
+      "enabled": true,
+      "description_zh": "当高优先级规则均不满足时归类为微噪音。",
+      "conditions": {},
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "未命中明确三K事件，归类为微噪音。"
+    }
+  ]
+}

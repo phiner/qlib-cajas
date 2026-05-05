@@ -259,6 +259,7 @@ def test_dataset_has_required_micro_and_no_trading_fields() -> None:
         "short_term_state_8",
         "mid_term_state_24",
         "long_term_state_128",
+        "micro_pattern_rule_version",
     ]:
         assert col in ds.columns
     for col in ["trade_signal", "entry", "exit", "order", "position_size"]:

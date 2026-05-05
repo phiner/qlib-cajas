@@ -924,3 +924,10 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 - Build and review `validation-eurusd-market-state-calibration` after market-state dataset generation.
 - If catch-all concentration warnings are high, refine deterministic thresholds first, then proceed to GUI wiring.
 - This gate is still research-only and keeps real LLM trial approval as `not_approved`.
+
+
+## Externalize-before-calibrate step
+
+- Before distribution calibration, externalize and validate 3-bar micro pattern rules via `validation-eurusd-micro-pattern-rules`.
+- Keep 8/24/128 structure logic quantitative and unchanged in boundary semantics.
+- Real LLM trial approval remains `not_approved`.

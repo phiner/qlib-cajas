@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -18,6 +19,30 @@ EXPECTED_BAR_HOURS = 0.25
 GAP_HOURS_THRESHOLD = 1.0
 
 REQUIRED_COLUMNS = ["timestamp", "open", "high", "low", "close"]
+MICRO_RULES_JSON_PATH = Path("cajas/data_examples/eurusd_micro_pattern_rules_v0.json")
+MICRO_RULE_VERSION_FALLBACK = "eurusd_micro_pattern_rules_builtin_fallback_v0"
+ALLOWED_RULE_CONDITION_KEYS = {
+    "breaks_prior_low",
+    "breaks_prior_high",
+    "close_returns_inside_prior_range",
+    "latest_close_position_min",
+    "latest_close_position_max",
+    "lower_wick_ratio_min",
+    "upper_wick_ratio_min",
+    "body_ratio_min",
+    "body_ratio_max",
+    "three_bar_return_min",
+    "three_bar_return_max",
+    "three_bar_return_abs_max",
+    "range_width_max",
+    "range_width_min",
+    "range_ratio_3_8_max",
+    "consecutive_direction",
+    "direction_change",
+    "latest_body_direction",
+    "volatility_state_3",
+    "max_wick_ratio_max",
+}
 
 
 MICRO_EVENT_VALUES = {
@@ -34,6 +59,96 @@ MICRO_EVENT_VALUES = {
     "micro_noise",
     "unknown",
 }
+
+
+def _builtin_micro_rules() -> dict[str, Any]:
+    return {
+        "rule_version": MICRO_RULE_VERSION_FALLBACK,
+        "rules": [
+            {
+                "pattern_id": "micro_noise_fallback",
+                "event": "micro_noise",
+                "direction": "mixed",
+                "strength": "weak",
+                "priority": 1,
+                "enabled": True,
+                "description_zh": "回退规则：未命中其他规则时归类为微噪音",
+                "conditions": {},
+                "flags": {
+                    "micro_reversal_detected_3": False,
+                    "micro_rejection_detected_3": False,
+                    "micro_sweep_detected_3": False,
+                },
+                "rationale_template_zh": "回退规则触发：未命中明确三K形态。",
+            }
+        ],
+    }
+
+
+def load_micro_pattern_rules(path: Path | None = None) -> dict[str, Any]:
+    use_path = path or MICRO_RULES_JSON_PATH
+    if not use_path.exists():
+        return _builtin_micro_rules()
+    try:
+        payload = json.loads(use_path.read_text(encoding="utf-8"))
+    except Exception:
+        return _builtin_micro_rules()
+    errors = validate_micro_pattern_rules(payload)
+    if errors:
+        return _builtin_micro_rules()
+    return payload
+
+
+def validate_micro_pattern_rules(rules: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    rule_items = rules.get("rules")
+    if not isinstance(rule_items, list) or not rule_items:
+        return ["rules_missing_or_empty"]
+    priorities = []
+    for idx, rule in enumerate(rule_items):
+        if not isinstance(rule, dict):
+            errors.append(f"rule_{idx}_not_object")
+            continue
+        for k in ["pattern_id", "event", "direction", "strength", "priority", "enabled", "conditions", "flags"]:
+            if k not in rule:
+                errors.append(f"rule_{idx}_missing_{k}")
+        cond = rule.get("conditions", {})
+        if not isinstance(cond, dict):
+            errors.append(f"rule_{idx}_conditions_not_object")
+        else:
+            bad_keys = [k for k in cond.keys() if k not in ALLOWED_RULE_CONDITION_KEYS]
+            if bad_keys:
+                errors.append(f"rule_{idx}_invalid_condition_keys:{','.join(sorted(bad_keys))}")
+        priorities.append(rule.get("priority"))
+    if len(set(priorities)) != len(priorities):
+        errors.append("priority_not_unique")
+    return errors
+
+
+def evaluate_micro_pattern_rule(window_metrics: dict[str, Any], rule: dict[str, Any]) -> bool:
+    cond = rule.get("conditions", {})
+    if not isinstance(cond, dict):
+        return False
+    for key, expected in cond.items():
+        v = window_metrics.get(key)
+        if key in {"breaks_prior_low", "breaks_prior_high", "close_returns_inside_prior_range"}:
+            if bool(v) != bool(expected):
+                return False
+        elif key.endswith("_min"):
+            if pd.isna(v) or float(v) < float(expected):
+                return False
+        elif key.endswith("_max"):
+            if pd.isna(v) or float(v) > float(expected):
+                return False
+        elif key in {"consecutive_direction", "direction_change", "latest_body_direction", "volatility_state_3"}:
+            if str(v) != str(expected):
+                return False
+        elif key == "three_bar_return_abs_max":
+            if pd.isna(v) or abs(float(v)) > float(expected):
+                return False
+        else:
+            return False
+    return True
 
 
 def _ensure_columns(df: pd.DataFrame) -> None:
@@ -185,10 +300,13 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
             "micro_pattern_event_3": "unknown",
             "micro_pattern_direction_3": "unknown",
             "micro_pattern_strength_3": "unknown",
+            "micro_event_reason_code": "micro_rule_window_insufficient",
             "micro_reversal_detected_3": False,
             "micro_rejection_detected_3": False,
             "micro_sweep_detected_3": False,
             "micro_event_rationale_zh": "样本不足，无法判定3K微事件",
+            "micro_pattern_rule_version": MICRO_RULE_VERSION_FALLBACK,
+            "micro_pattern_rule_id": "none",
         }
 
     up_seq = prev2_close < prev_close < close
@@ -214,108 +332,61 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
         and up_w > 0.35
     )
 
-    failed_follow_up = high > prev_high and close <= prev_close and current_bear
-    failed_follow_down = low < prev_low and close >= prev_close and current_bull
+    metrics = {
+        "breaks_prior_low": bool(low < min(prev2_low, prev_low)) if not pd.isna(prev2_low) and not pd.isna(prev_low) else False,
+        "breaks_prior_high": bool(high > max(prev2_high, prev_high)) if not pd.isna(prev2_high) and not pd.isna(prev_high) else False,
+        "close_returns_inside_prior_range": bool(returns_in),
+        "latest_close_position_min": float(r.get("latest_close_position_in_candle", np.nan)),
+        "latest_close_position_max": float(r.get("latest_close_position_in_candle", np.nan)),
+        "lower_wick_ratio_min": low_w,
+        "upper_wick_ratio_min": up_w,
+        "body_ratio_min": bw,
+        "body_ratio_max": bw,
+        "three_bar_return_min": float(r.get("return_3", np.nan)),
+        "three_bar_return_max": float(r.get("return_3", np.nan)),
+        "three_bar_return_abs_max": abs(float(r.get("return_3", np.nan))) if pd.notna(r.get("return_3", np.nan)) else np.nan,
+        "range_width_max": float(r.get("range_width_3", np.nan)),
+        "range_width_min": float(r.get("range_width_3", np.nan)),
+        "range_ratio_3_8_max": float(r.get("range_ratio_3_8", np.nan)),
+        "consecutive_direction": "up" if up_seq else ("down" if down_seq else "mixed"),
+        "direction_change": "down_to_up" if reversal_up else ("up_to_down" if reversal_down else "none"),
+        "latest_body_direction": "bull" if current_bull else ("bear" if current_bear else "flat"),
+        "volatility_state_3": str(r.get("volatility_state_3", "unknown")),
+        "max_wick_ratio_max": max(up_w, low_w),
+    }
 
-    event = "micro_noise"
-    direction = "mixed"
-    strength = "weak"
-    reason_code = "micro_conflicting_sequence"
-    reversal = False
-    rejection = False
-    sweep = False
-    rationale = "3K形态冲突，归类为微噪音"
-
-    if reversal_up:
-        event = "three_bar_reversal_up"
-        direction = "up"
-        strength = "strong"
-        reason_code = "micro_three_bar_reversal_up"
-        reversal = True
-        rationale = "前两根下压后当前阳线突破前高，构成3K向上反转"
-    elif reversal_down:
-        event = "three_bar_reversal_down"
-        direction = "down"
-        strength = "strong"
-        reason_code = "micro_three_bar_reversal_down"
-        reversal = True
-        rationale = "前两根上推后当前阴线跌破前低，构成3K向下反转"
-    elif lower_sweep_reclaim:
-        event = "lower_sweep_reclaim"
-        direction = "up"
-        strength = "medium" if low_w > 0.45 else "weak"
-        reason_code = "micro_lower_sweep_reclaim"
-        rejection = True
-        sweep = True
-        rationale = "下扫前低后收回区间内，表现为下影回收"
-    elif upper_sweep_reject:
-        event = "upper_sweep_reject"
-        direction = "down"
-        strength = "medium" if up_w > 0.45 else "weak"
-        reason_code = "micro_upper_sweep_reject"
-        rejection = True
-        sweep = True
-        rationale = "上扫前高后收回区间内，表现为上影拒绝"
-    elif up_seq and current_bear and up_w > 0.35 and bw < 0.45:
-        event = "three_bar_exhaustion_up"
-        direction = "down"
-        strength = "medium"
-        reason_code = "micro_three_bar_exhaustion_up"
-        rejection = True
-        rationale = "连续上推后实体减弱并出现上影，出现上行动能衰竭"
-    elif down_seq and current_bull and low_w > 0.35 and bw < 0.45:
-        event = "three_bar_exhaustion_down"
-        direction = "up"
-        strength = "medium"
-        reason_code = "micro_three_bar_exhaustion_down"
-        rejection = True
-        rationale = "连续下压后实体减弱并出现下影，出现下行动能衰竭"
-    elif failed_follow_up:
-        event = "failed_followthrough_up"
-        direction = "down"
-        strength = "medium"
-        reason_code = "micro_failed_followthrough_up"
-        rejection = True
-        rationale = "尝试上破但收盘未跟随，形成上破失败"
-    elif failed_follow_down:
-        event = "failed_followthrough_down"
-        direction = "up"
-        strength = "medium"
-        reason_code = "micro_failed_followthrough_down"
-        rejection = True
-        rationale = "尝试下破但收盘未跟随，形成下破失败"
-    elif abs(close - prev_close) <= max(1e-8, 0.15 * (high - low)) and bw <= 0.25:
-        event = "micro_pause"
-        direction = "neutral"
-        strength = "weak"
-        reason_code = "micro_small_body_pause"
-        rationale = "实体很小且收盘变化有限，属于微暂停"
-    elif (
-        bool(r.get("volatility_state_3", "unknown") == "compressed")
-        and returns_in
-        and float(r.get("range_ratio_3_8", np.nan)) <= 0.45
-        and abs(float(r.get("return_3", np.nan) or 0.0)) <= 0.0005
-        and bw <= 0.2
-        and max(up_w, low_w) <= 0.4
-    ):
-        event = "micro_compression"
-        direction = "neutral"
-        strength = "weak"
-        reason_code = "micro_small_range_compression"
-        rationale = "3K区间压缩且收回原区间，属于微压缩"
-
-    if event not in MICRO_EVENT_VALUES:
-        event = "unknown"
+    payload = load_micro_pattern_rules()
+    rules = sorted([x for x in payload.get("rules", []) if bool(x.get("enabled", False))], key=lambda x: int(x.get("priority", 0)), reverse=True)
+    for rule in rules:
+        if evaluate_micro_pattern_rule(metrics, rule):
+            event = str(rule.get("event", "unknown"))
+            if event not in MICRO_EVENT_VALUES:
+                event = "unknown"
+            flags = rule.get("flags", {})
+            return {
+                "micro_pattern_event_3": event,
+                "micro_pattern_direction_3": str(rule.get("direction", "unknown")),
+                "micro_pattern_strength_3": str(rule.get("strength", "unknown")),
+                "micro_event_reason_code": str(rule.get("pattern_id", "unknown_rule")),
+                "micro_reversal_detected_3": bool(flags.get("micro_reversal_detected_3", False)),
+                "micro_rejection_detected_3": bool(flags.get("micro_rejection_detected_3", False)),
+                "micro_sweep_detected_3": bool(flags.get("micro_sweep_detected_3", False)),
+                "micro_event_rationale_zh": str(rule.get("rationale_template_zh", "规则命中")),
+                "micro_pattern_rule_version": str(payload.get("rule_version", MICRO_RULE_VERSION_FALLBACK)),
+                "micro_pattern_rule_id": str(rule.get("pattern_id", "unknown_rule")),
+            }
 
     return {
-        "micro_pattern_event_3": event,
-        "micro_pattern_direction_3": direction,
-        "micro_pattern_strength_3": strength,
-        "micro_event_reason_code": reason_code,
-        "micro_reversal_detected_3": reversal,
-        "micro_rejection_detected_3": rejection,
-        "micro_sweep_detected_3": sweep,
-        "micro_event_rationale_zh": rationale,
+        "micro_pattern_event_3": "micro_noise",
+        "micro_pattern_direction_3": "mixed",
+        "micro_pattern_strength_3": "weak",
+        "micro_event_reason_code": "micro_noise_fallback",
+        "micro_reversal_detected_3": False,
+        "micro_rejection_detected_3": False,
+        "micro_sweep_detected_3": False,
+        "micro_event_rationale_zh": "未命中规则，归类为微噪音。",
+        "micro_pattern_rule_version": str(payload.get("rule_version", MICRO_RULE_VERSION_FALLBACK)),
+        "micro_pattern_rule_id": "micro_noise_fallback",
     }
 
 
@@ -576,9 +647,14 @@ def summarize_market_state_dataset(df: pd.DataFrame) -> dict[str, Any]:
     unknown_count = int((df[required_states].astype(str) == "unknown").sum().sum())
     gap_caveat_count = int(((df.get("gap_count_128", pd.Series([0] * len(df))) > 0).fillna(False)).sum())
 
+    loaded_rules = load_micro_pattern_rules()
+    rule_version_series = df.get("micro_pattern_rule_version", pd.Series([MICRO_RULE_VERSION_FALLBACK] * len(df))).fillna(MICRO_RULE_VERSION_FALLBACK).astype(str)
+    rule_version_value = str(rule_version_series.value_counts().index[0]) if len(rule_version_series) > 0 else MICRO_RULE_VERSION_FALLBACK
     return {
         "status": "ready",
         **dist,
+        "micro_pattern_rule_version": rule_version_value,
+        "micro_pattern_rule_count": int(len(loaded_rules.get("rules", []))),
         "confidence_distribution": conf,
         "micro_reversal_count": int(df.get("micro_reversal_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
         "micro_rejection_count": int(df.get("micro_rejection_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
