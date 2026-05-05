@@ -74,6 +74,11 @@ Non-negotiable constraints:
   - run smoke-session and human-review-quality reports after each session
   - keep real LLM integration unapproved and trial approval at `not_approved`
   - use review-quality feedback report to prioritize the next manual batch focus
+- Market-state direction update:
+  - objective is shifting from pattern-only review toward EURUSD 15m market-state understanding
+  - Qlib remains the offline data/model/evaluation substrate
+  - market-state taxonomy semantics, human rationale, and LLM handoff remain in `cajas/` layer, not Qlib core
+  - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:
 
