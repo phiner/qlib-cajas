@@ -16,6 +16,10 @@ Current focus:
 - Consolidated read-only progress validation (`./scripts/validate_eurusd_review_progress.sh`)
 - GUI chart visibility hardening with explicit no-data warnings, always-visible compact diagnostics, expandable detailed debug info, and NaN-to-empty review note sanitization (blank notes mean optional/unset)
 - Streamlit chart width deprecation addressed via `width="stretch"` with backward-compatible fallback
+- Candidate selection standards report and trend-tail bias audit:
+  - `tmp/validation-eurusd-candidate-selection-standards.json`
+  - `tmp/validation-eurusd-candidate-selection-standards.md`
+  - trend rows include `why_selected_summary`, preferred-review flags, and tail-risk diagnostics
 
 Current scope is research-only and is **not** a trading system.
 

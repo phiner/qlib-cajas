@@ -269,3 +269,47 @@ def test_batch_builder_full_batch_prefers_strict_no_overlap_fallback(temp_dir, l
     )
     assert report["batch_row_count"] == 100
     assert report["overlap_summary"]["fallback_window_overlap_count"] == 0
+
+
+def test_batch_builder_parses_string_booleans_and_avoids_nonpreferred_high_tail(temp_dir, label_schema):
+    df = pd.DataFrame(
+        [
+            {
+                "sample_id": "trend_good",
+                "timestamp": "2020-01-01T00:00:00+00:00",
+                "candidate_type": "short_trend_down_candidate",
+                "confidence_score": 0.9,
+                "review_priority": "high",
+                "preferred_review_candidate": "True",
+                "tail_risk_level": "low",
+                "excluded_late_reversal_anchor": "False",
+            },
+            {
+                "sample_id": "trend_bad",
+                "timestamp": "2020-01-01T00:15:00+00:00",
+                "candidate_type": "short_trend_down_candidate",
+                "confidence_score": 0.95,
+                "review_priority": "high",
+                "preferred_review_candidate": "False",
+                "tail_risk_level": "high",
+                "excluded_late_reversal_anchor": "False",
+            },
+        ]
+    )
+    template_csv = temp_dir / "trend_template.csv"
+    df.to_csv(template_csv, index=False)
+    out_csv = temp_dir / "batch.csv"
+    out_jsonl = temp_dir / "batch.jsonl"
+    report = build_review_batch_report(
+        template_csv=template_csv,
+        label_schema_json=label_schema,
+        batch_id="trend_filter",
+        batch_size=1,
+        per_type_target=1,
+        output_batch_csv=out_csv,
+        output_batch_jsonl=out_jsonl,
+    )
+    batch = pd.read_csv(out_csv)
+    assert report["status"] in {"ready", "watch"}
+    assert "trend_good" in batch["sample_id"].astype(str).tolist()
+    assert "trend_bad" not in batch["sample_id"].astype(str).tolist()

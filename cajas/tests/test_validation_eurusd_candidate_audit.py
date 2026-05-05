@@ -129,6 +129,30 @@ def test_audit_status_gate_payload_when_selected_rows_are_complete(tmp_path: Pat
     assert payload["status"] in {"pass", "watch", "needs_rule_refinement"}
     assert "audit_gates" in payload
     assert "batch_quality_metrics" in payload
+    assert "trend_tail_bias_audit" in payload
+
+
+def test_trend_tail_bias_summary_present(tmp_path: Path) -> None:
+    clean = _mini_clean(tmp_path / "clean_tail.csv")
+    cand = detect_eurusd_pattern_candidates(pd.read_csv(clean), min_confidence=0.5)
+    if cand.empty:
+        return
+    cand_path = tmp_path / "cand_tail.csv"
+    batch_path = tmp_path / "batch_tail.csv"
+    cand.to_csv(cand_path, index=False)
+    cand.head(50).to_csv(tmp_path / "template_tail.csv", index=False)
+    cand.head(20).to_csv(batch_path, index=False)
+    payload = build_validation_eurusd_candidate_audit(
+        candidate_csv=cand_path,
+        template_csv=tmp_path / "template_tail.csv",
+        batch_csv=batch_path,
+        clean_view_csv=clean,
+        rejected_csv=tmp_path / "rej_tail.csv",
+    )
+    summary = payload.get("trend_tail_bias_audit", {})
+    assert "trend_batch_count" in summary
+    assert "trend_near_tail_ratio" in summary
+    assert "tail_bias_status" in summary
 
 
 def test_audit_status_needs_rule_refinement_on_selected_reason_gap(tmp_path: Path) -> None:

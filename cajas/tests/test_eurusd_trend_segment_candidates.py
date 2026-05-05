@@ -49,7 +49,7 @@ def test_representative_anchor_is_mid_not_last() -> None:
     out = detect_eurusd_pattern_candidates(_trend_fixture(), min_confidence=0.5)
     downs = out[out["candidate_type"] == "short_trend_down_candidate"].copy()
     assert not downs.empty
-    assert (downs["segment_position_fraction"] <= 0.75).all()
+    assert (downs["segment_position_fraction"] <= 0.65).all()
     assert (downs["segment_position_fraction"] >= 0.3).any()
 
 

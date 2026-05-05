@@ -65,6 +65,22 @@ The review workflow consists of:
 6. **Review guide**: Human-friendly instructions for filling review fields
 7. **Batch completion**: Tracks progress of completed batch reviews
 
+### Candidate selection standards and tail-bias controls
+
+- Trend segment candidates are representative structure anchors, not entry points.
+- Trend preferred review defaults are strict:
+  - `preferred_max_segment_position_fraction=0.60`
+  - `watch_max_segment_position_fraction=0.65`
+  - `avoid_last_n_bars=6`
+  - `target_fraction=0.40`
+- `preferred_review_candidate=false` or `tail_risk_level=high` trend rows should not enter batch unless explicit fallback reason is present.
+- Batch/audit rows include:
+  - `why_selected_summary`
+  - `tail_risk_level`
+  - `tail_risk_reason_codes`
+  - `near_segment_tail|near_segment_head|near_segment_mid`
+  - `post_anchor_reversal_strength|post_anchor_followthrough_strength`
+
 ### First review batch workflow
 
 The first review batch (`eurusd_15m_pattern_review_batch_001`) contains 100 samples selected from the 500-row template:

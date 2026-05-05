@@ -41,6 +41,9 @@ This project is not:
 Candidate-audit progression rule:
 - do not advance large-scale review while candidate audit is `needs_rule_refinement` or `blocked`
 - continue when audit is at least `watch` with documented non-blocking warnings
+- enforce trend tail-bias watch:
+  - `tail_bias_status` should remain `pass` or `watch`
+  - selected trend rows with `tail_risk_level=high` require explicit fallback reason
 
 Non-negotiable constraints:
 

@@ -12,9 +12,11 @@ HORIZONS = [3, 5, 8, 13, 21, 34, 55]
 
 TREND_SEGMENT_DEFAULTS = {
     "max_candidates_per_segment": 1,
-    "target_fraction": 0.5,
-    "avoid_last_n_bars": 4,
-    "max_segment_position_fraction": 0.75,
+    "target_fraction": 0.4,
+    "avoid_last_n_bars": 6,
+    "preferred_max_segment_position_fraction": 0.60,
+    "watch_max_segment_position_fraction": 0.65,
+    "max_segment_position_fraction": 0.65,
     "rebound_lookahead_bars": 4,
     "rebound_threshold_atr_multiple": 0.5,
     "exclude_late_rebound_anchor": True,
@@ -163,6 +165,8 @@ def _emit_trend_segment_candidates(
         seg_frac = float(seg_pos / (seg_len - 1)) if seg_len > 1 else 0.0
         is_late_tail = seg_pos >= max(0, seg_len - int(cfg["avoid_last_n_bars"]))
         late_segment_anchor = bool(seg_frac > float(cfg["max_segment_position_fraction"]) or is_late_tail)
+        preferred_frac_limit = float(cfg.get("preferred_max_segment_position_fraction", 0.60))
+        watch_frac_limit = float(cfg.get("watch_max_segment_position_fraction", 0.65))
 
         close_anchor = float(row["close"])
         atr8 = float(row.get("atr_like_range_mean_8", 0.0) or 0.0)
@@ -193,12 +197,27 @@ def _emit_trend_segment_candidates(
         preferred_review_candidate = not excluded_late_reversal_anchor
         if not bool(cfg["exclude_late_rebound_anchor"]):
             preferred_review_candidate = True
+        distance_to_end = int(max(0, end - anchor_idx))
+        distance_to_start = int(max(0, anchor_idx - start))
+        near_tail = bool(seg_frac >= watch_frac_limit or distance_to_end <= int(cfg["avoid_last_n_bars"]))
+        near_head = bool(seg_frac <= 0.20 or distance_to_start <= 2)
+        near_mid = bool(0.25 <= seg_frac <= 0.60)
+        ideal_mid = near_mid
+        if near_tail or rebound_after_anchor or weak_follow_through:
+            preferred_review_candidate = False
 
         candidate_reasons = list(base_reasons)
         selection_reasons = ["segment_representative", "segment_midpoint_anchor", "trend_continuation_context", "sufficient_pre_context"]
         exclusion_reasons: list[str] = []
+        tail_risk_reasons: list[str] = []
         if suppressed_count > 0:
             selection_reasons.append("same_segment_duplicate_suppressed")
+        if seg_frac > preferred_frac_limit:
+            tail_risk_reasons.append("segment_fraction_above_preferred")
+        if seg_frac > watch_frac_limit:
+            tail_risk_reasons.append("segment_fraction_above_watch")
+        if distance_to_end <= int(cfg["avoid_last_n_bars"]):
+            tail_risk_reasons.append("near_segment_end")
         if late_segment_anchor:
             exclusion_reasons.append("late_segment_anchor")
         if near_segment_low:
@@ -211,6 +230,13 @@ def _emit_trend_segment_candidates(
             exclusion_reasons.append("weak_follow_through_after_anchor")
         if excluded_late_reversal_anchor:
             exclusion_reasons.append("excluded_late_reversal_anchor")
+        if not ideal_mid:
+            exclusion_reasons.append("not_ideal_mid_segment_anchor")
+        tail_risk_level = "low"
+        if near_tail or rebound_after_anchor or weak_follow_through:
+            tail_risk_level = "high"
+        elif seg_frac > preferred_frac_limit or not ideal_mid:
+            tail_risk_level = "medium"
 
         all_reasons = list(dict.fromkeys(candidate_reasons + selection_reasons + exclusion_reasons))
         conf = _trend_conf(row, direction)
@@ -265,6 +291,12 @@ def _emit_trend_segment_candidates(
             "segment_low_index": int(segment_low_idx),
             "segment_high_index": int(segment_high_idx),
             "segment_position_fraction": round(float(seg_frac), 6),
+            "distance_to_segment_end_bars": distance_to_end,
+            "distance_to_segment_start_bars": distance_to_start,
+            "near_segment_tail": bool(near_tail),
+            "near_segment_head": bool(near_head),
+            "near_segment_mid": bool(near_mid),
+            "ideal_mid_segment_anchor": bool(ideal_mid),
             "segment_anchor_rank": 1,
             "segment_raw_trigger_count": int(raw_trigger_count),
             "segment_duplicate_suppressed_count": int(max(0, suppressed_count)),
@@ -274,6 +306,22 @@ def _emit_trend_segment_candidates(
             "weak_follow_through_after_anchor": bool(weak_follow_through),
             "excluded_late_reversal_anchor": bool(excluded_late_reversal_anchor),
             "preferred_review_candidate": bool(preferred_review_candidate),
+            "preferred_review_candidate_reason": "passes_preferred_tail_screen"
+            if preferred_review_candidate
+            else "excluded_by_tail_or_reversal_screen",
+            "tail_risk_level": tail_risk_level,
+            "tail_risk_reason_codes": "|".join(tail_risk_reasons),
+            "post_anchor_reversal_strength": round(float(rebound_move / max(rebound_threshold, 1e-9)), 6) if not fwd.empty else 0.0,
+            "post_anchor_followthrough_strength": round(float(continuation_move / max(rebound_threshold, 1e-9)), 6) if not fwd.empty else 0.0,
+            "tail_bias_score": round(
+                float(min(1.0, max(0.0, seg_frac * 0.6 + (1.0 if near_tail else 0.0) * 0.25 + (1.0 if rebound_after_anchor else 0.0) * 0.15))),
+                6,
+            ),
+            "why_selected_summary": (
+                f"segment representative at {seg_frac:.2f} of {segment_direction} segment; "
+                f"duplicate triggers suppressed={suppressed_count}; causal slope rule; "
+                f"late_filter={'triggered' if exclusion_reasons else 'not_triggered'}"
+            ),
         }
         item.update(CAUSAL_PAST_ONLY)
         item["review_filter_uses_future_bars"] = True
@@ -363,6 +411,19 @@ def detect_eurusd_pattern_candidates(
                 "weak_follow_through_after_anchor": False,
                 "excluded_late_reversal_anchor": False,
                 "preferred_review_candidate": True,
+                "preferred_review_candidate_reason": "non_trend_candidate_default",
+                "tail_risk_level": "low",
+                "tail_risk_reason_codes": "",
+                "distance_to_segment_end_bars": "",
+                "distance_to_segment_start_bars": "",
+                "near_segment_tail": False,
+                "near_segment_head": False,
+                "near_segment_mid": False,
+                "ideal_mid_segment_anchor": False,
+                "post_anchor_reversal_strength": 0.0,
+                "post_anchor_followthrough_strength": 0.0,
+                "tail_bias_score": 0.0,
+                "why_selected_summary": f"{candidate_type}: {primary_reason}; selected for type balance and full-range coverage",
             }
             item.update(CAUSAL_PAST_ONLY)
             _add_candidate(rows, item)

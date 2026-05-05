@@ -13,6 +13,13 @@ FORBIDDEN_TRADING_COLUMNS = [
 ]
 
 
+def _as_bool_series(s: pd.Series, default: bool = False) -> pd.Series:
+    if s.dtype == bool:
+        return s.fillna(default)
+    norm = s.fillna(str(default)).astype(str).str.strip().str.lower()
+    return norm.isin({"1", "true", "yes", "y", "t"})
+
+
 def diversify_review_samples(
     candidates: pd.DataFrame,
     *,
@@ -320,16 +327,23 @@ def build_review_batch_report(
         schema = json.load(f)
     
     df = pd.read_csv(template_csv)
+    if "fallback_reason" not in df.columns:
+        df["fallback_reason"] = ""
     # Enforce trend candidate quality gates at batch selection time.
     if "candidate_type" in df.columns:
         trend_mask = df["candidate_type"].astype(str).str.contains("trend", na=False)
         if "excluded_late_reversal_anchor" in df.columns:
-            excluded_mask = df["excluded_late_reversal_anchor"].fillna(False).astype(bool)
+            excluded_mask = _as_bool_series(df["excluded_late_reversal_anchor"], default=False)
             df = df[~(trend_mask & excluded_mask)].copy()
         if "preferred_review_candidate" in df.columns:
-            preferred_mask = df["preferred_review_candidate"].fillna(True).astype(bool)
+            preferred_mask = _as_bool_series(df["preferred_review_candidate"], default=True)
             fallback = df.get("fallback_reason", pd.Series([""] * len(df), index=df.index)).fillna("").astype(str).str.strip()
             df = df[~(trend_mask & (~preferred_mask) & (fallback == ""))].copy()
+            trend_mask = df["candidate_type"].astype(str).str.contains("trend", na=False)
+        if "tail_risk_level" in df.columns:
+            risk = df["tail_risk_level"].fillna("").astype(str).str.strip().str.lower()
+            fallback = df.get("fallback_reason", pd.Series([""] * len(df), index=df.index)).fillna("").astype(str).str.strip()
+            df = df[~(trend_mask & (risk == "high") & (fallback == ""))].copy()
     excluded_sample_ids = set(excluded_sample_ids or set())
     excluded_present_count = 0
     
@@ -363,6 +377,14 @@ def build_review_batch_report(
             rest = rest[~rest["sample_id"].astype(str).isin(selected_ids)]
         preselected = pd.concat([preselected, rest.head(missing)], ignore_index=True)
     preselected = preselected.head(batch_size)
+    if "fallback_reason" not in preselected.columns:
+        preselected["fallback_reason"] = ""
+    if "candidate_type" in preselected.columns and "preferred_review_candidate" in preselected.columns:
+        trend_mask = preselected["candidate_type"].astype(str).str.contains("trend", na=False)
+        pref = _as_bool_series(preselected["preferred_review_candidate"], default=True)
+        risk = preselected.get("tail_risk_level", pd.Series(["low"] * len(preselected), index=preselected.index)).fillna("low").astype(str).str.lower()
+        preselected.loc[trend_mask & (~pref), "fallback_reason"] = preselected.loc[trend_mask & (~pref), "fallback_reason"].fillna("").astype(str).replace("", "non_preferred_trend_fallback")
+        preselected.loc[trend_mask & (risk == "high"), "fallback_reason"] = preselected.loc[trend_mask & (risk == "high"), "fallback_reason"].fillna("").astype(str).replace("", "high_tail_risk_fallback")
     overlap_cfg = {
         "anchor_duplicate_gap_bars": 8,
         "same_region_cooldown_bars": 48,

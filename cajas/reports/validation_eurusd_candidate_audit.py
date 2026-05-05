@@ -78,6 +78,16 @@ def _bool_true_count(df: pd.DataFrame, col: str) -> int:
     return int(norm.isin({"1", "true", "yes", "y", "t"}).sum())
 
 
+def _to_bool_series(df: pd.DataFrame, col: str, default: bool) -> pd.Series:
+    if col not in df.columns:
+        return pd.Series([default] * len(df), index=df.index)
+    s = df[col]
+    if s.dtype == bool:
+        return s.fillna(default)
+    norm = s.fillna(str(default)).astype(str).str.strip().str.lower()
+    return norm.isin({"1", "true", "yes", "y", "t"})
+
+
 def build_validation_eurusd_candidate_audit(
     *,
     candidate_csv: Path,
@@ -255,6 +265,41 @@ def build_validation_eurusd_candidate_audit(
         pref = trend["preferred_review_candidate"].fillna(True).astype(bool)
         fallback = trend.get("fallback_reason", pd.Series([""] * len(trend))).fillna("").astype(str).str.strip()
         trend_nonpreferred_without_fallback = int((~pref & (fallback == "")).sum())
+    trend_tail_audit = {}
+    trend_batch = selected[selected.get("candidate_type", pd.Series([], dtype=str)).astype(str).str.contains("trend", na=False)].copy()
+    if trend_batch.empty:
+        trend_tail_audit = {
+            "trend_batch_count": 0,
+            "trend_near_tail_count": 0,
+            "trend_near_tail_ratio": 0.0,
+            "trend_ideal_mid_count": 0,
+            "trend_ideal_mid_ratio": 0.0,
+            "trend_post_reversal_count": 0,
+            "trend_post_reversal_ratio": 0.0,
+            "tail_bias_status": "watch",
+        }
+    else:
+        seg_frac = pd.to_numeric(trend_batch.get("segment_position_fraction", pd.Series([0.0] * len(trend_batch))), errors="coerce").fillna(0.0)
+        d_end = pd.to_numeric(trend_batch.get("distance_to_segment_end_bars", pd.Series([999] * len(trend_batch))), errors="coerce").fillna(999)
+        near_tail = _to_bool_series(trend_batch, "near_segment_tail", False) | (seg_frac >= 0.65) | (d_end <= 4)
+        ideal_mid = _to_bool_series(trend_batch, "ideal_mid_segment_anchor", False) | ((seg_frac >= 0.25) & (seg_frac <= 0.60))
+        post_rev = pd.to_numeric(trend_batch.get("post_anchor_reversal_strength", pd.Series([0.0] * len(trend_batch))), errors="coerce").fillna(0.0) >= 1.0
+        excluded = _to_bool_series(trend_batch, "excluded_late_reversal_anchor", False)
+        total = max(1, len(trend_batch))
+        near_tail_ratio = float(near_tail.sum() / total)
+        tail_status = "pass" if near_tail_ratio <= 0.10 else ("watch" if near_tail_ratio <= 0.25 else "needs_rule_refinement")
+        if bool(excluded.any()):
+            tail_status = "blocked"
+        trend_tail_audit = {
+            "trend_batch_count": int(len(trend_batch)),
+            "trend_near_tail_count": int(near_tail.sum()),
+            "trend_near_tail_ratio": round(near_tail_ratio, 6),
+            "trend_ideal_mid_count": int(ideal_mid.sum()),
+            "trend_ideal_mid_ratio": round(float(ideal_mid.sum() / total), 6),
+            "trend_post_reversal_count": int(post_rev.sum()),
+            "trend_post_reversal_ratio": round(float(post_rev.sum() / total), 6),
+            "tail_bias_status": tail_status,
+        }
 
     causality_summary = {
         "missing_causality_columns": missing_causality,
@@ -364,6 +409,8 @@ def build_validation_eurusd_candidate_audit(
 
     if missing_causality:
         status = "blocked"
+    elif trend_tail_audit.get("tail_bias_status") == "blocked":
+        status = "blocked"
     elif must_failures:
         status = "needs_rule_refinement"
     elif should_failures:
@@ -420,6 +467,7 @@ def build_validation_eurusd_candidate_audit(
             "must_fix_failures": must_failures,
             "should_fix_failures": should_failures,
         },
+        "trend_tail_bias_audit": trend_tail_audit,
         "active_batch_warnings": sorted(set(active_batch_warnings)),
         "next_actions": next_actions,
         "scope_boundary": {
