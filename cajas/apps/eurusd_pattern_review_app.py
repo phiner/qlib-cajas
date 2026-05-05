@@ -1,5 +1,6 @@
 """EURUSD 15m pattern review GUI app."""
 from pathlib import Path
+from datetime import datetime
 
 from cajas.research.eurusd_pattern_review_gui import (
     load_clean_view,
@@ -29,6 +30,7 @@ from cajas.research.eurusd_pattern_review_gui import (
     default_review_values,
     get_review_progress,
     sanitize_optional_text_value,
+    backup_active_review_persistence_files,
 )
 
 
@@ -183,6 +185,21 @@ def main():
         "Label Schema JSON",
         "tmp/validation-eurusd-pattern-label-schema.json"
     )
+    if st.sidebar.button("Hard Reset Active Review Persistence"):
+        reset_result = backup_active_review_persistence_files(
+            completed_csv=Path(completed_path),
+            events_jsonl=Path(events_jsonl_path),
+            progress_json=Path("tmp/validation-eurusd-completed-review-progress.json"),
+            progress_md=Path("tmp/validation-eurusd-completed-review-progress.md"),
+            backup_root=Path("tmp/eurusd/review_schema_reset_backups"),
+            stamp=datetime.now().strftime("%Y%m%d_%H%M%S"),
+        )
+        if reset_result.get("status") == "backed_up":
+            st.sidebar.success(f"Backed up active artifacts to: {reset_result.get('backup_dir')}")
+        else:
+            st.sidebar.info("No active completed artifacts found to reset.")
+        st.session_state.clear()
+        st.rerun()
     
     if st.sidebar.button("Load/Reload"):
         st.session_state.clear()
@@ -214,15 +231,10 @@ def main():
     candidate_types = ["All"] + sorted(batch["candidate_type"].unique().tolist())
     selected_type = st.sidebar.selectbox("Candidate Type", candidate_types)
     
-    review_statuses = ["All"] + list(schema.get("allowed_values", {}).get("review_status", ["pending", "reviewed"]))
-    selected_status = st.sidebar.selectbox("Review Status", review_statuses)
-    
     # Filter summary only; global sample navigation always uses full batch order.
     filtered = batch.copy()
     if selected_type != "All":
         filtered = filtered[filtered["candidate_type"] == selected_type]
-    if selected_status != "All":
-        filtered = filtered[filtered["review_status"] == selected_status]
     
     filtered_count = len(filtered)
     row_count = len(batch)
@@ -274,7 +286,7 @@ def main():
         f"Pending {progress['pending']} | Skipped {progress['skipped']} | Rejected {len(rejected_ids)}"
     )
     
-    if selected_type != "All" or selected_status != "All":
+    if selected_type != "All":
         st.sidebar.info(
             "Filters are active; direct Sample Number jump uses full batch order."
         )
@@ -296,29 +308,23 @@ def main():
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
     review_key_map = {
-        "human_pattern_label": "review_pattern_label",
         "market_context": "review_market_context",
         "trend_direction": "review_trend_direction",
         "trend_stage": "review_trend_stage",
         "volatility_state": "review_volatility_state",
         "recent_move_context": "review_recent_move_context",
         "session_context": "review_session_context",
-        "direction_context": "review_direction_context",
         "structure_location": "review_structure_location",
         "level_quality": "review_level_quality",
-        "structure_quality": "review_structure_quality",
         "local_behavior": "review_local_behavior",
         "confirmation_result": "review_confirmation_result",
-        "follow_through_quality": "review_follow_through_quality",
         "review_outcome": "review_outcome",
         "pattern_quality": "pattern_quality",
         "false_positive_reason": "false_positive_reason",
-        "review_confidence_level": "review_confidence_level",
+        "review_confidence": "review_confidence",
         "primary_candidate_family": "primary_candidate_family",
         "secondary_candidate_family": "secondary_candidate_family",
-        "review_confidence": "review_confidence",
         "review_notes": "review_notes",
-        "review_status": "review_status",
     }
 
     if st.session_state.get("current_sample_id") != sample_id:
@@ -331,13 +337,11 @@ def main():
             value = sample.get(field, state_defaults[field])
             if field == "review_notes":
                 value = sanitize_optional_text_value(value)
-            if field in {"structure_quality", "follow_through_quality", "review_confidence"}:
-                value = int(value) if value is not None else int(state_defaults[field])
             st.session_state[key] = value if value not in (None, "") or field == "review_notes" else state_defaults[field]
         st.session_state["review_notes"] = sanitize_optional_text_value(st.session_state.get("review_notes", ""))
 
     for field, key in review_key_map.items():
-        if field in {"review_notes", "structure_quality", "follow_through_quality", "review_confidence"}:
+        if field in {"review_notes"}:
             continue
         options = allowed.get(field)
         if isinstance(options, list) and options:
@@ -437,63 +441,6 @@ def main():
         st.caption("wick/doji 必须结合 structure_location 和 level_quality 判断。")
         st.caption("possible_false_breakout 必须看 level_quality、reclaim 和 follow-through。")
 
-        top_cols = st.columns(3) if compact_mode else st.columns(2)
-        col1 = top_cols[0]
-        col2 = top_cols[1]
-        col3 = top_cols[2] if compact_mode else top_cols[0]
-
-        with col1:
-            human_pattern_label = st.selectbox(
-                "Pattern Label",
-                allowed.get("human_pattern_label", ["unclear"]),
-                key="review_pattern_label",
-            )
-        with col2:
-            direction_context = st.selectbox(
-                "Direction Context",
-                allowed.get("direction_context", ["unclear"]),
-                key="review_direction_context",
-            )
-
-        if compact_mode:
-            review_status = col3.selectbox(
-                "Review Status",
-                allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
-                key="review_status",
-            )
-
-        s_cols = st.columns(4) if compact_mode else st.columns(2)
-        s1 = s_cols[0]
-        s2 = s_cols[1]
-        s3 = s_cols[2] if compact_mode else s_cols[0]
-        s4 = s_cols[3] if compact_mode else s_cols[1]
-
-        with s1:
-            structure_quality = st.slider("Structure Quality", 1, 5, key="review_structure_quality")
-        with s2:
-            follow_through_quality = st.slider("Follow-through Quality", 1, 5, key="review_follow_through_quality")
-        with s3 if compact_mode else s1:
-            review_confidence = st.slider("Review Confidence", 1, 5, key="review_confidence")
-
-        if compact_mode:
-            with s4:
-                review_notes = st.text_input(
-                    "Review Notes",
-                    placeholder="Optional notes...",
-                    key="review_notes",
-                )
-        else:
-            review_notes = st.text_area(
-                "Review Notes",
-                placeholder="Optional notes...",
-                key="review_notes",
-            )
-            review_status = st.selectbox(
-                "Review Status",
-                allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
-                key="review_status",
-            )
-
         with st.expander("背景与走势 Context", expanded=True):
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -527,7 +474,7 @@ def main():
                 pattern_quality = st.selectbox("pattern_quality", allowed.get("pattern_quality", ["not_reviewed"]), key="pattern_quality")
             with c2:
                 false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
-                review_confidence_level = st.selectbox("review_confidence_level", allowed.get("review_confidence_level", ["not_reviewed"]), key="review_confidence_level")
+                review_confidence = st.selectbox("review_confidence", allowed.get("review_confidence", ["not_reviewed"]), key="review_confidence")
 
         with st.expander("候选归类 Candidate Family", expanded=False):
             c1, c2 = st.columns(2)
@@ -543,6 +490,11 @@ def main():
                     allowed.get("secondary_candidate_family", ["not_reviewed"]),
                     key="secondary_candidate_family",
                 )
+        review_notes = st.text_area(
+            "review_notes",
+            placeholder="Optional notes...",
+            key="review_notes",
+        )
 
         st.markdown("#### Bad Sample Workflow")
         reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
@@ -551,29 +503,23 @@ def main():
 
     def build_review_labels() -> dict:
         return {
-            "human_pattern_label": human_pattern_label,
             "market_context": market_context,
             "trend_direction": trend_direction,
             "trend_stage": trend_stage,
             "volatility_state": volatility_state,
             "recent_move_context": recent_move_context,
             "session_context": session_context,
-            "direction_context": direction_context,
             "structure_location": structure_location,
             "level_quality": level_quality,
-            "structure_quality": structure_quality,
             "local_behavior": local_behavior,
             "confirmation_result": confirmation_result,
-            "follow_through_quality": follow_through_quality,
             "review_outcome": review_outcome,
             "pattern_quality": pattern_quality,
             "false_positive_reason": false_positive_reason,
-            "review_confidence_level": review_confidence_level,
             "primary_candidate_family": primary_candidate_family,
             "secondary_candidate_family": secondary_candidate_family,
             "review_confidence": review_confidence,
             "review_notes": review_notes,
-            "review_status": review_status,
         }
 
     def persist_review(action_type: str, advance_to_next: bool) -> None:

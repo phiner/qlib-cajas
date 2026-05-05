@@ -10,28 +10,44 @@ import pandas as pd
 
 from cajas.research.eurusd_pattern_review_gui import FORBIDDEN_TRADING_COLUMNS
 
-REVIEW_ENUM_FIELDS = ["human_pattern_label", "market_context", "direction_context", "review_status"]
-REVIEW_SCORE_FIELDS = ["structure_quality", "follow_through_quality", "review_confidence"]
 REQUIRED_IDENTITY_FIELDS = ["sample_id", "timestamp", "candidate_type"]
 REQUIRED_REVIEW_FIELDS = [
-    "human_pattern_label",
     "market_context",
-    "direction_context",
-    "review_status",
-    "structure_quality",
-    "follow_through_quality",
+    "trend_direction",
+    "trend_stage",
+    "volatility_state",
+    "recent_move_context",
+    "session_context",
+    "structure_location",
+    "level_quality",
+    "local_behavior",
+    "confirmation_result",
+    "review_outcome",
+    "pattern_quality",
+    "false_positive_reason",
     "review_confidence",
+    "primary_candidate_family",
+    "secondary_candidate_family",
     "review_notes",
     "review_updated_at_utc",
 ]
 COMPARE_REVIEW_FIELDS = [
-    "human_pattern_label",
     "market_context",
-    "direction_context",
-    "review_status",
-    "structure_quality",
-    "follow_through_quality",
+    "trend_direction",
+    "trend_stage",
+    "volatility_state",
+    "recent_move_context",
+    "session_context",
+    "structure_location",
+    "level_quality",
+    "local_behavior",
+    "confirmation_result",
+    "review_outcome",
+    "pattern_quality",
+    "false_positive_reason",
     "review_confidence",
+    "primary_candidate_family",
+    "secondary_candidate_family",
     "review_notes",
 ]
 
@@ -76,7 +92,7 @@ def _norm(v: Any) -> str:
 
 
 def _is_reviewed(v: Any) -> bool:
-    return _norm(v).strip().lower() == "reviewed"
+    return bool(_norm(v).strip())
 
 
 def _keyword_counts(values: list[str]) -> dict[str, int]:
@@ -218,26 +234,20 @@ def build_completed_review_progress_report(
     completed_not_in_batch = []
     reviewed_ids: list[str] = []
     pending_ids: list[str] = []
-    invalid_score_rows: list[str] = []
     invalid_enum_rows: list[str] = []
 
     if "sample_id" in completed_df.columns:
         counts = completed_df["sample_id"].astype(str).value_counts()
         duplicate_sample_ids = sorted([sid for sid, n in counts.items() if int(n) > 1])
 
-    if "sample_id" in completed_df.columns and "review_status" in completed_df.columns:
+    if "sample_id" in completed_df.columns and "review_updated_at_utc" in completed_df.columns:
         dedup = completed_df.drop_duplicates(subset=["sample_id"], keep="last").copy()
         dedup["sample_id"] = dedup["sample_id"].astype(str)
-        dedup["is_reviewed"] = dedup["review_status"].map(_is_reviewed)
+        dedup["is_reviewed"] = dedup["review_updated_at_utc"].map(_is_reviewed)
         reviewed_ids = sorted(dedup.loc[dedup["is_reviewed"], "sample_id"].tolist())
         pending_ids = sorted([sid for sid in batch_ids if sid not in set(reviewed_ids)])
         completed_not_in_batch = sorted([sid for sid in dedup["sample_id"].tolist() if sid not in batch_id_set])
-        for field in REVIEW_SCORE_FIELDS:
-            if field in dedup.columns:
-                vals = pd.to_numeric(dedup[field], errors="coerce")
-                bad = dedup.loc[vals.isna() | (vals < 1) | (vals > 5), "sample_id"].astype(str).tolist()
-                invalid_score_rows.extend(bad)
-        for field in REVIEW_ENUM_FIELDS:
+        for field in REQUIRED_REVIEW_FIELDS:
             if field in dedup.columns and field in allowed:
                 allowed_vals = _allowed_with_legacy(schema, field)
                 for _, row in dedup.iterrows():
@@ -314,9 +324,9 @@ def build_completed_review_progress_report(
         csv_jsonl_value_compare = "warning_events_jsonl_missing"
 
     reviewed_df = pd.DataFrame()
-    if "sample_id" in completed_df.columns and "review_status" in completed_df.columns:
+    if "sample_id" in completed_df.columns and "review_updated_at_utc" in completed_df.columns:
         dedup = completed_df.drop_duplicates(subset=["sample_id"], keep="last").copy()
-        reviewed_df = dedup[dedup["review_status"].map(_is_reviewed)].copy()
+        reviewed_df = dedup[dedup["review_updated_at_utc"].map(_is_reviewed)].copy()
 
     def _dist(series: pd.Series) -> dict[str, int]:
         if series.empty:
@@ -349,7 +359,7 @@ def build_completed_review_progress_report(
     csv_schema_status = "valid"
     if missing_identity_fields or missing_review_fields or forbidden_columns or duplicate_sample_ids or completed_not_in_batch:
         csv_schema_status = "blocked"
-    elif invalid_score_rows or invalid_enum_rows:
+    elif invalid_enum_rows:
         csv_schema_status = "warning"
 
     jsonl_audit_status = "valid"
@@ -397,7 +407,6 @@ def build_completed_review_progress_report(
         "missing_review_fields": missing_review_fields,
         "duplicate_sample_ids": duplicate_sample_ids,
         "completed_samples_not_in_batch": completed_not_in_batch,
-        "invalid_score_rows": sorted(set(invalid_score_rows)),
         "invalid_enum_rows": sorted(set(invalid_enum_rows)),
         "jsonl_event_count": jsonl_event_count,
         "jsonl_valid_event_count": jsonl_valid_event_count,
@@ -463,7 +472,6 @@ def render_completed_review_progress_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- duplicate_sample_ids: `{payload.get('duplicate_sample_ids')}`",
         f"- completed_samples_not_in_batch: `{payload.get('completed_samples_not_in_batch')}`",
-        f"- invalid_score_rows: `{payload.get('invalid_score_rows')}`",
         f"- invalid_enum_rows: `{payload.get('invalid_enum_rows')}`",
         f"- jsonl_malformed_line_count: `{payload.get('jsonl_malformed_line_count')}`",
         f"- completed_without_jsonl: `{payload.get('completed_without_jsonl')}`",

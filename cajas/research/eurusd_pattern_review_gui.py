@@ -8,6 +8,7 @@ import pandas as pd
 
 from cajas.research.eurusd_review_schema import (
     ALLOWED_VALUES as SCHEMA_ALLOWED_VALUES,
+    CANONICAL_REVIEW_FIELDS,
     COMPATIBLE_SCHEMA_VERSIONS as SCHEMA_COMPATIBLE_SCHEMA_VERSIONS,
     LEGACY_ALLOWED_VALUES as SCHEMA_LEGACY_ALLOWED_VALUES,
     REVIEW_SCHEMA_VERSION,
@@ -24,6 +25,14 @@ OPTIONAL_TEXT_FIELDS = [
 DEFAULT_REVIEW_VALUES = schema_default_review_values()
 REVIEW_FIELDS = list(DEFAULT_REVIEW_VALUES.keys())
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
+LEGACY_REMOVED_FIELDS = [
+    "pattern_label",
+    "direction_context",
+    "review_status",
+    "structure_quality",
+    "follow_through_quality",
+    "review_confidence_level",
+]
 REJECTED_SCHEMA_VERSION = "eurusd_15m_rejected_sample_v1"
 REJECTED_FIELDS = [
     "sample_id",
@@ -706,6 +715,7 @@ def save_completed_review(
     ).drop_duplicates(
         subset=["sample_id"], keep="last"
     )
+    completed_df = completed_df.drop(columns=[c for c in LEGACY_REMOVED_FIELDS if c in completed_df.columns], errors="ignore")
 
     for key, default_value in DEFAULT_REVIEW_VALUES.items():
         if key not in completed_df.columns:
@@ -750,6 +760,7 @@ def save_completed_review(
     ).drop_duplicates(
         subset=["sample_id"], keep="last"
     )
+    completed_df = completed_df.drop(columns=[c for c in LEGACY_REMOVED_FIELDS if c in completed_df.columns], errors="ignore")
 
     # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -766,7 +777,7 @@ def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
     row = default_review_values()
     row.update(overrides)
     row["review_notes"] = sanitize_optional_text_value(row.get("review_notes", ""))
-    return {key: row[key] for key in DEFAULT_REVIEW_VALUES}
+    return {key: row[key] for key in CANONICAL_REVIEW_FIELDS}
 
 
 def save_or_update_completed_review(
@@ -1085,8 +1096,8 @@ def sanitize_output_columns(df: pd.DataFrame) -> pd.DataFrame:
 def get_review_progress(batch_df: pd.DataFrame) -> Dict[str, int]:
     """Get review progress summary."""
     total = len(batch_df)
-    reviewed = len(batch_df[batch_df["review_status"] == "reviewed"])
-    skipped = len(batch_df[batch_df["human_pattern_label"] == "skip_bad_context"])
+    reviewed = len(batch_df[batch_df[REVIEW_UPDATED_AT_COLUMN].notna()]) if REVIEW_UPDATED_AT_COLUMN in batch_df.columns else 0
+    skipped = len(batch_df[batch_df["review_outcome"].astype(str) == "not_enough_context"]) if "review_outcome" in batch_df.columns else 0
     pending = total - reviewed
     
     return {
@@ -1095,3 +1106,27 @@ def get_review_progress(batch_df: pd.DataFrame) -> Dict[str, int]:
         "pending": pending,
         "skipped": skipped
     }
+
+
+def backup_active_review_persistence_files(
+    *,
+    completed_csv: Path,
+    events_jsonl: Path,
+    progress_json: Path,
+    progress_md: Path,
+    backup_root: Path,
+    stamp: str,
+) -> dict[str, Any]:
+    """Move active completed artifacts into a timestamped backup directory."""
+    files = [completed_csv, events_jsonl, progress_json, progress_md]
+    existing = [p for p in files if p.exists()]
+    if not existing:
+        return {"status": "no_active_artifacts", "moved": [], "backup_dir": None}
+    backup_dir = backup_root / f"{stamp}_five_layer_schema_reset"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    moved: list[str] = []
+    for src in existing:
+        dst = backup_dir / src.name
+        src.rename(dst)
+        moved.append(str(dst))
+    return {"status": "backed_up", "moved": moved, "backup_dir": str(backup_dir)}

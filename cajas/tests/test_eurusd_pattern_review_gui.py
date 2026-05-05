@@ -79,6 +79,7 @@ def clean_view_fixture(temp_dir):
 
 @pytest.fixture
 def batch_fixture(temp_dir):
+    defaults = default_review_values()
     df = pd.DataFrame({
         "sample_id": ["s1", "s2", "s3"],
         "timestamp": pd.to_datetime(["2020-01-01 01:00:00", "2020-01-01 02:00:00", "2020-01-01 03:00:00"]),
@@ -86,14 +87,7 @@ def batch_fixture(temp_dir):
         "confidence_score": [0.8, 0.7, 0.9],
         "review_priority": ["high", "low", "high"],
         "reason_codes": ["test"] * 3,
-        "review_status": ["pending"] * 3,
-        "human_pattern_label": ["unclear"] * 3,
-        "market_context": ["unclear"] * 3,
-        "direction_context": ["unclear"] * 3,
-        "structure_quality": [3] * 3,
-        "follow_through_quality": [3] * 3,
-        "review_confidence": [3] * 3,
-        "review_notes": [""] * 3
+        **{k: [v] * 3 for k, v in defaults.items()},
     })
     path = temp_dir / "batch.csv"
     df.to_csv(path, index=False)
@@ -118,15 +112,16 @@ def test_merge_completed_labels(batch_fixture):
     completed_df = pd.DataFrame({
         "sample_id": ["s1"],
         "timestamp": pd.to_datetime(["2020-01-01 01:00:00"]),
-        "human_pattern_label": ["valid_pattern"],
-        "review_status": ["reviewed"]
+        "market_context": ["uptrend"],
+        "review_outcome": ["valid_pattern"],
+        "review_updated_at_utc": ["2026-05-05T00:00:00Z"],
     })
     
     merged = merge_completed_labels(batch_df, completed_df)
     
-    assert merged.loc[merged["sample_id"] == "s1", "human_pattern_label"].iloc[0] == "valid_pattern"
-    assert merged.loc[merged["sample_id"] == "s1", "review_status"].iloc[0] == "reviewed"
-    assert merged.loc[merged["sample_id"] == "s2", "review_status"].iloc[0] == "pending"
+    assert merged.loc[merged["sample_id"] == "s1", "review_outcome"].iloc[0] == "valid_pattern"
+    assert merged.loc[merged["sample_id"] == "s1", "market_context"].iloc[0] == "uptrend"
+    assert merged.loc[merged["sample_id"] == "s2", "review_outcome"].iloc[0] == "not_reviewed"
 
 
 def test_merge_completed_labels_backfills_new_defaults_for_legacy_rows(batch_fixture, temp_dir):
@@ -135,8 +130,8 @@ def test_merge_completed_labels_backfills_new_defaults_for_legacy_rows(batch_fix
         {
             "sample_id": ["s1"],
             "timestamp": pd.to_datetime(["2020-01-01 01:00:00"]),
-            "human_pattern_label": ["valid_pattern"],
-            "review_status": ["reviewed"],
+            "review_outcome": ["valid_pattern"],
+            "review_updated_at_utc": ["2026-05-05T00:00:00Z"],
         }
     )
     merged = merge_completed_labels(batch_df, completed_df)
@@ -350,21 +345,20 @@ def test_save_completed_review(batch_fixture, temp_dir):
     output_path = temp_dir / "completed.csv"
     
     labels = {
-        "human_pattern_label": "valid_pattern",
-        "market_context": "trend",
-        "direction_context": "up",
-        "structure_quality": 5,
-        "follow_through_quality": 4,
-        "review_confidence": 5,
+        "market_context": "uptrend",
+        "trend_direction": "up",
+        "structure_location": "prior_low",
+        "local_behavior": "lower_wick_rejection",
+        "review_outcome": "valid_pattern",
+        "review_confidence": "high",
         "review_notes": "test note",
-        "review_status": "reviewed"
     }
     
     save_completed_review(batch_df, "s1", labels, output_path)
     
     assert output_path.exists()
     completed = pd.read_csv(output_path)
-    assert completed.loc[completed["sample_id"] == "s1", "human_pattern_label"].iloc[0] == "valid_pattern"
+    assert completed.loc[completed["sample_id"] == "s1", "review_outcome"].iloc[0] == "valid_pattern"
     row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
     for field in REVIEW_FIELDS:
         assert field in completed.columns
@@ -378,10 +372,9 @@ def test_save_blocks_forbidden_columns(batch_fixture, temp_dir):
     output_path = temp_dir / "completed.csv"
     
     labels = {
-        "human_pattern_label": "valid_pattern",
+        "review_outcome": "valid_pattern",
         "buy": 1,
         "sell": 0,
-        "review_status": "reviewed"
     }
     
     save_completed_review(batch_df, "s1", labels, output_path)
@@ -398,16 +391,16 @@ def test_save_completed_review_deduplicates_sample_id(batch_fixture, temp_dir):
     existing = pd.concat([existing, existing.iloc[[0]]], ignore_index=True)
     existing.to_csv(output_path, index=False)
 
-    save_completed_review(batch_df, "s1", {"review_status": "reviewed"}, output_path)
+    save_completed_review(batch_df, "s1", {"review_outcome": "valid_pattern"}, output_path)
     completed = pd.read_csv(output_path)
     assert completed["sample_id"].value_counts().get("s1", 0) == 1
 
 
 def test_sanitize_output_columns():
-    df = pd.DataFrame({"sample_id": ["s1"], "buy": [1], "review_status": ["pending"]})
+    df = pd.DataFrame({"sample_id": ["s1"], "buy": [1], "review_outcome": ["not_reviewed"]})
     out = sanitize_output_columns(df)
     assert "buy" not in out.columns
-    assert "review_status" in out.columns
+    assert "review_outcome" in out.columns
 
 
 def test_create_candlestick_figure_optional_dependency(clean_view_fixture):
@@ -519,7 +512,7 @@ def test_create_candlestick_figure_marker_no_full_height_line_for_wick_sensitive
 
 def test_get_review_progress(batch_fixture):
     batch_df = load_review_batch(batch_fixture)
-    batch_df.loc[0, "review_status"] = "reviewed"
+    batch_df.loc[0, "review_updated_at_utc"] = "2026-05-05T00:00:00Z"
     
     progress = get_review_progress(batch_df)
     
@@ -533,7 +526,7 @@ def test_save_completed_review_sanitizes_nan_notes(batch_fixture, temp_dir):
     output_path = temp_dir / "completed.csv"
     labels = {
         "review_notes": float("nan"),
-        "review_status": "reviewed",
+        "review_outcome": "valid_pattern",
     }
     save_completed_review(batch_df, "s1", labels, output_path)
     completed = pd.read_csv(output_path)
@@ -543,14 +536,9 @@ def test_save_completed_review_sanitizes_nan_notes(batch_fixture, temp_dir):
 
 def test_default_review_values_match_reset_contract():
     defaults = default_review_values()
-    assert defaults["human_pattern_label"] == "unclear"
     assert defaults["market_context"] == "unclear"
-    assert defaults["direction_context"] == "unclear"
-    assert defaults["structure_quality"] == 3
-    assert defaults["follow_through_quality"] == 3
-    assert defaults["review_confidence"] == 3
+    assert defaults["review_confidence"] == "not_reviewed"
     assert defaults["review_notes"] == ""
-    assert defaults["review_status"] == "pending"
     for field in [
         "trend_direction",
         "trend_stage",
@@ -563,7 +551,7 @@ def test_default_review_values_match_reset_contract():
         "review_outcome",
         "pattern_quality",
         "false_positive_reason",
-        "review_confidence_level",
+        "review_confidence",
         "primary_candidate_family",
         "secondary_candidate_family",
         "session_context",
@@ -572,20 +560,29 @@ def test_default_review_values_match_reset_contract():
 
 
 def test_build_review_update_row_fills_required_fields():
-    row = build_review_update_row({"review_notes": float("nan"), "review_status": "reviewed"})
+    row = build_review_update_row({"review_notes": float("nan"), "review_outcome": "valid_pattern"})
     for field in [
-        "human_pattern_label",
         "market_context",
-        "direction_context",
-        "structure_quality",
-        "follow_through_quality",
+        "trend_direction",
+        "trend_stage",
+        "volatility_state",
+        "recent_move_context",
+        "session_context",
+        "structure_location",
+        "level_quality",
+        "local_behavior",
+        "confirmation_result",
+        "review_outcome",
+        "pattern_quality",
+        "false_positive_reason",
         "review_confidence",
+        "primary_candidate_family",
+        "secondary_candidate_family",
         "review_notes",
-        "review_status",
     ]:
         assert field in row
     assert row["review_notes"] == ""
-    assert row["review_status"] == "reviewed"
+    assert row["review_outcome"] == "valid_pattern"
     for field in REVIEW_FIELDS:
         assert field in row
 
@@ -596,19 +593,19 @@ def test_save_or_update_completed_review_updates_without_duplicate(batch_fixture
     save_or_update_completed_review(
         batch_df=batch_df,
         sample_id="s1",
-        review_values={"human_pattern_label": "weak_pattern", "review_notes": "first"},
+        review_values={"review_outcome": "weak_pattern", "review_notes": "first"},
         output_path=output_path,
     )
     save_or_update_completed_review(
         batch_df=batch_df,
         sample_id="s1",
-        review_values={"human_pattern_label": "valid_pattern", "review_notes": "second", "review_status": "reviewed"},
+        review_values={"review_outcome": "valid_pattern", "review_notes": "second"},
         output_path=output_path,
     )
     completed = pd.read_csv(output_path)
     assert completed["sample_id"].value_counts().get("s1", 0) == 1
     row = completed.loc[completed["sample_id"] == "s1"].iloc[0]
-    assert row["human_pattern_label"] == "valid_pattern"
+    assert row["review_outcome"] == "valid_pattern"
     assert row["review_notes"] == "second"
 
 
@@ -637,7 +634,7 @@ def test_save_or_update_persists_identity_and_update_timestamp(batch_fixture, te
     save_or_update_completed_review(
         batch_df=batch_df,
         sample_id="s3",
-        review_values={"review_notes": "identity-check", "review_status": "reviewed"},
+        review_values={"review_notes": "identity-check", "review_outcome": "valid_pattern"},
         output_path=output_path,
     )
     completed = pd.read_csv(output_path)
@@ -651,14 +648,11 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     jsonl_path = temp_dir / "events.jsonl"
     completed_csv_path = temp_dir / "completed.csv"
     review_values = {
-        "human_pattern_label": "weak_pattern",
         "market_context": "range",
-        "direction_context": "neutral",
-        "structure_quality": 2,
-        "follow_through_quality": 2,
-        "review_confidence": 3,
+        "trend_direction": "mixed",
+        "review_outcome": "weak_pattern",
+        "review_confidence": "medium",
         "review_notes": "note",
-        "review_status": "reviewed",
     }
     append_review_event_jsonl(
         jsonl_path=jsonl_path,
@@ -688,7 +682,7 @@ def test_append_review_event_jsonl_is_append_friendly(temp_dir):
     append_review_event_jsonl(
         jsonl_path=jsonl_path,
         sample_id="s1",
-        review_values={"review_status": "pending"},
+        review_values={"review_outcome": "not_reviewed"},
         action_type="save",
         completed_csv_path=completed_csv_path,
         batch_path="tmp/eurusd/batch.csv",
@@ -696,7 +690,7 @@ def test_append_review_event_jsonl_is_append_friendly(temp_dir):
     append_review_event_jsonl(
         jsonl_path=jsonl_path,
         sample_id="s1",
-        review_values={"review_status": "reviewed"},
+        review_values={"review_outcome": "valid_pattern"},
         action_type="save_and_next",
         completed_csv_path=completed_csv_path,
         batch_path="tmp/eurusd/batch.csv",
@@ -716,7 +710,7 @@ def test_save_review_action_writes_csv_and_jsonl(batch_fixture, temp_dir):
     action = save_review_action(
         batch_df=batch_df,
         sample_id="s1",
-        review_values={"review_notes": "ok", "review_status": "reviewed"},
+        review_values={"review_notes": "ok", "review_outcome": "valid_pattern"},
         completed_csv_path=completed_path,
         audit_jsonl_path=events_path,
         action_type="save",
@@ -739,7 +733,7 @@ def test_save_review_action_duplicate_safe_with_two_events(batch_fixture, temp_d
     save_review_action(
         batch_df=batch_df,
         sample_id="s2",
-        review_values={"review_notes": "one", "review_status": "pending"},
+        review_values={"review_notes": "one", "review_outcome": "not_reviewed"},
         completed_csv_path=completed_path,
         audit_jsonl_path=events_path,
         action_type="save",
@@ -748,7 +742,7 @@ def test_save_review_action_duplicate_safe_with_two_events(batch_fixture, temp_d
     save_review_action(
         batch_df=batch_df,
         sample_id="s2",
-        review_values={"review_notes": "two", "review_status": "reviewed"},
+        review_values={"review_notes": "two", "review_outcome": "valid_pattern"},
         completed_csv_path=completed_path,
         audit_jsonl_path=events_path,
         action_type="save_and_next",
@@ -770,7 +764,7 @@ def test_save_review_action_csv_success_jsonl_warning(batch_fixture, temp_dir):
     action = save_review_action(
         batch_df=batch_df,
         sample_id="s3",
-        review_values={"review_notes": "warn-case", "review_status": "reviewed"},
+        review_values={"review_notes": "warn-case", "review_outcome": "valid_pattern"},
         completed_csv_path=completed_path,
         audit_jsonl_path=jsonl_dir,
         action_type="save_and_next",
@@ -1120,10 +1114,10 @@ def test_direct_jump_resolution_uses_global_batch_order_ignoring_filters():
         {
             "sample_id": ["s1", "s2", "s3", "s4"],
             "candidate_type": ["A", "A", "B", "A"],
-            "review_status": ["pending", "reviewed", "pending", "pending"],
+            "review_outcome": ["not_reviewed", "valid_pattern", "not_reviewed", "not_reviewed"],
         }
     )
-    filtered = batch[(batch["candidate_type"] == "A") & (batch["review_status"] == "pending")]
+    filtered = batch[(batch["candidate_type"] == "A") & (batch["review_outcome"] == "not_reviewed")]
     assert list(filtered["sample_id"]) == ["s1", "s4"]
     global_idx = sample_number_to_global_index(3, len(batch))
     sample = batch.iloc[global_idx]
@@ -1213,11 +1207,20 @@ def test_app_source_includes_all_five_layer_grouped_fields_and_help_text():
         "review_outcome",
         "pattern_quality",
         "false_positive_reason",
-        "review_confidence_level",
+        "review_confidence",
         "primary_candidate_family",
         "secondary_candidate_family",
     ]:
         assert field_name in app_source
+    for legacy_name in [
+        "Pattern Label",
+        "Direction Context",
+        "Review Status",
+        "Structure Quality",
+        "Follow-through Quality",
+        "review_confidence_level",
+    ]:
+        assert legacy_name not in app_source
     assert "candidate_type 是系统入口标签，不是最终形态结论。" in app_source
     assert "应填 recent_move_context，不要塞进 market_context。" in app_source
 

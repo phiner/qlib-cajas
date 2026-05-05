@@ -1,8 +1,8 @@
 from cajas.research.eurusd_review_schema import (
     ALLOWED_VALUES,
+    CANONICAL_REVIEW_FIELDS,
     DEFAULT_REVIEW_VALUES,
     FIVE_LAYER_ENUM_FIELDS,
-    LEGACY_ALLOWED_VALUES,
     default_review_values,
     validate_review_row,
 )
@@ -40,18 +40,8 @@ def test_validation_fails_for_unknown_value() -> None:
     assert any(x.startswith("invalid_value:local_behavior") for x in result["errors"])
 
 
-def test_legacy_value_can_warn_without_error() -> None:
-    row = default_review_values()
-    row["direction_context"] = LEGACY_ALLOWED_VALUES["direction_context"][0]
-    result = validate_review_row(row, allow_legacy=True)
-    assert result["errors"] == []
-    assert any(x.startswith("legacy_value:direction_context") for x in result["warnings"])
-
-
 def test_gui_default_review_values_stays_importable_and_compatible() -> None:
     defaults = gui_default_review_values()
-    assert defaults["human_pattern_label"] == "unclear"
-    assert defaults["review_status"] == "pending"
     assert "structure_location" in defaults
     assert defaults["structure_location"] == "not_reviewed"
 
@@ -68,6 +58,8 @@ def test_new_vocabulary_fields_exist_in_defaults() -> None:
     ]:
         assert field in row
         assert row[field] == "not_reviewed"
+    for field in ["direction_context", "review_status", "structure_quality", "follow_through_quality", "review_confidence_level"]:
+        assert field not in row
 
 
 def test_recent_move_context_values_and_market_context_boundary() -> None:
@@ -83,3 +75,10 @@ def test_extended_vocabulary_completeness_rules() -> None:
     assert "consolidation_after_impulse" in ALLOWED_VALUES["trend_stage"]
     assert "middle_of_nowhere" in ALLOWED_VALUES["structure_location"]
     assert "none" in ALLOWED_VALUES["secondary_candidate_family"]
+
+
+def test_canonical_review_fields_list_is_five_layer_only() -> None:
+    assert "review_confidence" in CANONICAL_REVIEW_FIELDS
+    assert "review_confidence_level" not in CANONICAL_REVIEW_FIELDS
+    for field in ["direction_context", "review_status", "structure_quality", "follow_through_quality", "pattern_label"]:
+        assert field not in CANONICAL_REVIEW_FIELDS

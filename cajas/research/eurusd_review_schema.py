@@ -11,14 +11,8 @@ COMPATIBLE_SCHEMA_VERSIONS = [
     REVIEW_SCHEMA_VERSION,
 ]
 
-FIELD_HUMAN_PATTERN_LABEL = "human_pattern_label"
 FIELD_MARKET_CONTEXT = "market_context"
-FIELD_DIRECTION_CONTEXT = "direction_context"
-FIELD_STRUCTURE_QUALITY = "structure_quality"
-FIELD_FOLLOW_THROUGH_QUALITY = "follow_through_quality"
-FIELD_REVIEW_CONFIDENCE_SCORE = "review_confidence"
 FIELD_REVIEW_NOTES = "review_notes"
-FIELD_REVIEW_STATUS = "review_status"
 
 FIELD_STRUCTURE_LOCATION = "structure_location"
 FIELD_LOCAL_BEHAVIOR = "local_behavior"
@@ -26,7 +20,7 @@ FIELD_CONFIRMATION_RESULT = "confirmation_result"
 FIELD_REVIEW_OUTCOME = "review_outcome"
 FIELD_PATTERN_QUALITY = "pattern_quality"
 FIELD_FALSE_POSITIVE_REASON = "false_positive_reason"
-FIELD_REVIEW_CONFIDENCE = "review_confidence_level"
+FIELD_REVIEW_CONFIDENCE = "review_confidence"
 FIELD_PRIMARY_CANDIDATE_FAMILY = "primary_candidate_family"
 FIELD_SECONDARY_CANDIDATE_FAMILY = "secondary_candidate_family"
 FIELD_RECENT_MOVE_CONTEXT = "recent_move_context"
@@ -36,7 +30,6 @@ FIELD_VOLATILITY_STATE = "volatility_state"
 FIELD_LEVEL_QUALITY = "level_quality"
 FIELD_SESSION_CONTEXT = "session_context"
 
-LEGACY_ENUM_FIELDS = [FIELD_HUMAN_PATTERN_LABEL, FIELD_MARKET_CONTEXT, FIELD_DIRECTION_CONTEXT, FIELD_REVIEW_STATUS]
 FIVE_LAYER_ENUM_FIELDS = [
     FIELD_MARKET_CONTEXT,
     FIELD_STRUCTURE_LOCATION,
@@ -45,8 +38,27 @@ FIVE_LAYER_ENUM_FIELDS = [
     FIELD_REVIEW_OUTCOME,
 ]
 
+CANONICAL_REVIEW_FIELDS = [
+    FIELD_MARKET_CONTEXT,
+    FIELD_TREND_DIRECTION,
+    FIELD_TREND_STAGE,
+    FIELD_VOLATILITY_STATE,
+    FIELD_RECENT_MOVE_CONTEXT,
+    FIELD_SESSION_CONTEXT,
+    FIELD_STRUCTURE_LOCATION,
+    FIELD_LEVEL_QUALITY,
+    FIELD_LOCAL_BEHAVIOR,
+    FIELD_CONFIRMATION_RESULT,
+    FIELD_REVIEW_OUTCOME,
+    FIELD_PATTERN_QUALITY,
+    FIELD_FALSE_POSITIVE_REASON,
+    FIELD_REVIEW_CONFIDENCE,
+    FIELD_PRIMARY_CANDIDATE_FAMILY,
+    FIELD_SECONDARY_CANDIDATE_FAMILY,
+    FIELD_REVIEW_NOTES,
+]
+
 ALLOWED_VALUES = {
-    FIELD_HUMAN_PATTERN_LABEL: ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
     FIELD_MARKET_CONTEXT: [
         "uptrend",
         "downtrend",
@@ -58,18 +70,6 @@ ALLOWED_VALUES = {
         "unclear",
         "not_reviewed",
     ],
-    FIELD_DIRECTION_CONTEXT: [
-        "up",
-        "down",
-        "neutral",
-        "mixed",
-        "up_pullback",
-        "down_pullback",
-        "reversal_up",
-        "reversal_down",
-        "unclear",
-    ],
-    FIELD_REVIEW_STATUS: ["pending", "reviewed", "needs_recheck", "skip"],
     FIELD_STRUCTURE_LOCATION: [
         "prior_high",
         "prior_low",
@@ -206,33 +206,13 @@ ALLOWED_VALUES = {
     FIELD_SESSION_CONTEXT: ["asia", "london", "new_york", "overlap", "rollover", "normal", "unclear", "not_reviewed"],
 }
 
-LEGACY_ALLOWED_VALUES = {
-    FIELD_DIRECTION_CONTEXT: ["sideways"],
-    FIELD_MARKET_CONTEXT: [
-        "trend",
-        "pullback",
-        "breakout",
-        "reversal_attempt",
-        "high_volatility",
-        "low_volatility",
-    ],
-}
+LEGACY_ALLOWED_VALUES: dict[str, list[str]] = {}
 
-NUMERIC_RANGES = {
-    FIELD_STRUCTURE_QUALITY: {"min": 1, "max": 5},
-    FIELD_FOLLOW_THROUGH_QUALITY: {"min": 1, "max": 5},
-    FIELD_REVIEW_CONFIDENCE_SCORE: {"min": 1, "max": 5},
-}
+NUMERIC_RANGES: dict[str, dict[str, float]] = {}
 
 DEFAULT_REVIEW_VALUES = {
-    FIELD_HUMAN_PATTERN_LABEL: "unclear",
     FIELD_MARKET_CONTEXT: "unclear",
-    FIELD_DIRECTION_CONTEXT: "unclear",
-    FIELD_STRUCTURE_QUALITY: 3,
-    FIELD_FOLLOW_THROUGH_QUALITY: 3,
-    FIELD_REVIEW_CONFIDENCE_SCORE: 3,
     FIELD_REVIEW_NOTES: "",
-    FIELD_REVIEW_STATUS: "pending",
     FIELD_STRUCTURE_LOCATION: "not_reviewed",
     FIELD_LOCAL_BEHAVIOR: "not_reviewed",
     FIELD_CONFIRMATION_RESULT: "not_reviewed",
