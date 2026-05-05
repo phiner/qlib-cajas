@@ -83,6 +83,12 @@ COMPLETED_PROGRESS_JSON="tmp/validation-eurusd-completed-review-progress.json"
 COMPLETED_PROGRESS_MD="tmp/validation-eurusd-completed-review-progress.md"
 SUMMARY_CURRENT_JSON="tmp/validation-eurusd-review-summary-current.json"
 SUMMARY_CURRENT_MD="tmp/validation-eurusd-review-summary-current.md"
+REJECTED_JSON="tmp/validation-eurusd-rejected-samples.json"
+REJECTED_MD="tmp/validation-eurusd-rejected-samples.md"
+REJECTED_CSV="tmp/eurusd/EURUSD_15m_pattern_review_rejected_samples.csv"
+REJECTED_EVENTS_JSONL="tmp/eurusd/EURUSD_15m_pattern_review_rejected_samples_events.jsonl"
+SOURCE_RANGE_JSON="tmp/validation-eurusd-sampling-source-range.json"
+SOURCE_RANGE_MD="tmp/validation-eurusd-sampling-source-range.md"
 RESET_JSON="tmp/validation-eurusd-review-batch-reset.json"
 RESET_MD="tmp/validation-eurusd-review-batch-reset.md"
 
@@ -215,6 +221,20 @@ PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_pattern_review_batch 
   --output-json "${OUTPUT_JSON}" \
   --output-md "${OUTPUT_MD}"
 
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_sampling_source_range_report \
+  --output-json "${SOURCE_RANGE_JSON}" \
+  --output-md "${SOURCE_RANGE_MD}"
+
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_completed_review_progress_report \
+  --output-json "${COMPLETED_PROGRESS_JSON}" \
+  --output-md "${COMPLETED_PROGRESS_MD}"
+
+PYTHONPATH=. "${PYTHON_BIN}" -m cajas.scripts.build_eurusd_rejected_samples_report \
+  --rejected-csv "${REJECTED_CSV}" \
+  --rejected-events-jsonl "${REJECTED_EVENTS_JSONL}" \
+  --output-json "${REJECTED_JSON}" \
+  --output-md "${REJECTED_MD}"
+
 PYTHONPATH=. "${PYTHON_BIN}" - <<'PY' "${RESET_JSON}" "${RESET_MD}" "${OUTPUT_BATCH_CSV}" "${OUTPUT_BATCH_JSONL}" "${COMPLETED_CSV}" "${COMPLETED_EVENTS_JSONL}" "${BACKUP_OLD}" "${BACKUP_DIR}" "${MIN_GAP_BARS}" "${MAX_SAMPLES_PER_DAY}" "${BATCH_SIZE}" "${removed_files[*]:-}"
 import json
 import sys
@@ -269,6 +289,12 @@ payload = {
         batch_jsonl,
         "tmp/validation-eurusd-pattern-review-batch-001.json",
         "tmp/validation-eurusd-pattern-review-batch-001.md",
+        "tmp/validation-eurusd-sampling-source-range.json",
+        "tmp/validation-eurusd-sampling-source-range.md",
+        "tmp/validation-eurusd-completed-review-progress.json",
+        "tmp/validation-eurusd-completed-review-progress.md",
+        "tmp/validation-eurusd-rejected-samples.json",
+        "tmp/validation-eurusd-rejected-samples.md",
     ],
     "diversification_settings": {
         "balanced_by_candidate_type": True,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -70,7 +71,11 @@ def _coverage(df: pd.DataFrame) -> dict[str, Any]:
 def _bool_true_count(df: pd.DataFrame, col: str) -> int:
     if col not in df.columns:
         return 0
-    return int(df[col].fillna(False).astype(bool).sum())
+    s = df[col]
+    if s.dtype == bool:
+        return int(s.fillna(False).sum())
+    norm = s.fillna(False).astype(str).str.strip().str.lower()
+    return int(norm.isin({"1", "true", "yes", "y", "t"}).sum())
 
 
 def build_validation_eurusd_candidate_audit(
@@ -159,7 +164,12 @@ def build_validation_eurusd_candidate_audit(
     if not batch.empty and "timestamp" in batch.columns:
         bts = pd.to_datetime(batch["timestamp"], utc=True, errors="coerce")
         duplicate_summary["same_timestamp_duplicates"] = int(bts.astype(str).duplicated().sum())
-        if "source_row_index" in batch.columns:
+        if "overlap_summary" in batch.columns:
+            # Reserved for future embedded overlap summaries.
+            pass
+        if "max_window_overlap_ratio" in batch.columns:
+            duplicate_summary["window_overlap_max_ratio"] = float(pd.to_numeric(batch["max_window_overlap_ratio"], errors="coerce").fillna(0.0).max())
+        elif "source_row_index" in batch.columns:
             si = pd.to_numeric(batch["source_row_index"], errors="coerce").dropna().sort_values().astype(int)
             gaps = si.diff().dropna()
             duplicate_summary["anchor_near_duplicates"] = int((gaps <= 8).sum())
@@ -171,7 +181,16 @@ def build_validation_eurusd_candidate_audit(
 
     batch_ref = batch.copy()
     selected = cand
-    if not batch_ref.empty:
+    required_selected_cols = {
+        "candidate_type",
+        "primary_selection_reason",
+        "selection_reason_codes",
+        "excluded_late_reversal_anchor",
+        "preferred_review_candidate",
+    }
+    if not batch_ref.empty and required_selected_cols.issubset(set(batch_ref.columns)):
+        selected = batch_ref.copy()
+    elif not batch_ref.empty:
         if "sample_id" in batch_ref.columns and "sample_id" in cand.columns:
             selected = cand[cand["sample_id"].astype(str).isin(batch_ref["sample_id"].astype(str))]
         elif all(col in batch_ref.columns for col in ["source_row_index", "candidate_type"]) and all(col in cand.columns for col in ["source_row_index", "candidate_type"]):
@@ -224,7 +243,13 @@ def build_validation_eurusd_candidate_audit(
             else:
                 miss += int((trend[c].fillna("").astype(str).str.strip() == "").sum())
         explain_missing["trend_missing_segment_metadata"] = int(miss)
-    trend_excluded_count = _bool_true_count(trend, "excluded_late_reversal_anchor")
+    trend_excluded_count = 0
+    if "excluded_late_reversal_anchor" in batch_ref.columns:
+        trend_batch = batch_ref[batch_ref.get("candidate_type", pd.Series([], dtype=str)).astype(str).str.contains("trend", na=False)]
+        vals = trend_batch.get("excluded_late_reversal_anchor", pd.Series([], dtype=object)).fillna(False).astype(str).str.strip().str.lower()
+        trend_excluded_count = int(vals.isin({"1", "true", "yes", "y", "t"}).sum())
+    else:
+        trend_excluded_count = _bool_true_count(trend, "excluded_late_reversal_anchor")
     trend_nonpreferred_without_fallback = 0
     if not trend.empty and "preferred_review_candidate" in trend.columns:
         pref = trend["preferred_review_candidate"].fillna(True).astype(bool)
@@ -317,9 +342,20 @@ def build_validation_eurusd_candidate_audit(
     }
     must_failures = [k for k, v in gate_failures.items() if not v]
     should_failures = []
+    overlap_threshold = 0.35
+    overlap_summary = {}
+    batch_report_path = Path("tmp/validation-eurusd-pattern-review-batch-001.json")
+    if batch_report_path.exists():
+        try:
+            batch_report_payload = json.loads(batch_report_path.read_text(encoding="utf-8"))
+            overlap_summary = batch_report_payload.get("overlap_summary", {}) or {}
+            duplicate_summary["window_overlap_max_ratio"] = float(overlap_summary.get("max_window_overlap_ratio", duplicate_summary["window_overlap_max_ratio"]))
+            duplicate_summary["high_window_overlap_duplicate_groups"] = int(overlap_summary.get("window_overlap_warning_count", duplicate_summary["high_window_overlap_duplicate_groups"]))
+        except Exception:
+            overlap_summary = {}
     if duplicate_summary["same_region_duplicates"] > 10:
         should_failures.append("same_region_duplicates_above_threshold")
-    if duplicate_summary["window_overlap_max_ratio"] > 0.35:
+    if duplicate_summary["window_overlap_max_ratio"] > overlap_threshold:
         should_failures.append("window_overlap_max_ratio_above_threshold")
     if coverage_warnings:
         should_failures.append("coverage_imbalance_detected")
@@ -367,6 +403,10 @@ def build_validation_eurusd_candidate_audit(
             "first20_unique_days": first20_days,
             "first20_unique_years": first20_years,
             "first20_max_window_overlap": float(duplicate_summary["window_overlap_max_ratio"]),
+            "first30_max_window_overlap": float(overlap_summary.get("first30_max_window_overlap", duplicate_summary["window_overlap_max_ratio"])),
+            "window_overlap_max_ratio_threshold": float(overlap_summary.get("window_overlap_max_ratio_threshold", overlap_threshold)),
+            "window_overlap_duplicate_groups": overlap_summary.get("window_overlap_duplicate_groups", []),
+            "fallback_window_overlap_count": int(overlap_summary.get("fallback_window_overlap_count", 0)),
             "coverage_status": coverage_status,
             "coverage_warnings": coverage_warnings,
             "first20_coverage_summary": {

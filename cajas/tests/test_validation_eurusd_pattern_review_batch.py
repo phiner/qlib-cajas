@@ -8,6 +8,7 @@ import pytest
 from cajas.reports.validation_eurusd_pattern_review_batch import (
     build_review_batch_report,
     diversify_review_samples,
+    summarize_window_overlap,
     summarize_sample_time_diversity,
 )
 
@@ -193,3 +194,78 @@ def test_batch_builder_excludes_sample_ids(temp_dir, template_csv, label_schema)
     assert "s000" not in built["sample_id"].astype(str).tolist()
     assert report["excluded_sample_count"] == 3
     assert report["excluded_sample_count_present_in_template"] >= 1
+
+
+def test_window_overlap_summary_detects_overlap():
+    df = pd.DataFrame(
+        {
+            "sample_id": ["a", "b", "c"],
+            "timestamp": [
+                "2020-01-01T00:00:00+00:00",
+                "2020-01-01T00:15:00+00:00",
+                "2020-01-03T00:00:00+00:00",
+            ],
+            "candidate_type": ["type_a", "type_b", "type_c"],
+            "source_row_index": [100, 110, 1000],
+        }
+    )
+    s = summarize_window_overlap(df, window_bars=120, pre_context_ratio=0.6, overlap_threshold=0.35)
+    assert s["window_overlap_warning_count"] >= 1
+    assert s["max_window_overlap_ratio"] > 0.35
+
+
+def test_batch_builder_emits_overlap_summary(temp_dir, template_csv, label_schema):
+    output_csv = temp_dir / "batch_overlap.csv"
+    output_jsonl = temp_dir / "batch_overlap.jsonl"
+    report = build_review_batch_report(
+        template_csv=template_csv,
+        label_schema_json=label_schema,
+        batch_id="test_batch_overlap",
+        batch_size=30,
+        per_type_target=3,
+        output_batch_csv=output_csv,
+        output_batch_jsonl=output_jsonl,
+    )
+    assert "overlap_summary" in report
+    for k in [
+        "window_overlap_max_ratio_threshold",
+        "max_window_overlap_ratio",
+        "window_overlap_warning_count",
+        "window_overlap_duplicate_groups",
+        "fallback_window_overlap_count",
+        "first20_max_window_overlap",
+        "first30_max_window_overlap",
+    ]:
+        assert k in report["overlap_summary"]
+
+
+def test_batch_builder_full_batch_prefers_strict_no_overlap_fallback(temp_dir, label_schema):
+    rows = []
+    base_ts = pd.Timestamp("2020-01-01T00:00:00+00:00")
+    for i in range(300):
+        rows.append(
+            {
+                "sample_id": f"s{i:03d}",
+                "timestamp": (base_ts + pd.Timedelta(minutes=60 * i)).isoformat(),
+                "candidate_type": f"type_{i % 10}",
+                "confidence_score": 0.8,
+                "review_priority": "high",
+                "source_row_index": i * 20,
+            }
+        )
+    template = pd.DataFrame(rows)
+    template_csv = temp_dir / "template_strict.csv"
+    template.to_csv(template_csv, index=False)
+    output_csv = temp_dir / "batch_strict.csv"
+    output_jsonl = temp_dir / "batch_strict.jsonl"
+    report = build_review_batch_report(
+        template_csv=template_csv,
+        label_schema_json=label_schema,
+        batch_id="strict_full",
+        batch_size=100,
+        per_type_target=10,
+        output_batch_csv=output_csv,
+        output_batch_jsonl=output_jsonl,
+    )
+    assert report["batch_row_count"] == 100
+    assert report["overlap_summary"]["fallback_window_overlap_count"] == 0
