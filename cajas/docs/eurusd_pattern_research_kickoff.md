@@ -329,3 +329,9 @@ The audit separates:
 
 The report includes causality flags, multi-label timestamp conflicts, duplicate-region checks, and year/session/volatility coverage.
 Future-aware review filters are explicitly marked as not-for-live-signal.
+
+Status gates are deterministic:
+- `pass`: must-fix gates pass and no material should-fix failures
+- `watch`: must-fix gates pass with non-blocking quality warnings
+- `needs_rule_refinement`: any must-fix gate fails
+- `blocked`: required audit artifacts/columns missing

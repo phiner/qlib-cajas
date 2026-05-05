@@ -2150,3 +2150,18 @@ Review feedback policy:
 - Completed review file path: `tmp/eurusd/EURUSD_15m_pattern_review_completed.csv`.
 - Missing completed-review file is normal and non-blocking (`awaiting_review_input`).
 - Feedback/summary artifacts are review-only and produce no trading signals/orders/model training.
+
+EURUSD candidate-audit hardening workflow:
+
+```bash
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_candidate_audit_report
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_candidate_audit_warning_inventory
+PYTHONPATH=. ./.venv-qlib313/bin/python -m cajas.scripts.build_eurusd_candidate_hardening_roadmap
+./scripts/validate_eurusd_candidate_audit.sh
+```
+
+Candidate-audit statuses:
+- `pass`: must-fix gates pass and no material should-fix failures.
+- `watch`: must-fix gates pass with non-blocking warning follow-ups.
+- `needs_rule_refinement`: one or more must-fix gates fail.
+- `blocked`: required inputs/columns missing or unreadable.

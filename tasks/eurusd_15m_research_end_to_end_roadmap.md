@@ -38,6 +38,10 @@ This project is not:
 - multi-timeframe aggregation by default
 - production ML training yet
 
+Candidate-audit progression rule:
+- do not advance large-scale review while candidate audit is `needs_rule_refinement` or `blocked`
+- continue when audit is at least `watch` with documented non-blocking warnings
+
 Non-negotiable constraints:
 
 - Keep Qlib core unchanged.

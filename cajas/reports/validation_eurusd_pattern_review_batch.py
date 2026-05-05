@@ -194,6 +194,16 @@ def build_review_batch_report(
         schema = json.load(f)
     
     df = pd.read_csv(template_csv)
+    # Enforce trend candidate quality gates at batch selection time.
+    if "candidate_type" in df.columns:
+        trend_mask = df["candidate_type"].astype(str).str.contains("trend", na=False)
+        if "excluded_late_reversal_anchor" in df.columns:
+            excluded_mask = df["excluded_late_reversal_anchor"].fillna(False).astype(bool)
+            df = df[~(trend_mask & excluded_mask)].copy()
+        if "preferred_review_candidate" in df.columns:
+            preferred_mask = df["preferred_review_candidate"].fillna(True).astype(bool)
+            fallback = df.get("fallback_reason", pd.Series([""] * len(df), index=df.index)).fillna("").astype(str).str.strip()
+            df = df[~(trend_mask & (~preferred_mask) & (fallback == ""))].copy()
     excluded_sample_ids = set(excluded_sample_ids or set())
     excluded_present_count = 0
     

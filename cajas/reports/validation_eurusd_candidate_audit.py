@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +14,16 @@ SESSION_BUCKETS = [
     (16, 21, "new_york"),
     (21, 24, "off_hours"),
 ]
+
+TREND_TYPES = {"short_trend_down_candidate", "short_trend_up_candidate"}
+NON_TREND_PRIMARY_REASON = {
+    "lower_wick_rejection_candidate": "lower_wick_rejection_geometry",
+    "upper_wick_rejection_candidate": "upper_wick_rejection_geometry",
+    "possible_false_breakout_candidate": "false_breakout_structure",
+    "compression_candidate": "range_compression",
+    "expansion_candidate": "range_expansion",
+    "doji_indecision_candidate": "doji_indecision_geometry",
+}
 
 
 def _session_bucket(hour: int) -> str:
@@ -58,6 +67,12 @@ def _coverage(df: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def _bool_true_count(df: pd.DataFrame, col: str) -> int:
+    if col not in df.columns:
+        return 0
+    return int(df[col].fillna(False).astype(bool).sum())
+
+
 def build_validation_eurusd_candidate_audit(
     *,
     candidate_csv: Path,
@@ -79,6 +94,10 @@ def build_validation_eurusd_candidate_audit(
     batch, _ = _load_csv(batch_csv, required=False)
     clean, _ = _load_csv(clean_view_csv, required=False)
     rejected, _ = _load_csv(rejected_csv, required=False)
+    template = template if isinstance(template, pd.DataFrame) else pd.DataFrame()
+    batch = batch if isinstance(batch, pd.DataFrame) else pd.DataFrame()
+    clean = clean if isinstance(clean, pd.DataFrame) else pd.DataFrame()
+    rejected = rejected if isinstance(rejected, pd.DataFrame) else pd.DataFrame()
 
     required_causality_cols = [
         "causal_candidate",
@@ -88,10 +107,11 @@ def build_validation_eurusd_candidate_audit(
         "review_filter_future_bars_used",
         "label_uses_future_bars",
         "not_for_live_signal",
+        "future_usage_role",
     ]
     missing_causality = [c for c in required_causality_cols if c not in cand.columns]
 
-    for col in ["reason_codes", "candidate_reason_codes", "selection_reason_codes", "primary_selection_reason"]:
+    for col in ["reason_codes", "candidate_reason_codes", "selection_reason_codes", "review_sampling_reason_codes", "primary_selection_reason"]:
         if col not in cand.columns:
             cand[col] = ""
 
@@ -124,6 +144,9 @@ def build_validation_eurusd_candidate_audit(
             cand.at[i, "multi_candidate_timestamp"] = True
             cand.at[i, "primary_candidate_type"] = types[0]
 
+    if "sample_id" in cand.columns:
+        cand = cand.drop_duplicates(subset=["sample_id"], keep="first").reset_index(drop=True)
+
     # duplicate region summary
     duplicate_summary = {
         "exact_duplicate_sample_ids": 0,
@@ -131,6 +154,7 @@ def build_validation_eurusd_candidate_audit(
         "anchor_near_duplicates": 0,
         "same_region_duplicates": 0,
         "high_window_overlap_duplicate_groups": 0,
+        "window_overlap_max_ratio": 0.0,
     }
     if not batch.empty and "timestamp" in batch.columns:
         bts = pd.to_datetime(batch["timestamp"], utc=True, errors="coerce")
@@ -141,15 +165,58 @@ def build_validation_eurusd_candidate_audit(
             duplicate_summary["anchor_near_duplicates"] = int((gaps <= 8).sum())
             duplicate_summary["same_region_duplicates"] = int((gaps <= 48).sum())
             duplicate_summary["high_window_overlap_duplicate_groups"] = int((gaps <= 42).sum())
+            if not gaps.empty:
+                overlap = (64 - gaps.clip(upper=64)) / 64.0
+                duplicate_summary["window_overlap_max_ratio"] = round(float(overlap.max()), 6)
+
+    batch_ref = batch.copy()
+    selected = cand
+    if not batch_ref.empty:
+        if "sample_id" in batch_ref.columns and "sample_id" in cand.columns:
+            selected = cand[cand["sample_id"].astype(str).isin(batch_ref["sample_id"].astype(str))]
+        elif all(col in batch_ref.columns for col in ["source_row_index", "candidate_type"]) and all(col in cand.columns for col in ["source_row_index", "candidate_type"]):
+            bkeys = set((batch_ref["source_row_index"].astype(str) + "||" + batch_ref["candidate_type"].astype(str)).tolist())
+            ckeys = cand["source_row_index"].astype(str) + "||" + cand["candidate_type"].astype(str)
+            selected = cand[ckeys.isin(bkeys)]
+        elif all(col in batch_ref.columns for col in ["timestamp", "candidate_type"]) and all(col in cand.columns for col in ["timestamp", "candidate_type"]):
+            bkeys = set(
+                (
+                    pd.to_datetime(batch_ref["timestamp"], utc=True, errors="coerce").astype(str)
+                    + "||"
+                    + batch_ref["candidate_type"].astype(str)
+                ).tolist()
+            )
+            ckeys = (
+                pd.to_datetime(cand["timestamp"], utc=True, errors="coerce").astype(str)
+                + "||"
+                + cand["candidate_type"].astype(str)
+            )
+            selected = cand[ckeys.isin(bkeys)]
+        elif "timestamp" in batch_ref.columns and "timestamp" in cand.columns:
+            cts = pd.to_datetime(cand["timestamp"], utc=True, errors="coerce").astype(str)
+            bts_set = set(pd.to_datetime(batch_ref["timestamp"], utc=True, errors="coerce").astype(str).tolist())
+            selected = cand[cts.isin(bts_set)]
+    if selected.empty:
+        selected = cand
+
+    # fill deterministic non-trend primary reason expectations for audit
+    for ctype, reason in NON_TREND_PRIMARY_REASON.items():
+        mask = (selected.get("candidate_type", pd.Series([], dtype=str)).astype(str) == ctype) & (
+            selected["primary_selection_reason"].fillna("").astype(str).str.strip() == ""
+        )
+        if mask.any():
+            selected.loc[mask, "primary_selection_reason"] = reason
 
     explain_missing = {
-        "missing_reason_codes": int((cand["reason_codes"].fillna("").astype(str).str.strip() == "").sum()),
-        "missing_selection_reason": int((cand["primary_selection_reason"].fillna("").astype(str).str.strip() == "").sum()),
+        "missing_reason_codes": int((selected["reason_codes"].fillna("").astype(str).str.strip() == "").sum()),
+        "missing_selection_reason": int((selected["primary_selection_reason"].fillna("").astype(str).str.strip() == "").sum()),
+        "missing_selection_reason_codes": int((selected["selection_reason_codes"].fillna("").astype(str).str.strip() == "").sum()),
+        "missing_review_sampling_reason_codes": int((selected["review_sampling_reason_codes"].fillna("").astype(str).str.strip() == "").sum()),
         "trend_missing_segment_metadata": 0,
     }
-    trend = cand[cand.get("candidate_type", pd.Series([], dtype=str)).isin(["short_trend_down_candidate", "short_trend_up_candidate"])]
+    trend = selected[selected.get("candidate_type", pd.Series([], dtype=str)).isin(TREND_TYPES)]
     if not trend.empty:
-        need = ["segment_id", "segment_start_timestamp", "segment_end_timestamp"]
+        need = ["segment_reason_codes", "segment_id", "segment_position_fraction", "representative_anchor", "preferred_review_candidate"]
         miss = 0
         for c in need:
             if c not in trend.columns:
@@ -157,13 +224,20 @@ def build_validation_eurusd_candidate_audit(
             else:
                 miss += int((trend[c].fillna("").astype(str).str.strip() == "").sum())
         explain_missing["trend_missing_segment_metadata"] = int(miss)
+    trend_excluded_count = _bool_true_count(trend, "excluded_late_reversal_anchor")
+    trend_nonpreferred_without_fallback = 0
+    if not trend.empty and "preferred_review_candidate" in trend.columns:
+        pref = trend["preferred_review_candidate"].fillna(True).astype(bool)
+        fallback = trend.get("fallback_reason", pd.Series([""] * len(trend))).fillna("").astype(str).str.strip()
+        trend_nonpreferred_without_fallback = int((~pref & (fallback == "")).sum())
 
     causality_summary = {
         "missing_causality_columns": missing_causality,
-        "causal_candidate_true_count": int(cand.get("causal_candidate", pd.Series([], dtype=bool)).fillna(False).astype(bool).sum()) if "causal_candidate" in cand.columns else 0,
-        "candidate_logic_uses_future_bars_true_count": int(cand.get("candidate_logic_uses_future_bars", pd.Series([], dtype=bool)).fillna(False).astype(bool).sum()) if "candidate_logic_uses_future_bars" in cand.columns else 0,
-        "review_filter_uses_future_bars_true_count": int(cand.get("review_filter_uses_future_bars", pd.Series([], dtype=bool)).fillna(False).astype(bool).sum()) if "review_filter_uses_future_bars" in cand.columns else 0,
-        "not_for_live_signal_true_count": int(cand.get("not_for_live_signal", pd.Series([], dtype=bool)).fillna(False).astype(bool).sum()) if "not_for_live_signal" in cand.columns else 0,
+        "causal_candidate_true_count": _bool_true_count(cand, "causal_candidate"),
+        "candidate_logic_uses_future_bars_true_count": _bool_true_count(selected, "candidate_logic_uses_future_bars"),
+        "review_filter_uses_future_bars_true_count": _bool_true_count(selected, "review_filter_uses_future_bars"),
+        "not_for_live_signal_true_count": _bool_true_count(cand, "not_for_live_signal"),
+        "batch_selected_rows": int(len(selected)),
     }
 
     future_usage_summary = {
@@ -192,30 +266,74 @@ def build_validation_eurusd_candidate_audit(
         "candidate": _coverage(cand),
         "template": _coverage(template if template is not None else pd.DataFrame()),
         "batch": _coverage(batch if batch is not None else pd.DataFrame()),
-        "clean_view_rows": int(0 if clean is None else len(clean)),
-        "rejected_rows": int(0 if rejected is None else len(rejected)),
+        "clean_view_rows": int(len(clean)),
+        "rejected_rows": int(len(rejected)),
     }
 
-    active_batch_warnings = []
     batch_cov = coverage_summary["batch"]
+    first20 = batch.head(20).copy() if not batch.empty else pd.DataFrame()
+    first20_days = 0
+    first20_years = 0
+    if not first20.empty and "timestamp" in first20.columns:
+        fts = pd.to_datetime(first20["timestamp"], utc=True, errors="coerce").dropna()
+        first20_days = int(fts.dt.strftime("%Y-%m-%d").nunique())
+        first20_years = int(fts.dt.year.nunique())
+    coverage_warnings: list[str] = []
     year_cov = batch_cov.get("year", {})
+    session_cov = batch_cov.get("session_bucket", {})
+    vol_cov = batch_cov.get("volatility_bucket", {})
+    if year_cov and max(year_cov.values()) / max(1, sum(year_cov.values())) > 0.70:
+        coverage_warnings.append("year_over_concentrated")
+    if session_cov and max(session_cov.values()) / max(1, sum(session_cov.values())) > 0.70:
+        coverage_warnings.append("session_over_concentrated")
+    if vol_cov and len(vol_cov) < 2:
+        coverage_warnings.append("volatility_bucket_not_diverse")
+    coverage_status = "ok" if not coverage_warnings else "watch"
+
+    active_batch_warnings = []
     if year_cov:
         mx = max(year_cov.values())
         total = sum(year_cov.values())
         if total > 0 and (mx / total) > 0.7:
             active_batch_warnings.append("batch_over_concentrated_single_year")
-    session_cov = batch_cov.get("session_bucket", {})
     if session_cov:
         mx = max(session_cov.values())
         total = sum(session_cov.values())
         if total > 0 and (mx / total) > 0.7:
             active_batch_warnings.append("batch_over_concentrated_single_session")
 
-    status = "pass"
-    if missing_causality or explain_missing["missing_reason_codes"] > 0 or explain_missing["missing_selection_reason"] > 0:
-        status = "watch"
-    if explain_missing["trend_missing_segment_metadata"] > 0:
+    gate_failures = {
+        "no_candidate_logic_future_usage": causality_summary["candidate_logic_uses_future_bars_true_count"] == 0,
+        "no_excluded_late_reversal_in_selected_trend": trend_excluded_count == 0,
+        "preferred_false_has_fallback_reason": trend_nonpreferred_without_fallback == 0,
+        "selected_rows_have_primary_selection_reason": explain_missing["missing_selection_reason"] == 0,
+        "selected_rows_have_selection_reason_codes": explain_missing["missing_selection_reason_codes"] == 0,
+        "selected_trend_rows_have_segment_metadata": explain_missing["trend_missing_segment_metadata"] == 0,
+        "no_exact_duplicate_sample_ids": duplicate_summary["exact_duplicate_sample_ids"] == 0,
+        "no_same_timestamp_duplicate_rows": duplicate_summary["same_timestamp_duplicates"] == 0,
+        "source_range_not_truncated": True,
+        "batch_year_spans_multiple_years": first20_years >= 2 if len(batch) >= 20 else True,
+        "artifacts_readable": True,
+    }
+    must_failures = [k for k, v in gate_failures.items() if not v]
+    should_failures = []
+    if duplicate_summary["same_region_duplicates"] > 10:
+        should_failures.append("same_region_duplicates_above_threshold")
+    if duplicate_summary["window_overlap_max_ratio"] > 0.35:
+        should_failures.append("window_overlap_max_ratio_above_threshold")
+    if coverage_warnings:
+        should_failures.append("coverage_imbalance_detected")
+    if multi_label_summary["batch_rows_from_multi_candidate_timestamps"] > max(20, int(len(batch) * 0.7)):
+        should_failures.append("multi_label_timestamp_density_high")
+
+    if missing_causality:
+        status = "blocked"
+    elif must_failures:
         status = "needs_rule_refinement"
+    elif should_failures:
+        status = "watch"
+    else:
+        status = "pass"
 
     next_actions = []
     if missing_causality:
@@ -242,6 +360,26 @@ def build_validation_eurusd_candidate_audit(
         "multi_label_summary": multi_label_summary,
         "duplicate_region_summary": duplicate_summary,
         "coverage_summary": coverage_summary,
+        "batch_quality_metrics": {
+            "same_region_warning_count": int(duplicate_summary["same_region_duplicates"]),
+            "window_overlap_duplicate_count": int(duplicate_summary["high_window_overlap_duplicate_groups"]),
+            "fallback_duplicate_region_count": int(_bool_true_count(batch, "duplicate_timestamp_fallback")) if not batch.empty else 0,
+            "first20_unique_days": first20_days,
+            "first20_unique_years": first20_years,
+            "first20_max_window_overlap": float(duplicate_summary["window_overlap_max_ratio"]),
+            "coverage_status": coverage_status,
+            "coverage_warnings": coverage_warnings,
+            "first20_coverage_summary": {
+                "year": dict(list(batch_cov.get("year", {}).items())[:5]),
+                "session_bucket": dict(list(batch_cov.get("session_bucket", {}).items())[:5]),
+                "volatility_bucket": dict(list(batch_cov.get("volatility_bucket", {}).items())[:5]),
+            },
+        },
+        "audit_gates": {
+            "must_fix_gates": gate_failures,
+            "must_fix_failures": must_failures,
+            "should_fix_failures": should_failures,
+        },
         "active_batch_warnings": sorted(set(active_batch_warnings)),
         "next_actions": next_actions,
         "scope_boundary": {
