@@ -917,3 +917,10 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 - Split recognition into `3-bar micro pattern/event` and `8/24/128 quantitative structure`.
 - Keep micro-event outputs independent and use them to qualify local structure, not to override long-window background automatically.
 - Keep boundaries unchanged: no Qlib core edits, no trading outputs, no real LLM provider integration.
+
+
+## Pre-GUI calibration gate (Task 081)
+
+- Build and review `validation-eurusd-market-state-calibration` after market-state dataset generation.
+- If catch-all concentration warnings are high, refine deterministic thresholds first, then proceed to GUI wiring.
+- This gate is still research-only and keeps real LLM trial approval as `not_approved`.

@@ -220,6 +220,7 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
     event = "micro_noise"
     direction = "mixed"
     strength = "weak"
+    reason_code = "micro_conflicting_sequence"
     reversal = False
     rejection = False
     sweep = False
@@ -229,18 +230,21 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
         event = "three_bar_reversal_up"
         direction = "up"
         strength = "strong"
+        reason_code = "micro_three_bar_reversal_up"
         reversal = True
         rationale = "前两根下压后当前阳线突破前高，构成3K向上反转"
     elif reversal_down:
         event = "three_bar_reversal_down"
         direction = "down"
         strength = "strong"
+        reason_code = "micro_three_bar_reversal_down"
         reversal = True
         rationale = "前两根上推后当前阴线跌破前低，构成3K向下反转"
     elif lower_sweep_reclaim:
         event = "lower_sweep_reclaim"
         direction = "up"
         strength = "medium" if low_w > 0.45 else "weak"
+        reason_code = "micro_lower_sweep_reclaim"
         rejection = True
         sweep = True
         rationale = "下扫前低后收回区间内，表现为下影回收"
@@ -248,6 +252,7 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
         event = "upper_sweep_reject"
         direction = "down"
         strength = "medium" if up_w > 0.45 else "weak"
+        reason_code = "micro_upper_sweep_reject"
         rejection = True
         sweep = True
         rationale = "上扫前高后收回区间内，表现为上影拒绝"
@@ -255,35 +260,48 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
         event = "three_bar_exhaustion_up"
         direction = "down"
         strength = "medium"
+        reason_code = "micro_three_bar_exhaustion_up"
         rejection = True
         rationale = "连续上推后实体减弱并出现上影，出现上行动能衰竭"
     elif down_seq and current_bull and low_w > 0.35 and bw < 0.45:
         event = "three_bar_exhaustion_down"
         direction = "up"
         strength = "medium"
+        reason_code = "micro_three_bar_exhaustion_down"
         rejection = True
         rationale = "连续下压后实体减弱并出现下影，出现下行动能衰竭"
     elif failed_follow_up:
         event = "failed_followthrough_up"
         direction = "down"
         strength = "medium"
+        reason_code = "micro_failed_followthrough_up"
         rejection = True
         rationale = "尝试上破但收盘未跟随，形成上破失败"
     elif failed_follow_down:
         event = "failed_followthrough_down"
         direction = "up"
         strength = "medium"
+        reason_code = "micro_failed_followthrough_down"
         rejection = True
         rationale = "尝试下破但收盘未跟随，形成下破失败"
     elif abs(close - prev_close) <= max(1e-8, 0.15 * (high - low)) and bw <= 0.25:
         event = "micro_pause"
         direction = "neutral"
         strength = "weak"
+        reason_code = "micro_small_body_pause"
         rationale = "实体很小且收盘变化有限，属于微暂停"
-    elif bool(r.get("volatility_state_3", "unknown") == "compressed") and returns_in:
+    elif (
+        bool(r.get("volatility_state_3", "unknown") == "compressed")
+        and returns_in
+        and float(r.get("range_ratio_3_8", np.nan)) <= 0.45
+        and abs(float(r.get("return_3", np.nan) or 0.0)) <= 0.0005
+        and bw <= 0.2
+        and max(up_w, low_w) <= 0.4
+    ):
         event = "micro_compression"
         direction = "neutral"
         strength = "weak"
+        reason_code = "micro_small_range_compression"
         rationale = "3K区间压缩且收回原区间，属于微压缩"
 
     if event not in MICRO_EVENT_VALUES:
@@ -293,6 +311,7 @@ def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, A
         "micro_pattern_event_3": event,
         "micro_pattern_direction_3": direction,
         "micro_pattern_strength_3": strength,
+        "micro_event_reason_code": reason_code,
         "micro_reversal_detected_3": reversal,
         "micro_rejection_detected_3": rejection,
         "micro_sweep_detected_3": sweep,
@@ -311,73 +330,105 @@ def classify_structure_state_row(row: pd.Series | dict[str, Any]) -> dict[str, A
     returns_in = bool(r.get("latest_bar_returns_inside_prior_3_range", False))
 
     short = "unknown"
+    short_reason = "structure_8_unknown"
     if pd.notna(r8):
         if r8 > 0.0025:
             short = "impulse_up"
+            short_reason = "structure_8_impulse_up"
         elif r8 < -0.0025:
             short = "impulse_down"
+            short_reason = "structure_8_impulse_down"
         elif abs(r8) <= 0.0008:
             short = "sideways"
+            short_reason = "structure_8_sideways_low_return"
         elif breaks_hi and returns_in:
             short = "false_breakout"
+            short_reason = "structure_8_false_breakout"
         elif breaks_hi or breaks_lo:
             short = "breakout_attempt"
+            short_reason = "structure_8_breakout_attempt"
         else:
             short = "transition"
+            short_reason = "structure_8_transition"
 
     long_state = "unknown"
+    long_reason = "structure_128_unknown"
     if pd.notna(r128):
         if r128 > 0.01:
             long_state = "uptrend"
+            long_reason = "structure_128_uptrend"
         elif r128 < -0.01:
             long_state = "downtrend"
+            long_reason = "structure_128_downtrend"
         elif abs(r128) <= 0.004:
             long_state = "sideways"
+            long_reason = "structure_128_sideways_low_slope"
         else:
             long_state = "transition"
+            long_reason = "structure_128_transition"
 
         if long_state == "uptrend" and r24 < -0.003:
             long_state = "weakening_uptrend"
+            long_reason = "structure_128_weakening_uptrend"
         if long_state == "downtrend" and r24 > 0.003:
             long_state = "weakening_downtrend"
+            long_reason = "structure_128_weakening_downtrend"
         if pos128 >= 0.75 and abs(r24) < 0.002:
             long_state = "high_level_consolidation"
+            long_reason = "structure_128_high_level_consolidation"
         if pos128 <= 0.25 and abs(r24) < 0.002:
             long_state = "low_level_base"
+            long_reason = "structure_128_low_level_base"
 
     mid = "unknown"
+    mid_reason = "structure_24_unknown"
     if pd.notna(r24):
         if r24 > 0.006:
             mid = "uptrend"
+            mid_reason = "structure_24_uptrend"
         elif r24 < -0.006:
             mid = "downtrend"
+            mid_reason = "structure_24_downtrend"
         elif abs(r24) <= 0.0015:
             mid = "sideways"
+            mid_reason = "structure_24_sideways"
         elif abs(r24) <= 0.003:
             mid = "consolidation"
+            mid_reason = "structure_24_consolidation"
         else:
             mid = "transition"
+            mid_reason = "structure_24_transition"
 
         if long_state in {"uptrend", "weakening_uptrend"} and r24 < -0.002:
             mid = "pullback"
+            mid_reason = "structure_24_pullback_in_128_uptrend"
         if long_state in {"downtrend", "weakening_downtrend"} and r24 > 0.002:
             mid = "rebound"
+            mid_reason = "structure_24_rebound_in_128_downtrend"
 
     local = "unknown"
+    local_reason = "structure_local_unknown"
     if long_state in {"uptrend", "weakening_uptrend"} and mid == "pullback":
         local = "pullback_in_uptrend"
+        local_reason = "structure_local_pullback_in_uptrend"
     elif long_state in {"downtrend", "weakening_downtrend"} and mid == "rebound":
         local = "rebound_in_downtrend"
+        local_reason = "structure_local_rebound_in_downtrend"
     elif long_state == "high_level_consolidation":
         local = "high_level_consolidation"
+        local_reason = "structure_local_high_level_consolidation"
     elif long_state == "low_level_base":
         local = "low_level_base"
+        local_reason = "structure_local_low_level_base"
     elif long_state == "sideways" and mid in {"sideways", "consolidation"}:
         local = "range_chop"
+        local_reason = "structure_local_range_chop"
     elif mid in {"uptrend", "downtrend"} and short in {"impulse_up", "impulse_down"}:
         local = "trend_continuation"
+        local_reason = "structure_local_trend_continuation"
 
     confidence = "low"
+    confidence_reason = "confidence_conflicting_windows"
     votes = 0
     if long_state in {"uptrend", "weakening_uptrend"} and mid in {"uptrend", "pullback", "consolidation"}:
         votes += 1
@@ -387,8 +438,10 @@ def classify_structure_state_row(row: pd.Series | dict[str, Any]) -> dict[str, A
         votes += 1
     if votes >= 3:
         confidence = "high"
+        confidence_reason = "confidence_aligned_windows"
     elif votes >= 2:
         confidence = "medium"
+        confidence_reason = "confidence_partially_aligned_windows"
 
     return {
         "short_term_state_8": short,
@@ -396,6 +449,11 @@ def classify_structure_state_row(row: pd.Series | dict[str, Any]) -> dict[str, A
         "long_term_state_128": long_state,
         "local_structure_state": local,
         "structure_confidence": confidence,
+        "short_structure_reason_code": short_reason,
+        "mid_structure_reason_code": mid_reason,
+        "long_structure_reason_code": long_reason,
+        "local_structure_reason_code": local_reason,
+        "confidence_reason_code": confidence_reason,
     }
 
 
@@ -405,14 +463,19 @@ def combine_micro_event_with_structure(row: pd.Series | dict[str, Any]) -> dict[
     local = str(r.get("local_structure_state", "unknown"))
     long_state = str(r.get("long_term_state_128", "unknown"))
 
+    combined_reason = "combine_no_adjustment"
     if local == "pullback_in_uptrend" and micro in {"three_bar_reversal_up", "lower_sweep_reclaim", "failed_followthrough_down"}:
         local = "pullback_in_uptrend"
+        combined_reason = "combine_pullback_uptrend_supported_by_micro_up"
     elif local == "rebound_in_downtrend" and micro in {"three_bar_reversal_down", "upper_sweep_reject", "failed_followthrough_up"}:
         local = "rebound_in_downtrend"
+        combined_reason = "combine_rebound_downtrend_supported_by_micro_down"
     elif long_state == "high_level_consolidation" and micro in {"upper_sweep_reject", "three_bar_exhaustion_up"}:
         local = "exhaustion_risk"
+        combined_reason = "combine_high_consolidation_exhaustion_risk"
     elif long_state == "sideways" and micro in {"micro_noise", "micro_pause", "micro_compression"}:
         local = "range_chop"
+        combined_reason = "combine_sideways_micro_range_chop"
 
     structure = classify_structure_state_row(r)
     short = structure["short_term_state_8"]
@@ -425,6 +488,7 @@ def combine_micro_event_with_structure(row: pd.Series | dict[str, Any]) -> dict[
     )
     return {
         "local_structure_state": local,
+        "combined_reason_code": combined_reason,
         "market_state_rationale_zh": rationale_zh,
     }
 
@@ -519,6 +583,18 @@ def summarize_market_state_dataset(df: pd.DataFrame) -> dict[str, Any]:
         "micro_reversal_count": int(df.get("micro_reversal_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
         "micro_rejection_count": int(df.get("micro_rejection_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
         "micro_sweep_count": int(df.get("micro_sweep_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
+        "micro_event_reason_code_distribution": {
+            str(k): int(v)
+            for k, v in df.get("micro_event_reason_code", pd.Series(dtype=str)).fillna("unknown").astype(str).value_counts().items()
+        },
+        "structure_reason_code_distribution": {
+            str(k): int(v)
+            for k, v in df.get("local_structure_reason_code", pd.Series(dtype=str)).fillna("unknown").astype(str).value_counts().items()
+        },
+        "confidence_reason_code_distribution": {
+            str(k): int(v)
+            for k, v in df.get("confidence_reason_code", pd.Series(dtype=str)).fillna("unknown").astype(str).value_counts().items()
+        },
         "unknown_state_count": unknown_count,
         "gap_caveat_count": gap_caveat_count,
     }

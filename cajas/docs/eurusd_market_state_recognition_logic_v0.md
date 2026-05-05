@@ -42,3 +42,10 @@ Future Qlib adapter should consume:
 - human-corrected labels after review
 
 No Qlib core modification is required for this phase.
+
+
+## Calibration Diagnostics (Task 081)
+
+- Added calibration report layer to quantify micro/structure concentration before GUI integration.
+- Added reason-code distributions for micro event, local structure, and confidence assignment to improve deterministic explainability.
+- Over-dominant catch-all classes trigger warnings and manual review priority lists; they do not create trade actions.

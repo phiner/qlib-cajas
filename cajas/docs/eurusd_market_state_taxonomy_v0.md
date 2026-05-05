@@ -54,3 +54,10 @@ Enum examples:
 - No trading signals/orders/position sizing.
 - No Qlib core change requirement.
 - No real LLM provider calls.
+
+
+## Calibration Guard (Task 081)
+
+- Add `validation-eurusd-market-state-calibration` report before GUI wiring.
+- Catch-all warnings (`dominant_*`, `catch_all_micro_event_high`, `unknown_local_structure_high`, `low_confidence_dominant`) are review signals, not trading signals and not automatic blockers by default.
+- Calibration report remains research-only and keeps real LLM trial status at `not_approved`.
