@@ -57,6 +57,9 @@ def test_gui_validation_ready_or_watch(mock_clean_view, mock_batch, temp_dir):
     assert report["launcher_command"] == "./scripts/run_eurusd_review_gui.sh"
     assert "language_policy_path" in report
     assert report["language_boundary_policy_status"] in {"documented", "missing"}
+    assert report["zh_rationale_fields_known_by_helper"] is True
+    assert report["zh_rationale_fields_exposed_in_gui"] is True
+    assert report["zh_bilingual_labels_present"] is True
 
 
 def test_gui_validation_blocked_missing_app(mock_clean_view, mock_batch, temp_dir):

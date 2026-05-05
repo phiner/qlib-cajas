@@ -21,6 +21,10 @@ FORBIDDEN_TRADING_COLUMNS = [
 ]
 OPTIONAL_TEXT_FIELDS = [
     "review_notes",
+    "human_rationale_zh",
+    "human_counterexample_zh",
+    "human_uncertainty_reason_zh",
+    "human_context_notes_zh",
 ]
 DEFAULT_REVIEW_VALUES = schema_default_review_values()
 REVIEW_FIELDS = list(DEFAULT_REVIEW_VALUES.keys())
@@ -776,7 +780,9 @@ def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
     """Build a complete review payload with sanitized optional text fields."""
     row = default_review_values()
     row.update(overrides)
-    row["review_notes"] = sanitize_optional_text_value(row.get("review_notes", ""))
+    for field in OPTIONAL_TEXT_FIELDS:
+        if field in row:
+            row[field] = sanitize_optional_text_value(row.get(field, ""))
     return {key: row[key] for key in CANONICAL_REVIEW_FIELDS}
 
 

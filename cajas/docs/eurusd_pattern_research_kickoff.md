@@ -9,6 +9,7 @@ Language boundary policy:
 - Runtime and automation identifiers remain English.
 - Human/LLM semantic rationale is Chinese-authoritative where precision matters.
 - Reference: `cajas/docs/eurusd_review_language_policy.md`.
+- Active review persistence includes first-class `_zh` rationale fields (`human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`).
 
 ## Expected data location
 

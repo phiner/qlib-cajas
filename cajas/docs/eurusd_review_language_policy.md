@@ -49,6 +49,13 @@ Recommended semantic bridge naming:
 - `counter_observations_zh`
 - `uncertainty_reason_zh`
 
+Active first-class rationale fields in EURUSD review records:
+
+- `human_rationale_zh`
+- `human_counterexample_zh`
+- `human_uncertainty_reason_zh`
+- `human_context_notes_zh`
+
 ## Prohibited Direction
 
 Do not introduce:

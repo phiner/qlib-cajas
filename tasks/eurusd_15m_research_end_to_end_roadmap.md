@@ -56,6 +56,7 @@ Non-negotiable constraints:
 - CSV/JSONL remain durable storage/interchange formats.
 - GitHub merge must be manual by the human user.
 - Runtime identifiers must remain English; Chinese is authoritative for semantic review rationale via `_zh` semantic fields where needed (see `cajas/docs/eurusd_review_language_policy.md`).
+- Active semantic fields include `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, and `human_context_notes_zh` in CSV/JSONL review persistence.
 
 Local GUI run commands:
 

@@ -325,6 +325,10 @@ def main():
         "primary_candidate_family": "primary_candidate_family",
         "secondary_candidate_family": "secondary_candidate_family",
         "review_notes": "review_notes",
+        "human_rationale_zh": "human_rationale_zh",
+        "human_counterexample_zh": "human_counterexample_zh",
+        "human_uncertainty_reason_zh": "human_uncertainty_reason_zh",
+        "human_context_notes_zh": "human_context_notes_zh",
     }
 
     if st.session_state.get("current_sample_id") != sample_id:
@@ -338,10 +342,17 @@ def main():
             if field == "review_notes":
                 value = sanitize_optional_text_value(value)
             st.session_state[key] = value if value not in (None, "") or field == "review_notes" else state_defaults[field]
-        st.session_state["review_notes"] = sanitize_optional_text_value(st.session_state.get("review_notes", ""))
+        for text_field in [
+            "review_notes",
+            "human_rationale_zh",
+            "human_counterexample_zh",
+            "human_uncertainty_reason_zh",
+            "human_context_notes_zh",
+        ]:
+            st.session_state[text_field] = sanitize_optional_text_value(st.session_state.get(text_field, ""))
 
     for field, key in review_key_map.items():
-        if field in {"review_notes"}:
+        if field in {"review_notes", "human_rationale_zh", "human_counterexample_zh", "human_uncertainty_reason_zh", "human_context_notes_zh"}:
             continue
         options = allowed.get(field)
         if isinstance(options, list) and options:
@@ -495,6 +506,27 @@ def main():
             placeholder="Optional notes...",
             key="review_notes",
         )
+        st.markdown("#### Chinese Semantic Rationale")
+        human_rationale_zh = st.text_area(
+            "Human rationale (ZH) / 人工判断理由",
+            placeholder="填写中文的人审判断依据...",
+            key="human_rationale_zh",
+        )
+        human_counterexample_zh = st.text_area(
+            "Counterexample notes (ZH) / 反例/否定理由",
+            placeholder="填写为什么该形态不成立或存在反例...",
+            key="human_counterexample_zh",
+        )
+        human_uncertainty_reason_zh = st.text_area(
+            "Uncertainty reason (ZH) / 不确定原因",
+            placeholder="若不确定，填写不确定来源...",
+            key="human_uncertainty_reason_zh",
+        )
+        human_context_notes_zh = st.text_area(
+            "Context notes (ZH) / 上下文备注",
+            placeholder="填写影响判断的上下文信息...",
+            key="human_context_notes_zh",
+        )
 
         st.markdown("#### Bad Sample Workflow")
         reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
@@ -520,6 +552,10 @@ def main():
             "secondary_candidate_family": secondary_candidate_family,
             "review_confidence": review_confidence,
             "review_notes": review_notes,
+            "human_rationale_zh": human_rationale_zh,
+            "human_counterexample_zh": human_counterexample_zh,
+            "human_uncertainty_reason_zh": human_uncertainty_reason_zh,
+            "human_context_notes_zh": human_context_notes_zh,
         }
 
     def persist_review(action_type: str, advance_to_next: bool) -> None:

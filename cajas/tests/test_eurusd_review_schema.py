@@ -79,6 +79,10 @@ def test_extended_vocabulary_completeness_rules() -> None:
 
 def test_canonical_review_fields_list_is_five_layer_only() -> None:
     assert "review_confidence" in CANONICAL_REVIEW_FIELDS
+    assert "human_rationale_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_counterexample_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_uncertainty_reason_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_context_notes_zh" in CANONICAL_REVIEW_FIELDS
     assert "review_confidence_level" not in CANONICAL_REVIEW_FIELDS
     for field in ["direction_context", "review_status", "structure_quality", "follow_through_quality", "pattern_label"]:
         assert field not in CANONICAL_REVIEW_FIELDS

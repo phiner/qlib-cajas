@@ -555,6 +555,10 @@ def test_default_review_values_match_reset_contract():
         "primary_candidate_family",
         "secondary_candidate_family",
         "session_context",
+        "human_rationale_zh",
+        "human_counterexample_zh",
+        "human_uncertainty_reason_zh",
+        "human_context_notes_zh",
     ]:
         assert field in defaults
 
@@ -579,6 +583,10 @@ def test_build_review_update_row_fills_required_fields():
         "primary_candidate_family",
         "secondary_candidate_family",
         "review_notes",
+        "human_rationale_zh",
+        "human_counterexample_zh",
+        "human_uncertainty_reason_zh",
+        "human_context_notes_zh",
     ]:
         assert field in row
     assert row["review_notes"] == ""
@@ -653,6 +661,8 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
         "review_outcome": "weak_pattern",
         "review_confidence": "medium",
         "review_notes": "note",
+        "human_rationale_zh": "理由",
+        "human_counterexample_zh": "反例",
     }
     append_review_event_jsonl(
         jsonl_path=jsonl_path,
@@ -672,6 +682,8 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     assert record["completed_csv_path"] == str(completed_csv_path)
     assert record["source_batch_path"] == "tmp/eurusd/batch.csv"
     assert record["review"]["review_notes"] == "note"
+    assert record["review"]["human_rationale_zh"] == "理由"
+    assert record["review"]["human_counterexample_zh"] == "反例"
     assert "recent_move_context" in record["review"]
     assert "session_context" in record["review"]
 
