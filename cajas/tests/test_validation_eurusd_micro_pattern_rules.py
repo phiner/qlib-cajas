@@ -95,3 +95,37 @@ def test_noise_only_after_higher_priority_fail() -> None:
     }
     out = classify_market_state_row(row)
     assert out["micro_pattern_event_3"] == "micro_noise"
+
+
+def test_new_bucket_triggers_before_micro_noise() -> None:
+    row = {
+        "open": 1.001,
+        "close": 1.0012,
+        "high": 1.00129,
+        "low": 1.00096,
+        "prev_open_1": 1.0011,
+        "prev_close_1": 1.00115,
+        "prev_high_1": 1.00135,
+        "prev_low_1": 1.0009,
+        "prev_open_2": 1.00105,
+        "prev_close_2": 1.0011,
+        "prev_high_2": 1.0013,
+        "prev_low_2": 1.00095,
+        "body_ratio_latest": 0.18,
+        "upper_wick_ratio_latest": 0.2,
+        "lower_wick_ratio_latest": 0.18,
+        "latest_close_position_in_candle": 0.55,
+        "latest_bar_returns_inside_prior_3_range": True,
+        "volatility_state_3": "normal",
+        "range_ratio_3_8": 0.7,
+        "return_3": 0.0002,
+        "range_width_3": 0.001,
+        "return_8": 0.0,
+        "return_24": 0.0,
+        "return_128": 0.0,
+        "range_position_128": 0.5,
+        "latest_bar_breaks_prior_3_high": False,
+        "latest_bar_breaks_prior_3_low": False,
+    }
+    out = classify_market_state_row(row)
+    assert out["micro_pattern_event_3"] in {"inside_range_pause", "micro_pause"}

@@ -17,6 +17,11 @@ REQUIRED_EVENTS = {
     "failed_followthrough_up",
     "failed_followthrough_down",
     "micro_pause",
+    "inside_range_pause",
+    "micro_drift_up",
+    "micro_drift_down",
+    "micro_chop",
+    "wick_conflict",
     "micro_compression",
     "micro_noise",
 }

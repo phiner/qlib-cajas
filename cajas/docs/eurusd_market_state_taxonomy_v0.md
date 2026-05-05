@@ -68,3 +68,10 @@ Enum examples:
 - 3-bar micro recognition now reads versioned external rules from `cajas/data_examples/eurusd_micro_pattern_rules_v0.json`.
 - Rules are evaluated by priority and are deterministic/auditable; `micro_noise` remains lowest-priority catch-all.
 - These pattern events are research context labels, not trading signals.
+
+
+## Micro-noise residual profiling (Task 083)
+
+- Added deterministic `validation-eurusd-micro-noise-profile` to break `micro_noise` into reviewable diagnostic subtypes.
+- Added conservative buckets (`inside_range_pause`, `micro_drift_up/down`, `micro_chop`, `wick_conflict`) above residual `micro_noise`.
+- `micro_noise` remains residual catch-all; no trading semantics are introduced.

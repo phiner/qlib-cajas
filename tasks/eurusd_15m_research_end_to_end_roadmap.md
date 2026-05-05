@@ -931,3 +931,10 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 - Before distribution calibration, externalize and validate 3-bar micro pattern rules via `validation-eurusd-micro-pattern-rules`.
 - Keep 8/24/128 structure logic quantitative and unchanged in boundary semantics.
 - Real LLM trial approval remains `not_approved`.
+
+
+## Task 083 gate
+
+- Added micro-noise profiling report before further calibration tuning.
+- Keep `micro_noise` as residual class while splitting repeatable weak structures into named buckets for review quality.
+- Real LLM trial approval remains `not_approved`; no trading outputs.

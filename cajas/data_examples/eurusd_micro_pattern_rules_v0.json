@@ -172,6 +172,27 @@
       "rationale_template_zh": "下破后缺乏跟随，短线反抽概率增加。"
     },
     {
+      "pattern_id": "inside_range_pause_v0",
+      "event": "inside_range_pause",
+      "direction": "neutral",
+      "strength": "weak",
+      "priority": 22,
+      "enabled": true,
+      "description_zh": "处于前区间内部且波动收敛，属于区间内暂停。",
+      "conditions": {
+        "close_returns_inside_prior_range": true,
+        "body_ratio_max": 0.22,
+        "three_bar_return_abs_max": 0.0004,
+        "max_wick_ratio_max": 0.35
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "价格位于前区间内部且缺乏方向性，表现为区间内暂停。"
+    },
+    {
       "pattern_id": "micro_pause_v0",
       "event": "micro_pause",
       "direction": "neutral",
@@ -191,11 +212,93 @@
       "rationale_template_zh": "波动收敛且实体偏小，短线节奏暂停。"
     },
     {
+      "pattern_id": "micro_drift_up_v0",
+      "event": "micro_drift_up",
+      "direction": "up",
+      "strength": "weak",
+      "priority": 18,
+      "enabled": true,
+      "description_zh": "三K缓慢上移且未形成强突破，属于弱上漂移。",
+      "conditions": {
+        "consecutive_direction": "up",
+        "three_bar_return_min": 0.0004,
+        "three_bar_return_max": 0.0022,
+        "body_ratio_max": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "短线连续上移但力度一般，归类为弱上漂移。"
+    },
+    {
+      "pattern_id": "micro_drift_down_v0",
+      "event": "micro_drift_down",
+      "direction": "down",
+      "strength": "weak",
+      "priority": 17,
+      "enabled": true,
+      "description_zh": "三K缓慢下移且未形成强下破，属于弱下漂移。",
+      "conditions": {
+        "consecutive_direction": "down",
+        "three_bar_return_max": -0.0004,
+        "three_bar_return_min": -0.0022,
+        "body_ratio_max": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "短线连续下移但力度一般，归类为弱下漂移。"
+    },
+    {
+      "pattern_id": "wick_conflict_v0",
+      "event": "wick_conflict",
+      "direction": "mixed",
+      "strength": "weak",
+      "priority": 16,
+      "enabled": true,
+      "description_zh": "上下影均较长且实体偏小，方向冲突。",
+      "conditions": {
+        "upper_wick_ratio_min": 0.35,
+        "lower_wick_ratio_min": 0.35,
+        "body_ratio_max": 0.35
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": true,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "上下影冲突且实体有限，短线方向不明确。"
+    },
+    {
+      "pattern_id": "micro_chop_v0",
+      "event": "micro_chop",
+      "direction": "mixed",
+      "strength": "weak",
+      "priority": 14,
+      "enabled": true,
+      "description_zh": "三K方向交替且回报有限，属于微观震荡。",
+      "conditions": {
+        "consecutive_direction": "mixed",
+        "three_bar_return_abs_max": 0.0012,
+        "body_ratio_max": 0.45
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "连续方向不一致且收益有限，归类为微观震荡。"
+    },
+    {
       "pattern_id": "micro_compression_v0",
       "event": "micro_compression",
       "direction": "neutral",
       "strength": "weak",
-      "priority": 15,
+      "priority": 13,
       "enabled": true,
       "description_zh": "三K区间明显压缩并处于区间内部。",
       "conditions": {

@@ -56,3 +56,10 @@ No Qlib core modification is required for this phase.
 - Added rule loader/validator/evaluator flow for 3-bar micro events.
 - Market-state report exposes `micro_pattern_rule_version`, `micro_pattern_rules_loaded`, and `micro_pattern_rule_count`.
 - If rule file is missing/invalid, runtime uses deterministic fallback `micro_noise` rule to avoid nondeterministic behavior.
+
+
+## Noise-to-bucket workflow
+
+- Workflow is now: profile micro-noise -> identify dominant subtypes -> add minimal stable rule buckets -> re-run calibration.
+- Rule additions are conservative and deterministic; stronger sweep/reversal/exhaustion rules keep higher priority.
+- GUI wiring should remain deferred until micro-event distribution is sufficiently interpretable.
