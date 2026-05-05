@@ -318,6 +318,8 @@ def main():
         "level_quality": "review_level_quality",
         "local_behavior": "review_local_behavior",
         "confirmation_result": "review_confirmation_result",
+        "human_label": "human_label",
+        "human_confidence": "human_confidence",
         "review_outcome": "review_outcome",
         "pattern_quality": "pattern_quality",
         "false_positive_reason": "false_positive_reason",
@@ -481,11 +483,11 @@ def main():
         with st.expander("人审结论 Review Outcome", expanded=True):
             c1, c2 = st.columns(2)
             with c1:
-                review_outcome = st.selectbox("review_outcome", allowed.get("review_outcome", ["not_reviewed"]), key="review_outcome")
+                human_label = st.selectbox("human_label", allowed.get("human_label", ["not_reviewed"]), key="human_label")
                 pattern_quality = st.selectbox("pattern_quality", allowed.get("pattern_quality", ["not_reviewed"]), key="pattern_quality")
             with c2:
                 false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
-                review_confidence = st.selectbox("review_confidence", allowed.get("review_confidence", ["not_reviewed"]), key="review_confidence")
+                human_confidence = st.selectbox("human_confidence", allowed.get("human_confidence", ["not_reviewed"]), key="human_confidence")
 
         with st.expander("候选归类 Candidate Family", expanded=False):
             c1, c2 = st.columns(2)
@@ -545,12 +547,14 @@ def main():
             "level_quality": level_quality,
             "local_behavior": local_behavior,
             "confirmation_result": confirmation_result,
-            "review_outcome": review_outcome,
+            "human_label": human_label,
+            "review_outcome": human_label,
             "pattern_quality": pattern_quality,
             "false_positive_reason": false_positive_reason,
+            "human_confidence": human_confidence,
             "primary_candidate_family": primary_candidate_family,
             "secondary_candidate_family": secondary_candidate_family,
-            "review_confidence": review_confidence,
+            "review_confidence": human_confidence,
             "review_notes": review_notes,
             "human_rationale_zh": human_rationale_zh,
             "human_counterexample_zh": human_counterexample_zh,

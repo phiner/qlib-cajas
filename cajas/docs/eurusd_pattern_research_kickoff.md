@@ -17,6 +17,10 @@ Language boundary policy:
 - Real LLM integration may only start after readiness report is `ready_for_explicit_approval` and explicit user approval is granted.
 - Explicit approval must be recorded in a dedicated artifact (default `not_approved`) before any live API trial work.
 - A fail-closed trial runner seam exists for future integration (`cajas/research/eurusd_llm_trial_runner.py`), but no provider adapter is implemented and no live API call is available in the current phase.
+- Current priority before any real LLM integration is human review quality: complete `human_label`, `human_confidence`, and `_zh` rationale fields with auditable completeness metrics.
+- Human review quality reporting artifact:
+  - `tmp/validation-eurusd-human-review-quality.json`
+  - `tmp/validation-eurusd-human-review-quality.md`
 
 ## Expected data location
 

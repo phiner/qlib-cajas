@@ -20,6 +20,10 @@ def build_gui_validation_report(
         "human_uncertainty_reason_zh",
         "human_context_notes_zh",
     ]
+    required_core_handoff_fields = [
+        "human_label",
+        "human_confidence",
+    ]
     run_command = "./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py"
     launcher_command = "./scripts/run_eurusd_review_gui.sh"
 
@@ -168,6 +172,7 @@ def build_gui_validation_report(
     app_text = app_path.read_text(encoding="utf-8")
     zh_fields_known_by_helper = all(field in helper_text for field in required_zh_fields)
     zh_fields_exposed_in_gui = all(field in app_text for field in required_zh_fields)
+    core_handoff_fields_exposed_in_gui = all(field in app_text for field in required_core_handoff_fields)
     zh_bilingual_labels_present = all(
         token in app_text
         for token in [
@@ -209,8 +214,10 @@ def build_gui_validation_report(
         "launcher_command": launcher_command,
         "language_boundary_policy_status": "documented" if language_policy_path.exists() else "missing",
         "required_zh_fields": required_zh_fields,
+        "required_core_handoff_fields": required_core_handoff_fields,
         "zh_rationale_fields_known_by_helper": zh_fields_known_by_helper,
         "zh_rationale_fields_exposed_in_gui": zh_fields_exposed_in_gui,
+        "core_handoff_fields_exposed_in_gui": core_handoff_fields_exposed_in_gui,
         "zh_bilingual_labels_present": zh_bilingual_labels_present,
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }
@@ -273,6 +280,7 @@ def format_gui_validation_markdown(report: Dict[str, Any]) -> str:
         f"- Language boundary policy: `{report.get('language_boundary_policy_status', 'unknown')}`",
         f"- ZH rationale fields known by helper: `{report.get('zh_rationale_fields_known_by_helper')}`",
         f"- ZH rationale fields exposed in GUI: `{report.get('zh_rationale_fields_exposed_in_gui')}`",
+        f"- Core handoff fields exposed in GUI: `{report.get('core_handoff_fields_exposed_in_gui')}`",
         f"- ZH bilingual labels present: `{report.get('zh_bilingual_labels_present')}`",
         "",
         "## Recommendation",

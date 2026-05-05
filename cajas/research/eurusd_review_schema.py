@@ -25,6 +25,8 @@ FIELD_REVIEW_OUTCOME = "review_outcome"
 FIELD_PATTERN_QUALITY = "pattern_quality"
 FIELD_FALSE_POSITIVE_REASON = "false_positive_reason"
 FIELD_REVIEW_CONFIDENCE = "review_confidence"
+FIELD_HUMAN_LABEL = "human_label"
+FIELD_HUMAN_CONFIDENCE = "human_confidence"
 FIELD_PRIMARY_CANDIDATE_FAMILY = "primary_candidate_family"
 FIELD_SECONDARY_CANDIDATE_FAMILY = "secondary_candidate_family"
 FIELD_RECENT_MOVE_CONTEXT = "recent_move_context"
@@ -53,6 +55,8 @@ CANONICAL_REVIEW_FIELDS = [
     FIELD_LEVEL_QUALITY,
     FIELD_LOCAL_BEHAVIOR,
     FIELD_CONFIRMATION_RESULT,
+    FIELD_HUMAN_LABEL,
+    FIELD_HUMAN_CONFIDENCE,
     FIELD_REVIEW_OUTCOME,
     FIELD_PATTERN_QUALITY,
     FIELD_FALSE_POSITIVE_REASON,
@@ -131,6 +135,14 @@ ALLOWED_VALUES = {
         "unclear",
         "not_reviewed",
     ],
+    FIELD_HUMAN_LABEL: [
+        "valid_pattern",
+        "weak_pattern",
+        "false_positive",
+        "not_enough_context",
+        "unclear",
+        "not_reviewed",
+    ],
     FIELD_PATTERN_QUALITY: ["strong", "medium", "weak", "invalid", "unclear", "not_reviewed"],
     FIELD_FALSE_POSITIVE_REASON: [
         "none",
@@ -150,6 +162,7 @@ ALLOWED_VALUES = {
         "not_reviewed",
     ],
     FIELD_REVIEW_CONFIDENCE: ["high", "medium", "low", "unclear", "not_reviewed"],
+    FIELD_HUMAN_CONFIDENCE: ["high", "medium", "low", "unclear", "not_reviewed"],
     FIELD_PRIMARY_CANDIDATE_FAMILY: [
         "market_context",
         "volatility_state",
@@ -224,6 +237,8 @@ DEFAULT_REVIEW_VALUES = {
     FIELD_STRUCTURE_LOCATION: "not_reviewed",
     FIELD_LOCAL_BEHAVIOR: "not_reviewed",
     FIELD_CONFIRMATION_RESULT: "not_reviewed",
+    FIELD_HUMAN_LABEL: "not_reviewed",
+    FIELD_HUMAN_CONFIDENCE: "not_reviewed",
     FIELD_REVIEW_OUTCOME: "not_reviewed",
     FIELD_PATTERN_QUALITY: "not_reviewed",
     FIELD_FALSE_POSITIVE_REASON: "not_reviewed",

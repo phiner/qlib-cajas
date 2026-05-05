@@ -64,6 +64,7 @@ Non-negotiable constraints:
 - Gate rule: real LLM integration may begin only when readiness report is `ready_for_explicit_approval` and the user explicitly approves the integration task.
 - Approval artifact rule: default state must remain `not_approved`; even limited trial approval does not permit automation escalation or any trading outputs.
 - Fail-closed runner seam rule: `cajas/research/eurusd_llm_trial_runner.py` may validate readiness/approval/sample caps, but without a provider adapter it must stop at `ready_but_no_provider_adapter` and perform no provider call.
+- Human-review-first rule before real LLM integration: keep raising completeness/quality of `human_label`, `human_confidence`, and `_zh` rationale fields; treat `validation-eurusd-human-review-quality` report as a prerequisite evidence surface for meaningful future second-review evaluation.
 
 Local GUI run commands:
 

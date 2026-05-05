@@ -780,6 +780,15 @@ def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
     """Build a complete review payload with sanitized optional text fields."""
     row = default_review_values()
     row.update(overrides)
+    # Keep compatibility aliases aligned for downstream review quality reports.
+    if "human_label" not in overrides and "review_outcome" in overrides:
+        row["human_label"] = row.get("review_outcome", "not_reviewed")
+    if "review_outcome" not in overrides and "human_label" in overrides:
+        row["review_outcome"] = row.get("human_label", "not_reviewed")
+    if "human_confidence" not in overrides and "review_confidence" in overrides:
+        row["human_confidence"] = row.get("review_confidence", "not_reviewed")
+    if "review_confidence" not in overrides and "human_confidence" in overrides:
+        row["review_confidence"] = row.get("human_confidence", "not_reviewed")
     for field in OPTIONAL_TEXT_FIELDS:
         if field in row:
             row[field] = sanitize_optional_text_value(row.get(field, ""))
@@ -819,6 +828,7 @@ def append_review_event_jsonl(
     payload = {
         "event_timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "schema_version": REVIEW_SCHEMA_VERSION,
+        "standard_version": "eurusd_15m_review_standard_v0",
         "action_type": action_type,
         "sample_id": sample_id,
         "completed_csv_path": str(completed_csv_path),

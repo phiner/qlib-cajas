@@ -538,6 +538,8 @@ def test_default_review_values_match_reset_contract():
     defaults = default_review_values()
     assert defaults["market_context"] == "unclear"
     assert defaults["review_confidence"] == "not_reviewed"
+    assert defaults["human_label"] == "not_reviewed"
+    assert defaults["human_confidence"] == "not_reviewed"
     assert defaults["review_notes"] == ""
     for field in [
         "trend_direction",
@@ -549,9 +551,11 @@ def test_default_review_values_match_reset_contract():
         "local_behavior",
         "confirmation_result",
         "review_outcome",
+        "human_label",
         "pattern_quality",
         "false_positive_reason",
         "review_confidence",
+        "human_confidence",
         "primary_candidate_family",
         "secondary_candidate_family",
         "session_context",
@@ -577,9 +581,11 @@ def test_build_review_update_row_fills_required_fields():
         "local_behavior",
         "confirmation_result",
         "review_outcome",
+        "human_label",
         "pattern_quality",
         "false_positive_reason",
         "review_confidence",
+        "human_confidence",
         "primary_candidate_family",
         "secondary_candidate_family",
         "review_notes",
@@ -591,6 +597,7 @@ def test_build_review_update_row_fills_required_fields():
         assert field in row
     assert row["review_notes"] == ""
     assert row["review_outcome"] == "valid_pattern"
+    assert row["human_label"] == "valid_pattern"
     for field in REVIEW_FIELDS:
         assert field in row
 
@@ -679,11 +686,14 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     assert record["action_type"] == "save"
     assert "event_timestamp_utc" in record
     assert "schema_version" in record
+    assert record["standard_version"] == "eurusd_15m_review_standard_v0"
     assert record["completed_csv_path"] == str(completed_csv_path)
     assert record["source_batch_path"] == "tmp/eurusd/batch.csv"
     assert record["review"]["review_notes"] == "note"
     assert record["review"]["human_rationale_zh"] == "理由"
     assert record["review"]["human_counterexample_zh"] == "反例"
+    assert record["review"]["human_label"] == "weak_pattern"
+    assert record["review"]["human_confidence"] == "medium"
     assert "recent_move_context" in record["review"]
     assert "session_context" in record["review"]
 
@@ -874,6 +884,8 @@ def test_app_imports_default_review_values_when_used():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "default_review_values()" in app_source
     assert "default_review_values," in app_source
+    assert "human_label" in app_source
+    assert "human_confidence" in app_source
 
 
 def test_detect_time_axis_gaps_no_gap():
