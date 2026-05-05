@@ -1099,6 +1099,23 @@ def test_app_source_uses_global_sample_number_wording_and_keys():
     assert "sample_number_input" in app_source
 
 
+def test_app_source_injects_compact_css_and_hides_streamlit_chrome():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "def inject_compact_review_css" in app_source
+    assert '[data-testid="stHeader"] { display: none; }' in app_source
+    assert '[data-testid="stToolbar"] { display: none; }' in app_source
+    assert '[data-testid="stDecoration"] { display: none; }' in app_source
+    assert "inject_compact_review_css(st)" in app_source
+    assert "EURUSD 15m Review · Sample" in app_source
+
+
+def test_app_source_keeps_sidebar_and_toast_behavior():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "st.sidebar.header(\"Configuration\")" in app_source
+    assert "consume_pending_toast_once(st, st.session_state)" in app_source
+    assert "[data-testid=\"stSidebar\"]" not in app_source
+
+
 def test_app_source_resolves_sample_before_sidebar_sample_id_caption():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     sample_assign = app_source.find("sample = batch.iloc[sample_idx]")

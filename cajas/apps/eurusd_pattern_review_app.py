@@ -96,6 +96,27 @@ def apply_pending_global_sample_index(state, pending_key: str, current_key: str,
     state[input_key] = global_index_to_sample_number(idx)
 
 
+def inject_compact_review_css(st_module) -> None:
+    """Hide unneeded Streamlit top chrome and compact header spacing for review workflow."""
+    st_module.markdown(
+        """
+<style>
+[data-testid="stHeader"] { display: none; }
+[data-testid="stToolbar"] { display: none; }
+[data-testid="stDecoration"] { display: none; }
+#MainMenu { visibility: hidden; }
+header { visibility: hidden; height: 0rem; }
+.block-container { padding-top: 0.25rem; padding-bottom: 0.75rem; max-width: 1500px; }
+h1, h2, h3 { margin-top: 0.1rem; margin-bottom: 0.35rem; }
+[data-testid="stMetricValue"] { font-size: 1.4rem; }
+[data-testid="stVerticalBlock"] { gap: 0.35rem; }
+.stTextInput, .stSelectbox, .stTextArea { margin-bottom: 0.2rem; }
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main():
     try:
         import streamlit as st
@@ -105,19 +126,7 @@ def main():
         )
 
     st.set_page_config(page_title="EURUSD 15m Review", layout="wide")
-    st.markdown(
-        """
-<style>
-.block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 1500px; }
-h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
-[data-testid="stMetricValue"] { font-size: 1.4rem; }
-[data-testid="stVerticalBlock"] { gap: 0.4rem; }
-.stTextInput, .stSelectbox, .stTextArea { margin-bottom: 0.25rem; }
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.title("EURUSD 15m Review")
+    inject_compact_review_css(st)
     CANONICAL_INDEX_KEY = "current_global_sample_idx"
     WIDGET_INDEX_KEY = "sample_number_input"
     PENDING_INDEX_KEY = "pending_global_sample_idx"
@@ -304,6 +313,10 @@ h1, h2, h3 { margin-top: 0.25rem; margin-bottom: 0.5rem; }
         st.session_state["review_direction_context"] = allowed.get("direction_context", ["unclear"])[0]
     if st.session_state.get("review_status") not in allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]):
         st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"])[0]
+
+    st.markdown(
+        f"### EURUSD 15m Review · Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
+    )
 
     if compact_mode:
         st.subheader(f"Sample {sample['sample_id']}")
