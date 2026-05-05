@@ -908,3 +908,5 @@ Audit outputs:
 - `tmp/validation-eurusd-candidate-audit.md`
 
 This audit is read-only and does not reset or rebuild active review artifacts.
+
+- Market-state prototype v0 now targets nested `3/8/24/128` windows with deterministic feature/label rules and research-only outputs (no trading actions).
