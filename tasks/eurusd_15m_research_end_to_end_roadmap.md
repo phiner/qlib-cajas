@@ -60,6 +60,7 @@ Non-negotiable constraints:
 - Future LLM second-review flow must read deterministic exported artifacts (for example `EURUSD_15m_llm_review_samples.jsonl`) with explicit forbidden execution/trading outputs.
 - Before any online model call, offline second-review output schema validation and conservative automation readiness gating must pass.
 - Fixture-based second-review drills are test/demo evidence only and do not count as real LLM production results.
+- Pipeline order: human standard v0 -> deterministic artifact export -> offline second-review protocol -> fixture drill -> explicit approval for real LLM integration -> human audit gate before automation increase.
 
 Local GUI run commands:
 

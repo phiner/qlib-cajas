@@ -17,6 +17,10 @@ LLM may read only deterministic sample artifacts:
 - includes deterministic diagnostics, human review context, and explicit forbidden outputs
 
 LLM must not inspect raw CSV directly and must not infer trading instructions.
+LLM should follow the human-governed standard and example library first:
+
+- `cajas/docs/eurusd_llm_review_standard_v0.md`
+- `cajas/data_examples/eurusd_review_standard_v0_examples.jsonl`
 
 ## Required Output Schema
 
