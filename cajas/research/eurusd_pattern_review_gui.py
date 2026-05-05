@@ -6,27 +6,23 @@ from typing import Any, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
-from cajas.research.eurusd_review_schema import default_review_values as schema_default_review_values
+from cajas.research.eurusd_review_schema import (
+    ALLOWED_VALUES as SCHEMA_ALLOWED_VALUES,
+    COMPATIBLE_SCHEMA_VERSIONS as SCHEMA_COMPATIBLE_SCHEMA_VERSIONS,
+    LEGACY_ALLOWED_VALUES as SCHEMA_LEGACY_ALLOWED_VALUES,
+    REVIEW_SCHEMA_VERSION,
+    default_review_values as schema_default_review_values,
+)
 
 FORBIDDEN_TRADING_COLUMNS = [
     "buy", "sell", "long", "short", "order", "position",
     "target_position", "signal", "entry", "exit"
 ]
-REVIEW_FIELDS = [
-    "human_pattern_label",
-    "market_context",
-    "direction_context",
-    "structure_quality",
-    "follow_through_quality",
-    "review_confidence",
-    "review_notes",
-    "review_status",
-]
 OPTIONAL_TEXT_FIELDS = [
     "review_notes",
 ]
 DEFAULT_REVIEW_VALUES = schema_default_review_values()
-REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v2"
+REVIEW_FIELDS = list(DEFAULT_REVIEW_VALUES.keys())
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
 REJECTED_SCHEMA_VERSION = "eurusd_15m_rejected_sample_v1"
 REJECTED_FIELDS = [
@@ -96,37 +92,10 @@ def load_label_schema(path: Path) -> Dict[str, Any]:
 def get_default_schema() -> Dict[str, Any]:
     """Get default label schema."""
     return {
-        "schema_version": "eurusd_15m_pattern_review_v2",
-        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
-        "allowed_values": {
-            "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": [
-                "trend",
-                "range",
-                "pullback",
-                "transition",
-                "breakout",
-                "reversal_attempt",
-                "high_volatility",
-                "low_volatility",
-                "unclear",
-            ],
-            "direction_context": [
-                "up",
-                "down",
-                "neutral",
-                "mixed",
-                "up_pullback",
-                "down_pullback",
-                "reversal_up",
-                "reversal_down",
-                "unclear",
-            ],
-            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
-        },
-        "legacy_allowed_values": {
-            "direction_context": ["sideways"],
-        },
+        "schema_version": REVIEW_SCHEMA_VERSION,
+        "compatible_schema_versions": list(SCHEMA_COMPATIBLE_SCHEMA_VERSIONS),
+        "allowed_values": dict(SCHEMA_ALLOWED_VALUES),
+        "legacy_allowed_values": dict(SCHEMA_LEGACY_ALLOWED_VALUES),
     }
 
 
@@ -143,7 +112,7 @@ def merge_completed_labels(batch_df: pd.DataFrame, completed_df: Optional[pd.Dat
         sample_id = row["sample_id"]
         mask = merged["sample_id"] == sample_id
         if mask.any():
-            for col in REVIEW_FIELDS:
+            for col in DEFAULT_REVIEW_VALUES:
                 if col in row:
                     merged.loc[mask, col] = row[col]
     
@@ -738,6 +707,10 @@ def save_completed_review(
         subset=["sample_id"], keep="last"
     )
 
+    for key, default_value in DEFAULT_REVIEW_VALUES.items():
+        if key not in completed_df.columns:
+            completed_df[key] = default_value
+
     # Update sample
     mask = completed_df["sample_id"] == sample_id
     batch_row = batch_df.loc[batch_df["sample_id"] == sample_id]
@@ -793,7 +766,7 @@ def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
     row = default_review_values()
     row.update(overrides)
     row["review_notes"] = sanitize_optional_text_value(row.get("review_notes", ""))
-    return {key: row[key] for key in REVIEW_FIELDS}
+    return {key: row[key] for key in DEFAULT_REVIEW_VALUES}
 
 
 def save_or_update_completed_review(

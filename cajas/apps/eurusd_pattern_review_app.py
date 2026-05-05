@@ -298,9 +298,24 @@ def main():
     review_key_map = {
         "human_pattern_label": "review_pattern_label",
         "market_context": "review_market_context",
+        "trend_direction": "review_trend_direction",
+        "trend_stage": "review_trend_stage",
+        "volatility_state": "review_volatility_state",
+        "recent_move_context": "review_recent_move_context",
+        "session_context": "review_session_context",
         "direction_context": "review_direction_context",
+        "structure_location": "review_structure_location",
+        "level_quality": "review_level_quality",
         "structure_quality": "review_structure_quality",
+        "local_behavior": "review_local_behavior",
+        "confirmation_result": "review_confirmation_result",
         "follow_through_quality": "review_follow_through_quality",
+        "review_outcome": "review_outcome",
+        "pattern_quality": "pattern_quality",
+        "false_positive_reason": "false_positive_reason",
+        "review_confidence_level": "review_confidence_level",
+        "primary_candidate_family": "primary_candidate_family",
+        "secondary_candidate_family": "secondary_candidate_family",
         "review_confidence": "review_confidence",
         "review_notes": "review_notes",
         "review_status": "review_status",
@@ -321,14 +336,13 @@ def main():
             st.session_state[key] = value if value not in (None, "") or field == "review_notes" else state_defaults[field]
         st.session_state["review_notes"] = sanitize_optional_text_value(st.session_state.get("review_notes", ""))
 
-    if st.session_state.get("review_pattern_label") not in allowed.get("human_pattern_label", ["unclear"]):
-        st.session_state["review_pattern_label"] = allowed.get("human_pattern_label", ["unclear"])[0]
-    if st.session_state.get("review_market_context") not in allowed.get("market_context", ["unclear"]):
-        st.session_state["review_market_context"] = allowed.get("market_context", ["unclear"])[0]
-    if st.session_state.get("review_direction_context") not in allowed.get("direction_context", ["unclear"]):
-        st.session_state["review_direction_context"] = allowed.get("direction_context", ["unclear"])[0]
-    if st.session_state.get("review_status") not in allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]):
-        st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"])[0]
+    for field, key in review_key_map.items():
+        if field in {"review_notes", "structure_quality", "follow_through_quality", "review_confidence"}:
+            continue
+        options = allowed.get(field)
+        if isinstance(options, list) and options:
+            if st.session_state.get(key) not in options:
+                st.session_state[key] = options[0]
 
     st.markdown(
         f"#### EURUSD 15m Review · Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
@@ -417,12 +431,16 @@ def main():
     left_col, right_col = st.columns([3.2, 1.4], gap="large")
     with left_col:
         st.markdown("#### Review Labels")
+        st.caption("candidate_type 是系统入口标签，不是最终形态结论。")
+        st.caption("先看背景，再看结构位置，再看局部行为，再看确认/失败，最后给人审结论。")
+        st.caption("冲高回落/触底回升/急涨后整理/急跌后整理应填 recent_move_context，不要塞进 market_context。")
+        st.caption("wick/doji 必须结合 structure_location 和 level_quality 判断。")
+        st.caption("possible_false_breakout 必须看 level_quality、reclaim 和 follow-through。")
 
-        top_cols = st.columns(4) if compact_mode else st.columns(2)
+        top_cols = st.columns(3) if compact_mode else st.columns(2)
         col1 = top_cols[0]
         col2 = top_cols[1]
         col3 = top_cols[2] if compact_mode else top_cols[0]
-        col4 = top_cols[3] if compact_mode else top_cols[1]
 
         with col1:
             human_pattern_label = st.selectbox(
@@ -431,12 +449,6 @@ def main():
                 key="review_pattern_label",
             )
         with col2:
-            market_context = st.selectbox(
-                "Market Context",
-                allowed.get("market_context", ["unclear"]),
-                key="review_market_context",
-            )
-        with col3 if compact_mode else col1:
             direction_context = st.selectbox(
                 "Direction Context",
                 allowed.get("direction_context", ["unclear"]),
@@ -444,7 +456,7 @@ def main():
             )
 
         if compact_mode:
-            review_status = col4.selectbox(
+            review_status = col3.selectbox(
                 "Review Status",
                 allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
                 key="review_status",
@@ -482,6 +494,56 @@ def main():
                 key="review_status",
             )
 
+        with st.expander("背景与走势 Context", expanded=True):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                market_context = st.selectbox("market_context", allowed.get("market_context", ["unclear"]), key="review_market_context")
+                trend_direction = st.selectbox("trend_direction", allowed.get("trend_direction", ["not_reviewed"]), key="review_trend_direction")
+            with c2:
+                trend_stage = st.selectbox("trend_stage", allowed.get("trend_stage", ["not_reviewed"]), key="review_trend_stage")
+                volatility_state = st.selectbox("volatility_state", allowed.get("volatility_state", ["not_reviewed"]), key="review_volatility_state")
+            with c3:
+                recent_move_context = st.selectbox("recent_move_context", allowed.get("recent_move_context", ["not_reviewed"]), key="review_recent_move_context")
+                session_context = st.selectbox("session_context", allowed.get("session_context", ["not_reviewed"]), key="review_session_context")
+
+        with st.expander("结构位置 Structure", expanded=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                structure_location = st.selectbox("structure_location", allowed.get("structure_location", ["not_reviewed"]), key="review_structure_location")
+            with c2:
+                level_quality = st.selectbox("level_quality", allowed.get("level_quality", ["not_reviewed"]), key="review_level_quality")
+
+        with st.expander("局部行为与确认 Behavior / Confirmation", expanded=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                local_behavior = st.selectbox("local_behavior", allowed.get("local_behavior", ["not_reviewed"]), key="review_local_behavior")
+            with c2:
+                confirmation_result = st.selectbox("confirmation_result", allowed.get("confirmation_result", ["not_reviewed"]), key="review_confirmation_result")
+
+        with st.expander("人审结论 Review Outcome", expanded=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                review_outcome = st.selectbox("review_outcome", allowed.get("review_outcome", ["not_reviewed"]), key="review_outcome")
+                pattern_quality = st.selectbox("pattern_quality", allowed.get("pattern_quality", ["not_reviewed"]), key="pattern_quality")
+            with c2:
+                false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
+                review_confidence_level = st.selectbox("review_confidence_level", allowed.get("review_confidence_level", ["not_reviewed"]), key="review_confidence_level")
+
+        with st.expander("候选归类 Candidate Family", expanded=False):
+            c1, c2 = st.columns(2)
+            with c1:
+                primary_candidate_family = st.selectbox(
+                    "primary_candidate_family",
+                    allowed.get("primary_candidate_family", ["not_reviewed"]),
+                    key="primary_candidate_family",
+                )
+            with c2:
+                secondary_candidate_family = st.selectbox(
+                    "secondary_candidate_family",
+                    allowed.get("secondary_candidate_family", ["not_reviewed"]),
+                    key="secondary_candidate_family",
+                )
+
         st.markdown("#### Bad Sample Workflow")
         reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
         reject_notes = st.text_input("Reject Notes", placeholder="Optional rejection notes...", key="reject_notes")
@@ -491,9 +553,24 @@ def main():
         return {
             "human_pattern_label": human_pattern_label,
             "market_context": market_context,
+            "trend_direction": trend_direction,
+            "trend_stage": trend_stage,
+            "volatility_state": volatility_state,
+            "recent_move_context": recent_move_context,
+            "session_context": session_context,
             "direction_context": direction_context,
+            "structure_location": structure_location,
+            "level_quality": level_quality,
             "structure_quality": structure_quality,
+            "local_behavior": local_behavior,
+            "confirmation_result": confirmation_result,
             "follow_through_quality": follow_through_quality,
+            "review_outcome": review_outcome,
+            "pattern_quality": pattern_quality,
+            "false_positive_reason": false_positive_reason,
+            "review_confidence_level": review_confidence_level,
+            "primary_candidate_family": primary_candidate_family,
+            "secondary_candidate_family": secondary_candidate_family,
             "review_confidence": review_confidence,
             "review_notes": review_notes,
             "review_status": review_status,

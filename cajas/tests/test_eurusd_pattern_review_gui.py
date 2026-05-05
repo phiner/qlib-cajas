@@ -129,6 +129,25 @@ def test_merge_completed_labels(batch_fixture):
     assert merged.loc[merged["sample_id"] == "s2", "review_status"].iloc[0] == "pending"
 
 
+def test_merge_completed_labels_backfills_new_defaults_for_legacy_rows(batch_fixture, temp_dir):
+    batch_df = load_review_batch(batch_fixture)
+    completed_df = pd.DataFrame(
+        {
+            "sample_id": ["s1"],
+            "timestamp": pd.to_datetime(["2020-01-01 01:00:00"]),
+            "human_pattern_label": ["valid_pattern"],
+            "review_status": ["reviewed"],
+        }
+    )
+    merged = merge_completed_labels(batch_df, completed_df)
+    row = merged.loc[merged["sample_id"] == "s1"].iloc[0]
+    defaults = default_review_values()
+    for field in ["recent_move_context", "trend_stage", "secondary_candidate_family", "session_context"]:
+        assert field in defaults
+        if field in merged.columns:
+            assert str(row.get(field, defaults[field])) in {str(defaults[field]), "", "nan"}
+
+
 def test_extract_chart_window(clean_view_fixture):
     clean_view = load_clean_view(clean_view_fixture)
     sample_timestamp = clean_view.iloc[50]["timestamp"]
@@ -532,6 +551,24 @@ def test_default_review_values_match_reset_contract():
     assert defaults["review_confidence"] == 3
     assert defaults["review_notes"] == ""
     assert defaults["review_status"] == "pending"
+    for field in [
+        "trend_direction",
+        "trend_stage",
+        "volatility_state",
+        "recent_move_context",
+        "structure_location",
+        "level_quality",
+        "local_behavior",
+        "confirmation_result",
+        "review_outcome",
+        "pattern_quality",
+        "false_positive_reason",
+        "review_confidence_level",
+        "primary_candidate_family",
+        "secondary_candidate_family",
+        "session_context",
+    ]:
+        assert field in defaults
 
 
 def test_build_review_update_row_fills_required_fields():
@@ -549,6 +586,8 @@ def test_build_review_update_row_fills_required_fields():
         assert field in row
     assert row["review_notes"] == ""
     assert row["review_status"] == "reviewed"
+    for field in REVIEW_FIELDS:
+        assert field in row
 
 
 def test_save_or_update_completed_review_updates_without_duplicate(batch_fixture, temp_dir):
@@ -639,6 +678,8 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     assert record["completed_csv_path"] == str(completed_csv_path)
     assert record["source_batch_path"] == "tmp/eurusd/batch.csv"
     assert record["review"]["review_notes"] == "note"
+    assert "recent_move_context" in record["review"]
+    assert "session_context" in record["review"]
 
 
 def test_append_review_event_jsonl_is_append_friendly(temp_dir):
@@ -1146,6 +1187,39 @@ def test_app_source_uses_compact_left_form_right_actions_layout():
     assert 'st.markdown("#### Review Labels")' in app_source
     assert 'st.markdown("#### Bad Sample Workflow")' in app_source
     assert 'st.markdown("#### Actions")' in app_source
+
+
+def test_app_source_includes_all_five_layer_grouped_fields_and_help_text():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    for heading in [
+        "背景与走势 Context",
+        "结构位置 Structure",
+        "局部行为与确认 Behavior / Confirmation",
+        "人审结论 Review Outcome",
+        "候选归类 Candidate Family",
+    ]:
+        assert heading in app_source
+    for field_name in [
+        "market_context",
+        "trend_direction",
+        "trend_stage",
+        "volatility_state",
+        "recent_move_context",
+        "session_context",
+        "structure_location",
+        "level_quality",
+        "local_behavior",
+        "confirmation_result",
+        "review_outcome",
+        "pattern_quality",
+        "false_positive_reason",
+        "review_confidence_level",
+        "primary_candidate_family",
+        "secondary_candidate_family",
+    ]:
+        assert field_name in app_source
+    assert "candidate_type 是系统入口标签，不是最终形态结论。" in app_source
+    assert "应填 recent_move_context，不要塞进 market_context。" in app_source
 
 
 def test_app_source_actions_kept_in_right_column():
