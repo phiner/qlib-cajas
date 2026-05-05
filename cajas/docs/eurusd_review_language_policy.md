@@ -74,3 +74,4 @@ Do not introduce:
 - No model training enablement in this policy step.
 - CSV + JSONL durable storage remains unchanged.
 - Future LLM review must consume deterministic exported artifacts (not raw CSV inspection), with explicit forbidden outputs such as `trade_signal`, `entry`, `exit`, and `position_size`.
+- Offline second-review protocol is documented in `cajas/docs/eurusd_llm_second_review_protocol.md`; runtime remains English-keyed while semantic explanations remain Chinese-authoritative.

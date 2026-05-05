@@ -58,6 +58,7 @@ Non-negotiable constraints:
 - Runtime identifiers must remain English; Chinese is authoritative for semantic review rationale via `_zh` semantic fields where needed (see `cajas/docs/eurusd_review_language_policy.md`).
 - Active semantic fields include `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, and `human_context_notes_zh` in CSV/JSONL review persistence.
 - Future LLM second-review flow must read deterministic exported artifacts (for example `EURUSD_15m_llm_review_samples.jsonl`) with explicit forbidden execution/trading outputs.
+- Before any online model call, offline second-review output schema validation and conservative automation readiness gating must pass.
 
 Local GUI run commands:
 

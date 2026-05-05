@@ -11,6 +11,7 @@ Language boundary policy:
 - Reference: `cajas/docs/eurusd_review_language_policy.md`.
 - Active review persistence includes first-class `_zh` rationale fields (`human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`).
 - Deterministic LLM-ready sample artifact export is the only planned LLM input surface; no live LLM calls and no raw-csv-first LLM review flow.
+- Offline LLM second-review protocol and output validation are defined before any live model integration.
 
 ## Expected data location
 
