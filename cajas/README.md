@@ -2060,9 +2060,11 @@ PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_research_read
 
 Review policy:
 - Candidate samples are QA-reviewed and label-schema-governed before manual annotation.
-- Template rows default to `review_status=pending` under schema `eurusd_15m_pattern_review_v1`.
+- Template rows default to `review_status=pending` under schema `eurusd_15m_pattern_review_v3`.
 - No trading signal/order fields are allowed in review exports.
 - Scope remains EURUSD 15m Bid clean view only.
+- Reviewers should follow five-layer order: `market_context` -> `structure_location` -> `local_behavior` -> `confirmation_result` -> `review_outcome`.
+- `candidate_type` is a system entry tag only and must not be treated as final pattern truth.
 
 EURUSD 15m first review batch commands:
 

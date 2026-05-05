@@ -272,7 +272,14 @@ Label schema artifacts:
 
 - `tmp/validation-eurusd-pattern-label-schema.json`
 - `tmp/validation-eurusd-pattern-label-schema.md`
-- schema version: `eurusd_15m_pattern_review_v2` (compatible with `v1`)
+- schema version: `eurusd_15m_pattern_review_v3` (compatible with `v1`/`v2`)
+- five-layer reviewer order:
+  - `market_context`
+  - `structure_location`
+  - `local_behavior`
+  - `confirmation_result`
+  - `review_outcome`
+- reviewer rule: `candidate_type` is only the sample entry tag, not the final pattern truth
 
 Review template artifacts:
 

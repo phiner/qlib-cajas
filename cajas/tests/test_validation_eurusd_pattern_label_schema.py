@@ -1,4 +1,5 @@
 from cajas.reports.validation_eurusd_pattern_label_schema import build_validation_eurusd_pattern_label_schema
+from cajas.research.eurusd_review_schema import ALLOWED_VALUES, FIVE_LAYER_ENUM_FIELDS
 
 
 def test_label_schema_ready_and_version() -> None:
@@ -46,3 +47,16 @@ def test_label_schema_allowed_values_and_ranges() -> None:
     assert "breakout" in payload["legacy_allowed_values"]["market_context"]
     assert payload["numeric_ranges"]["structure_quality"]["min"] == 1
     assert payload["numeric_ranges"]["review_confidence"]["max"] == 5
+
+
+def test_label_schema_includes_five_layer_summary_and_allowed_values() -> None:
+    payload = build_validation_eurusd_pattern_label_schema()
+    summary = payload["five_layer_schema"]
+    assert summary["ordered_fields"] == list(FIVE_LAYER_ENUM_FIELDS)
+    for field in FIVE_LAYER_ENUM_FIELDS:
+        assert payload["allowed_values"][field] == ALLOWED_VALUES[field]
+        assert field in summary["field_descriptions_cn"]
+
+    policy = payload["candidate_type_policy"]
+    assert policy["entry_tag_only"] is True
+    assert policy["final_pattern_truth"] is False
