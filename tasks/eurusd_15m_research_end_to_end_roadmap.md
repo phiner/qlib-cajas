@@ -67,6 +67,13 @@ Non-negotiable constraints:
 - Human-review-first rule before real LLM integration: keep raising completeness/quality of `human_label`, `human_confidence`, and `_zh` rationale fields; treat `validation-eurusd-human-review-quality` report as a prerequisite evidence surface for meaningful future second-review evaluation.
 - Empty-state semantics rule: when completed review CSV is not present yet, report `awaiting_review_input` instead of `blocked`, while keeping real LLM integration unapproved and trial approval at `not_approved`.
 - Green baseline rule: fast validation is green again after legacy schema alignment; next operational action is to restart real human review sessions and re-check human review quality report after each session.
+- Current review operating procedure:
+  - run `./scripts/run_eurusd_review_gui.sh`
+  - review in batches of 10-20 samples initially
+  - provide Chinese rationale for non-trivial judgments
+  - run smoke-session and human-review-quality reports after each session
+  - keep real LLM integration unapproved and trial approval at `not_approved`
+  - use review-quality feedback report to prioritize the next manual batch focus
 
 Local GUI run commands:
 
