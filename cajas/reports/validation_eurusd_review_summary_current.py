@@ -42,8 +42,11 @@ def build_review_summary_current_report(*, batch_csv: Path, completed_csv: Path)
         return {"status": "blocked", "reason": "completed_csv_missing_sample_id"}
 
     dedup = completed_df.drop_duplicates(subset=["sample_id"], keep="last").copy()
-    if "review_status" in dedup.columns:
-        reviewed_df = dedup[dedup["review_status"].map(_is_reviewed)].copy()
+    if "review_updated_at_utc" in dedup.columns:
+        reviewed_df = dedup[dedup["review_updated_at_utc"].map(_is_reviewed)].copy()
+    elif "review_status" in dedup.columns:
+        # Legacy fallback for older artifacts.
+        reviewed_df = dedup[dedup["review_status"].astype(str).eq("reviewed")].copy()
     else:
         reviewed_df = dedup.iloc[0:0].copy()
 
@@ -60,7 +63,12 @@ def build_review_summary_current_report(*, batch_csv: Path, completed_csv: Path)
         "reviewed_count": reviewed_count,
         "pending_count": int(len(pending_df)),
         "counts_by_candidate_type": _dist(reviewed_df.get("candidate_type", pd.Series([], dtype=str))),
-        "counts_by_pattern_label": _dist(reviewed_df.get("human_pattern_label", pd.Series([], dtype=str))),
+        "counts_by_pattern_label": _dist(
+            reviewed_df.get(
+                "human_label",
+                reviewed_df.get("human_pattern_label", pd.Series([], dtype=str)),
+            )
+        ),
         "counts_by_market_context": _dist(reviewed_df.get("market_context", pd.Series([], dtype=str))),
         "counts_by_direction_context": _dist(reviewed_df.get("direction_context", pd.Series([], dtype=str))),
         "counts_by_review_status": _dist(reviewed_df.get("review_status", pd.Series([], dtype=str))),

@@ -41,7 +41,9 @@ def _safe_read_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
 
 def _invalid_score_rows(df: pd.DataFrame) -> list[str]:
     bad: list[str] = []
-    for score_col in ("structure_quality", "follow_through_quality", "review_confidence"):
+    # Current schema keeps review_confidence as an enum (high/medium/low),
+    # so only legacy numeric score fields are range-checked here.
+    for score_col in ("structure_quality", "follow_through_quality"):
         if score_col not in df.columns:
             continue
         vals = pd.to_numeric(df[score_col], errors="coerce")

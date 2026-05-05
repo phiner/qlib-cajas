@@ -24,13 +24,12 @@ def test_summary_current_deterministic(tmp_path: Path):
             "sample_id": ["s1", "s2", "s3"],
             "timestamp": ["2020-01-01T00:00:00+00:00", "2020-01-01T00:15:00+00:00", "2020-01-02T00:00:00+00:00"],
             "candidate_type": ["a", "b", "a"],
-            "review_status": ["reviewed", "pending", "reviewed"],
-            "human_pattern_label": ["valid_pattern", "unclear", "weak_pattern"],
+            "review_status": ["reviewed", "pending", "reviewed"],  # legacy column tolerated
+            "human_label": ["valid_pattern", "unclear", "weak_pattern"],
+            "human_confidence": ["high", "medium", "low"],
             "market_context": ["trend", "unclear", "range"],
-            "direction_context": ["up", "unclear", "neutral"],
-            "structure_quality": [4, 3, 2],
-            "follow_through_quality": [4, 3, 2],
-            "review_confidence": [5, 3, 2],
+            "trend_direction": ["up", "unclear", "sideways"],
+            "review_confidence": ["high", "medium", "low"],
             "review_notes": ["good wick", "", "unclear"],
             "review_updated_at_utc": ["2026-05-04T00:00:00Z", "", "2026-05-04T01:00:00Z"],
         }

@@ -6,19 +6,26 @@ import pandas as pd
 from cajas.reports.validation_eurusd_pattern_review_completion_closure import (
     build_review_completion_closure_report,
 )
+from cajas.research.eurusd_review_schema import default_review_values
 
 
 def _schema(path: Path) -> Path:
     payload = {
-        "schema_version": "eurusd_15m_pattern_review_v2",
-        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
+        "schema_version": "eurusd_15m_pattern_review_v3",
+        "compatible_schema_versions": [
+            "eurusd_15m_pattern_review_v1",
+            "eurusd_15m_pattern_review_v2",
+            "eurusd_15m_pattern_review_v3",
+        ],
         "allowed_values": {
-            "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": ["trend", "range", "pullback", "transition", "breakout", "reversal_attempt", "high_volatility", "low_volatility", "unclear"],
-            "direction_context": ["up", "down", "neutral", "mixed", "up_pullback", "down_pullback", "reversal_up", "reversal_down", "unclear"],
-            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
+            "human_label": ["valid_pattern", "weak_pattern", "false_positive", "not_enough_context", "unclear", "not_reviewed"],
+            "human_confidence": ["high", "medium", "low", "unclear", "not_reviewed"],
+            "market_context": ["uptrend", "downtrend", "range", "compression", "expansion", "transition", "choppy", "unclear", "not_reviewed"],
+            "trend_direction": ["up", "down", "sideways", "mixed", "unclear", "not_reviewed"],
+            "review_outcome": ["valid_pattern", "weak_pattern", "false_positive", "not_enough_context", "unclear", "not_reviewed"],
+            "review_confidence": ["high", "medium", "low", "unclear", "not_reviewed"],
         },
-        "legacy_allowed_values": {"direction_context": ["sideways"]},
+        "legacy_allowed_values": {},
     }
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
@@ -31,21 +38,19 @@ def _batch(path: Path, ids: list[str]) -> Path:
 
 def _completed(path: Path, ids: list[str]) -> Path:
     rows = []
+    defaults = default_review_values()
     for sid in ids:
-        rows.append(
+        row = {"sample_id": sid, **defaults}
+        row.update(
             {
-                "sample_id": sid,
-                "human_pattern_label": "valid_pattern",
-                "market_context": "trend",
-                "direction_context": "up",
-                "structure_quality": 3,
-                "follow_through_quality": 3,
-                "review_confidence": 3,
-                "review_notes": "",
-                "review_status": "reviewed",
+                "human_label": "valid_pattern",
+                "review_outcome": "valid_pattern",
+                "human_confidence": "high",
+                "review_confidence": "high",
                 "review_updated_at_utc": "2026-05-04T00:00:00+00:00",
             }
         )
+        rows.append(row)
     pd.DataFrame(rows).to_csv(path, index=False)
     return path
 
@@ -129,7 +134,7 @@ def test_closure_blocked_on_duplicate_sample_ids(tmp_path: Path) -> None:
 def test_closure_blocked_missing_required_field(tmp_path: Path) -> None:
     batch = _batch(tmp_path / "batch.csv", ["s1"])
     schema = _schema(tmp_path / "schema.json")
-    pd.DataFrame({"sample_id": ["s1"], "review_status": ["reviewed"]}).to_csv(tmp_path / "completed.csv", index=False)
+    pd.DataFrame({"sample_id": ["s1"]}).to_csv(tmp_path / "completed.csv", index=False)
     report = build_review_completion_closure_report(
         batch_csv=batch, completed_csv=tmp_path / "completed.csv", label_schema_json=schema
     )
