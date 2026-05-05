@@ -63,6 +63,7 @@ Non-negotiable constraints:
 - Pipeline order: human standard v0 -> deterministic artifact export -> offline second-review protocol -> fixture drill -> explicit approval for real LLM integration -> human audit gate before automation increase.
 - Gate rule: real LLM integration may begin only when readiness report is `ready_for_explicit_approval` and the user explicitly approves the integration task.
 - Approval artifact rule: default state must remain `not_approved`; even limited trial approval does not permit automation escalation or any trading outputs.
+- Fail-closed runner seam rule: `cajas/research/eurusd_llm_trial_runner.py` may validate readiness/approval/sample caps, but without a provider adapter it must stop at `ready_but_no_provider_adapter` and perform no provider call.
 
 Local GUI run commands:
 

@@ -102,3 +102,10 @@ Candidate gate to `ready_for_limited_trial` requires at minimum:
   - `cajas/data_examples/eurusd_real_llm_integration_approval.template.json`
 - Default approval state is `not_approved`.
 - Future runner must fail closed unless approval artifact is `approved` and `live_api_calls_allowed=true`.
+- Current runner seam:
+  - `cajas/research/eurusd_llm_trial_runner.py`
+  - `cajas/scripts/run_eurusd_llm_second_review_trial.py`
+- Runner status behavior is fail-closed by design:
+  - default template path: `not_approved`
+  - synthetic approved path without adapter: `ready_but_no_provider_adapter`
+- No provider adapter is implemented in this phase, so no live API call is possible from this runner.
