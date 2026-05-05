@@ -17,15 +17,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build EURUSD LLM second review report")
     parser.add_argument("--sample-artifacts-jsonl", type=Path, required=True)
     parser.add_argument("--llm-outputs-jsonl", type=Path, default=Path("tmp/eurusd/EURUSD_15m_llm_second_review_outputs.jsonl"))
+    parser.add_argument("--llm-review-jsonl", type=Path, default=None)
     parser.add_argument("--output-json", type=Path, default=Path("tmp/validation-eurusd-llm-second-review.json"))
     parser.add_argument("--output-md", type=Path, default=Path("tmp/validation-eurusd-llm-second-review.md"))
     parser.add_argument("--min-output-coverage", type=float, default=0.8)
     parser.add_argument("--max-high-conf-disagreement-rate", type=float, default=0.2)
     args = parser.parse_args()
 
+    llm_outputs_jsonl = args.llm_review_jsonl if args.llm_review_jsonl is not None else args.llm_outputs_jsonl
     report = build_llm_second_review_report(
         sample_artifacts_jsonl=args.sample_artifacts_jsonl,
-        llm_outputs_jsonl=args.llm_outputs_jsonl,
+        llm_outputs_jsonl=llm_outputs_jsonl,
         min_output_coverage=args.min_output_coverage,
         max_high_conf_disagreement_rate=args.max_high_conf_disagreement_rate,
     )

@@ -59,6 +59,18 @@ Runtime keys remain English. Semantic explanatory content should be Chinese.
 - Duplicate `sample_id` rows are invalid for automation gates.
 - Any forbidden-trade output violation blocks readiness.
 - LLM output never overwrites human review CSV.
+- Fixture/demo outputs are protocol drills only and must not be represented as real production LLM results.
+
+## Offline Fixture Drill
+
+Example non-production fixture:
+
+- `cajas/data_examples/eurusd_llm_second_review.example.jsonl`
+
+Usage:
+
+- protocol drill and validator behavior checks only
+- human-audit metric walkthroughs (agreement/disagreement, high-confidence disagreement, requires-human-review, standard-gap)
 
 ## Automation Readiness Gate
 

@@ -16,13 +16,18 @@ def _sample_rows() -> list[dict]:
     return [
         {
             "artifact_version": "eurusd_llm_review_sample_v0",
-            "sample_id": "s1",
+            "sample_id": "sample_001",
             "human_review": {"human_label": "valid_pattern", "human_confidence": "high"},
         },
         {
             "artifact_version": "eurusd_llm_review_sample_v0",
-            "sample_id": "s2",
+            "sample_id": "sample_002",
             "human_review": {"human_label": "false_positive", "human_confidence": "high"},
+        },
+        {
+            "artifact_version": "eurusd_llm_review_sample_v0",
+            "sample_id": "sample_003",
+            "human_review": {"human_label": "valid_pattern", "human_confidence": "high"},
         },
     ]
 
@@ -46,7 +51,7 @@ def test_outputs_ready_with_fixture_metrics(tmp_path: Path) -> None:
             {
                 "artifact_version": "eurusd_llm_second_review_v0",
                 "source_artifact_version": "eurusd_llm_review_sample_v0",
-                "sample_id": "s1",
+                "sample_id": "sample_001",
                 "standard_version": "eurusd_15m_review_standard_v0",
                 "llm_reviewer_role": "second_reviewer",
                 "llm_pattern_validity": "valid",
@@ -63,7 +68,7 @@ def test_outputs_ready_with_fixture_metrics(tmp_path: Path) -> None:
             {
                 "artifact_version": "eurusd_llm_second_review_v0",
                 "source_artifact_version": "eurusd_llm_review_sample_v0",
-                "sample_id": "s2",
+                "sample_id": "sample_002",
                 "standard_version": "eurusd_15m_review_standard_v0",
                 "llm_reviewer_role": "second_reviewer",
                 "llm_pattern_validity": "uncertain",
@@ -98,7 +103,7 @@ def test_blocked_on_invalid_or_forbidden_output(tmp_path: Path) -> None:
             {
                 "artifact_version": "eurusd_llm_second_review_v0",
                 "source_artifact_version": "eurusd_llm_review_sample_v0",
-                "sample_id": "s9",
+                "sample_id": "sample_099",
                 "standard_version": "eurusd_15m_review_standard_v0",
                 "llm_reviewer_role": "second_reviewer",
                 "llm_pattern_validity": "valid",
@@ -118,3 +123,18 @@ def test_blocked_on_invalid_or_forbidden_output(tmp_path: Path) -> None:
     assert report["report_status"] == "blocked"
     assert report["unknown_sample_id_count"] == 1
     assert report["forbidden_output_violation_count"] == 1
+    assert report["automation_readiness_status"] == "not_ready"
+
+
+def test_example_fixture_file_is_valid_drill_input(tmp_path: Path) -> None:
+    sample_jsonl = tmp_path / "samples.jsonl"
+    fixture_path = Path("cajas/data_examples/eurusd_llm_second_review.example.jsonl")
+    _write_jsonl(sample_jsonl, _sample_rows())
+    report = build_llm_second_review_report(sample_artifacts_jsonl=sample_jsonl, llm_outputs_jsonl=fixture_path)
+    assert report["report_status"] == "llm_second_review_outputs_ready"
+    assert report["llm_review_row_count"] == 3
+    assert report["agreement_count"] == 1
+    assert report["disagreement_count"] == 2
+    assert report["high_confidence_disagreement_count"] == 2
+    assert report["requires_human_review_count"] == 1
+    assert report["possible_standard_gap_count"] == 1

@@ -59,6 +59,7 @@ Non-negotiable constraints:
 - Active semantic fields include `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, and `human_context_notes_zh` in CSV/JSONL review persistence.
 - Future LLM second-review flow must read deterministic exported artifacts (for example `EURUSD_15m_llm_review_samples.jsonl`) with explicit forbidden execution/trading outputs.
 - Before any online model call, offline second-review output schema validation and conservative automation readiness gating must pass.
+- Fixture-based second-review drills are test/demo evidence only and do not count as real LLM production results.
 
 Local GUI run commands:
 

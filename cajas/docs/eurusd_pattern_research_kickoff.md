@@ -12,6 +12,7 @@ Language boundary policy:
 - Active review persistence includes first-class `_zh` rationale fields (`human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`).
 - Deterministic LLM-ready sample artifact export is the only planned LLM input surface; no live LLM calls and no raw-csv-first LLM review flow.
 - Offline LLM second-review protocol and output validation are defined before any live model integration.
+- Offline fixture drills are allowed for validator testing only and must be clearly marked non-production.
 
 ## Expected data location
 
