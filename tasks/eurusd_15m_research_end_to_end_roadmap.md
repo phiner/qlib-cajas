@@ -61,6 +61,7 @@ Non-negotiable constraints:
 - Before any online model call, offline second-review output schema validation and conservative automation readiness gating must pass.
 - Fixture-based second-review drills are test/demo evidence only and do not count as real LLM production results.
 - Pipeline order: human standard v0 -> deterministic artifact export -> offline second-review protocol -> fixture drill -> explicit approval for real LLM integration -> human audit gate before automation increase.
+- Gate rule: real LLM integration may begin only when readiness report is `ready_for_explicit_approval` and the user explicitly approves the integration task.
 
 Local GUI run commands:
 

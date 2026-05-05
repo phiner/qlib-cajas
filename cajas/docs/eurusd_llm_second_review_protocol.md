@@ -92,3 +92,9 @@ Candidate gate to `ready_for_limited_trial` requires at minimum:
 - output coverage >= configured threshold
 - high-confidence disagreement rate <= configured threshold
 - human-audit coverage documented (or explicitly pending)
+
+## Real Integration Gate
+
+- `ready_for_explicit_approval` means prerequisites are ready, but integration is still not approved.
+- Real provider/API integration may start only after explicit user approval.
+- Approval does not allow trading actions; human audit gate remains mandatory before any automation increase.
