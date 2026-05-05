@@ -280,7 +280,7 @@ def main():
     sample_id = str(sample["sample_id"])
     is_rejected_sample = sample_id in rejected_ids
     if is_rejected_sample:
-        st.warning("This sample is rejected/excluded.")
+        st.sidebar.caption("Status: rejected/excluded")
     state_defaults = default_review_values()
     allowed = schema.get("allowed_values", {})
     review_key_map = {
@@ -296,6 +296,10 @@ def main():
 
     if st.session_state.get("current_sample_id") != sample_id:
         st.session_state["current_sample_id"] = sample_id
+        if is_rejected_sample and st.session_state.get("last_rejected_toast_sample_id") != sample_id:
+            if hasattr(st, "toast"):
+                st.toast("This sample is rejected/excluded.", icon="⛔")
+            st.session_state["last_rejected_toast_sample_id"] = sample_id
         for field, key in review_key_map.items():
             value = sample.get(field, state_defaults[field])
             if field == "review_notes":
@@ -332,7 +336,6 @@ def main():
         st.caption(meta_line)
 
     # Chart
-    st.markdown("##### Chart")
     chart_container = st.container()
     window, chart_diag = extract_chart_window_with_diagnostics(
         st.session_state.clean_view,

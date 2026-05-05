@@ -1112,7 +1112,14 @@ def test_app_source_moves_long_metadata_to_sample_details_expander():
     assert 'with st.expander("Sample Details", expanded=False):' in app_source
     assert "st.caption(meta_line)" in app_source
     assert 'st.subheader("Candlestick Chart")' not in app_source
-    assert 'st.markdown("##### Chart")' in app_source
+    assert 'st.markdown("##### Chart")' not in app_source
+
+
+def test_app_source_uses_compact_rejected_status_not_fullwidth_banner():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert 'st.warning("This sample is rejected/excluded.")' not in app_source
+    assert 'st.sidebar.caption("Status: rejected/excluded")' in app_source
+    assert 'st.toast("This sample is rejected/excluded.", icon="⛔")' in app_source
 
 
 def test_app_source_injects_compact_css_and_hides_streamlit_chrome():
