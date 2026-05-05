@@ -1099,6 +1099,22 @@ def test_app_source_uses_global_sample_number_wording_and_keys():
     assert "sample_number_input" in app_source
 
 
+def test_app_source_removes_redundant_main_sample_header_and_compacts_title():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "#### EURUSD 15m Review · Sample" in app_source
+    assert 'f"### EURUSD 15m Review · Sample' not in app_source
+    assert "st.subheader(f\"Sample {sample['sample_id']}\")" not in app_source
+    assert "st.header(f\"Sample: {sample['sample_id']}\")" not in app_source
+
+
+def test_app_source_moves_long_metadata_to_sample_details_expander():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert 'with st.expander("Sample Details", expanded=False):' in app_source
+    assert "st.caption(meta_line)" in app_source
+    assert 'st.subheader("Candlestick Chart")' not in app_source
+    assert 'st.markdown("##### Chart")' in app_source
+
+
 def test_app_source_injects_compact_css_and_hides_streamlit_chrome():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "def inject_compact_review_css" in app_source

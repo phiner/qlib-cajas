@@ -315,14 +315,8 @@ def main():
         st.session_state["review_status"] = allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"])[0]
 
     st.markdown(
-        f"### EURUSD 15m Review · Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
+        f"#### EURUSD 15m Review · Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
     )
-
-    if compact_mode:
-        st.subheader(f"Sample {sample['sample_id']}")
-    else:
-        st.header(f"Sample: {sample['sample_id']}")
-        st.subheader(f"{sample['timestamp']} - {sample['candidate_type']}")
 
     meta_line = " | ".join(
         [
@@ -334,10 +328,11 @@ def main():
             f"reasons={sample['reason_codes']}",
         ]
     )
-    st.caption(meta_line)
+    with st.expander("Sample Details", expanded=False):
+        st.caption(meta_line)
 
     # Chart
-    st.subheader("Candlestick Chart")
+    st.markdown("##### Chart")
     chart_container = st.container()
     window, chart_diag = extract_chart_window_with_diagnostics(
         st.session_state.clean_view,
