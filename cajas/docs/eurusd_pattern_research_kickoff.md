@@ -388,3 +388,10 @@ Status gates are deterministic:
 - `watch`: must-fix gates pass with non-blocking quality warnings
 - `needs_rule_refinement`: any must-fix gate fails
 - `blocked`: required audit artifacts/columns missing
+
+
+## Market-state split update (Task 080)
+
+- 3-bar logic is explicitly pattern/event based (`micro_pattern_event_3`) and no longer treated as a slope-only state.
+- 8/24/128 layers remain quantitative structure logic.
+- Micro events qualify structure interpretation and are retained as separate categorical fields for future Qlib adapter and human review.

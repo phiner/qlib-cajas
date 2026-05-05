@@ -17,8 +17,23 @@ MARKET_STATE_RULE_VERSION = "eurusd_market_state_rules_v0"
 EXPECTED_BAR_HOURS = 0.25
 GAP_HOURS_THRESHOLD = 1.0
 
-
 REQUIRED_COLUMNS = ["timestamp", "open", "high", "low", "close"]
+
+
+MICRO_EVENT_VALUES = {
+    "three_bar_reversal_up",
+    "three_bar_reversal_down",
+    "lower_sweep_reclaim",
+    "upper_sweep_reject",
+    "three_bar_exhaustion_up",
+    "three_bar_exhaustion_down",
+    "micro_pause",
+    "micro_compression",
+    "failed_followthrough_up",
+    "failed_followthrough_down",
+    "micro_noise",
+    "unknown",
+}
 
 
 def _ensure_columns(df: pd.DataFrame) -> None:
@@ -39,12 +54,15 @@ def _range_position(close: pd.Series, low: pd.Series, high: pd.Series) -> pd.Ser
 
 def _vol_state(width: pd.Series, width128: pd.Series) -> pd.Series:
     ratio = _safe_div(width, width128)
-    state = pd.Series(np.where(ratio < 0.6, "compressed", np.where(ratio > 1.4, "expanded", "normal")), index=width.index)
+    state = pd.Series(
+        np.where(ratio < 0.6, "compressed", np.where(ratio > 1.4, "expanded", "normal")),
+        index=width.index,
+    )
     state[ratio.isna()] = "unknown"
     return state
 
 
-def compute_market_state_features(df: pd.DataFrame) -> pd.DataFrame:
+def compute_structure_features_8_24_128(df: pd.DataFrame) -> pd.DataFrame:
     _ensure_columns(df)
     out = df.copy(deep=True)
     out["timestamp"] = pd.to_datetime(out["timestamp"], utc=True, errors="coerce")
@@ -105,17 +123,14 @@ def compute_market_state_features(df: pd.DataFrame) -> pd.DataFrame:
     out["directional_body_latest"] = np.sign(out["close"] - out["open"])
     out["latest_close_position_in_candle"] = _range_position(out["close"], out["low"], out["high"])
 
-    out["three_bar_direction_change"] = np.sign(out["return_3"] * out["return_8"]).map({-1.0: 1, 1.0: 0}).fillna(0).astype(int)
-    out["three_bar_reversal_score"] = (
-        out["three_bar_direction_change"]
-        + (out["body_ratio_latest"] > 0.55).astype(int)
-        + (out["latest_close_position_in_candle"].between(0.15, 0.85) == False).astype(int)
-    )
-    out["three_bar_rejection_score"] = (
-        (out["upper_wick_ratio_latest"] > 0.45).astype(int)
-        + (out["lower_wick_ratio_latest"] > 0.45).astype(int)
-        + (out["body_ratio_latest"] < 0.3).astype(int)
-    )
+    out["prev_open_1"] = out["open"].shift(1)
+    out["prev_close_1"] = out["close"].shift(1)
+    out["prev_high_1"] = out["high"].shift(1)
+    out["prev_low_1"] = out["low"].shift(1)
+    out["prev_open_2"] = out["open"].shift(2)
+    out["prev_close_2"] = out["close"].shift(2)
+    out["prev_high_2"] = out["high"].shift(2)
+    out["prev_low_2"] = out["low"].shift(2)
 
     prior3_high = out["high"].shift(1).rolling(ULTRA_SHORT_WINDOW_BARS, min_periods=ULTRA_SHORT_WINDOW_BARS).max()
     prior3_low = out["low"].shift(1).rolling(ULTRA_SHORT_WINDOW_BARS, min_periods=ULTRA_SHORT_WINDOW_BARS).min()
@@ -138,59 +153,163 @@ def compute_market_state_features(df: pd.DataFrame) -> pd.DataFrame:
     gap_flag = (delta_hours > GAP_HOURS_THRESHOLD).fillna(False)
     out["gap_count_128"] = gap_flag.rolling(LONG_WINDOW_BARS, min_periods=LONG_WINDOW_BARS).sum()
     out["largest_gap_hours_128"] = delta_hours.rolling(LONG_WINDOW_BARS, min_periods=LONG_WINDOW_BARS).max()
-
     return out
 
 
-def _trend_from_return(ret: float, pos_th: float, neg_th: float) -> str:
-    if pd.isna(ret):
-        return "unknown"
-    if ret >= pos_th:
-        return "up"
-    if ret <= neg_th:
-        return "down"
-    return "flat"
+def compute_market_state_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Backward-compatible alias used by existing tests/report code."""
+    return compute_structure_features_8_24_128(df)
 
 
-def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+def detect_three_bar_micro_event(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
     r = row if isinstance(row, dict) else row.to_dict()
-    r3 = float(r.get("return_3", np.nan))
+    close = float(r.get("close", np.nan))
+    open_ = float(r.get("open", np.nan))
+    high = float(r.get("high", np.nan))
+    low = float(r.get("low", np.nan))
+    prev_close = float(r.get("prev_close_1", np.nan))
+    prev_open = float(r.get("prev_open_1", np.nan))
+    prev2_close = float(r.get("prev_close_2", np.nan))
+    prev2_open = float(r.get("prev_open_2", np.nan))
+    prev2_low = float(r.get("prev_low_2", np.nan))
+    prev2_high = float(r.get("prev_high_2", np.nan))
+    prev_low = float(r.get("prev_low_1", np.nan))
+    prev_high = float(r.get("prev_high_1", np.nan))
+    bw = float(r.get("body_ratio_latest", np.nan))
+    up_w = float(r.get("upper_wick_ratio_latest", np.nan))
+    low_w = float(r.get("lower_wick_ratio_latest", np.nan))
+    returns_in = bool(r.get("latest_bar_returns_inside_prior_3_range", False))
+
+    if any(pd.isna(v) for v in [close, open_, high, low, prev_close, prev_open, prev2_close, prev2_open]):
+        return {
+            "micro_pattern_event_3": "unknown",
+            "micro_pattern_direction_3": "unknown",
+            "micro_pattern_strength_3": "unknown",
+            "micro_reversal_detected_3": False,
+            "micro_rejection_detected_3": False,
+            "micro_sweep_detected_3": False,
+            "micro_event_rationale_zh": "样本不足，无法判定3K微事件",
+        }
+
+    up_seq = prev2_close < prev_close < close
+    down_seq = prev2_close > prev_close > close
+    current_bull = close > open_
+    current_bear = close < open_
+
+    reversal_up = prev2_close > prev_close and current_bull and close > prev_high and bw >= 0.45
+    reversal_down = prev2_close < prev_close and current_bear and close < prev_low and bw >= 0.45
+
+    lower_sweep_reclaim = (
+        (not pd.isna(prev2_low))
+        and (not pd.isna(prev_low))
+        and low < min(prev2_low, prev_low)
+        and close > min(open_, prev_close)
+        and low_w > 0.35
+    )
+    upper_sweep_reject = (
+        (not pd.isna(prev2_high))
+        and (not pd.isna(prev_high))
+        and high > max(prev2_high, prev_high)
+        and close < max(open_, prev_close)
+        and up_w > 0.35
+    )
+
+    failed_follow_up = high > prev_high and close <= prev_close and current_bear
+    failed_follow_down = low < prev_low and close >= prev_close and current_bull
+
+    event = "micro_noise"
+    direction = "mixed"
+    strength = "weak"
+    reversal = False
+    rejection = False
+    sweep = False
+    rationale = "3K形态冲突，归类为微噪音"
+
+    if reversal_up:
+        event = "three_bar_reversal_up"
+        direction = "up"
+        strength = "strong"
+        reversal = True
+        rationale = "前两根下压后当前阳线突破前高，构成3K向上反转"
+    elif reversal_down:
+        event = "three_bar_reversal_down"
+        direction = "down"
+        strength = "strong"
+        reversal = True
+        rationale = "前两根上推后当前阴线跌破前低，构成3K向下反转"
+    elif lower_sweep_reclaim:
+        event = "lower_sweep_reclaim"
+        direction = "up"
+        strength = "medium" if low_w > 0.45 else "weak"
+        rejection = True
+        sweep = True
+        rationale = "下扫前低后收回区间内，表现为下影回收"
+    elif upper_sweep_reject:
+        event = "upper_sweep_reject"
+        direction = "down"
+        strength = "medium" if up_w > 0.45 else "weak"
+        rejection = True
+        sweep = True
+        rationale = "上扫前高后收回区间内，表现为上影拒绝"
+    elif up_seq and current_bear and up_w > 0.35 and bw < 0.45:
+        event = "three_bar_exhaustion_up"
+        direction = "down"
+        strength = "medium"
+        rejection = True
+        rationale = "连续上推后实体减弱并出现上影，出现上行动能衰竭"
+    elif down_seq and current_bull and low_w > 0.35 and bw < 0.45:
+        event = "three_bar_exhaustion_down"
+        direction = "up"
+        strength = "medium"
+        rejection = True
+        rationale = "连续下压后实体减弱并出现下影，出现下行动能衰竭"
+    elif failed_follow_up:
+        event = "failed_followthrough_up"
+        direction = "down"
+        strength = "medium"
+        rejection = True
+        rationale = "尝试上破但收盘未跟随，形成上破失败"
+    elif failed_follow_down:
+        event = "failed_followthrough_down"
+        direction = "up"
+        strength = "medium"
+        rejection = True
+        rationale = "尝试下破但收盘未跟随，形成下破失败"
+    elif abs(close - prev_close) <= max(1e-8, 0.15 * (high - low)) and bw <= 0.25:
+        event = "micro_pause"
+        direction = "neutral"
+        strength = "weak"
+        rationale = "实体很小且收盘变化有限，属于微暂停"
+    elif bool(r.get("volatility_state_3", "unknown") == "compressed") and returns_in:
+        event = "micro_compression"
+        direction = "neutral"
+        strength = "weak"
+        rationale = "3K区间压缩且收回原区间，属于微压缩"
+
+    if event not in MICRO_EVENT_VALUES:
+        event = "unknown"
+
+    return {
+        "micro_pattern_event_3": event,
+        "micro_pattern_direction_3": direction,
+        "micro_pattern_strength_3": strength,
+        "micro_reversal_detected_3": reversal,
+        "micro_rejection_detected_3": rejection,
+        "micro_sweep_detected_3": sweep,
+        "micro_event_rationale_zh": rationale,
+    }
+
+
+def classify_structure_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+    r = row if isinstance(row, dict) else row.to_dict()
     r8 = float(r.get("return_8", np.nan))
     r24 = float(r.get("return_24", np.nan))
     r128 = float(r.get("return_128", np.nan))
-    pos8 = float(r.get("range_position_8", np.nan))
-    pos24 = float(r.get("range_position_24", np.nan))
     pos128 = float(r.get("range_position_128", np.nan))
-    body_dir = float(r.get("directional_body_latest", np.nan))
-    up_w = float(r.get("upper_wick_ratio_latest", np.nan))
-    low_w = float(r.get("lower_wick_ratio_latest", np.nan))
-    rev_score = float(r.get("three_bar_reversal_score", 0.0) or 0.0)
-    rej_score = float(r.get("three_bar_rejection_score", 0.0) or 0.0)
     breaks_hi = bool(r.get("latest_bar_breaks_prior_3_high", False))
     breaks_lo = bool(r.get("latest_bar_breaks_prior_3_low", False))
     returns_in = bool(r.get("latest_bar_returns_inside_prior_3_range", False))
 
-    # ultra short 3
-    ultra = "unknown"
-    if pd.notna(r3):
-        if r3 > 0.0012 and body_dir > 0:
-            ultra = "micro_impulse_up"
-        elif r3 < -0.0012 and body_dir < 0:
-            ultra = "micro_impulse_down"
-        elif rev_score >= 2 and r3 > 0 and body_dir > 0:
-            ultra = "micro_reversal_up"
-        elif rev_score >= 2 and r3 < 0 and body_dir < 0:
-            ultra = "micro_reversal_down"
-        elif low_w > 0.5 and returns_in:
-            ultra = "micro_rejection_down"
-        elif up_w > 0.5 and returns_in:
-            ultra = "micro_rejection_up"
-        elif abs(r3) < 0.00035:
-            ultra = "micro_pause"
-        else:
-            ultra = "micro_noise"
-
-    # short 8
     short = "unknown"
     if pd.notna(r8):
         if r8 > 0.0025:
@@ -203,14 +322,9 @@ def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]
             short = "false_breakout"
         elif breaks_hi or breaks_lo:
             short = "breakout_attempt"
-        elif ultra in {"micro_rejection_up", "micro_reversal_down"}:
-            short = "rejection_up"
-        elif ultra in {"micro_rejection_down", "micro_reversal_up"}:
-            short = "rejection_down"
         else:
             short = "transition"
 
-    # long 128
     long_state = "unknown"
     if pd.notna(r128):
         if r128 > 0.01:
@@ -231,7 +345,6 @@ def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]
         if pos128 <= 0.25 and abs(r24) < 0.002:
             long_state = "low_level_base"
 
-    # mid 24
     mid = "unknown"
     if pd.notna(r24):
         if r24 > 0.006:
@@ -250,17 +363,10 @@ def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]
         if long_state in {"downtrend", "weakening_downtrend"} and r24 > 0.002:
             mid = "rebound"
 
-    # enrich short with context
-    if short == "transition":
-        if long_state in {"uptrend", "weakening_uptrend"} and r8 < -0.001:
-            short = "minor_pullback"
-        elif long_state in {"downtrend", "weakening_downtrend"} and r8 > 0.001:
-            short = "minor_rebound"
-
     local = "unknown"
-    if long_state in {"uptrend", "weakening_uptrend"} and mid == "pullback" and short in {"minor_rebound", "impulse_up", "rejection_down"}:
+    if long_state in {"uptrend", "weakening_uptrend"} and mid == "pullback":
         local = "pullback_in_uptrend"
-    elif long_state in {"downtrend", "weakening_downtrend"} and mid == "rebound" and short in {"minor_pullback", "impulse_down", "rejection_up"}:
+    elif long_state in {"downtrend", "weakening_downtrend"} and mid == "rebound":
         local = "rebound_in_downtrend"
     elif long_state == "high_level_consolidation":
         local = "high_level_consolidation"
@@ -268,50 +374,79 @@ def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]
         local = "low_level_base"
     elif long_state == "sideways" and mid in {"sideways", "consolidation"}:
         local = "range_chop"
-    elif long_state in {"uptrend", "downtrend"} and ultra in {"micro_reversal_up", "micro_reversal_down"} and rej_score >= 2:
-        local = "exhaustion_risk"
-    elif short == "breakout_attempt" and ultra in {"micro_impulse_up", "micro_impulse_down"}:
-        local = "breakout_retest"
-    elif short == "false_breakout":
-        local = "failed_breakout"
-    elif rej_score >= 2 and (breaks_hi or breaks_lo):
-        local = "liquidity_sweep"
-    elif ultra in {"micro_reversal_up", "micro_reversal_down"} and long_state in {"uptrend", "downtrend", "weakening_uptrend", "weakening_downtrend"}:
-        local = "micro_reversal_inside_trend"
     elif mid in {"uptrend", "downtrend"} and short in {"impulse_up", "impulse_down"}:
         local = "trend_continuation"
 
     confidence = "low"
-    direction_votes = 0
+    votes = 0
     if long_state in {"uptrend", "weakening_uptrend"} and mid in {"uptrend", "pullback", "consolidation"}:
-        direction_votes += 1
+        votes += 1
     if long_state in {"downtrend", "weakening_downtrend"} and mid in {"downtrend", "rebound", "consolidation"}:
-        direction_votes += 1
-    if short in {"impulse_up", "impulse_down", "minor_pullback", "minor_rebound"}:
-        direction_votes += 1
-    if ultra in {"micro_impulse_up", "micro_impulse_down", "micro_reversal_up", "micro_reversal_down"}:
-        direction_votes += 1
-    if direction_votes >= 3:
+        votes += 1
+    if short in {"impulse_up", "impulse_down", "transition"}:
+        votes += 1
+    if votes >= 3:
         confidence = "high"
-    elif direction_votes >= 2:
+    elif votes >= 2:
         confidence = "medium"
 
-    rationale_zh = f"超短期={ultra};短期={short};中期={mid};长期={long_state};结构={local}"
-
     return {
-        "ultra_short_state_3": ultra,
         "short_term_state_8": short,
         "mid_term_state_24": mid,
         "long_term_state_128": long_state,
         "local_structure_state": local,
         "structure_confidence": confidence,
-        "market_state_rule_version": MARKET_STATE_RULE_VERSION,
+    }
+
+
+def combine_micro_event_with_structure(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+    r = row if isinstance(row, dict) else row.to_dict()
+    micro = str(r.get("micro_pattern_event_3", "unknown"))
+    local = str(r.get("local_structure_state", "unknown"))
+    long_state = str(r.get("long_term_state_128", "unknown"))
+
+    if local == "pullback_in_uptrend" and micro in {"three_bar_reversal_up", "lower_sweep_reclaim", "failed_followthrough_down"}:
+        local = "pullback_in_uptrend"
+    elif local == "rebound_in_downtrend" and micro in {"three_bar_reversal_down", "upper_sweep_reject", "failed_followthrough_up"}:
+        local = "rebound_in_downtrend"
+    elif long_state == "high_level_consolidation" and micro in {"upper_sweep_reject", "three_bar_exhaustion_up"}:
+        local = "exhaustion_risk"
+    elif long_state == "sideways" and micro in {"micro_noise", "micro_pause", "micro_compression"}:
+        local = "range_chop"
+
+    structure = classify_structure_state_row(r)
+    short = structure["short_term_state_8"]
+    mid = structure["mid_term_state_24"]
+    long_final = structure["long_term_state_128"]
+
+    rationale_zh = (
+        f"微事件={micro};短期结构={short};中期结构={mid};长期结构={long_final};"
+        f"局部结构={local}"
+    )
+    return {
+        "local_structure_state": local,
         "market_state_rationale_zh": rationale_zh,
     }
 
 
+def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
+    r = row if isinstance(row, dict) else row.to_dict()
+    micro = detect_three_bar_micro_event(r)
+    structure = classify_structure_state_row(r)
+    merged = {**r, **micro, **structure}
+    combined = combine_micro_event_with_structure(merged)
+
+    return {
+        **micro,
+        **structure,
+        **combined,
+        "ultra_short_state_3": micro["micro_pattern_event_3"],
+        "market_state_rule_version": MARKET_STATE_RULE_VERSION,
+    }
+
+
 def build_market_state_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    features = compute_market_state_features(df)
+    features = compute_structure_features_8_24_128(df)
     states = features.apply(classify_market_state_row, axis=1, result_type="expand")
     out = pd.concat([features, states], axis=1)
 
@@ -326,29 +461,64 @@ def build_market_state_dataset(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def summarize_market_state_dataset(df: pd.DataFrame) -> dict[str, Any]:
-    states = [
-        "ultra_short_state_3",
+    required_states = [
+        "micro_pattern_event_3",
+        "micro_pattern_direction_3",
+        "micro_pattern_strength_3",
         "short_term_state_8",
         "mid_term_state_24",
         "long_term_state_128",
         "local_structure_state",
     ]
-    missing = [c for c in states if c not in df.columns]
+    missing = [c for c in required_states if c not in df.columns]
     if missing:
         return {"status": "blocked", "missing_state_columns": missing}
 
-    dist = {}
-    for c in states:
-        dist[c] = {str(k): int(v) for k, v in df[c].fillna("unknown").astype(str).value_counts().items()}
+    dist = {
+        "micro_pattern_event_distribution": {
+            str(k): int(v)
+            for k, v in df["micro_pattern_event_3"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "micro_pattern_direction_distribution": {
+            str(k): int(v)
+            for k, v in df["micro_pattern_direction_3"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "micro_pattern_strength_distribution": {
+            str(k): int(v)
+            for k, v in df["micro_pattern_strength_3"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "short_term_state_distribution": {
+            str(k): int(v)
+            for k, v in df["short_term_state_8"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "mid_term_state_distribution": {
+            str(k): int(v)
+            for k, v in df["mid_term_state_24"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "long_term_state_distribution": {
+            str(k): int(v)
+            for k, v in df["long_term_state_128"].fillna("unknown").astype(str).value_counts().items()
+        },
+        "local_structure_state_distribution": {
+            str(k): int(v)
+            for k, v in df["local_structure_state"].fillna("unknown").astype(str).value_counts().items()
+        },
+    }
 
-    conf = {str(k): int(v) for k, v in df["structure_confidence"].fillna("low").astype(str).value_counts().items()} if "structure_confidence" in df.columns else {}
-    unknown_count = int((df[states].astype(str) == "unknown").sum().sum())
+    conf = {
+        str(k): int(v)
+        for k, v in df["structure_confidence"].fillna("low").astype(str).value_counts().items()
+    } if "structure_confidence" in df.columns else {}
+    unknown_count = int((df[required_states].astype(str) == "unknown").sum().sum())
     gap_caveat_count = int(((df.get("gap_count_128", pd.Series([0] * len(df))) > 0).fillna(False)).sum())
 
     return {
         "status": "ready",
-        "state_distribution": dist,
+        **dist,
         "confidence_distribution": conf,
+        "micro_reversal_count": int(df.get("micro_reversal_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
+        "micro_rejection_count": int(df.get("micro_rejection_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
+        "micro_sweep_count": int(df.get("micro_sweep_detected_3", pd.Series(False)).fillna(False).astype(bool).sum()),
         "unknown_state_count": unknown_count,
         "gap_caveat_count": gap_caveat_count,
     }

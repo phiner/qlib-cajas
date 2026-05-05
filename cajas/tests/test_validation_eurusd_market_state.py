@@ -35,9 +35,12 @@ def test_report_ready_on_valid_input(tmp_path: Path) -> None:
         trial_approval_json=_trial(tmp_path / "trial.json"),
     )
     assert report["report_status"] == "market_state_dataset_ready"
+    assert report["three_bar_logic_type"] == "pattern_event"
+    assert report["structure_logic_type"] == "quantitative_8_24_128"
     assert report["feature_columns_present"] is True
     assert report["state_columns_present"] is True
     assert report["trading_outputs_excluded"] is True
+    assert isinstance(report["micro_pattern_event_distribution"], dict)
 
 
 def test_report_blocked_on_trial_approval_not_not_approved(tmp_path: Path) -> None:

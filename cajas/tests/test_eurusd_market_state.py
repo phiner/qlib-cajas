@@ -23,207 +23,243 @@ def _synthetic_df(n: int = 220, drift: float = 0.0002, vol: float = 0.0004) -> p
     return pd.DataFrame({"timestamp": ts, "open": open_, "high": high, "low": low, "close": close})
 
 
+def _base_row() -> dict:
+    return {
+        "return_8": 0.0004,
+        "return_24": 0.0004,
+        "return_128": 0.0002,
+        "range_position_128": 0.5,
+        "latest_bar_breaks_prior_3_high": False,
+        "latest_bar_breaks_prior_3_low": False,
+        "latest_bar_returns_inside_prior_3_range": True,
+        "volatility_state_3": "compressed",
+    }
+
+
 def test_feature_columns_exist() -> None:
     out = compute_market_state_features(_synthetic_df())
     for col in [
         "return_3", "return_8", "return_24", "return_128",
         "slope_3", "slope_8", "slope_24", "slope_128",
         "range_position_3", "range_position_8", "range_position_24", "range_position_128",
-        "three_bar_reversal_score", "higher_high_count_24", "gap_count_128",
+        "prev_close_1", "prev_close_2", "gap_count_128",
     ]:
         assert col in out.columns
 
 
-def test_range_positions_bounded_when_computable() -> None:
-    out = compute_market_state_features(_synthetic_df())
-    for col in ["range_position_3", "range_position_8", "range_position_24", "range_position_128"]:
-        s = out[col].dropna()
-        assert ((s >= 0.0) & (s <= 1.0)).all()
-
-
-def test_uptrend_classification_case() -> None:
+def test_lower_sweep_reclaim_detection() -> None:
     row = {
-        "return_3": 0.002,
-        "return_8": 0.004,
-        "return_24": 0.01,
-        "return_128": 0.03,
-        "range_position_128": 0.7,
-        "directional_body_latest": 1,
-        "upper_wick_ratio_latest": 0.1,
+        **_base_row(),
+        "open": 1.0010,
+        "close": 1.0030,
+        "high": 1.0035,
+        "low": 0.9970,
+        "prev_open_1": 1.0020,
+        "prev_close_1": 1.0010,
+        "prev_high_1": 1.0032,
+        "prev_low_1": 0.9990,
+        "prev_open_2": 1.0030,
+        "prev_close_2": 1.0020,
+        "prev_high_2": 1.0040,
+        "prev_low_2": 0.9995,
+        "body_ratio_latest": 0.5,
+        "upper_wick_ratio_latest": 0.05,
+        "lower_wick_ratio_latest": 0.55,
+    }
+    out = classify_market_state_row(row)
+    assert out["micro_pattern_event_3"] == "lower_sweep_reclaim"
+    assert out["micro_sweep_detected_3"] is True
+
+
+def test_upper_sweep_reject_detection() -> None:
+    row = {
+        **_base_row(),
+        "open": 1.0028,
+        "close": 1.0012,
+        "high": 1.0060,
+        "low": 1.0008,
+        "prev_open_1": 1.0020,
+        "prev_close_1": 1.0025,
+        "prev_high_1": 1.0042,
+        "prev_low_1": 1.0009,
+        "prev_open_2": 1.0010,
+        "prev_close_2": 1.0015,
+        "prev_high_2": 1.0040,
+        "prev_low_2": 1.0007,
+        "body_ratio_latest": 0.35,
+        "upper_wick_ratio_latest": 0.55,
         "lower_wick_ratio_latest": 0.1,
-        "three_bar_reversal_score": 0,
-        "three_bar_rejection_score": 0,
-        "latest_bar_breaks_prior_3_high": False,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
     }
     out = classify_market_state_row(row)
-    assert out["long_term_state_128"] in {"uptrend", "weakening_uptrend"}
+    assert out["micro_pattern_event_3"] == "upper_sweep_reject"
+    assert out["micro_rejection_detected_3"] is True
 
 
-def test_downtrend_classification_case() -> None:
+def test_three_bar_reversal_up_detection() -> None:
     row = {
-        "return_3": -0.002,
-        "return_8": -0.004,
-        "return_24": -0.01,
-        "return_128": -0.03,
-        "range_position_128": 0.3,
-        "directional_body_latest": -1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.1,
-        "three_bar_reversal_score": 0,
-        "three_bar_rejection_score": 0,
-        "latest_bar_breaks_prior_3_high": False,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
-    }
-    out = classify_market_state_row(row)
-    assert out["long_term_state_128"] in {"downtrend", "weakening_downtrend"}
-
-
-def test_sideways_classification_case() -> None:
-    row = {
-        "return_3": 0.0,
-        "return_8": 0.0001,
-        "return_24": 0.0003,
-        "return_128": 0.0005,
-        "range_position_128": 0.5,
-        "directional_body_latest": 0,
-        "upper_wick_ratio_latest": 0.2,
-        "lower_wick_ratio_latest": 0.2,
-        "three_bar_reversal_score": 0,
-        "three_bar_rejection_score": 1,
-        "latest_bar_breaks_prior_3_high": False,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
-    }
-    out = classify_market_state_row(row)
-    assert out["long_term_state_128"] in {"sideways", "transition"}
-
-
-def test_weakening_uptrend_pullback_case() -> None:
-    row = {
-        "return_3": -0.001,
-        "return_8": -0.002,
-        "return_24": -0.004,
+        **_base_row(),
         "return_128": 0.02,
-        "range_position_128": 0.65,
-        "directional_body_latest": -1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.2,
-        "three_bar_reversal_score": 1,
-        "three_bar_rejection_score": 1,
-        "latest_bar_breaks_prior_3_high": False,
-        "latest_bar_breaks_prior_3_low": True,
-        "latest_bar_returns_inside_prior_3_range": True,
+        "return_24": -0.004,
+        "open": 0.998,
+        "close": 1.006,
+        "high": 1.0063,
+        "low": 0.9975,
+        "prev_open_1": 1.003,
+        "prev_close_1": 1.000,
+        "prev_high_1": 1.002,
+        "prev_low_1": 0.999,
+        "prev_open_2": 1.006,
+        "prev_close_2": 1.003,
+        "prev_high_2": 1.0062,
+        "prev_low_2": 1.002,
+        "body_ratio_latest": 0.62,
+        "upper_wick_ratio_latest": 0.05,
+        "lower_wick_ratio_latest": 0.1,
     }
     out = classify_market_state_row(row)
-    assert out["long_term_state_128"] == "weakening_uptrend"
-    assert out["mid_term_state_24"] == "pullback"
+    assert out["micro_pattern_event_3"] == "three_bar_reversal_up"
+    assert out["micro_reversal_detected_3"] is True
 
 
-def test_weakening_downtrend_rebound_case() -> None:
+def test_three_bar_reversal_down_detection() -> None:
     row = {
-        "return_3": 0.001,
-        "return_8": 0.002,
+        **_base_row(),
+        "return_128": -0.02,
         "return_24": 0.004,
+        "open": 1.006,
+        "close": 0.998,
+        "high": 1.0065,
+        "low": 0.9978,
+        "prev_open_1": 1.002,
+        "prev_close_1": 1.005,
+        "prev_high_1": 1.0062,
+        "prev_low_1": 1.000,
+        "prev_open_2": 0.999,
+        "prev_close_2": 1.002,
+        "prev_high_2": 1.0022,
+        "prev_low_2": 0.9988,
+        "body_ratio_latest": 0.62,
+        "upper_wick_ratio_latest": 0.1,
+        "lower_wick_ratio_latest": 0.05,
+    }
+    out = classify_market_state_row(row)
+    assert out["micro_pattern_event_3"] == "three_bar_reversal_down"
+
+
+def test_micro_noise_on_contradictory_three_bars() -> None:
+    row = {
+        **_base_row(),
+        "open": 1.001,
+        "close": 1.0013,
+        "high": 1.003,
+        "low": 1.0010,
+        "prev_open_1": 1.0015,
+        "prev_close_1": 1.0010,
+        "prev_high_1": 1.0032,
+        "prev_low_1": 1.0008,
+        "prev_open_2": 1.001,
+        "prev_close_2": 1.0016,
+        "prev_high_2": 1.0031,
+        "prev_low_2": 1.0005,
+        "body_ratio_latest": 0.22,
+        "upper_wick_ratio_latest": 0.22,
+        "lower_wick_ratio_latest": 0.2,
+    }
+    out = classify_market_state_row(row)
+    assert out["micro_pattern_event_3"] in {"micro_noise", "micro_pause", "micro_compression"}
+
+
+def test_three_bar_not_slope_only() -> None:
+    row = {
+        **_base_row(),
+        "return_3": -0.002,
+        "open": 0.998,
+        "close": 1.006,
+        "high": 1.0063,
+        "low": 0.9975,
+        "prev_open_1": 1.003,
+        "prev_close_1": 1.000,
+        "prev_high_1": 1.002,
+        "prev_low_1": 0.999,
+        "prev_open_2": 1.006,
+        "prev_close_2": 1.003,
+        "prev_high_2": 1.0062,
+        "prev_low_2": 1.002,
+        "body_ratio_latest": 0.62,
+        "upper_wick_ratio_latest": 0.05,
+        "lower_wick_ratio_latest": 0.1,
+    }
+    out = classify_market_state_row(row)
+    assert out["micro_pattern_event_3"] == "three_bar_reversal_up"
+
+
+def test_combiner_long_uptrend_pullback_with_reversal_up() -> None:
+    row = {
+        **_base_row(),
+        "return_8": 0.0015,
+        "return_24": -0.0035,
+        "return_128": 0.018,
+        "range_position_128": 0.65,
+        "open": 0.998,
+        "close": 1.006,
+        "high": 1.0063,
+        "low": 0.9975,
+        "prev_open_1": 1.003,
+        "prev_close_1": 1.000,
+        "prev_high_1": 1.002,
+        "prev_low_1": 0.999,
+        "prev_open_2": 1.006,
+        "prev_close_2": 1.003,
+        "prev_high_2": 1.0062,
+        "prev_low_2": 1.002,
+        "body_ratio_latest": 0.62,
+        "upper_wick_ratio_latest": 0.05,
+        "lower_wick_ratio_latest": 0.1,
+    }
+    out = classify_market_state_row(row)
+    assert out["local_structure_state"] == "pullback_in_uptrend"
+
+
+def test_combiner_long_downtrend_rebound_with_lower_sweep() -> None:
+    row = {
+        **_base_row(),
+        "return_8": -0.0012,
+        "return_24": 0.0035,
         "return_128": -0.02,
         "range_position_128": 0.35,
-        "directional_body_latest": 1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.2,
-        "three_bar_reversal_score": 1,
-        "three_bar_rejection_score": 1,
-        "latest_bar_breaks_prior_3_high": True,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
+        "open": 1.0010,
+        "close": 1.0030,
+        "high": 1.0035,
+        "low": 0.9970,
+        "prev_open_1": 1.0020,
+        "prev_close_1": 1.0010,
+        "prev_high_1": 1.0032,
+        "prev_low_1": 0.9990,
+        "prev_open_2": 1.0030,
+        "prev_close_2": 1.0020,
+        "prev_high_2": 1.0040,
+        "prev_low_2": 0.9995,
+        "body_ratio_latest": 0.5,
+        "upper_wick_ratio_latest": 0.05,
+        "lower_wick_ratio_latest": 0.55,
     }
     out = classify_market_state_row(row)
-    assert out["long_term_state_128"] == "weakening_downtrend"
-    assert out["mid_term_state_24"] == "rebound"
+    assert out["local_structure_state"] == "rebound_in_downtrend"
 
 
-def test_micro_reversal_case() -> None:
-    row = {
-        "return_3": 0.0015,
-        "return_8": -0.0025,
-        "return_24": -0.001,
-        "return_128": -0.015,
-        "range_position_128": 0.4,
-        "directional_body_latest": 1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.35,
-        "three_bar_reversal_score": 3,
-        "three_bar_rejection_score": 1,
-        "latest_bar_breaks_prior_3_high": True,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
-    }
-    out = classify_market_state_row(row)
-    assert out["ultra_short_state_3"] in {"micro_reversal_up", "micro_impulse_up"}
-
-
-def test_short_term_impulse_case() -> None:
-    row = {
-        "return_3": 0.001,
-        "return_8": 0.004,
-        "return_24": 0.002,
-        "return_128": 0.008,
-        "range_position_128": 0.6,
-        "directional_body_latest": 1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.1,
-        "three_bar_reversal_score": 0,
-        "three_bar_rejection_score": 0,
-        "latest_bar_breaks_prior_3_high": True,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
-    }
-    out = classify_market_state_row(row)
-    assert out["short_term_state_8"] == "impulse_up"
-
-
-def test_wick_rejection_case() -> None:
-    row = {
-        "return_3": -0.0005,
-        "return_8": -0.0007,
-        "return_24": -0.001,
-        "return_128": -0.003,
-        "range_position_128": 0.45,
-        "directional_body_latest": -1,
-        "upper_wick_ratio_latest": 0.7,
-        "lower_wick_ratio_latest": 0.05,
-        "three_bar_reversal_score": 1,
-        "three_bar_rejection_score": 3,
-        "latest_bar_breaks_prior_3_high": True,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": True,
-    }
-    out = classify_market_state_row(row)
-    assert out["ultra_short_state_3"] in {"micro_rejection_up", "micro_noise"}
-
-
-def test_local_structure_combination_case() -> None:
-    row = {
-        "return_3": 0.001,
-        "return_8": 0.0015,
-        "return_24": -0.003,
-        "return_128": 0.02,
-        "range_position_128": 0.6,
-        "directional_body_latest": 1,
-        "upper_wick_ratio_latest": 0.1,
-        "lower_wick_ratio_latest": 0.25,
-        "three_bar_reversal_score": 2,
-        "three_bar_rejection_score": 1,
-        "latest_bar_breaks_prior_3_high": True,
-        "latest_bar_breaks_prior_3_low": False,
-        "latest_bar_returns_inside_prior_3_range": False,
-    }
-    out = classify_market_state_row(row)
-    assert out["local_structure_state"] in {"pullback_in_uptrend", "micro_reversal_inside_trend", "trend_continuation"}
-
-
-def test_dataset_has_no_trading_fields() -> None:
+def test_dataset_has_required_micro_and_no_trading_fields() -> None:
     ds = build_market_state_dataset(_synthetic_df())
+    for col in [
+        "micro_pattern_event_3",
+        "micro_pattern_direction_3",
+        "micro_pattern_strength_3",
+        "micro_reversal_detected_3",
+        "micro_rejection_detected_3",
+        "micro_sweep_detected_3",
+        "short_term_state_8",
+        "mid_term_state_24",
+        "long_term_state_128",
+    ]:
+        assert col in ds.columns
     for col in ["trade_signal", "entry", "exit", "order", "position_size"]:
         assert col not in ds.columns

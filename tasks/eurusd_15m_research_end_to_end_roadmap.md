@@ -910,3 +910,10 @@ Audit outputs:
 This audit is read-only and does not reset or rebuild active review artifacts.
 
 - Market-state prototype v0 now targets nested `3/8/24/128` windows with deterministic feature/label rules and research-only outputs (no trading actions).
+
+
+## Market-state architecture correction (Task 080)
+
+- Split recognition into `3-bar micro pattern/event` and `8/24/128 quantitative structure`.
+- Keep micro-event outputs independent and use them to qualify local structure, not to override long-window background automatically.
+- Keep boundaries unchanged: no Qlib core edits, no trading outputs, no real LLM provider integration.

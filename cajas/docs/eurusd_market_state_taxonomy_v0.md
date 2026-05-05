@@ -1,4 +1,4 @@
-# EURUSD 15m Market State Taxonomy v0 (3/8/24/128)
+# EURUSD 15m Market State Taxonomy v0 (Split Micro Event + Structure)
 
 ## Windows
 
@@ -7,49 +7,50 @@
 - `mid_window_bars = 24`
 - `long_window_bars = 128`
 
-Nested interpretation:
+## Recognition Split
 
-- 3 bars: immediate micro-action
-- 8 bars: current action
-- 24 bars: local swing/structure
-- 128 bars: local review-window background
+- 3-bar layer (`micro_pattern_event_3`) is pattern/event recognition, not generic return/slope classification.
+- 8/24/128 layers are quantitative structure recognition.
+- 3-bar events qualify structure interpretation; they do not define long background alone.
 
-128-bar long window is local 15m background, not macro daily/weekly trend.
+## 3-Bar Micro Event Fields
 
-## Chinese Semantics
+- `micro_pattern_event_3`
+- `micro_pattern_direction_3`
+- `micro_pattern_strength_3`
+- `micro_reversal_detected_3`
+- `micro_rejection_detected_3`
+- `micro_sweep_detected_3`
+- `micro_event_rationale_zh`
 
-- 超短期：3 根 K，捕捉最即时反转、冲高回落、下探回收、短线拒绝、微观突变。
-- 短期：8 根 K，判断当前动作（急涨/急跌/小回调/小反弹/假突破/整理）。
-- 中期：24 根 K，判断局部 swing 结构（顺势推进/回调/反弹/震荡/转折）。
-- 长期：128 根 K，判断当前 review 窗口背景（上涨/下跌/高位整理/低位筑底/趋势放缓/转折尝试）。
+Enum examples:
 
-## Runtime Enum Fields
+- `three_bar_reversal_up`
+- `three_bar_reversal_down`
+- `lower_sweep_reclaim`
+- `upper_sweep_reject`
+- `three_bar_exhaustion_up`
+- `three_bar_exhaustion_down`
+- `micro_pause`
+- `micro_compression`
+- `failed_followthrough_up`
+- `failed_followthrough_down`
+- `micro_noise`
+- `unknown`
 
-- `ultra_short_state_3`
+## 8/24/128 Structure Fields
+
 - `short_term_state_8`
 - `mid_term_state_24`
 - `long_term_state_128`
 - `local_structure_state`
 - `structure_confidence`
-
-`market_state_rule_version = eurusd_market_state_rules_v0`
-
-## Nuance Rules
-
-- Long-term uptrend with 24-bar decline maps to `pullback` in mid-term, not immediate trend reversal.
-- Long-term downtrend with 24-bar rise maps to `rebound` in mid-term.
-- 3-bar micro reversal can coexist with trend-continuation backgrounds.
-
-## Deterministic Rule Caveats
-
-- v0 rules are transparent deterministic heuristics, not trained models.
-- Swing counts are rolling approximations.
-- Gap context is timestamp-delta based approximation.
-- This output is for research labeling and review, not execution.
+- `market_state_rationale_zh`
+- `market_state_rule_version = eurusd_market_state_rules_v0`
 
 ## Boundary
 
-- no trading signals
-- no order/position outputs
-- no broker/exchange execution
-- no real LLM integration
+- Research-only labeling context.
+- No trading signals/orders/position sizing.
+- No Qlib core change requirement.
+- No real LLM provider calls.
