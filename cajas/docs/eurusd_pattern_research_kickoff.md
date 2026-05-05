@@ -21,6 +21,7 @@ Language boundary policy:
 - Human review quality reporting artifact:
   - `tmp/validation-eurusd-human-review-quality.json`
   - `tmp/validation-eurusd-human-review-quality.md`
+- Missing completed review CSV should be reported as `awaiting_review_input` (non-blocking workflow state), not as a system blocker.
 
 ## Expected data location
 

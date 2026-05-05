@@ -26,7 +26,16 @@ def main() -> int:
     args.output_md.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     args.output_md.write_text(render_human_review_quality_markdown(payload), encoding="utf-8")
-    print(json.dumps({"status": "ok", "report_status": payload.get("status"), "output_json": str(args.output_json), "output_md": str(args.output_md)}))
+    print(
+        json.dumps(
+            {
+                "status": "ok",
+                "report_status": payload.get("report_status"),
+                "output_json": str(args.output_json),
+                "output_md": str(args.output_md),
+            }
+        )
+    )
     return 0
 
 
