@@ -53,6 +53,10 @@ def test_guide_contains_five_layer_and_candidate_type_clarification(temp_dir, la
     assert "candidate_type 是系统把样本送进来的原因，不是最终形态名称。" in md
     assert "candidate_type is a system entry tag, not final label truth." in md
     assert "possible_false_breakout_candidate is a structure hypothesis and needs level/context validation." in md
+    assert "market_context 保持宽背景，不要塞入冲高回落/触底回升等短期动作。" in md
+    assert "recent_move_context" in md
+    assert "spike_up_reversal" in md
+    assert "spike_down_reversal" in md
 
 
 def test_guide_does_not_assume_new_gui_fields(temp_dir, label_schema):

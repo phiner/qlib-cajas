@@ -15,6 +15,7 @@ def test_label_schema_allowed_values_and_ranges() -> None:
     allowed = payload["allowed_values"]
     assert "human_pattern_label" in allowed
     assert "uptrend" in allowed["market_context"]
+    assert "choppy" in allowed["market_context"]
     assert "downtrend" in allowed["market_context"]
     assert "not_reviewed" in allowed["market_context"]
     assert "unclear" in allowed["market_context"]
@@ -38,7 +39,17 @@ def test_label_schema_allowed_values_and_ranges() -> None:
     assert "review_confidence_level" in allowed
     assert "primary_candidate_family" in allowed
     assert "secondary_candidate_family" in allowed
+    assert "trend_direction" in allowed
+    assert "trend_stage" in allowed
+    assert "volatility_state" in allowed
+    assert "recent_move_context" in allowed
+    assert "level_quality" in allowed
+    assert "session_context" in allowed
     assert "not_reviewed" in allowed["review_outcome"]
+    assert "not_enough_context" in allowed["review_outcome"]
+    assert "partial_follow_through" in allowed["confirmation_result"]
+    assert "delayed_follow_through" in allowed["confirmation_result"]
+    assert "none" in allowed["secondary_candidate_family"]
     assert "needs_recheck" in allowed["review_status"]
     assert "skip" in allowed["review_status"]
     assert "sideways" in payload["legacy_allowed_values"]["direction_context"]
@@ -60,3 +71,6 @@ def test_label_schema_includes_five_layer_summary_and_allowed_values() -> None:
     policy = payload["candidate_type_policy"]
     assert policy["entry_tag_only"] is True
     assert policy["final_pattern_truth"] is False
+    assert "spike_up_reversal" not in payload["allowed_values"]["market_context"]
+    assert "spike_up_reversal" in payload["allowed_values"]["recent_move_context"]
+    assert "consolidation_after_impulse" in payload["allowed_values"]["trend_stage"]

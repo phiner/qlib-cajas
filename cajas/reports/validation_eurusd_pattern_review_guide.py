@@ -53,6 +53,22 @@ def build_review_guide_report(label_schema_json: Path, batch_report_json: Path =
             "先看背景，再看位置，再看局部行为，再看确认/失败，最后给人审结论。",
             "不要只按 candidate_type 判断。",
             "candidate_type 是系统把样本送进来的原因，不是最终形态名称。",
+            "market_context 保持宽背景，不要塞入冲高回落/触底回升等短期动作。",
+        ],
+        "field_boundary_notes": {
+            "market_context": "broad regime/background only",
+            "trend_direction": "directional state only",
+            "trend_stage": "phase of the move (e.g. consolidation_after_impulse)",
+            "recent_move_context": "recent price-action sequence (spike/reversal/impulse consolidation)",
+        },
+        "recent_move_examples_cn": [
+            "冲高回落 -> recent_move_context=spike_up_reversal",
+            "触底回升 -> recent_move_context=spike_down_reversal",
+            "急涨后整理 -> recent_move_context=sharp_rise_then_consolidation + trend_stage=consolidation_after_impulse",
+            "急跌后整理 -> recent_move_context=sharp_drop_then_consolidation + trend_stage=consolidation_after_impulse",
+        ],
+        "optional_future_fields": [
+            "session_context (asia/london/new_york/overlap/rollover/normal) is documented and can stay optional until GUI wiring.",
         ],
         "candidate_type_clarification": {
             "entry_tag_only": True,
@@ -136,6 +152,16 @@ def format_review_guide_markdown(report: Dict[str, Any]) -> str:
     for row in sections["review_principles_cn"]:
         lines.append(f"- {row}")
 
+    lines.extend(["", "## Vocabulary Boundaries", ""])
+    lines.append(f"- market_context: {sections['field_boundary_notes']['market_context']}")
+    lines.append(f"- trend_direction: {sections['field_boundary_notes']['trend_direction']}")
+    lines.append(f"- trend_stage: {sections['field_boundary_notes']['trend_stage']}")
+    lines.append(f"- recent_move_context: {sections['field_boundary_notes']['recent_move_context']}")
+
+    lines.extend(["", "## Recent-Move Examples (CN)", ""])
+    for row in sections["recent_move_examples_cn"]:
+        lines.append(f"- {row}")
+
     lines.extend(["", "## Candidate Family Guidance", ""])
     lines.append(f"- market_context/trend: {sections['candidate_family_guidance']['market_context_or_trend']}")
     lines.append(f"- volatility_state: {sections['candidate_family_guidance']['volatility_state']}")
@@ -175,6 +201,10 @@ def format_review_guide_markdown(report: Dict[str, Any]) -> str:
     lines.extend(["", "## Warnings", ""])
     for warning in sections["warnings"]:
         lines.append(f"- {warning}")
+
+    lines.extend(["", "## Optional/Future Field Notes", ""])
+    for row in sections["optional_future_fields"]:
+        lines.append(f"- {row}")
 
     lines.extend(["", "## Recommendation", "", f"`{report['recommendation']}`"])
 

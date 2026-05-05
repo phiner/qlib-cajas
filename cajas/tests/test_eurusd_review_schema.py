@@ -54,3 +54,32 @@ def test_gui_default_review_values_stays_importable_and_compatible() -> None:
     assert defaults["review_status"] == "pending"
     assert "structure_location" in defaults
     assert defaults["structure_location"] == "not_reviewed"
+
+
+def test_new_vocabulary_fields_exist_in_defaults() -> None:
+    row = default_review_values()
+    for field in [
+        "recent_move_context",
+        "trend_direction",
+        "trend_stage",
+        "volatility_state",
+        "level_quality",
+        "session_context",
+    ]:
+        assert field in row
+        assert row[field] == "not_reviewed"
+
+
+def test_recent_move_context_values_and_market_context_boundary() -> None:
+    assert "recent_move_context" in ALLOWED_VALUES
+    assert "spike_up_reversal" in ALLOWED_VALUES["recent_move_context"]
+    assert "spike_down_reversal" in ALLOWED_VALUES["recent_move_context"]
+    assert "sharp_rise_then_consolidation" in ALLOWED_VALUES["recent_move_context"]
+    assert "sharp_drop_then_consolidation" in ALLOWED_VALUES["recent_move_context"]
+    assert "spike_up_reversal" not in ALLOWED_VALUES["market_context"]
+
+
+def test_extended_vocabulary_completeness_rules() -> None:
+    assert "consolidation_after_impulse" in ALLOWED_VALUES["trend_stage"]
+    assert "middle_of_nowhere" in ALLOWED_VALUES["structure_location"]
+    assert "none" in ALLOWED_VALUES["secondary_candidate_family"]

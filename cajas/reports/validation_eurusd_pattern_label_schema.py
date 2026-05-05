@@ -30,6 +30,20 @@ QUALITY_CONTROL_FIELD_DESCRIPTIONS_CN = {
     "secondary_candidate_family": "次候选家族：次要归因来源或重叠来源。",
 }
 
+VOCABULARY_BOUNDARY_CN = {
+    "market_context": "仅用于宽背景/市场状态，不承载具体短期价格动作短语。",
+    "trend_direction": "仅表达方向状态（up/down/sideways/mixed）。",
+    "trend_stage": "表达阶段（如 consolidation_after_impulse）。",
+    "recent_move_context": "表达最近动作序列（如 spike_up_reversal / sharp_rise_then_consolidation）。",
+}
+
+RECENT_MOVE_EXAMPLES_CN = [
+    "冲高回落 -> recent_move_context=spike_up_reversal",
+    "触底回升 -> recent_move_context=spike_down_reversal",
+    "急涨后整理 -> recent_move_context=sharp_rise_then_consolidation, trend_stage=consolidation_after_impulse",
+    "急跌后整理 -> recent_move_context=sharp_drop_then_consolidation, trend_stage=consolidation_after_impulse",
+]
+
 
 def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
     return {
@@ -47,6 +61,14 @@ def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
             "follow_through_quality",
             "review_confidence",
             "review_notes",
+        ],
+        "extended_review_fields": [
+            "trend_direction",
+            "trend_stage",
+            "volatility_state",
+            "recent_move_context",
+            "level_quality",
+            "session_context",
         ],
         "allowed_values": ALLOWED_VALUES,
         "legacy_allowed_values": LEGACY_ALLOWED_VALUES,
@@ -73,6 +95,8 @@ def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
             "structure_event": "False-breakout candidates require level, reclaim, and follow-through checks.",
             "mixed_overlap": "Record ambiguity and use secondary family when needed.",
         },
+        "vocabulary_boundary": VOCABULARY_BOUNDARY_CN,
+        "recent_move_examples_cn": RECENT_MOVE_EXAMPLES_CN,
         "scope_boundary": {
             "manual_review_labels_only": True,
             "trading_signal": False,
@@ -89,6 +113,8 @@ def render_validation_eurusd_pattern_label_schema_markdown(payload: dict[str, An
     candidate_policy = payload.get("candidate_type_policy", {})
     quality_fields = payload.get("quality_control_fields", {})
     family_guide = payload.get("candidate_family_guidance", {})
+    boundary = payload.get("vocabulary_boundary", {})
+    examples = payload.get("recent_move_examples_cn", [])
     return "\n".join(
         [
             "# Validation EURUSD Pattern Label Schema",
@@ -134,6 +160,17 @@ def render_validation_eurusd_pattern_label_schema_markdown(payload: dict[str, An
             f"- entry_tag_only: `{candidate_policy.get('entry_tag_only')}`",
             f"- final_pattern_truth: `{candidate_policy.get('final_pattern_truth')}`",
             f"- note: {candidate_policy.get('note_cn', '')}",
+            "",
+            "## Vocabulary Boundary (CN)",
+            "",
+            f"- market_context: {boundary.get('market_context', '')}",
+            f"- trend_direction: {boundary.get('trend_direction', '')}",
+            f"- trend_stage: {boundary.get('trend_stage', '')}",
+            f"- recent_move_context: {boundary.get('recent_move_context', '')}",
+            "",
+            "## Recent-Move Mapping Examples",
+            "",
+            *[f"- {item}" for item in examples],
             "",
         ]
     )

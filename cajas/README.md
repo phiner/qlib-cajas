@@ -2065,6 +2065,11 @@ Review policy:
 - Scope remains EURUSD 15m Bid clean view only.
 - Reviewers should follow five-layer order: `market_context` -> `structure_location` -> `local_behavior` -> `confirmation_result` -> `review_outcome`.
 - `candidate_type` is a system entry tag only and must not be treated as final pattern truth.
+- Vocabulary boundary:
+  - `market_context`: broad regime/background only
+  - `trend_direction`: directional state only
+  - `trend_stage`: trend phase/stage only
+  - `recent_move_context`: recent move sequence (spike/reversal/impulse-consolidation)
 
 EURUSD 15m first review batch commands:
 

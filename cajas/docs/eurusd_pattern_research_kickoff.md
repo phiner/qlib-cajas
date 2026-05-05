@@ -280,6 +280,16 @@ Label schema artifacts:
   - `confirmation_result`
   - `review_outcome`
 - reviewer rule: `candidate_type` is only the sample entry tag, not the final pattern truth
+- vocabulary boundary:
+  - `market_context` stays broad (regime/background only)
+  - `recent_move_context` captures short-horizon move sequences
+  - `trend_direction` captures direction state
+  - `trend_stage` captures phase/state of trend development
+- mapping examples:
+  - 冲高回落 -> `recent_move_context=spike_up_reversal`
+  - 触底回升 -> `recent_move_context=spike_down_reversal`
+  - 急涨后整理 -> `recent_move_context=sharp_rise_then_consolidation`, `trend_stage=consolidation_after_impulse`
+  - 急跌后整理 -> `recent_move_context=sharp_drop_then_consolidation`, `trend_stage=consolidation_after_impulse`
 
 Review template artifacts:
 
