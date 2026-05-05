@@ -403,82 +403,79 @@ def main():
         st.caption("Reason Codes")
         st.write(str(sample["reason_codes"]))
     
-    # Review form
-    st.subheader("Review Labels")
+    # Compact lower layout: form on left, actions on right.
+    left_col, right_col = st.columns([3.2, 1.4], gap="large")
+    with left_col:
+        st.markdown("#### Review Labels")
 
-    top_cols = st.columns(4) if compact_mode else st.columns(2)
-    col1 = top_cols[0]
-    col2 = top_cols[1]
-    col3 = top_cols[2] if compact_mode else top_cols[0]
-    col4 = top_cols[3] if compact_mode else top_cols[1]
-    
-    with col1:
-        human_pattern_label = st.selectbox(
-            "Pattern Label",
-            allowed.get("human_pattern_label", ["unclear"]),
-            key="review_pattern_label",
-        )
-    with col2:
-        market_context = st.selectbox(
-            "Market Context",
-            allowed.get("market_context", ["unclear"]),
-            key="review_market_context",
-        )
-    with col3 if compact_mode else col1:
-        direction_context = st.selectbox(
-            "Direction Context",
-            allowed.get("direction_context", ["unclear"]),
-            key="review_direction_context",
-        )
+        top_cols = st.columns(4) if compact_mode else st.columns(2)
+        col1 = top_cols[0]
+        col2 = top_cols[1]
+        col3 = top_cols[2] if compact_mode else top_cols[0]
+        col4 = top_cols[3] if compact_mode else top_cols[1]
 
-    if compact_mode:
-        review_status = col4.selectbox(
-            "Review Status",
-            allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
-            key="review_status",
-        )
+        with col1:
+            human_pattern_label = st.selectbox(
+                "Pattern Label",
+                allowed.get("human_pattern_label", ["unclear"]),
+                key="review_pattern_label",
+            )
+        with col2:
+            market_context = st.selectbox(
+                "Market Context",
+                allowed.get("market_context", ["unclear"]),
+                key="review_market_context",
+            )
+        with col3 if compact_mode else col1:
+            direction_context = st.selectbox(
+                "Direction Context",
+                allowed.get("direction_context", ["unclear"]),
+                key="review_direction_context",
+            )
 
-    s_cols = st.columns(4) if compact_mode else st.columns(2)
-    s1 = s_cols[0]
-    s2 = s_cols[1]
-    s3 = s_cols[2] if compact_mode else s_cols[0]
-    s4 = s_cols[3] if compact_mode else s_cols[1]
+        if compact_mode:
+            review_status = col4.selectbox(
+                "Review Status",
+                allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
+                key="review_status",
+            )
 
-    with s1:
-        structure_quality = st.slider("Structure Quality", 1, 5, key="review_structure_quality")
-    with s2:
-        follow_through_quality = st.slider("Follow-through Quality", 1, 5, key="review_follow_through_quality")
-    with s3 if compact_mode else s1:
-        review_confidence = st.slider("Review Confidence", 1, 5, key="review_confidence")
+        s_cols = st.columns(4) if compact_mode else st.columns(2)
+        s1 = s_cols[0]
+        s2 = s_cols[1]
+        s3 = s_cols[2] if compact_mode else s_cols[0]
+        s4 = s_cols[3] if compact_mode else s_cols[1]
 
-    if compact_mode:
-        with s4:
-            review_notes = st.text_input(
+        with s1:
+            structure_quality = st.slider("Structure Quality", 1, 5, key="review_structure_quality")
+        with s2:
+            follow_through_quality = st.slider("Follow-through Quality", 1, 5, key="review_follow_through_quality")
+        with s3 if compact_mode else s1:
+            review_confidence = st.slider("Review Confidence", 1, 5, key="review_confidence")
+
+        if compact_mode:
+            with s4:
+                review_notes = st.text_input(
+                    "Review Notes",
+                    placeholder="Optional notes...",
+                    key="review_notes",
+                )
+        else:
+            review_notes = st.text_area(
                 "Review Notes",
                 placeholder="Optional notes...",
                 key="review_notes",
             )
-    else:
-        review_notes = st.text_area(
-            "Review Notes",
-            placeholder="Optional notes...",
-            key="review_notes",
-        )
-        review_status = st.selectbox(
-            "Review Status",
-            allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
-            key="review_status",
-        )
-    
+            review_status = st.selectbox(
+                "Review Status",
+                allowed.get("review_status", ["pending", "reviewed", "needs_recheck", "skip"]),
+                key="review_status",
+            )
 
-    st.subheader("Bad Sample Workflow")
-    reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
-    reject_notes = st.text_input("Reject Notes", placeholder="Optional rejection notes...", key="reject_notes")
-    confirm_reject = st.checkbox("Confirm reject current sample", key="confirm_reject_current_sample")
-
-    # Save buttons
-    st.caption("Use Save or Save and Next to persist edits before navigating.")
-    col1, col2, col3, col4, col5 = st.columns([1, 1.2, 1.2, 1, 1.2])
+        st.markdown("#### Bad Sample Workflow")
+        reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
+        reject_notes = st.text_input("Reject Notes", placeholder="Optional rejection notes...", key="reject_notes")
+        confirm_reject = st.checkbox("Confirm reject current sample", key="confirm_reject_current_sample")
 
     def build_review_labels() -> dict:
         return {
@@ -538,38 +535,39 @@ def main():
         )
         st.rerun()
     
-    with col1:
-        if st.button("Save"):
+    with right_col:
+        st.markdown("#### Actions")
+        st.caption("Use Save or Save and Next to persist edits before navigating.")
+
+        if st.button("Save", use_container_width=True):
             try:
                 persist_review(action_type="save", advance_to_next=False)
             except Exception as exc:
                 st.error(f"Save failed for sample_id={sample_id}: {exc}")
-    
-    with col2:
-        if st.button("Save and Next"):
+
+        if st.button("Save and Next", use_container_width=True):
             try:
                 persist_review(action_type="save_and_next", advance_to_next=True)
             except Exception as exc:
                 st.error(f"Save and Next failed for sample_id={sample_id}: {exc}")
-    
-    with col3:
-        if st.button("Previous Sample", disabled=sample_idx <= 0):
-            if show_rejected_samples:
-                st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
-            else:
-                st.session_state[PENDING_INDEX_KEY] = previous_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
-            st.rerun()
-    with col4:
-        if st.button("Next Sample", disabled=sample_idx >= row_count - 1):
-            if show_rejected_samples:
-                st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
-            else:
-                st.session_state[PENDING_INDEX_KEY] = next_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
-            st.rerun()
 
+        nav1, nav2 = st.columns(2)
+        with nav1:
+            if st.button("Previous Sample", disabled=sample_idx <= 0, use_container_width=True):
+                if show_rejected_samples:
+                    st.session_state[PENDING_INDEX_KEY] = previous_sample_index(sample_idx, row_count)
+                else:
+                    st.session_state[PENDING_INDEX_KEY] = previous_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
+                st.rerun()
+        with nav2:
+            if st.button("Next Sample", disabled=sample_idx >= row_count - 1, use_container_width=True):
+                if show_rejected_samples:
+                    st.session_state[PENDING_INDEX_KEY] = next_sample_index(sample_idx, row_count)
+                else:
+                    st.session_state[PENDING_INDEX_KEY] = next_non_rejected_sample_index(sample_idx, row_count, rejected_ids, sample_ids)
+                st.rerun()
 
-    with col5:
-        if st.button("Reject Sample", disabled=not confirm_reject):
+        if st.button("Reject Sample", disabled=not confirm_reject, use_container_width=True):
             try:
                 reject_action = reject_sample_action(
                     batch_df=batch,

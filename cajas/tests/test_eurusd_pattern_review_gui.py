@@ -1116,6 +1116,23 @@ def test_app_source_keeps_sidebar_and_toast_behavior():
     assert "[data-testid=\"stSidebar\"]" not in app_source
 
 
+def test_app_source_uses_compact_left_form_right_actions_layout():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert 'left_col, right_col = st.columns([3.2, 1.4], gap="large")' in app_source
+    assert 'st.markdown("#### Review Labels")' in app_source
+    assert 'st.markdown("#### Bad Sample Workflow")' in app_source
+    assert 'st.markdown("#### Actions")' in app_source
+
+
+def test_app_source_actions_kept_in_right_column():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert 'if st.button("Save", use_container_width=True):' in app_source
+    assert 'if st.button("Save and Next", use_container_width=True):' in app_source
+    assert 'if st.button("Previous Sample", disabled=sample_idx <= 0, use_container_width=True):' in app_source
+    assert 'if st.button("Next Sample", disabled=sample_idx >= row_count - 1, use_container_width=True):' in app_source
+    assert 'if st.button("Reject Sample", disabled=not confirm_reject, use_container_width=True):' in app_source
+
+
 def test_app_source_resolves_sample_before_sidebar_sample_id_caption():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     sample_assign = app_source.find("sample = batch.iloc[sample_idx]")
