@@ -4,6 +4,12 @@
 
 This phase transitions `qlib-cajas` from maintenance-only validation infrastructure into actual EURUSD market-structure research while preserving strict offline and non-trading boundaries.
 
+Language boundary policy:
+
+- Runtime and automation identifiers remain English.
+- Human/LLM semantic rationale is Chinese-authoritative where precision matters.
+- Reference: `cajas/docs/eurusd_review_language_policy.md`.
+
 ## Expected data location
 
 Primary local inputs:

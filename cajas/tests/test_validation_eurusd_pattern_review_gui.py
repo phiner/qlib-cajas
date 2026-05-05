@@ -55,6 +55,8 @@ def test_gui_validation_ready_or_watch(mock_clean_view, mock_batch, temp_dir):
     assert "run_command" in report
     assert "launcher_path" in report
     assert report["launcher_command"] == "./scripts/run_eurusd_review_gui.sh"
+    assert "language_policy_path" in report
+    assert report["language_boundary_policy_status"] in {"documented", "missing"}
 
 
 def test_gui_validation_blocked_missing_app(mock_clean_view, mock_batch, temp_dir):

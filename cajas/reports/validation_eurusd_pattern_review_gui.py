@@ -12,6 +12,7 @@ def build_gui_validation_report(
 ) -> Dict[str, Any]:
     """Build GUI validation report."""
     launcher_path = Path("scripts/run_eurusd_review_gui.sh")
+    language_policy_path = Path("cajas/docs/eurusd_review_language_policy.md")
     helper_path = Path("cajas/research/eurusd_pattern_review_gui.py")
     run_command = "./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py"
     launcher_command = "./scripts/run_eurusd_review_gui.sh"
@@ -24,6 +25,7 @@ def build_gui_validation_report(
             "app_path": str(app_path),
             "helper_path": str(helper_path),
             "launcher_path": str(launcher_path),
+            "language_policy_path": str(language_policy_path),
             "streamlit_available": False,
             "plotly_available": False,
             "clean_view_path": str(clean_view_csv),
@@ -45,6 +47,7 @@ def build_gui_validation_report(
             "app_path": str(app_path),
             "helper_path": str(helper_path),
             "launcher_path": str(launcher_path),
+            "language_policy_path": str(language_policy_path),
             "streamlit_available": False,
             "plotly_available": False,
             "clean_view_path": str(clean_view_csv),
@@ -82,6 +85,7 @@ def build_gui_validation_report(
             "app_path": str(app_path),
             "helper_path": str(helper_path),
             "launcher_path": str(launcher_path),
+            "language_policy_path": str(language_policy_path),
             "streamlit_available": False,
             "plotly_available": False,
             "clean_view_path": str(clean_view_csv),
@@ -119,6 +123,7 @@ def build_gui_validation_report(
             "app_path": str(app_path),
             "helper_path": str(helper_path),
             "launcher_path": str(launcher_path),
+            "language_policy_path": str(language_policy_path),
             "streamlit_available": streamlit_available,
             "plotly_available": plotly_available,
             "clean_view_path": str(clean_view_csv),
@@ -139,6 +144,7 @@ def build_gui_validation_report(
             "app_path": str(app_path),
             "helper_path": str(helper_path),
             "launcher_path": str(launcher_path),
+            "language_policy_path": str(language_policy_path),
             "streamlit_available": streamlit_available,
             "plotly_available": plotly_available,
             "clean_view_path": str(clean_view_csv),
@@ -169,6 +175,7 @@ def build_gui_validation_report(
         "app_path": str(app_path),
         "helper_path": str(helper_path),
         "launcher_path": str(launcher_path),
+        "language_policy_path": str(language_policy_path),
         "streamlit_available": streamlit_available,
         "plotly_available": plotly_available,
         "missing_dependencies": missing_deps,
@@ -180,6 +187,7 @@ def build_gui_validation_report(
         "forbidden_trading_column_policy": "blocked_on_save",
         "run_command": run_command,
         "launcher_command": launcher_command,
+        "language_boundary_policy_status": "documented" if language_policy_path.exists() else "missing",
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }
 
@@ -197,6 +205,7 @@ def format_gui_validation_markdown(report: Dict[str, Any]) -> str:
         f"- Helper: `{report['helper_path']}`",
         f"- Clean view: `{report['clean_view_path']}`",
         f"- Launcher: `{report['launcher_path']}`",
+        f"- Language policy: `{report['language_policy_path']}`",
         f"- Review batch: `{report['review_batch_path']}`",
         f"- Completed output: `{report['completed_output_path']}`",
         "",
@@ -237,6 +246,7 @@ def format_gui_validation_markdown(report: Dict[str, Any]) -> str:
         "## Policy",
         "",
         f"- Forbidden trading columns: `{report['forbidden_trading_column_policy']}`",
+        f"- Language boundary policy: `{report.get('language_boundary_policy_status', 'unknown')}`",
         "",
         "## Recommendation",
         "",

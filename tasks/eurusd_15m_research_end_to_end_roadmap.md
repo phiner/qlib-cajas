@@ -55,6 +55,7 @@ Non-negotiable constraints:
 - GUI is the human review interface.
 - CSV/JSONL remain durable storage/interchange formats.
 - GitHub merge must be manual by the human user.
+- Runtime identifiers must remain English; Chinese is authoritative for semantic review rationale via `_zh` semantic fields where needed (see `cajas/docs/eurusd_review_language_policy.md`).
 
 Local GUI run commands:
 
