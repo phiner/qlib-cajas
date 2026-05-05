@@ -50,6 +50,7 @@ from cajas.apps.eurusd_pattern_review_app import (
     build_compact_chart_status_line,
     enqueue_pending_toast,
     consume_pending_toast_once,
+    apply_reject_form_sample_reset,
     sample_number_to_global_index,
     global_index_to_sample_number,
     apply_pending_global_sample_index,
@@ -1154,6 +1155,44 @@ def test_app_source_actions_kept_in_right_column():
     assert 'if st.button("Previous Sample", disabled=sample_idx <= 0, use_container_width=True):' in app_source
     assert 'if st.button("Next Sample", disabled=sample_idx >= row_count - 1, use_container_width=True):' in app_source
     assert 'if st.button("Reject Sample", disabled=not confirm_reject, use_container_width=True):' in app_source
+
+
+def test_reject_form_reset_helper_resets_on_sample_change_and_pending_flag():
+    state = {
+        "reject_form_sample_id": "s1",
+        "confirm_reject_current_sample": True,
+        "reject_notes": "x",
+    }
+    apply_reject_form_sample_reset(state, "s2")
+    assert state["confirm_reject_current_sample"] is False
+    assert state["reject_notes"] == ""
+    assert state["reject_form_sample_id"] == "s2"
+
+    state2 = {
+        "reject_form_sample_id": "s2",
+        "confirm_reject_current_sample": True,
+        "reject_notes": "keep",
+    }
+    apply_reject_form_sample_reset(state2, "s2")
+    assert state2["confirm_reject_current_sample"] is True
+    assert state2["reject_notes"] == "keep"
+
+    state3 = {
+        "reject_form_sample_id": "s3",
+        "confirm_reject_current_sample": True,
+        "reject_notes": "y",
+        "pending_clear_reject_confirm": True,
+    }
+    apply_reject_form_sample_reset(state3, "s3")
+    assert state3["confirm_reject_current_sample"] is False
+    assert "pending_clear_reject_confirm" not in state3
+
+
+def test_app_source_uses_reject_form_reset_before_checkbox():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "apply_reject_form_sample_reset(st.session_state, sample_id)" in app_source
+    assert 'st.checkbox("Confirm reject current sample", key="confirm_reject_current_sample")' in app_source
+    assert 'st.session_state["pending_clear_reject_confirm"] = True' in app_source
 
 
 def test_app_source_resolves_sample_before_sidebar_sample_id_caption():

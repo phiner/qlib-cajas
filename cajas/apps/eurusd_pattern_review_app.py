@@ -96,6 +96,17 @@ def apply_pending_global_sample_index(state, pending_key: str, current_key: str,
     state[input_key] = global_index_to_sample_number(idx)
 
 
+def apply_reject_form_sample_reset(state, sample_id: str) -> None:
+    """Reset reject confirmation/notes when navigating to a different sample."""
+    if state.pop("pending_clear_reject_confirm", False):
+        state["confirm_reject_current_sample"] = False
+    last_sample = str(state.get("reject_form_sample_id", ""))
+    if last_sample != str(sample_id):
+        state["confirm_reject_current_sample"] = False
+        state["reject_notes"] = ""
+        state["reject_form_sample_id"] = str(sample_id)
+
+
 def inject_compact_review_css(st_module) -> None:
     """Hide unneeded Streamlit top chrome and compact header spacing for review workflow."""
     st_module.markdown(
@@ -279,6 +290,7 @@ def main():
     st.sidebar.caption(f"sample_id={sample['sample_id']} | global_index={sample_idx}")
     sample_id = str(sample["sample_id"])
     is_rejected_sample = sample_id in rejected_ids
+    apply_reject_form_sample_reset(st.session_state, sample_id)
     if is_rejected_sample:
         st.sidebar.caption("Status: rejected/excluded")
     state_defaults = default_review_values()
@@ -583,6 +595,7 @@ def main():
                 if not show_rejected_samples:
                     next_idx = next_non_rejected_sample_index(sample_idx, row_count, refreshed_rejected, sample_ids)
                 st.session_state[PENDING_INDEX_KEY] = next_idx
+                st.session_state["pending_clear_reject_confirm"] = True
                 enqueue_pending_toast(
                     st.session_state,
                     f"Rejected {sample_id} -> skipped from future review",
