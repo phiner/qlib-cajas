@@ -4,11 +4,20 @@ from __future__ import annotations
 
 from typing import Any
 
+from cajas.research.eurusd_review_schema import (
+    ALLOWED_VALUES,
+    COMPATIBLE_SCHEMA_VERSIONS,
+    DEFAULT_REVIEW_VALUES,
+    LEGACY_ALLOWED_VALUES,
+    NUMERIC_RANGES,
+    REVIEW_SCHEMA_VERSION,
+)
+
 
 def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
     return {
-        "schema_version": "eurusd_15m_pattern_review_v2",
-        "compatible_schema_versions": ["eurusd_15m_pattern_review_v1", "eurusd_15m_pattern_review_v2"],
+        "schema_version": REVIEW_SCHEMA_VERSION,
+        "compatible_schema_versions": COMPATIBLE_SCHEMA_VERSIONS,
         "status": "ready",
         "required_fields": [
             "sample_id",
@@ -22,50 +31,10 @@ def build_validation_eurusd_pattern_label_schema() -> dict[str, Any]:
             "review_confidence",
             "review_notes",
         ],
-        "allowed_values": {
-            "human_pattern_label": ["valid_pattern", "weak_pattern", "false_positive", "unclear", "skip_bad_context"],
-            "market_context": [
-                "trend",
-                "range",
-                "pullback",
-                "transition",
-                "breakout",
-                "reversal_attempt",
-                "high_volatility",
-                "low_volatility",
-                "unclear",
-            ],
-            "direction_context": [
-                "up",
-                "down",
-                "neutral",
-                "mixed",
-                "up_pullback",
-                "down_pullback",
-                "reversal_up",
-                "reversal_down",
-                "unclear",
-            ],
-            "review_status": ["pending", "reviewed", "needs_recheck", "skip"],
-        },
-        "legacy_allowed_values": {
-            "direction_context": ["sideways"],
-        },
-        "numeric_ranges": {
-            "structure_quality": {"min": 1, "max": 5},
-            "follow_through_quality": {"min": 1, "max": 5},
-            "review_confidence": {"min": 1, "max": 5},
-        },
-        "defaults": {
-            "human_pattern_label": "unclear",
-            "market_context": "unclear",
-            "direction_context": "unclear",
-            "structure_quality": 3,
-            "follow_through_quality": 3,
-            "review_confidence": 3,
-            "review_notes": "",
-            "review_status": "pending",
-        },
+        "allowed_values": ALLOWED_VALUES,
+        "legacy_allowed_values": LEGACY_ALLOWED_VALUES,
+        "numeric_ranges": NUMERIC_RANGES,
+        "defaults": DEFAULT_REVIEW_VALUES,
         "scope_boundary": {
             "manual_review_labels_only": True,
             "trading_signal": False,

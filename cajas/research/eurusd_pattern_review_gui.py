@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Set, Tuple
 
 import pandas as pd
 
+from cajas.research.eurusd_review_schema import default_review_values as schema_default_review_values
 
 FORBIDDEN_TRADING_COLUMNS = [
     "buy", "sell", "long", "short", "order", "position",
@@ -24,16 +25,7 @@ REVIEW_FIELDS = [
 OPTIONAL_TEXT_FIELDS = [
     "review_notes",
 ]
-DEFAULT_REVIEW_VALUES = {
-    "human_pattern_label": "unclear",
-    "market_context": "unclear",
-    "direction_context": "unclear",
-    "structure_quality": 3,
-    "follow_through_quality": 3,
-    "review_confidence": 3,
-    "review_notes": "",
-    "review_status": "pending",
-}
+DEFAULT_REVIEW_VALUES = schema_default_review_values()
 REVIEW_SCHEMA_VERSION = "eurusd_15m_pattern_review_v2"
 REVIEW_UPDATED_AT_COLUMN = "review_updated_at_utc"
 REJECTED_SCHEMA_VERSION = "eurusd_15m_rejected_sample_v1"
@@ -793,7 +785,7 @@ def save_completed_review(
 
 def default_review_values() -> Dict[str, Any]:
     """Return default review values used by reset and new samples."""
-    return dict(DEFAULT_REVIEW_VALUES)
+    return schema_default_review_values()
 
 
 def build_review_update_row(overrides: Dict[str, Any]) -> Dict[str, Any]:
