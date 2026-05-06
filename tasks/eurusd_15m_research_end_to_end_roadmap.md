@@ -951,3 +951,16 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 
 - Added bundle phase before GUI wiring: manual-label workflow, rule-candidate report, qlib adapter contract, dataset quality gate, and market-state bundle summary.
 - Current expected bundle status is watch when manual labels are awaiting human input; this is non-blocking for infrastructure but blocks GUI-wiring progression.
+
+## Task 086 dedicated micro-pattern packet labeling tool
+
+- Added dedicated local app for packet-only manual labeling: `cajas/apps/eurusd_micro_pattern_review_app.py`.
+- Persistence loop is explicit:
+  - latest-state completed CSV keyed by `sample_id`
+  - append-only audit JSONL event log
+- Main EURUSD review GUI remains unchanged in this phase.
+- After saves, regenerate:
+  - `validation-eurusd-micro-pattern-manual-labels`
+  - `validation-eurusd-micro-pattern-rule-candidates`
+  - `validation-eurusd-market-state-bundle`
+- Trial approval remains `not_approved`; no real LLM or trading semantics are introduced.

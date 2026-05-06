@@ -77,3 +77,14 @@ No Qlib core modification is required for this phase.
 - Sequence now enforced: review packet -> manual labels -> rule candidates -> qlib adapter contract -> dataset quality gate -> bundle report.
 - GUI wiring is deferred until this foundation stack is stable and watch reasons are understood.
 - Real LLM remains unapproved and no Qlib core changes are required.
+
+## Dedicated micro-pattern labeling tool
+
+- Manual labeling for residual 3-bar packet now runs in a dedicated app:
+  - `PYTHONPATH=. ./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_micro_pattern_review_app.py`
+  - or `./scripts/run_eurusd_micro_pattern_review_gui.sh`
+- Persistence semantics:
+  - latest-state CSV keyed by `sample_id`: `tmp/eurusd/EURUSD_15m_micro_pattern_review_packet_completed_template.csv`
+  - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_micro_pattern_review_events.jsonl`
+- Runtime identifiers remain English, rationale/suggestion semantics stay in `_zh` fields.
+- This tool is research labeling only and does not add trading semantics or real LLM calls.

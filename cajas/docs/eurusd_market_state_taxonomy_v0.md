@@ -90,3 +90,19 @@ Enum examples:
 - Added rule-candidate summary report scaffold that depends on completed manual labels and does not auto-edit rule JSON.
 - Added Qlib adapter contract report and dataset quality gate prior to GUI integration.
 - Added consolidated market-state bundle report to summarize readiness/watch reasons.
+
+## Task 086 dedicated packet labeling loop
+
+- Added dedicated packet labeling app for `micro_pattern_review_packet` instead of wiring market-state into the main review GUI.
+- Required editable fields:
+  - `human_micro_pattern_label`
+  - `human_micro_pattern_confidence`
+  - `human_micro_pattern_rationale_zh`
+  - `human_rule_suggestion_zh`
+  - `human_should_create_rule`
+  - `suggested_event_key`
+  - `review_updated_at_utc`
+- Status model remains research-only:
+  - manual labels: `awaiting_manual_micro_pattern_labels | manual_micro_pattern_labels_watch | manual_micro_pattern_labels_ready`
+  - rule candidates: `awaiting_manual_labels | rule_candidates_watch | rule_candidates_ready`
+- Trial approval remains `not_approved` by policy.

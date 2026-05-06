@@ -20,6 +20,11 @@ Current focus:
   - `tmp/validation-eurusd-candidate-selection-standards.json`
   - `tmp/validation-eurusd-candidate-selection-standards.md`
   - trend rows include `why_selected_summary`, preferred-review flags, and tail-risk diagnostics
+- Dedicated micro-pattern packet labeling loop:
+  - launch `./scripts/run_eurusd_micro_pattern_review_gui.sh`
+  - label only residual 3-bar packet rows
+  - persist to latest-state CSV (`sample_id`) and append-only JSONL audit
+  - regenerate manual labels/rule candidates/bundle reports after save
 
 Current scope is research-only and is **not** a trading system.
 

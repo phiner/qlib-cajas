@@ -18,7 +18,7 @@ REQUIRED_ADDED_FIELDS = [
     "review_updated_at_utc",
 ]
 ALLOWED_CONFIDENCE = {"", "low", "medium", "high", "1", "2", "3", "4", "5"}
-ALLOWED_SHOULD_CREATE = {"", "yes", "no", "watch"}
+ALLOWED_SHOULD_CREATE = {"", "yes", "no", "uncertain"}
 FORBIDDEN_FIELDS = {"trade_signal", "entry", "exit", "order", "position_size", "target_position"}
 
 
