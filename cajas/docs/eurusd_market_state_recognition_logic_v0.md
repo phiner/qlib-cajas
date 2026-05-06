@@ -101,10 +101,16 @@ No Qlib core modification is required for this phase.
 - Main inspection packet now excludes cold-start/incomplete-window rows by default.
 - Main packet selection prioritizes complete four-layer rows (`3/8/24/128` complete, non-unknown states, stable micro-rule version).
 - Cold-start rows are diagnostic-only context and must be explicitly included via CLI opt-in.
+- Manual feedback workflow:
+  - use `tmp/eurusd/EURUSD_15m_market_state_inspection_packet.csv`
+  - build/use `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed_template.csv`
+  - save reviewer edits to `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
+  - rerun inspection feedback + bundle reports before any taxonomy/rule updates
 
 ## tmp artifact cleanup policy
 
 - Cleanup is plan-first and conservative: generate cleanup plan report before any archive action.
 - Protected inputs (for example clean view CSV and quarantined rows) are never auto-selected.
 - Manual/human-completed artifacts (completed review CSVs and audit JSONL) are never auto-selected.
+- Archive executor defaults to dry-run; apply mode is manual user action only.
 - This phase keeps cleanup dry-run/proposed only.

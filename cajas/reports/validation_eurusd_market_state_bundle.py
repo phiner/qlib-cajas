@@ -29,6 +29,8 @@ def build_market_state_bundle_report(output_json: Path) -> dict[str, Any]:
     quality = _status(base / "validation-eurusd-market-state-dataset-quality.json")
     inspection_packet = _status(base / "validation-eurusd-market-state-inspection-packet.json")
     cleanup_plan = _status(base / "validation-tmp-artifact-cleanup-plan.json")
+    archive_dry_run_status = _status(base / "validation-tmp-archive-dry-run.json", key="mode")
+    feedback_template_exists = (base / "eurusd/EURUSD_15m_market_state_inspection_packet_completed_template.csv").exists()
     readiness = _status(base / "validation-eurusd-real-llm-integration-readiness.json", key="status")
     trial = _status(base / "validation-eurusd-llm-trial-approval.json", key="approval_status")
 
@@ -50,6 +52,12 @@ def build_market_state_bundle_report(output_json: Path) -> dict[str, Any]:
             watch.append(f"{name}:{s}")
     if cleanup_plan in {"blocked", "missing", "invalid"}:
         watch.append(f"tmp_cleanup_plan:{cleanup_plan}")
+    if archive_dry_run_status not in {"dry_run", "missing"}:
+        watch.append(f"tmp_archive_dry_run:{archive_dry_run_status}")
+    if archive_dry_run_status == "missing":
+        watch.append("tmp_archive_dry_run:missing")
+    if not feedback_template_exists:
+        watch.append("inspection_feedback_template:missing")
     if manual in {"awaiting_manual_micro_pattern_labels", "manual_micro_pattern_labels_watch", "missing"}:
         watch.append(f"manual_labels:{manual}")
     if candidates in {"awaiting_manual_labels", "rule_candidates_watch", "missing"}:
@@ -77,6 +85,8 @@ def build_market_state_bundle_report(output_json: Path) -> dict[str, Any]:
         "dataset_quality_status": quality,
         "inspection_packet_status": inspection_packet,
         "tmp_cleanup_plan_status": cleanup_plan,
+        "tmp_archive_dry_run_status": archive_dry_run_status,
+        "inspection_feedback_template_exists": bool(feedback_template_exists),
         "real_llm_readiness_status": readiness,
         "trial_approval_status": trial,
         "tmp_cleanup_plan_dry_run_only": True,

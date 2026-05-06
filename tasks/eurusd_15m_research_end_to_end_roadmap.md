@@ -86,6 +86,8 @@ Non-negotiable constraints:
   - four-layer inspection packet must use complete rows by default (exclude cold-start/incomplete 128-window rows)
   - cold-start rows remain diagnostic-only artifacts, not main semantic-inspection evidence
   - tmp artifact hygiene uses conservative cleanup-plan reports (dry-run) before any archive/apply action
+  - archive executor defaults to dry-run; apply mode is explicit manual operation only
+  - completed inspection feedback template should be prepared before the next manual review batch
   - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:
