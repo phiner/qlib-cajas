@@ -256,11 +256,19 @@ def build_inspection_chart(window_df: pd.DataFrame, target_local_idx: int, highl
             line_color="rgba(0,0,0,0.30)",
             annotation_text=f"{labels[layer]} bars",
             annotation_position="top left",
+            annotation_font_size=12,
         )
     for gap in axis_info.get("gap_markers", []):
         gx = float(gap["display_x"])
         fig.add_vline(x=gx, line_width=1, line_dash="dot", line_color="rgba(90,90,90,0.8)")
-        fig.add_annotation(x=gx, y=1.03, yref="paper", text=str(gap["label"]), showarrow=False, font={"size": 9, "color": "#444"})
+        fig.add_annotation(
+            x=gx,
+            y=1.03,
+            yref="paper",
+            text=str(gap["label"]),
+            showarrow=False,
+            font={"size": 12, "color": "#444"},
+        )
     if 0 <= target_local_idx < len(window_df):
         fig.add_vline(x=target_local_idx, line_width=2, line_color="black")
     fig.update_layout(

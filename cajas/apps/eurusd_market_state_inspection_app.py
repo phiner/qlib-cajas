@@ -34,7 +34,27 @@ def main() -> None:
         ) from exc
 
     st.set_page_config(page_title="EURUSD Market-state Inspection", layout="wide")
-    st.title("EURUSD 四层市场状态图表审阅")
+    st.markdown(
+        """
+<style>
+.msi-title { font-size: 30px; font-weight: 700; margin-bottom: 0.2rem; }
+.msi-sub { font-size: 17px; color: #334155; margin-bottom: 0.6rem; }
+.msi-chip { font-size: 17px; font-weight: 600; }
+.msi-section { font-size: 23px; font-weight: 700; margin-top: 0.4rem; }
+.msi-rationale { font-size: 16px; line-height: 1.45; margin-bottom: 0.4rem; }
+.msi-small { font-size: 15px; color: #475569; }
+div[data-testid="stDataFrame"] * { font-size: 16px !important; }
+label[data-testid="stWidgetLabel"] p { font-size: 16px !important; font-weight: 600 !important; }
+textarea, input, select { font-size: 16px !important; }
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="msi-title">EURUSD 四层市场状态图表审阅</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="msi-sub">chart + feedback simultaneous review · research-only · no LLM · no trading</div>',
+        unsafe_allow_html=True,
+    )
 
     packet_csv = DEFAULT_PACKET_CSV
     raw_csv = DEFAULT_RAW_CSV
@@ -63,23 +83,31 @@ def main() -> None:
     idx = max(0, min(int(st.session_state.market_state_index), total - 1))
     row = merged.iloc[idx]
 
-    controls = st.columns([1.1, 1.2, 1, 1, 1, 1, 1.8])
-    controls[0].markdown(f"**Sample {idx + 1}/{total}**")
-    controls[1].markdown(f"`confidence={row.get('structure_confidence', '')}`")
+    controls = st.columns([1.2, 1.5, 0.9, 0.9, 1.6, 0.9, 1.1, 1.1])
+    controls[0].markdown(f'<div class="msi-chip">Sample {idx + 1}/{total}</div>', unsafe_allow_html=True)
+    controls[1].markdown(
+        f'<div class="msi-chip">confidence: {row.get("structure_confidence", "")}</div>',
+        unsafe_allow_html=True,
+    )
     if controls[2].button("Previous", use_container_width=True):
         st.session_state.market_state_index = max(0, idx - 1)
         st.rerun()
     if controls[3].button("Next", use_container_width=True):
         st.session_state.market_state_index = min(total - 1, idx + 1)
         st.rerun()
-    jump_sample = controls[4].text_input("Jump sample_id", key="market_state_jump_input", label_visibility="collapsed", placeholder="sample_id")
+    jump_sample = controls[4].text_input(
+        "Jump sample_id", key="market_state_jump_input", label_visibility="collapsed", placeholder="sample_id"
+    )
     if controls[5].button("Jump", use_container_width=True) and jump_sample:
         matched = merged.index[merged["sample_id"].astype(str) == jump_sample].tolist()
         if matched:
             st.session_state.market_state_index = int(matched[0])
             st.rerun()
         st.warning(f"sample_id not found: {jump_sample}")
+    save_now = controls[6].button("Save", use_container_width=True)
+    save_next = controls[7].button("Save+Next", use_container_width=True)
 
+    left, right = st.columns([1.8, 1.2], gap="large")
     try:
         window_df, target_local_idx = compute_chart_window(raw_df, str(row["timestamp"]), total_bars=total_bars)
         highlights = compute_layer_highlights(target_local_idx, row)
@@ -88,51 +116,47 @@ def main() -> None:
         st.error(f"Chart build failed: {exc}")
         return
 
-    st.plotly_chart(fig, width="stretch", height=560)
+    with left:
+        st.plotly_chart(fig, width="stretch", height=620)
+        st.markdown('<div class="msi-small">compressed axis + weekend/market-closed gap markers + explicit 3/8/24/128 spans</div>', unsafe_allow_html=True)
+        st.markdown('<div class="msi-section">Layer Summary</div>', unsafe_allow_html=True)
+        st.dataframe(build_layer_summary(row), hide_index=True, width="stretch")
+        st.markdown('<div class="msi-section">Rationale</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msi-rationale"><b>pattern_3</b>: {row.get("pattern_3_rationale_zh", "")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msi-rationale"><b>market_8</b>: {row.get("market_8_rationale_zh", "")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msi-rationale"><b>market_24</b>: {row.get("market_24_rationale_zh", "")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msi-rationale"><b>market_128</b>: {row.get("market_128_rationale_zh", "")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msi-rationale"><b>combined</b>: {row.get("market_state_rationale_zh", "")}</div>', unsafe_allow_html=True)
 
-    st.caption(
-        f"Rows={total} | current={idx + 1} | p3={row.get('pattern_3_actual_bars_used', '')} "
-        f"m8={row.get('market_8_actual_bars_used', '')} m24={row.get('market_24_actual_bars_used', '')} "
-        f"m128={row.get('market_128_actual_bars_used', '')} | confidence={row.get('structure_confidence', '')} | "
-        "research-only, no LLM, no trading"
-    )
+    with right:
+        st.markdown('<div class="msi-section">Manual Feedback</div>', unsafe_allow_html=True)
+        defaults = default_feedback_values(row)
+        agree_opts = sorted(AGREEMENT_VALUES, key=lambda x: (x != "", x))
 
-    st.subheader("Layer Summary")
-    st.dataframe(build_layer_summary(row), hide_index=True, width="stretch")
-
-    rat1, rat2 = st.columns(2)
-    with rat1:
-        st.caption(f"pattern_3: {row.get('pattern_3_rationale_zh', '')}")
-        st.caption(f"market_8: {row.get('market_8_rationale_zh', '')}")
-        st.caption(f"market_24: {row.get('market_24_rationale_zh', '')}")
-    with rat2:
-        st.caption(f"market_128: {row.get('market_128_rationale_zh', '')}")
-        st.caption(f"combined: {row.get('market_state_rationale_zh', '')}")
-
-    st.subheader("Manual Feedback")
-    defaults = default_feedback_values(row)
-    agree_opts = sorted(AGREEMENT_VALUES, key=lambda x: (x != "", x))
-    def _layer_fields(name: str, agree_key: str, correct_key: str, fb_key: str) -> tuple[str, str, str]:
-        c1, c2, c3 = st.columns([1, 1.3, 2.2])
-        with c1:
-            agree = st.selectbox(agree_key, agree_opts, index=agree_opts.index(defaults[agree_key]) if defaults[agree_key] in agree_opts else 0, key=f"{name}_agree")
-        with c2:
-            correct = st.text_input(correct_key, value=defaults[correct_key], key=f"{name}_correct")
-        with c3:
-            fb = st.text_area(fb_key, value=defaults[fb_key], height=70, key=f"{name}_fb")
-        return agree, correct, fb
-
-    hp3_agree, hp3_correct, hp3_fb = _layer_fields("p3", "human_pattern_3_agreement", "human_pattern_3_correct_label", "human_pattern_3_feedback_zh")
-    hm8_agree, hm8_correct, hm8_fb = _layer_fields("m8", "human_market_8_agreement", "human_market_8_correct_state", "human_market_8_feedback_zh")
-    hm24_agree, hm24_correct, hm24_fb = _layer_fields("m24", "human_market_24_agreement", "human_market_24_correct_state", "human_market_24_feedback_zh")
-    hm128_agree, hm128_correct, hm128_fb = _layer_fields("m128", "human_market_128_agreement", "human_market_128_correct_state", "human_market_128_feedback_zh")
-    hlocal_agree, hlocal_correct, hlocal_fb = _layer_fields("local", "human_local_structure_agreement", "human_local_structure_correct_state", "human_local_structure_feedback_zh")
-
-    di1, di2 = st.columns(2)
-    with di1:
-        hdef = st.text_area("human_definition_issue_zh", value=defaults["human_definition_issue_zh"], height=80)
-    with di2:
-        hrule = st.text_area("human_rule_adjustment_suggestion_zh", value=defaults["human_rule_adjustment_suggestion_zh"], height=80)
+        tabs = st.tabs(["P3", "M8", "M24", "M128", "Local", "Notes"])
+        with tabs[0]:
+            hp3_agree = st.selectbox("human_pattern_3_agreement", agree_opts, index=agree_opts.index(defaults["human_pattern_3_agreement"]) if defaults["human_pattern_3_agreement"] in agree_opts else 0, key="p3_agree")
+            hp3_correct = st.text_input("human_pattern_3_correct_label", value=defaults["human_pattern_3_correct_label"], key="p3_correct")
+            hp3_fb = st.text_area("human_pattern_3_feedback_zh", value=defaults["human_pattern_3_feedback_zh"], height=110, key="p3_fb")
+        with tabs[1]:
+            hm8_agree = st.selectbox("human_market_8_agreement", agree_opts, index=agree_opts.index(defaults["human_market_8_agreement"]) if defaults["human_market_8_agreement"] in agree_opts else 0, key="m8_agree")
+            hm8_correct = st.text_input("human_market_8_correct_state", value=defaults["human_market_8_correct_state"], key="m8_correct")
+            hm8_fb = st.text_area("human_market_8_feedback_zh", value=defaults["human_market_8_feedback_zh"], height=110, key="m8_fb")
+        with tabs[2]:
+            hm24_agree = st.selectbox("human_market_24_agreement", agree_opts, index=agree_opts.index(defaults["human_market_24_agreement"]) if defaults["human_market_24_agreement"] in agree_opts else 0, key="m24_agree")
+            hm24_correct = st.text_input("human_market_24_correct_state", value=defaults["human_market_24_correct_state"], key="m24_correct")
+            hm24_fb = st.text_area("human_market_24_feedback_zh", value=defaults["human_market_24_feedback_zh"], height=110, key="m24_fb")
+        with tabs[3]:
+            hm128_agree = st.selectbox("human_market_128_agreement", agree_opts, index=agree_opts.index(defaults["human_market_128_agreement"]) if defaults["human_market_128_agreement"] in agree_opts else 0, key="m128_agree")
+            hm128_correct = st.text_input("human_market_128_correct_state", value=defaults["human_market_128_correct_state"], key="m128_correct")
+            hm128_fb = st.text_area("human_market_128_feedback_zh", value=defaults["human_market_128_feedback_zh"], height=110, key="m128_fb")
+        with tabs[4]:
+            hlocal_agree = st.selectbox("human_local_structure_agreement", agree_opts, index=agree_opts.index(defaults["human_local_structure_agreement"]) if defaults["human_local_structure_agreement"] in agree_opts else 0, key="local_agree")
+            hlocal_correct = st.text_input("human_local_structure_correct_state", value=defaults["human_local_structure_correct_state"], key="local_correct")
+            hlocal_fb = st.text_area("human_local_structure_feedback_zh", value=defaults["human_local_structure_feedback_zh"], height=110, key="local_fb")
+        with tabs[5]:
+            hdef = st.text_area("human_definition_issue_zh", value=defaults["human_definition_issue_zh"], height=110)
+            hrule = st.text_area("human_rule_adjustment_suggestion_zh", value=defaults["human_rule_adjustment_suggestion_zh"], height=110)
 
     payload = {
         **row.to_dict(),
@@ -155,14 +179,13 @@ def main() -> None:
         "human_rule_adjustment_suggestion_zh": hrule,
     }
 
-    c_save, c_save_next = st.columns(2)
-    if c_save.button("Save", use_container_width=True):
+    if save_now:
         result = persist_feedback(payload, completed_csv=completed_csv, audit_jsonl=audit_jsonl)
         if result.get("status") == "ok":
             st.success(f"Saved sample_id={result['sample_id']}")
         else:
             st.error(f"Save blocked: {result.get('errors', [])}")
-    if c_save_next.button("Save and Next", use_container_width=True):
+    if save_next:
         result = persist_feedback(payload, completed_csv=completed_csv, audit_jsonl=audit_jsonl)
         if result.get("status") == "ok":
             st.session_state.market_state_index = min(total - 1, idx + 1)

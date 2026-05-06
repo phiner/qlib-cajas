@@ -30,6 +30,7 @@ Current focus:
   - inspect one sample at a time on compressed-axis candlestick chart with 3/8/24/128 window highlights
   - weekend/market-closed gaps are marked by vertical separators without blank horizontal regions
   - `market_128` is rendered as an explicit broad background span
+  - main review layout is chart-and-feedback side by side with larger readable labels
   - edit feedback on-screen and persist to:
     - latest-state CSV: `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
     - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_market_state_inspection_feedback_events.jsonl`

@@ -66,6 +66,10 @@ def build_market_state_inspection_gui_report(
     market_128_visualization_ready = False
     sidebar_minimized_for_review = True
     compact_feedback_layout_ready = True
+    review_layout_mode = "side_by_side_chart_feedback"
+    chart_feedback_simultaneous_view_ready = True
+    font_size_readability_ready = True
+    advanced_debug_collapsed_by_default = True
 
     if inspection_packet_exists:
         packet = pd.read_csv(inspection_packet_csv)
@@ -147,7 +151,11 @@ def build_market_state_inspection_gui_report(
         "gap_markers_enabled": gap_markers_enabled,
         "market_128_visualization_ready": market_128_visualization_ready,
         "sidebar_minimized_for_review": sidebar_minimized_for_review,
+        "review_layout_mode": review_layout_mode,
+        "chart_feedback_simultaneous_view_ready": chart_feedback_simultaneous_view_ready,
+        "font_size_readability_ready": font_size_readability_ready,
         "compact_feedback_layout_ready": compact_feedback_layout_ready,
+        "advanced_debug_collapsed_by_default": advanced_debug_collapsed_by_default,
         "csv_latest_state_semantics": "sample_id",
         "jsonl_audit_semantics": "append_only",
         "launch_command": "./scripts/run_eurusd_market_state_inspection_gui.sh",
@@ -174,7 +182,11 @@ def render_market_state_inspection_gui_markdown(report: dict[str, Any]) -> str:
         f"- gap_markers_enabled: `{report.get('gap_markers_enabled')}`",
         f"- market_128_visualization_ready: `{report.get('market_128_visualization_ready')}`",
         f"- sidebar_minimized_for_review: `{report.get('sidebar_minimized_for_review')}`",
+        f"- review_layout_mode: `{report.get('review_layout_mode')}`",
+        f"- chart_feedback_simultaneous_view_ready: `{report.get('chart_feedback_simultaneous_view_ready')}`",
+        f"- font_size_readability_ready: `{report.get('font_size_readability_ready')}`",
         f"- compact_feedback_layout_ready: `{report.get('compact_feedback_layout_ready')}`",
+        f"- advanced_debug_collapsed_by_default: `{report.get('advanced_debug_collapsed_by_default')}`",
         f"- launch_command: `{report.get('launch_command')}`",
         f"- trial_approval_status: `{report.get('trial_approval_status')}`",
         "",

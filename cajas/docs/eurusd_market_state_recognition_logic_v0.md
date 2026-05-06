@@ -111,6 +111,9 @@ No Qlib core modification is required for this phase.
   - inspect one sample at a time with compressed-axis candlestick chart + 3/8/24/128 highlighted windows
   - weekends/market-closed periods are compressed and marked with vertical gap separators
   - 128-layer is rendered as a broad explicit background span (not label-only)
+  - review layout is side-by-side: chart/summary on the left, feedback on the right
+  - chart and feedback remain visible together on normal desktop screens
+  - key labels/rationale/feedback typography is increased for readability
   - fill feedback fields on the same screen and persist to latest-state CSV + append-only JSONL audit
   - advanced path/diagnostic details are in collapsed `Advanced / Debug` section by default
 
