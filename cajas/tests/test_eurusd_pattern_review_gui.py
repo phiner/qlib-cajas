@@ -54,6 +54,7 @@ from cajas.apps.eurusd_pattern_review_app import (
     sample_number_to_global_index,
     global_index_to_sample_number,
     apply_pending_global_sample_index,
+    get_manual_feedback_layout_contract,
 )
 
 
@@ -890,22 +891,40 @@ def test_app_imports_default_review_values_when_used():
 
 def test_app_shows_overall_human_review_before_detailed_sections():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
-    assert "##### Overall Human Review" in app_source
+    assert "##### Overall Human Review / 总体人工审核" in app_source
     assert "Overall human label / 总体人工判断" in app_source
     assert "Overall confidence / 总体置信度" in app_source
     assert "Human rationale (ZH) / 人工判断理由" in app_source
     assert "Counterexample notes (ZH) / 反例/否定理由" in app_source
     assert "Uncertainty reason (ZH) / 不确定原因" in app_source
     assert "Context notes (ZH) / 上下文备注" in app_source
-    assert app_source.index("##### Overall Human Review") < app_source.index("##### Detailed Review Dimensions")
-    assert app_source.index("Overall human label / 总体人工判断") < app_source.index("背景与走势 Context")
+    assert app_source.index("##### Overall Human Review / 总体人工审核") < app_source.index("##### Detailed Layer Feedback / 分层辅助反馈")
+    contract = get_manual_feedback_layout_contract()
+    assert contract["overall_review_before_detail_tabs"] is True
+    assert contract["overall_fields_outside_detail_tabs"] is True
 
 
 def test_app_explains_overall_label_boundary():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "Overall Human Review is the final sample-level decision." in app_source
-    assert "Detailed review fields below are supporting context, not a substitute for the final human label." in app_source
+    assert "Overall fields are the final sample-level human decision." in app_source
+    assert "Layer tabs below are supporting detail only." in app_source
+    assert "P3/M8/M24/M128/Local fields are supporting layer feedback only." in app_source
     assert "`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute." in app_source
+
+
+def test_manual_feedback_layout_contract_matches_active_render_path():
+    contract = get_manual_feedback_layout_contract()
+    assert contract["active_render_path_checked"] is True
+    assert contract["app_path"] == "cajas/apps/eurusd_pattern_review_app.py"
+    assert contract["launcher_path"] == "./scripts/run_eurusd_review_gui.sh"
+    assert contract["overall_review_heading"] == "Overall Human Review / 总体人工审核"
+    assert contract["detail_group_heading"] == "Detailed Layer Feedback / 分层辅助反馈"
+    assert contract["overall_review_before_detail_tabs"] is True
+    assert contract["overall_fields_outside_detail_tabs"] is True
+    assert contract["local_is_detail_only"] is True
+    assert contract["pattern_3_is_detail_only"] is True
+    assert contract["market_state_tabbed_app_is_active"] is False
 
 
 def test_detect_time_axis_gaps_no_gap():

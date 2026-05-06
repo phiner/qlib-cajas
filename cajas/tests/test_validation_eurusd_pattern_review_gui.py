@@ -62,6 +62,22 @@ def test_gui_validation_ready_or_watch(mock_clean_view, mock_batch, temp_dir):
     assert report["core_handoff_fields_exposed_in_gui"] is True
     assert report["zh_bilingual_labels_present"] is True
     assert report["overall_review_section_present"] is True
+    assert report["active_render_path_checked"] is True
+    assert report["launcher_targets_active_app"] is True
+    assert report["overall_review_section_visible"] is True
+    assert report["overall_review_before_detail_tabs"] is True
+    assert report["overall_fields_outside_detail_tabs"] is True
+    assert report["local_is_detail_only"] is True
+    assert report["pattern_3_is_detail_only"] is True
+    assert report["overall_field_names"] == [
+        "human_label",
+        "human_confidence",
+        "human_rationale_zh",
+        "human_counterexample_zh",
+        "human_uncertainty_reason_zh",
+        "human_context_notes_zh",
+    ]
+    assert "背景与走势 Context" in report["detail_tab_names"]
 
 
 def test_gui_validation_blocked_missing_app(mock_clean_view, mock_batch, temp_dir):

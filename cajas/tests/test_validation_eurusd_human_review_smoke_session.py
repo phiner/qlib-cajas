@@ -87,3 +87,32 @@ def test_ready_when_reviews_and_standard_present(tmp_path: Path) -> None:
     assert report["report_status"] == "human_review_smoke_ready"
     assert report["zh_rationale_saved_count"] == 2
     assert report["standard_version_saved_count"] == 2
+
+
+def test_blocked_when_overall_confidence_missing(tmp_path: Path) -> None:
+    completed = tmp_path / "completed.csv"
+    events = tmp_path / "events.jsonl"
+    pd.DataFrame(
+        {
+            "sample_id": ["s1"],
+            "human_label": ["valid_pattern"],
+            "human_confidence": [""],
+            "human_rationale_zh": ["理由1"],
+            "human_counterexample_zh": [""],
+            "human_uncertainty_reason_zh": [""],
+            "human_context_notes_zh": [""],
+            "review_updated_at_utc": ["2026-05-01T00:00:00Z"],
+        }
+    ).to_csv(completed, index=False)
+    rows = [
+        {"sample_id": "s1", "standard_version": "eurusd_15m_review_standard_v0", "review": {"human_rationale_zh": "理由1"}},
+    ]
+    events.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in rows) + "\n", encoding="utf-8")
+
+    report = build_human_review_smoke_session_report(
+        completed_csv=completed,
+        review_events_jsonl=events,
+        trial_approval_json=_write_trial(tmp_path / "trial.json"),
+    )
+    assert report["report_status"] == "blocked"
+    assert "missing_saved_human_confidence" in report["blocking_reasons"]

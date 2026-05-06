@@ -82,11 +82,18 @@ def build_gui_validation_report(
     except Exception:
         pass
     
+    layout_contract: Dict[str, Any] | None = None
     try:
         from cajas.research import eurusd_pattern_review_gui
         can_import_helper = True
     except Exception:
         pass
+
+    try:
+        from cajas.apps.eurusd_pattern_review_app import get_manual_feedback_layout_contract
+        layout_contract = get_manual_feedback_layout_contract()
+    except Exception:
+        layout_contract = None
     
     if not can_import_helper:
         return {
@@ -187,10 +194,24 @@ def build_gui_validation_report(
     overall_review_section_present = all(
         token in app_text
         for token in [
-            "##### Overall Human Review",
-            "Overall Human Review is the final sample-level decision.",
-            "Detailed review fields below are supporting context, not a substitute for the final human label.",
+            "##### Overall Human Review / 总体人工审核",
+            "Overall fields are the final sample-level human decision.",
+            "Layer tabs below are supporting detail only.",
+            "##### Detailed Layer Feedback / 分层辅助反馈",
         ]
+    )
+    active_render_path_checked = bool(layout_contract and layout_contract.get("active_render_path_checked") is True)
+    overall_review_section_visible = bool(layout_contract and layout_contract.get("overall_review_section_visible") is True)
+    overall_review_before_detail_tabs = bool(layout_contract and layout_contract.get("overall_review_before_detail_tabs") is True)
+    overall_fields_outside_detail_tabs = bool(layout_contract and layout_contract.get("overall_fields_outside_detail_tabs") is True)
+    overall_field_names = list((layout_contract or {}).get("overall_field_names", []))
+    detail_tab_names = list((layout_contract or {}).get("detail_tab_names", []))
+    local_is_detail_only = bool(layout_contract and layout_contract.get("local_is_detail_only") is True)
+    pattern_3_is_detail_only = bool(layout_contract and layout_contract.get("pattern_3_is_detail_only") is True)
+    launcher_targets_active_app = bool(
+        layout_contract
+        and str(layout_contract.get("app_path", "")) in app_text
+        and str(layout_contract.get("launcher_path", "")).endswith("run_eurusd_review_gui.sh")
     )
 
     # Determine status
@@ -230,6 +251,16 @@ def build_gui_validation_report(
         "core_handoff_fields_exposed_in_gui": core_handoff_fields_exposed_in_gui,
         "zh_bilingual_labels_present": zh_bilingual_labels_present,
         "overall_review_section_present": overall_review_section_present,
+        "active_render_path_checked": active_render_path_checked,
+        "launcher_targets_active_app": launcher_targets_active_app,
+        "overall_review_section_visible": overall_review_section_visible,
+        "overall_review_before_detail_tabs": overall_review_before_detail_tabs,
+        "overall_fields_outside_detail_tabs": overall_fields_outside_detail_tabs,
+        "overall_field_names": overall_field_names,
+        "detail_tab_names": detail_tab_names,
+        "local_is_detail_only": local_is_detail_only,
+        "pattern_3_is_detail_only": pattern_3_is_detail_only,
+        "layout_contract": layout_contract or {},
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }
 

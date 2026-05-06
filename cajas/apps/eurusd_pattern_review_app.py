@@ -33,6 +33,35 @@ from cajas.research.eurusd_pattern_review_gui import (
     backup_active_review_persistence_files,
 )
 
+ACTIVE_REVIEW_APP_PATH = "cajas/apps/eurusd_pattern_review_app.py"
+ACTIVE_REVIEW_LAUNCHER_PATH = "./scripts/run_eurusd_review_gui.sh"
+OVERALL_REVIEW_FIELD_NAMES = [
+    "human_label",
+    "human_confidence",
+    "human_rationale_zh",
+    "human_counterexample_zh",
+    "human_uncertainty_reason_zh",
+    "human_context_notes_zh",
+]
+DETAIL_SECTION_NAMES = [
+    "背景与走势 Context",
+    "结构位置 Structure",
+    "局部行为与确认 Behavior / Confirmation",
+    "Sample-Level Review Summary",
+    "候选归类 Candidate Family",
+    "Notes",
+]
+PATTERN_3_DETAIL_FIELDS = [
+    "human_pattern_3_agreement",
+    "human_pattern_3_correct_label",
+    "human_pattern_3_feedback_zh",
+]
+LOCAL_DETAIL_FIELDS = [
+    "human_local_structure_agreement",
+    "human_local_structure_correct_state",
+    "human_local_structure_feedback_zh",
+]
+
 
 def render_plotly_chart(st_module, fig):
     """Render Plotly chart with new Streamlit width API and fallback."""
@@ -128,6 +157,38 @@ h1, h2, h3 { margin-top: 0.1rem; margin-bottom: 0.35rem; }
         """,
         unsafe_allow_html=True,
     )
+
+
+def get_manual_feedback_layout_contract() -> dict:
+    """Return an inspectable contract for the active manual-feedback render path."""
+    return {
+        "active_render_path_checked": True,
+        "launcher_path": ACTIVE_REVIEW_LAUNCHER_PATH,
+        "app_path": ACTIVE_REVIEW_APP_PATH,
+        "render_entrypoint": "cajas.apps.eurusd_pattern_review_app.main",
+        "manual_feedback_heading": "Manual Feedback",
+        "overall_review_heading": "Overall Human Review / 总体人工审核",
+        "overall_help_text": [
+            "Overall fields are the final sample-level human decision.",
+            "Layer tabs below are supporting detail only.",
+            "human_label is the final sample-level review.",
+            "P3/M8/M24/M128/Local fields are supporting layer feedback only.",
+            "Local = local structure detail around the target candle. It helps explain the decision but does not replace human_label.",
+        ],
+        "overall_field_names": list(OVERALL_REVIEW_FIELD_NAMES),
+        "detail_group_heading": "Detailed Layer Feedback / 分层辅助反馈",
+        "detail_ui_kind": "expanders",
+        "detail_tab_names": list(DETAIL_SECTION_NAMES),
+        "overall_review_section_visible": True,
+        "overall_review_before_detail_tabs": True,
+        "overall_fields_outside_detail_tabs": True,
+        "pattern_3_is_detail_only": True,
+        "local_is_detail_only": True,
+        "pattern_3_detail_fields": list(PATTERN_3_DETAIL_FIELDS),
+        "local_detail_fields": list(LOCAL_DETAIL_FIELDS),
+        "market_state_tabbed_app_path": "cajas/apps/eurusd_market_state_inspection_app.py",
+        "market_state_tabbed_app_is_active": False,
+    }
 
 
 def main():
@@ -453,8 +514,12 @@ def main():
         st.caption("Detailed review fields below are supporting context, not a substitute for the final human label.")
         st.caption("`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute.")
 
-        st.markdown("##### Overall Human Review")
+        st.markdown("##### Overall Human Review / 总体人工审核")
         st.caption("Fill these overall fields before the more detailed review dimensions.")
+        st.caption("Overall fields are the final sample-level human decision.")
+        st.caption("Layer tabs below are supporting detail only.")
+        st.caption("human_label is the final sample-level review.")
+        st.caption("P3/M8/M24/M128/Local fields are supporting layer feedback only.")
         overall_c1, overall_c2 = st.columns(2)
         with overall_c1:
             human_label = st.selectbox(
@@ -490,8 +555,9 @@ def main():
             key="human_context_notes_zh",
         )
 
-        st.markdown("##### Detailed Review Dimensions")
+        st.markdown("##### Detailed Layer Feedback / 分层辅助反馈")
         st.caption("Use these fields as supporting review context after the overall human decision.")
+        st.caption("Local = local structure detail around the target candle. It helps explain the decision but does not replace human_label.")
         st.caption("冲高回落/触底回升/急涨后整理/急跌后整理应填 recent_move_context，不要塞进 market_context。")
         st.caption("wick/doji 必须结合 structure_location 和 level_quality 判断。")
         st.caption("possible_false_breakout 必须看 level_quality、reclaim 和 follow-through。")

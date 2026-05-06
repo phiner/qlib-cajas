@@ -166,8 +166,17 @@ def build_human_review_smoke_session_report(
 
     if base["reviewed_sample_count"] <= 0 or base["jsonl_event_count"] <= 0:
         base["report_status"] = "awaiting_smoke_reviews"
-    elif base["zh_rationale_saved_count"] <= 0 or base["standard_version_saved_count"] <= 0:
+    elif (
+        base["human_label_present_count"] <= 0
+        or base["human_confidence_present_count"] <= 0
+        or base["zh_rationale_saved_count"] <= 0
+        or base["standard_version_saved_count"] <= 0
+    ):
         base["report_status"] = "blocked"
+        if base["human_label_present_count"] <= 0:
+            base["blocking_reasons"].append("missing_saved_human_label")
+        if base["human_confidence_present_count"] <= 0:
+            base["blocking_reasons"].append("missing_saved_human_confidence")
         if base["zh_rationale_saved_count"] <= 0:
             base["blocking_reasons"].append("missing_saved_human_rationale_zh")
         if base["standard_version_saved_count"] <= 0:
