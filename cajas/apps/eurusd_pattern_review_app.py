@@ -447,9 +447,51 @@ def main():
     # Compact lower layout: form on left, actions on right.
     left_col, right_col = st.columns([3.2, 1.4], gap="large")
     with left_col:
-        st.markdown("#### Review Labels")
+        st.markdown("#### Manual Feedback")
         st.caption("candidate_type 是系统入口标签，不是最终形态结论。")
-        st.caption("先看背景，再看结构位置，再看局部行为，再看确认/失败，最后给人审结论。")
+        st.caption("Overall Human Review is the final sample-level decision.")
+        st.caption("Detailed review fields below are supporting context, not a substitute for the final human label.")
+        st.caption("`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute.")
+
+        st.markdown("##### Overall Human Review")
+        st.caption("Fill these overall fields before the more detailed review dimensions.")
+        overall_c1, overall_c2 = st.columns(2)
+        with overall_c1:
+            human_label = st.selectbox(
+                "Overall human label / 总体人工判断",
+                allowed.get("human_label", ["not_reviewed"]),
+                key="human_label",
+            )
+        with overall_c2:
+            human_confidence = st.selectbox(
+                "Overall confidence / 总体置信度",
+                allowed.get("human_confidence", ["not_reviewed"]),
+                key="human_confidence",
+            )
+
+        human_rationale_zh = st.text_area(
+            "Human rationale (ZH) / 人工判断理由",
+            placeholder="填写中文的人审判断依据...",
+            key="human_rationale_zh",
+        )
+        human_counterexample_zh = st.text_area(
+            "Counterexample notes (ZH) / 反例/否定理由",
+            placeholder="填写为什么该形态不成立或存在反例...",
+            key="human_counterexample_zh",
+        )
+        human_uncertainty_reason_zh = st.text_area(
+            "Uncertainty reason (ZH) / 不确定原因",
+            placeholder="若不确定，填写不确定来源...",
+            key="human_uncertainty_reason_zh",
+        )
+        human_context_notes_zh = st.text_area(
+            "Context notes (ZH) / 上下文备注",
+            placeholder="填写影响判断的上下文信息...",
+            key="human_context_notes_zh",
+        )
+
+        st.markdown("##### Detailed Review Dimensions")
+        st.caption("Use these fields as supporting review context after the overall human decision.")
         st.caption("冲高回落/触底回升/急涨后整理/急跌后整理应填 recent_move_context，不要塞进 market_context。")
         st.caption("wick/doji 必须结合 structure_location 和 level_quality 判断。")
         st.caption("possible_false_breakout 必须看 level_quality、reclaim 和 follow-through。")
@@ -480,14 +522,12 @@ def main():
             with c2:
                 confirmation_result = st.selectbox("confirmation_result", allowed.get("confirmation_result", ["not_reviewed"]), key="review_confirmation_result")
 
-        with st.expander("人审结论 Review Outcome", expanded=True):
+        with st.expander("Sample-Level Review Summary", expanded=True):
             c1, c2 = st.columns(2)
             with c1:
-                human_label = st.selectbox("human_label", allowed.get("human_label", ["not_reviewed"]), key="human_label")
                 pattern_quality = st.selectbox("pattern_quality", allowed.get("pattern_quality", ["not_reviewed"]), key="pattern_quality")
             with c2:
                 false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
-                human_confidence = st.selectbox("human_confidence", allowed.get("human_confidence", ["not_reviewed"]), key="human_confidence")
 
         with st.expander("候选归类 Candidate Family", expanded=False):
             c1, c2 = st.columns(2)
@@ -507,27 +547,6 @@ def main():
             "review_notes",
             placeholder="Optional notes...",
             key="review_notes",
-        )
-        st.markdown("#### Chinese Semantic Rationale")
-        human_rationale_zh = st.text_area(
-            "Human rationale (ZH) / 人工判断理由",
-            placeholder="填写中文的人审判断依据...",
-            key="human_rationale_zh",
-        )
-        human_counterexample_zh = st.text_area(
-            "Counterexample notes (ZH) / 反例/否定理由",
-            placeholder="填写为什么该形态不成立或存在反例...",
-            key="human_counterexample_zh",
-        )
-        human_uncertainty_reason_zh = st.text_area(
-            "Uncertainty reason (ZH) / 不确定原因",
-            placeholder="若不确定，填写不确定来源...",
-            key="human_uncertainty_reason_zh",
-        )
-        human_context_notes_zh = st.text_area(
-            "Context notes (ZH) / 上下文备注",
-            placeholder="填写影响判断的上下文信息...",
-            key="human_context_notes_zh",
         )
 
         st.markdown("#### Bad Sample Workflow")

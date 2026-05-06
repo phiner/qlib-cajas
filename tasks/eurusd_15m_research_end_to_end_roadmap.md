@@ -70,6 +70,8 @@ Non-negotiable constraints:
 - Current review operating procedure:
   - run `./scripts/run_eurusd_review_gui.sh`
   - review in batches of 10-20 samples initially
+  - fill the Overall Human Review section first for the final sample-level judgment
+  - treat detailed review dimensions as supporting context, not as a substitute for `human_label`
   - provide Chinese rationale for non-trivial judgments
   - run smoke-session and human-review-quality reports after each session
   - keep real LLM integration unapproved and trial approval at `not_approved`

@@ -182,6 +182,9 @@ Optional local GUI dependencies (manual install only):
 - Sample-by-sample navigation
 - Candidate metadata display
 - Form-based label entry
+- Overall Human Review section appears before detailed review dimensions
+- Overall fields are the final sample-level decision: `human_label`, `human_confidence`, `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`
+- Detailed review dimensions remain supporting context and are not a substitute for the overall final label
 - Automatic save to completed CSV
 - Resume progress from existing completed file
 - Explicit chart warning messages when chart window extraction fails or has no data

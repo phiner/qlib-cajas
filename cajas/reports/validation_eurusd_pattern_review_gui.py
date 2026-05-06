@@ -176,10 +176,20 @@ def build_gui_validation_report(
     zh_bilingual_labels_present = all(
         token in app_text
         for token in [
+            "Overall human label / 总体人工判断",
+            "Overall confidence / 总体置信度",
             "Human rationale (ZH) / 人工判断理由",
             "Counterexample notes (ZH) / 反例/否定理由",
             "Uncertainty reason (ZH) / 不确定原因",
             "Context notes (ZH) / 上下文备注",
+        ]
+    )
+    overall_review_section_present = all(
+        token in app_text
+        for token in [
+            "##### Overall Human Review",
+            "Overall Human Review is the final sample-level decision.",
+            "Detailed review fields below are supporting context, not a substitute for the final human label.",
         ]
     )
 
@@ -219,6 +229,7 @@ def build_gui_validation_report(
         "zh_rationale_fields_exposed_in_gui": zh_fields_exposed_in_gui,
         "core_handoff_fields_exposed_in_gui": core_handoff_fields_exposed_in_gui,
         "zh_bilingual_labels_present": zh_bilingual_labels_present,
+        "overall_review_section_present": overall_review_section_present,
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }
 

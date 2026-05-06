@@ -888,6 +888,26 @@ def test_app_imports_default_review_values_when_used():
     assert "human_confidence" in app_source
 
 
+def test_app_shows_overall_human_review_before_detailed_sections():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "##### Overall Human Review" in app_source
+    assert "Overall human label / 总体人工判断" in app_source
+    assert "Overall confidence / 总体置信度" in app_source
+    assert "Human rationale (ZH) / 人工判断理由" in app_source
+    assert "Counterexample notes (ZH) / 反例/否定理由" in app_source
+    assert "Uncertainty reason (ZH) / 不确定原因" in app_source
+    assert "Context notes (ZH) / 上下文备注" in app_source
+    assert app_source.index("##### Overall Human Review") < app_source.index("##### Detailed Review Dimensions")
+    assert app_source.index("Overall human label / 总体人工判断") < app_source.index("背景与走势 Context")
+
+
+def test_app_explains_overall_label_boundary():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "Overall Human Review is the final sample-level decision." in app_source
+    assert "Detailed review fields below are supporting context, not a substitute for the final human label." in app_source
+    assert "`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute." in app_source
+
+
 def test_detect_time_axis_gaps_no_gap():
     timestamps = pd.date_range("2020-01-03 00:00:00", periods=10, freq="15min")
     gaps = detect_time_axis_gaps(list(timestamps))
@@ -1202,7 +1222,7 @@ def test_app_source_keeps_sidebar_and_toast_behavior():
 def test_app_source_uses_compact_left_form_right_actions_layout():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert 'left_col, right_col = st.columns([3.2, 1.4], gap="large")' in app_source
-    assert 'st.markdown("#### Review Labels")' in app_source
+    assert 'st.markdown("#### Manual Feedback")' in app_source
     assert 'st.markdown("#### Bad Sample Workflow")' in app_source
     assert 'st.markdown("#### Actions")' in app_source
 
@@ -1213,7 +1233,7 @@ def test_app_source_includes_all_five_layer_grouped_fields_and_help_text():
         "背景与走势 Context",
         "结构位置 Structure",
         "局部行为与确认 Behavior / Confirmation",
-        "人审结论 Review Outcome",
+        "Sample-Level Review Summary",
         "候选归类 Candidate Family",
     ]:
         assert heading in app_source
