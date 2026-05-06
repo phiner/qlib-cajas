@@ -106,3 +106,16 @@ Enum examples:
   - manual labels: `awaiting_manual_micro_pattern_labels | manual_micro_pattern_labels_watch | manual_micro_pattern_labels_ready`
   - rule candidates: `awaiting_manual_labels | rule_candidates_watch | rule_candidates_ready`
 - Trial approval remains `not_approved` by policy.
+
+## Task 088 four-layer inspection packet and feedback loop
+
+- Added reviewer-oriented inspection packet generated from Task 087 sample export.
+- Packet preserves four-layer system labels and adds blank human feedback fields:
+  - agreement/correction/rationale for `pattern_3`, `market_8`, `market_24`, `market_128`, and `local_structure_state`
+  - definition issue and rule-adjustment suggestion `_zh` fields
+- Feedback report classifies statuses:
+  - `awaiting_market_state_inspection_feedback`
+  - `market_state_inspection_feedback_watch`
+  - `market_state_inspection_feedback_ready`
+  - `blocked`
+- No automatic taxonomy/rule changes are performed; feedback is evidence for later v1 review.

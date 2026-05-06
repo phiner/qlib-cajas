@@ -964,3 +964,10 @@ This audit is read-only and does not reset or rebuild active review artifacts.
   - `validation-eurusd-micro-pattern-rule-candidates`
   - `validation-eurusd-market-state-bundle`
 - Trial approval remains `not_approved`; no real LLM or trading semantics are introduced.
+
+## Task 088 four-layer inspection packet
+
+- Added inspection packet builder from four-layer sample export for focused reviewer workflow.
+- Added completed-feedback validator with `awaiting|watch|ready|blocked` statuses and definition-gap summary signals.
+- Feedback is evidence for future taxonomy/rule v1 review; no automatic rule/taxonomy updates are allowed.
+- Trial approval remains `not_approved`; no LLM/trading scope change.

@@ -88,3 +88,13 @@ No Qlib core modification is required for this phase.
   - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_micro_pattern_review_events.jsonl`
 - Runtime identifiers remain English, rationale/suggestion semantics stay in `_zh` fields.
 - This tool is research labeling only and does not add trading semantics or real LLM calls.
+
+## Four-layer inspection packet workflow
+
+- Build compact inspection packet from sample export for manual semantic review:
+  - `pattern_3` event correctness
+  - `market_8/24/128` state correctness
+  - `local_structure_state` combiner correctness
+- Human feedback uses English runtime correction identifiers and `_zh` rationale fields.
+- Completed feedback is validated and summarized into definition-gap signals.
+- This workflow is inspection-only; no GUI wiring, no auto rule edits, no LLM/trading scope changes.
