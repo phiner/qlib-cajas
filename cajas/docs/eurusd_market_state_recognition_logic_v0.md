@@ -70,3 +70,10 @@ No Qlib core modification is required for this phase.
 - Residual-noise refinement now follows: profile -> conservative rule split -> review packet sampling -> human semantic review -> next rule update.
 - Added review packet fields include 3-bar OHLC context and blank human semantic fields for later labeling.
 - Avoid blind threshold tuning; prioritize subtype evidence from review packet.
+
+
+## Pre-GUI hardening sequence
+
+- Sequence now enforced: review packet -> manual labels -> rule candidates -> qlib adapter contract -> dataset quality gate -> bundle report.
+- GUI wiring is deferred until this foundation stack is stable and watch reasons are understood.
+- Real LLM remains unapproved and no Qlib core changes are required.

@@ -945,3 +945,9 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 - Introduced `validation-eurusd-micro-pattern-review-packet` as required artifact before further taxonomy expansion.
 - Keep GUI wiring deferred until residual-noise packet review stabilizes micro-event semantics.
 - Keep real LLM trial approval at `not_approved` and preserve non-trading boundaries.
+
+
+## Task 085 execution order
+
+- Added bundle phase before GUI wiring: manual-label workflow, rule-candidate report, qlib adapter contract, dataset quality gate, and market-state bundle summary.
+- Current expected bundle status is watch when manual labels are awaiting human input; this is non-blocking for infrastructure but blocks GUI-wiring progression.

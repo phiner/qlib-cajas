@@ -82,3 +82,11 @@ Enum examples:
 - Added `micro_pattern_review_packet` workflow for residual `micro_noise` inspection with deterministic sampling.
 - Residual `micro_noise` remains a valid catch-all; unresolved subtypes should be refined via human-reviewed packet evidence.
 - Micro-pattern semantics remain classification-only and non-trading.
+
+
+## Task 085 foundation hardening bundle
+
+- Added manual-label workflow report for micro-pattern review packet with explicit `awaiting|ready|watch|blocked` statuses.
+- Added rule-candidate summary report scaffold that depends on completed manual labels and does not auto-edit rule JSON.
+- Added Qlib adapter contract report and dataset quality gate prior to GUI integration.
+- Added consolidated market-state bundle report to summarize readiness/watch reasons.

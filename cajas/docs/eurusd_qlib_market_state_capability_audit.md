@@ -114,3 +114,10 @@ No live execution.
 `define_market_state_taxonomy_v0_and_feature_contract`
 
 Reason: horizon semantics and state definitions are being finalized; taxonomy and deterministic feature/label contracts should be locked before GUI rewiring or model training.
+
+
+## Foundation hardening update (Task 085)
+
+- Qlib remains an offline substrate; market-state semantics and review pipelines stay in `cajas/`.
+- Added adapter-contract and dataset-quality reports to make future Qlib integration auditable without core changes.
+- Added market-state bundle report to gate next steps before GUI wiring.
