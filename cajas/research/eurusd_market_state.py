@@ -544,9 +544,9 @@ def combine_micro_event_with_structure(row: pd.Series | dict[str, Any]) -> dict[
     if local == "pullback_in_uptrend" and micro in {"three_bar_reversal_up", "lower_sweep_reclaim", "failed_followthrough_down"}:
         local = "pullback_in_uptrend"
         combined_reason = "combine_pullback_uptrend_supported_by_micro_up"
-    elif local == "rebound_in_downtrend" and micro in {"three_bar_reversal_down", "upper_sweep_reject", "failed_followthrough_up"}:
+    elif local == "rebound_in_downtrend" and micro in {"three_bar_reversal_up", "lower_sweep_reclaim", "failed_followthrough_down"}:
         local = "rebound_in_downtrend"
-        combined_reason = "combine_rebound_downtrend_supported_by_micro_down"
+        combined_reason = "combine_rebound_downtrend_supported_by_micro_reclaim"
     elif long_state == "high_level_consolidation" and micro in {"upper_sweep_reject", "three_bar_exhaustion_up"}:
         local = "exhaustion_risk"
         combined_reason = "combine_high_consolidation_exhaustion_risk"
@@ -581,7 +581,6 @@ def classify_market_state_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]
         **micro,
         **structure,
         **combined,
-        "ultra_short_state_3": micro["micro_pattern_event_3"],
         "market_state_rule_version": MARKET_STATE_RULE_VERSION,
     }
 

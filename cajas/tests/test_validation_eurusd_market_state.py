@@ -35,7 +35,7 @@ def test_report_ready_on_valid_input(tmp_path: Path) -> None:
         trial_approval_json=_trial(tmp_path / "trial.json"),
     )
     assert report["report_status"] == "market_state_dataset_ready"
-    assert report["three_bar_logic_type"] == "pattern_event_rule_library"
+    assert report["three_bar_logic_type"] == "pattern_event"
     assert report["structure_logic_type"] == "quantitative_8_24_128"
     assert report["micro_pattern_rules_loaded"] is True
     assert report["feature_columns_present"] is True

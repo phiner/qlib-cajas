@@ -109,7 +109,7 @@ def build_market_state_report(
         "market_state_rule_version": MARKET_STATE_RULE_VERSION,
         "input_row_count": int(len(input_df)),
         "output_row_count": int(len(dataset)),
-        "three_bar_logic_type": "pattern_event_rule_library",
+        "three_bar_logic_type": "pattern_event",
         "structure_logic_type": "quantitative_8_24_128",
         "micro_pattern_rule_version": summary.get("micro_pattern_rule_version"),
         "micro_pattern_rules_loaded": bool(summary.get("micro_pattern_rule_count", 0) > 0),

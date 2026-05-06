@@ -78,6 +78,11 @@ Non-negotiable constraints:
   - objective is shifting from pattern-only review toward EURUSD 15m market-state understanding
   - Qlib remains the offline data/model/evaluation substrate
   - market-state taxonomy semantics, human rationale, and LLM handoff remain in `cajas/` layer, not Qlib core
+  - recognition split is fixed as:
+    - 3-bar pattern/event recognizer (`micro_pattern_event_3`) for local reversal/rejection/sweep context
+    - 8/24/128 quantitative structure recognizer for short/mid/long state and confidence
+    - combiner where 3-bar events qualify structure context and do not define long background alone
+  - future Qlib adapter consumes 8/24/128 quantitative features + 3-bar categorical events + human-corrected labels
   - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:
