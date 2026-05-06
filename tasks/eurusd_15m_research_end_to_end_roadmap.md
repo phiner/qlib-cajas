@@ -94,6 +94,7 @@ Non-negotiable constraints:
     - chart uses compressed sequential axis (no weekend blank spans) with vertical gap markers
     - 128-layer must remain explicitly visible as broad background window
     - default view is side-by-side chart/feedback with larger readable text
+    - chart area is width-prioritized; feedback panel is intentionally compact
     - advanced/debug details stay collapsed
     - edit feedback on-screen and persist to latest-state CSV + append-only JSONL
   - first feedback loop procedure:

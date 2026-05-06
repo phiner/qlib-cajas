@@ -72,6 +72,8 @@ def test_gui_report_ready(tmp_path: Path) -> None:
     assert report["sidebar_minimized_for_review"] is True
     assert report["review_layout_mode"] == "side_by_side_chart_feedback"
     assert report["chart_feedback_simultaneous_view_ready"] is True
+    assert report["chart_width_priority_ready"] is True
+    assert report["feedback_panel_compact_width_ready"] is True
     assert report["font_size_readability_ready"] is True
     assert report["compact_feedback_layout_ready"] is True
     assert report["advanced_debug_collapsed_by_default"] is True

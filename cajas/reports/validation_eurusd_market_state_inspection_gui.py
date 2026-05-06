@@ -68,6 +68,8 @@ def build_market_state_inspection_gui_report(
     compact_feedback_layout_ready = True
     review_layout_mode = "side_by_side_chart_feedback"
     chart_feedback_simultaneous_view_ready = True
+    chart_width_priority_ready = True
+    feedback_panel_compact_width_ready = True
     font_size_readability_ready = True
     advanced_debug_collapsed_by_default = True
 
@@ -153,6 +155,8 @@ def build_market_state_inspection_gui_report(
         "sidebar_minimized_for_review": sidebar_minimized_for_review,
         "review_layout_mode": review_layout_mode,
         "chart_feedback_simultaneous_view_ready": chart_feedback_simultaneous_view_ready,
+        "chart_width_priority_ready": chart_width_priority_ready,
+        "feedback_panel_compact_width_ready": feedback_panel_compact_width_ready,
         "font_size_readability_ready": font_size_readability_ready,
         "compact_feedback_layout_ready": compact_feedback_layout_ready,
         "advanced_debug_collapsed_by_default": advanced_debug_collapsed_by_default,
@@ -184,6 +188,8 @@ def render_market_state_inspection_gui_markdown(report: dict[str, Any]) -> str:
         f"- sidebar_minimized_for_review: `{report.get('sidebar_minimized_for_review')}`",
         f"- review_layout_mode: `{report.get('review_layout_mode')}`",
         f"- chart_feedback_simultaneous_view_ready: `{report.get('chart_feedback_simultaneous_view_ready')}`",
+        f"- chart_width_priority_ready: `{report.get('chart_width_priority_ready')}`",
+        f"- feedback_panel_compact_width_ready: `{report.get('feedback_panel_compact_width_ready')}`",
         f"- font_size_readability_ready: `{report.get('font_size_readability_ready')}`",
         f"- compact_feedback_layout_ready: `{report.get('compact_feedback_layout_ready')}`",
         f"- advanced_debug_collapsed_by_default: `{report.get('advanced_debug_collapsed_by_default')}`",

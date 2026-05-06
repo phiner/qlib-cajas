@@ -112,6 +112,7 @@ No Qlib core modification is required for this phase.
   - weekends/market-closed periods are compressed and marked with vertical gap separators
   - 128-layer is rendered as a broad explicit background span (not label-only)
   - review layout is side-by-side: chart/summary on the left, feedback on the right
+  - chart width is prioritized (about 4:1 layout), feedback panel stays compact
   - chart and feedback remain visible together on normal desktop screens
   - key labels/rationale/feedback typography is increased for readability
   - fill feedback fields on the same screen and persist to latest-state CSV + append-only JSONL audit

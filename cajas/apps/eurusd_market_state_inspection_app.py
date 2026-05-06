@@ -23,6 +23,7 @@ DEFAULT_PACKET_CSV = Path("tmp/eurusd/EURUSD_15m_market_state_inspection_packet.
 DEFAULT_RAW_CSV = Path("tmp/eurusd/EURUSD_15m_Bid_clean_view.csv")
 DEFAULT_COMPLETED_CSV = Path("tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv")
 DEFAULT_AUDIT_JSONL = Path("tmp/eurusd/EURUSD_15m_market_state_inspection_feedback_events.jsonl")
+REVIEW_LAYOUT_COLUMN_RATIO = [4, 1]
 
 
 def main() -> None:
@@ -107,7 +108,7 @@ textarea, input, select { font-size: 16px !important; }
     save_now = controls[6].button("Save", use_container_width=True)
     save_next = controls[7].button("Save+Next", use_container_width=True)
 
-    left, right = st.columns([1.8, 1.2], gap="large")
+    left, right = st.columns(REVIEW_LAYOUT_COLUMN_RATIO, gap="large")
     try:
         window_df, target_local_idx = compute_chart_window(raw_df, str(row["timestamp"]), total_bars=total_bars)
         highlights = compute_layer_highlights(target_local_idx, row)
@@ -137,26 +138,26 @@ textarea, input, select { font-size: 16px !important; }
         with tabs[0]:
             hp3_agree = st.selectbox("human_pattern_3_agreement", agree_opts, index=agree_opts.index(defaults["human_pattern_3_agreement"]) if defaults["human_pattern_3_agreement"] in agree_opts else 0, key="p3_agree")
             hp3_correct = st.text_input("human_pattern_3_correct_label", value=defaults["human_pattern_3_correct_label"], key="p3_correct")
-            hp3_fb = st.text_area("human_pattern_3_feedback_zh", value=defaults["human_pattern_3_feedback_zh"], height=110, key="p3_fb")
+            hp3_fb = st.text_area("human_pattern_3_feedback_zh", value=defaults["human_pattern_3_feedback_zh"], height=90, key="p3_fb")
         with tabs[1]:
             hm8_agree = st.selectbox("human_market_8_agreement", agree_opts, index=agree_opts.index(defaults["human_market_8_agreement"]) if defaults["human_market_8_agreement"] in agree_opts else 0, key="m8_agree")
             hm8_correct = st.text_input("human_market_8_correct_state", value=defaults["human_market_8_correct_state"], key="m8_correct")
-            hm8_fb = st.text_area("human_market_8_feedback_zh", value=defaults["human_market_8_feedback_zh"], height=110, key="m8_fb")
+            hm8_fb = st.text_area("human_market_8_feedback_zh", value=defaults["human_market_8_feedback_zh"], height=90, key="m8_fb")
         with tabs[2]:
             hm24_agree = st.selectbox("human_market_24_agreement", agree_opts, index=agree_opts.index(defaults["human_market_24_agreement"]) if defaults["human_market_24_agreement"] in agree_opts else 0, key="m24_agree")
             hm24_correct = st.text_input("human_market_24_correct_state", value=defaults["human_market_24_correct_state"], key="m24_correct")
-            hm24_fb = st.text_area("human_market_24_feedback_zh", value=defaults["human_market_24_feedback_zh"], height=110, key="m24_fb")
+            hm24_fb = st.text_area("human_market_24_feedback_zh", value=defaults["human_market_24_feedback_zh"], height=90, key="m24_fb")
         with tabs[3]:
             hm128_agree = st.selectbox("human_market_128_agreement", agree_opts, index=agree_opts.index(defaults["human_market_128_agreement"]) if defaults["human_market_128_agreement"] in agree_opts else 0, key="m128_agree")
             hm128_correct = st.text_input("human_market_128_correct_state", value=defaults["human_market_128_correct_state"], key="m128_correct")
-            hm128_fb = st.text_area("human_market_128_feedback_zh", value=defaults["human_market_128_feedback_zh"], height=110, key="m128_fb")
+            hm128_fb = st.text_area("human_market_128_feedback_zh", value=defaults["human_market_128_feedback_zh"], height=90, key="m128_fb")
         with tabs[4]:
             hlocal_agree = st.selectbox("human_local_structure_agreement", agree_opts, index=agree_opts.index(defaults["human_local_structure_agreement"]) if defaults["human_local_structure_agreement"] in agree_opts else 0, key="local_agree")
             hlocal_correct = st.text_input("human_local_structure_correct_state", value=defaults["human_local_structure_correct_state"], key="local_correct")
-            hlocal_fb = st.text_area("human_local_structure_feedback_zh", value=defaults["human_local_structure_feedback_zh"], height=110, key="local_fb")
+            hlocal_fb = st.text_area("human_local_structure_feedback_zh", value=defaults["human_local_structure_feedback_zh"], height=90, key="local_fb")
         with tabs[5]:
-            hdef = st.text_area("human_definition_issue_zh", value=defaults["human_definition_issue_zh"], height=110)
-            hrule = st.text_area("human_rule_adjustment_suggestion_zh", value=defaults["human_rule_adjustment_suggestion_zh"], height=110)
+            hdef = st.text_area("human_definition_issue_zh", value=defaults["human_definition_issue_zh"], height=100)
+            hrule = st.text_area("human_rule_adjustment_suggestion_zh", value=defaults["human_rule_adjustment_suggestion_zh"], height=100)
 
     payload = {
         **row.to_dict(),
