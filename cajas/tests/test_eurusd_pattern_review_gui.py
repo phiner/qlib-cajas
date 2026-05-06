@@ -55,6 +55,7 @@ from cajas.apps.eurusd_pattern_review_app import (
     global_index_to_sample_number,
     apply_pending_global_sample_index,
     get_manual_feedback_layout_contract,
+    get_candidate_type_explanation_zh,
 )
 
 
@@ -910,6 +911,8 @@ def test_app_explains_overall_label_boundary():
     assert "Overall fields are the final sample-level human decision." in app_source
     assert "Layer tabs below are supporting detail only." in app_source
     assert "P3/M8/M24/M128/Local fields are supporting layer feedback only." in app_source
+    assert "human_label 是当前 candidate_type 的最终人工判断。" in app_source
+    assert "Local/P3/M8/M24/M128 是证据层，不是最终结论。" in app_source
     assert "`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute." in app_source
 
 
@@ -922,9 +925,34 @@ def test_manual_feedback_layout_contract_matches_active_render_path():
     assert contract["detail_group_heading"] == "Detailed Layer Feedback / 分层辅助反馈"
     assert contract["overall_review_before_detail_tabs"] is True
     assert contract["overall_fields_outside_detail_tabs"] is True
+    assert contract["candidate_context_visible"] is True
+    assert contract["candidate_type_visible"] is True
+    assert contract["candidate_type_source"] == "sample.candidate_type"
+    assert contract["target_candle_context_visible"] is True
+    assert contract["candidate_context_before_overall_review"] is True
+    assert contract["layer_guide_visible"] is True
     assert contract["local_is_detail_only"] is True
     assert contract["pattern_3_is_detail_only"] is True
     assert contract["market_state_tabbed_app_is_active"] is False
+
+
+def test_candidate_type_explanation_helper():
+    assert "下影线拒绝候选" in get_candidate_type_explanation_zh("lower_wick_rejection_candidate")
+    assert "上影线拒绝候选" in get_candidate_type_explanation_zh("upper_wick_rejection_candidate")
+    assert get_candidate_type_explanation_zh("unknown_candidate_type") == ""
+
+
+def test_app_shows_candidate_context_and_layer_meaning_copy():
+    app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
+    assert "##### Current Candidate / 当前候选" in app_source
+    assert "你正在判断：当前样本是否构成" in app_source
+    assert "##### Layer guide / 分层说明" in app_source
+    assert "P3: target-near small pattern, roughly the smallest local candle combination." in app_source
+    assert "M8: short local rhythm/context around the target." in app_source
+    assert "M24: small swing / local regime context." in app_source
+    assert "M128: broader background context." in app_source
+    assert "Local：目标K线周围的局部结构质量，用来判断当前候选是否有局部支撑。" in app_source
+    assert app_source.index("##### Current Candidate / 当前候选") < app_source.index("##### Overall Human Review / 总体人工审核")
 
 
 def test_detect_time_axis_gaps_no_gap():

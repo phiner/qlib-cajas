@@ -71,6 +71,8 @@ Non-negotiable constraints:
   - run `./scripts/run_eurusd_review_gui.sh`
   - review in batches of 10-20 samples initially
   - fill the Overall Human Review section first for the final sample-level judgment
+  - read the Current Candidate card before judging; `human_label` applies to that `candidate_type`
+  - use the layer guide to interpret P3/M8/M24/M128/Local as supporting evidence only
   - treat detailed review dimensions as supporting context, not as a substitute for `human_label`
   - provide Chinese rationale for non-trivial judgments
   - run smoke-session and human-review-quality reports after each session

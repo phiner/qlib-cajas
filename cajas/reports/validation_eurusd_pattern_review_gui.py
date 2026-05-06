@@ -213,6 +213,22 @@ def build_gui_validation_report(
         and str(layout_contract.get("app_path", "")) in app_text
         and str(layout_contract.get("launcher_path", "")).endswith("run_eurusd_review_gui.sh")
     )
+    candidate_context_visible = bool(layout_contract and layout_contract.get("candidate_context_visible") is True)
+    candidate_type_visible = bool(layout_contract and layout_contract.get("candidate_type_visible") is True)
+    candidate_type_source = str((layout_contract or {}).get("candidate_type_source", ""))
+    target_candle_context_visible = bool(layout_contract and layout_contract.get("target_candle_context_visible") is True)
+    layer_guide_visible = bool(layout_contract and layout_contract.get("layer_guide_visible") is True)
+    local_layer_explained = bool(
+        "Local：目标K线周围的局部结构质量，用来判断当前候选是否有局部支撑。" in app_text
+        and layout_contract
+        and layout_contract.get("local_is_detail_only") is True
+    )
+    human_label_final_decision_explained = bool(
+        "human_label 是当前 candidate_type 的最终人工判断。" in app_text
+    )
+    detail_layers_marked_supporting_only = bool(
+        "Local/P3/M8/M24/M128 是证据层，不是最终结论。" in app_text
+    )
 
     # Determine status
     if not streamlit_available or not plotly_available:
@@ -260,6 +276,14 @@ def build_gui_validation_report(
         "detail_tab_names": detail_tab_names,
         "local_is_detail_only": local_is_detail_only,
         "pattern_3_is_detail_only": pattern_3_is_detail_only,
+        "candidate_context_visible": candidate_context_visible,
+        "candidate_type_visible": candidate_type_visible,
+        "candidate_type_source": candidate_type_source,
+        "target_candle_context_visible": target_candle_context_visible,
+        "layer_guide_visible": layer_guide_visible,
+        "local_layer_explained": local_layer_explained,
+        "human_label_final_decision_explained": human_label_final_decision_explained,
+        "detail_layers_marked_supporting_only": detail_layers_marked_supporting_only,
         "layout_contract": layout_contract or {},
         "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
     }

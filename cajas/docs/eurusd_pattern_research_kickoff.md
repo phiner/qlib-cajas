@@ -181,6 +181,8 @@ Optional local GUI dependencies (manual install only):
 - Interactive candlestick charts with Plotly
 - Sample-by-sample navigation
 - Candidate metadata display
+- Candidate context card appears above Overall Human Review and shows `sample_id`, `candidate_type`, target candle context, and `standard_version`
+- Layer guide explains how P3/M8/M24/M128/Local support the final candidate judgment
 - Form-based label entry
 - Overall Human Review section appears before detailed review dimensions
 - Overall fields are the final sample-level decision: `human_label`, `human_confidence`, `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`

@@ -61,6 +61,10 @@ LOCAL_DETAIL_FIELDS = [
     "human_local_structure_correct_state",
     "human_local_structure_feedback_zh",
 ]
+CANDIDATE_EXPLANATIONS_ZH = {
+    "lower_wick_rejection_candidate": "下影线拒绝候选：目标K线出现下探后收回，需结合局部结构、短线背景和更大市场状态判断是否成立。",
+    "upper_wick_rejection_candidate": "上影线拒绝候选：目标K线上探后回落，需结合局部结构、短线背景和更大市场状态判断是否成立。",
+}
 
 
 def render_plotly_chart(st_module, fig):
@@ -167,6 +171,33 @@ def get_manual_feedback_layout_contract() -> dict:
         "app_path": ACTIVE_REVIEW_APP_PATH,
         "render_entrypoint": "cajas.apps.eurusd_pattern_review_app.main",
         "manual_feedback_heading": "Manual Feedback",
+        "candidate_context_heading": "Current Candidate / 当前候选",
+        "candidate_context_visible": True,
+        "candidate_type_visible": True,
+        "candidate_type_source": "sample.candidate_type",
+        "target_candle_context_visible": True,
+        "candidate_context_field_names": [
+            "sample_id",
+            "candidate_type",
+            "target_candle",
+            "target_index",
+            "standard_version",
+            "candidate_type_explanation_zh",
+        ],
+        "candidate_context_before_overall_review": True,
+        "layer_guide_visible": True,
+        "layer_guide_lines": [
+            "P3: target-near small pattern, roughly the smallest local candle combination.",
+            "M8: short local rhythm/context around the target.",
+            "M24: small swing / local regime context.",
+            "M128: broader background context.",
+            "Local: immediate local structure quality around the target candle; supports or weakens the current candidate but does not replace human_label.",
+            "P3：目标K线附近最小形态。",
+            "M8：短线节奏和附近结构。",
+            "M24：小波段背景。",
+            "M128：更大市场状态背景。",
+            "Local：目标K线周围的局部结构质量，用来判断当前候选是否有局部支撑。",
+        ],
         "overall_review_heading": "Overall Human Review / 总体人工审核",
         "overall_help_text": [
             "Overall fields are the final sample-level human decision.",
@@ -174,6 +205,8 @@ def get_manual_feedback_layout_contract() -> dict:
             "human_label is the final sample-level review.",
             "P3/M8/M24/M128/Local fields are supporting layer feedback only.",
             "Local = local structure detail around the target candle. It helps explain the decision but does not replace human_label.",
+            "human_label 是当前 candidate_type 的最终人工判断。",
+            "Local/P3/M8/M24/M128 是证据层，不是最终结论。",
         ],
         "overall_field_names": list(OVERALL_REVIEW_FIELD_NAMES),
         "detail_group_heading": "Detailed Layer Feedback / 分层辅助反馈",
@@ -189,6 +222,11 @@ def get_manual_feedback_layout_contract() -> dict:
         "market_state_tabbed_app_path": "cajas/apps/eurusd_market_state_inspection_app.py",
         "market_state_tabbed_app_is_active": False,
     }
+
+
+def get_candidate_type_explanation_zh(candidate_type: str) -> str:
+    """Return Chinese explanation for known candidate types, else empty string."""
+    return CANDIDATE_EXPLANATIONS_ZH.get(str(candidate_type), "")
 
 
 def main():
@@ -514,12 +552,40 @@ def main():
         st.caption("Detailed review fields below are supporting context, not a substitute for the final human label.")
         st.caption("`human_label` is the final sample-level human decision; `human_pattern_3_correct_label` is not used here as a substitute.")
 
+        st.markdown("##### Current Candidate / 当前候选")
+        candidate_type = str(sample.get("candidate_type", "unknown") or "unknown")
+        candidate_explanation_zh = get_candidate_type_explanation_zh(candidate_type)
+        target_timestamp = str(chart_diag.get("target_timestamp_used") or sample.get("timestamp") or "")
+        target_index = chart_diag.get("target_index_global")
+        st.caption(f"sample_id: {sample_id}")
+        st.caption(f"candidate_type: {candidate_type}")
+        st.caption(f"target candle: {target_timestamp}")
+        st.caption(f"target_index: {target_index if target_index is not None else 'unknown'}")
+        st.caption("standard_version: eurusd_15m_review_standard_v0")
+        st.caption(f"你正在判断：当前样本是否构成 {candidate_type}。")
+        if candidate_explanation_zh:
+            st.caption(f"{candidate_type} = {candidate_explanation_zh}")
+
+        st.markdown("##### Layer guide / 分层说明")
+        st.caption("P3: target-near small pattern, roughly the smallest local candle combination.")
+        st.caption("M8: short local rhythm/context around the target.")
+        st.caption("M24: small swing / local regime context.")
+        st.caption("M128: broader background context.")
+        st.caption("Local: immediate local structure quality around the target candle; supports or weakens the current candidate but does not replace human_label.")
+        st.caption("P3：目标K线附近最小形态。")
+        st.caption("M8：短线节奏和附近结构。")
+        st.caption("M24：小波段背景。")
+        st.caption("M128：更大市场状态背景。")
+        st.caption("Local：目标K线周围的局部结构质量，用来判断当前候选是否有局部支撑。")
+
         st.markdown("##### Overall Human Review / 总体人工审核")
         st.caption("Fill these overall fields before the more detailed review dimensions.")
         st.caption("Overall fields are the final sample-level human decision.")
         st.caption("Layer tabs below are supporting detail only.")
         st.caption("human_label is the final sample-level review.")
         st.caption("P3/M8/M24/M128/Local fields are supporting layer feedback only.")
+        st.caption("human_label 是当前 candidate_type 的最终人工判断。")
+        st.caption("Local/P3/M8/M24/M128 是证据层，不是最终结论。")
         overall_c1, overall_c2 = st.columns(2)
         with overall_c1:
             human_label = st.selectbox(

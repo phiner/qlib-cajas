@@ -69,6 +69,14 @@ def test_gui_validation_ready_or_watch(mock_clean_view, mock_batch, temp_dir):
     assert report["overall_fields_outside_detail_tabs"] is True
     assert report["local_is_detail_only"] is True
     assert report["pattern_3_is_detail_only"] is True
+    assert report["candidate_context_visible"] is True
+    assert report["candidate_type_visible"] is True
+    assert report["candidate_type_source"] == "sample.candidate_type"
+    assert report["target_candle_context_visible"] is True
+    assert report["layer_guide_visible"] is True
+    assert report["local_layer_explained"] is True
+    assert report["human_label_final_decision_explained"] is True
+    assert report["detail_layers_marked_supporting_only"] is True
     assert report["overall_field_names"] == [
         "human_label",
         "human_confidence",
