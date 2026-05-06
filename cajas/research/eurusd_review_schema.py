@@ -17,6 +17,23 @@ FIELD_HUMAN_RATIONALE_ZH = "human_rationale_zh"
 FIELD_HUMAN_COUNTEREXAMPLE_ZH = "human_counterexample_zh"
 FIELD_HUMAN_UNCERTAINTY_REASON_ZH = "human_uncertainty_reason_zh"
 FIELD_HUMAN_CONTEXT_NOTES_ZH = "human_context_notes_zh"
+FIELD_HUMAN_PATTERN_3_AGREEMENT = "human_pattern_3_agreement"
+FIELD_HUMAN_PATTERN_3_CORRECT_LABEL = "human_pattern_3_correct_label"
+FIELD_HUMAN_PATTERN_3_FEEDBACK_ZH = "human_pattern_3_feedback_zh"
+FIELD_HUMAN_MARKET_8_AGREEMENT = "human_market_8_agreement"
+FIELD_HUMAN_MARKET_8_CORRECT_STATE = "human_market_8_correct_state"
+FIELD_HUMAN_MARKET_8_FEEDBACK_ZH = "human_market_8_feedback_zh"
+FIELD_HUMAN_MARKET_24_AGREEMENT = "human_market_24_agreement"
+FIELD_HUMAN_MARKET_24_CORRECT_STATE = "human_market_24_correct_state"
+FIELD_HUMAN_MARKET_24_FEEDBACK_ZH = "human_market_24_feedback_zh"
+FIELD_HUMAN_MARKET_128_AGREEMENT = "human_market_128_agreement"
+FIELD_HUMAN_MARKET_128_CORRECT_STATE = "human_market_128_correct_state"
+FIELD_HUMAN_MARKET_128_FEEDBACK_ZH = "human_market_128_feedback_zh"
+FIELD_HUMAN_LOCAL_STRUCTURE_AGREEMENT = "human_local_structure_agreement"
+FIELD_HUMAN_LOCAL_STRUCTURE_CORRECT_STATE = "human_local_structure_correct_state"
+FIELD_HUMAN_LOCAL_STRUCTURE_FEEDBACK_ZH = "human_local_structure_feedback_zh"
+FIELD_HUMAN_DEFINITION_ISSUE_ZH = "human_definition_issue_zh"
+FIELD_HUMAN_RULE_ADJUSTMENT_SUGGESTION_ZH = "human_rule_adjustment_suggestion_zh"
 
 FIELD_STRUCTURE_LOCATION = "structure_location"
 FIELD_LOCAL_BEHAVIOR = "local_behavior"
@@ -68,6 +85,23 @@ CANONICAL_REVIEW_FIELDS = [
     FIELD_HUMAN_COUNTEREXAMPLE_ZH,
     FIELD_HUMAN_UNCERTAINTY_REASON_ZH,
     FIELD_HUMAN_CONTEXT_NOTES_ZH,
+    FIELD_HUMAN_PATTERN_3_AGREEMENT,
+    FIELD_HUMAN_PATTERN_3_CORRECT_LABEL,
+    FIELD_HUMAN_PATTERN_3_FEEDBACK_ZH,
+    FIELD_HUMAN_MARKET_8_AGREEMENT,
+    FIELD_HUMAN_MARKET_8_CORRECT_STATE,
+    FIELD_HUMAN_MARKET_8_FEEDBACK_ZH,
+    FIELD_HUMAN_MARKET_24_AGREEMENT,
+    FIELD_HUMAN_MARKET_24_CORRECT_STATE,
+    FIELD_HUMAN_MARKET_24_FEEDBACK_ZH,
+    FIELD_HUMAN_MARKET_128_AGREEMENT,
+    FIELD_HUMAN_MARKET_128_CORRECT_STATE,
+    FIELD_HUMAN_MARKET_128_FEEDBACK_ZH,
+    FIELD_HUMAN_LOCAL_STRUCTURE_AGREEMENT,
+    FIELD_HUMAN_LOCAL_STRUCTURE_CORRECT_STATE,
+    FIELD_HUMAN_LOCAL_STRUCTURE_FEEDBACK_ZH,
+    FIELD_HUMAN_DEFINITION_ISSUE_ZH,
+    FIELD_HUMAN_RULE_ADJUSTMENT_SUGGESTION_ZH,
 ]
 
 ALLOWED_VALUES = {
@@ -225,6 +259,53 @@ ALLOWED_VALUES = {
     ],
     FIELD_LEVEL_QUALITY: ["strong", "medium", "weak", "none", "unclear", "not_reviewed"],
     FIELD_SESSION_CONTEXT: ["asia", "london", "new_york", "overlap", "rollover", "normal", "unclear", "not_reviewed"],
+    FIELD_HUMAN_PATTERN_3_AGREEMENT: ["agree", "disagree", "uncertain", "not_reviewed"],
+    FIELD_HUMAN_PATTERN_3_CORRECT_LABEL: ["rejection", "continuation", "indecision", "noise", "unclear", "not_reviewed"],
+    FIELD_HUMAN_MARKET_8_AGREEMENT: ["agree", "disagree", "uncertain", "not_reviewed"],
+    FIELD_HUMAN_MARKET_8_CORRECT_STATE: [
+        "uptrend",
+        "downtrend",
+        "range",
+        "pullback",
+        "transition",
+        "compression",
+        "expansion",
+        "unclear",
+        "not_reviewed",
+    ],
+    FIELD_HUMAN_MARKET_24_AGREEMENT: ["agree", "disagree", "uncertain", "not_reviewed"],
+    FIELD_HUMAN_MARKET_24_CORRECT_STATE: [
+        "uptrend",
+        "downtrend",
+        "range",
+        "pullback",
+        "transition",
+        "compression",
+        "expansion",
+        "unclear",
+        "not_reviewed",
+    ],
+    FIELD_HUMAN_MARKET_128_AGREEMENT: ["agree", "disagree", "uncertain", "not_reviewed"],
+    FIELD_HUMAN_MARKET_128_CORRECT_STATE: [
+        "uptrend",
+        "downtrend",
+        "range",
+        "pullback",
+        "transition",
+        "compression",
+        "expansion",
+        "unclear",
+        "not_reviewed",
+    ],
+    FIELD_HUMAN_LOCAL_STRUCTURE_AGREEMENT: ["agree", "disagree", "uncertain", "not_reviewed"],
+    FIELD_HUMAN_LOCAL_STRUCTURE_CORRECT_STATE: [
+        "supported",
+        "unsupported",
+        "mixed",
+        "fragile",
+        "unclear",
+        "not_reviewed",
+    ],
 }
 
 LEGACY_ALLOWED_VALUES: dict[str, list[str]] = {}
@@ -255,6 +336,23 @@ DEFAULT_REVIEW_VALUES = {
     FIELD_HUMAN_COUNTEREXAMPLE_ZH: "",
     FIELD_HUMAN_UNCERTAINTY_REASON_ZH: "",
     FIELD_HUMAN_CONTEXT_NOTES_ZH: "",
+    FIELD_HUMAN_PATTERN_3_AGREEMENT: "not_reviewed",
+    FIELD_HUMAN_PATTERN_3_CORRECT_LABEL: "not_reviewed",
+    FIELD_HUMAN_PATTERN_3_FEEDBACK_ZH: "",
+    FIELD_HUMAN_MARKET_8_AGREEMENT: "not_reviewed",
+    FIELD_HUMAN_MARKET_8_CORRECT_STATE: "not_reviewed",
+    FIELD_HUMAN_MARKET_8_FEEDBACK_ZH: "",
+    FIELD_HUMAN_MARKET_24_AGREEMENT: "not_reviewed",
+    FIELD_HUMAN_MARKET_24_CORRECT_STATE: "not_reviewed",
+    FIELD_HUMAN_MARKET_24_FEEDBACK_ZH: "",
+    FIELD_HUMAN_MARKET_128_AGREEMENT: "not_reviewed",
+    FIELD_HUMAN_MARKET_128_CORRECT_STATE: "not_reviewed",
+    FIELD_HUMAN_MARKET_128_FEEDBACK_ZH: "",
+    FIELD_HUMAN_LOCAL_STRUCTURE_AGREEMENT: "not_reviewed",
+    FIELD_HUMAN_LOCAL_STRUCTURE_CORRECT_STATE: "not_reviewed",
+    FIELD_HUMAN_LOCAL_STRUCTURE_FEEDBACK_ZH: "",
+    FIELD_HUMAN_DEFINITION_ISSUE_ZH: "",
+    FIELD_HUMAN_RULE_ADJUSTMENT_SUGGESTION_ZH: "",
 }
 
 

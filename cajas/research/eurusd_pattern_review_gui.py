@@ -25,6 +25,13 @@ OPTIONAL_TEXT_FIELDS = [
     "human_counterexample_zh",
     "human_uncertainty_reason_zh",
     "human_context_notes_zh",
+    "human_pattern_3_feedback_zh",
+    "human_market_8_feedback_zh",
+    "human_market_24_feedback_zh",
+    "human_market_128_feedback_zh",
+    "human_local_structure_feedback_zh",
+    "human_definition_issue_zh",
+    "human_rule_adjustment_suggestion_zh",
 ]
 DEFAULT_REVIEW_VALUES = schema_default_review_values()
 REVIEW_FIELDS = list(DEFAULT_REVIEW_VALUES.keys())

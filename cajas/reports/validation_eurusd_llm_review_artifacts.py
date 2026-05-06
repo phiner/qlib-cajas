@@ -24,6 +24,25 @@ REQUIRED_ZH_FIELDS = [
     "human_uncertainty_reason_zh",
     "human_context_notes_zh",
 ]
+MULTI_LAYER_EVIDENCE_FIELDS = [
+    "human_pattern_3_agreement",
+    "human_pattern_3_correct_label",
+    "human_pattern_3_feedback_zh",
+    "human_market_8_agreement",
+    "human_market_8_correct_state",
+    "human_market_8_feedback_zh",
+    "human_market_24_agreement",
+    "human_market_24_correct_state",
+    "human_market_24_feedback_zh",
+    "human_market_128_agreement",
+    "human_market_128_correct_state",
+    "human_market_128_feedback_zh",
+    "human_local_structure_agreement",
+    "human_local_structure_correct_state",
+    "human_local_structure_feedback_zh",
+    "human_definition_issue_zh",
+    "human_rule_adjustment_suggestion_zh",
+]
 FORBIDDEN_OUTPUTS = [
     "trade_signal",
     "entry",
@@ -130,6 +149,10 @@ def _build_sample_row(sample: pd.Series, clean_view: pd.DataFrame, review: dict[
             "human_uncertainty_reason_zh": _safe_text(review.get("human_uncertainty_reason_zh")),
             "human_context_notes_zh": _safe_text(review.get("human_context_notes_zh")),
         },
+        "multi_layer_evidence": {
+            key: _safe_text(review.get(key), "not_reviewed" if not key.endswith("_zh") else "")
+            for key in MULTI_LAYER_EVIDENCE_FIELDS
+        },
         "future_llm_boundary": {
             "role": "second_reviewer",
             "allowed_tasks": [
@@ -172,7 +195,7 @@ def build_llm_review_artifacts_report(
     zh_presence_counts = {field: 0 for field in REQUIRED_ZH_FIELDS}
     required_row_keys = [
         "artifact_version", "sample_id", "symbol", "timeframe", "candidate_type", "standard_version",
-        "language_policy", "target_candle", "context_window", "deterministic_diagnostics", "human_review", "future_llm_boundary",
+        "language_policy", "target_candle", "context_window", "deterministic_diagnostics", "human_review", "multi_layer_evidence", "future_llm_boundary",
     ]
     missing_required_field_count = 0
 

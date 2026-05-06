@@ -100,6 +100,11 @@ def test_watch_flags_for_missing_rationale_and_uncertainty_and_high_confidence(t
             "human_counterexample_zh": ["", "", ""],
             "human_uncertainty_reason_zh": ["", "", ""],
             "human_context_notes_zh": ["", "", ""],
+            "human_pattern_3_feedback_zh": ["", "已有P3", ""],
+            "human_market_8_feedback_zh": ["", "", ""],
+            "human_market_24_feedback_zh": ["", "", "已有M24"],
+            "human_market_128_feedback_zh": ["", "", ""],
+            "human_local_structure_feedback_zh": ["", "", ""],
             "standard_version": ["eurusd_15m_review_standard_v0", "", "eurusd_15m_review_standard_v0"],
         }
     ).to_csv(completed, index=False)
@@ -110,6 +115,12 @@ def test_watch_flags_for_missing_rationale_and_uncertainty_and_high_confidence(t
     assert report["uncertain_without_uncertainty_reason_count"] == 1
     assert report["high_confidence_without_rationale_count"] == 2
     assert report["missing_standard_version_count"] == 1
+    assert report["overall_label_coverage"] == report["label_coverage"]
+    assert report["overall_rationale_coverage"] == report["rationale_coverage"]
+    assert report["p3_feedback_coverage"] == (1 / 3)
+    assert report["m24_feedback_coverage"] == (1 / 3)
+    assert report["samples_with_overall_but_no_layer_evidence"] == 1
+    assert report["samples_with_layer_evidence_but_no_overall_label"] == 0
 
 
 def test_ready_when_quality_and_standard_version_present(tmp_path: Path) -> None:
@@ -129,6 +140,11 @@ def test_ready_when_quality_and_standard_version_present(tmp_path: Path) -> None
             "human_counterexample_zh": ["反例1", ""],
             "human_uncertainty_reason_zh": ["", "上下文不足"],
             "human_context_notes_zh": ["备注1", "备注2"],
+            "human_pattern_3_feedback_zh": ["P3理由1", "P3理由2"],
+            "human_market_8_feedback_zh": ["M8理由1", "M8理由2"],
+            "human_market_24_feedback_zh": ["M24理由1", "M24理由2"],
+            "human_market_128_feedback_zh": ["M128理由1", "M128理由2"],
+            "human_local_structure_feedback_zh": ["Local理由1", "Local理由2"],
             "standard_version": ["eurusd_15m_review_standard_v0", "eurusd_15m_review_standard_v0"],
         }
     ).to_csv(completed, index=False)
@@ -137,6 +153,11 @@ def test_ready_when_quality_and_standard_version_present(tmp_path: Path) -> None
     assert report["report_status"] == "human_review_quality_ready"
     assert report["reviewed_samples"] == 2
     assert report["missing_standard_version_count"] == 0
+    assert report["p3_feedback_coverage"] == 1.0
+    assert report["m8_feedback_coverage"] == 1.0
+    assert report["m24_feedback_coverage"] == 1.0
+    assert report["m128_feedback_coverage"] == 1.0
+    assert report["local_feedback_coverage"] == 1.0
 
 
 def test_non_english_schema_keys_block(tmp_path: Path) -> None:

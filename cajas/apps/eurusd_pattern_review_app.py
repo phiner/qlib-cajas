@@ -43,23 +43,42 @@ OVERALL_REVIEW_FIELD_NAMES = [
     "human_uncertainty_reason_zh",
     "human_context_notes_zh",
 ]
-DETAIL_SECTION_NAMES = [
-    "背景与走势 Context",
-    "结构位置 Structure",
-    "局部行为与确认 Behavior / Confirmation",
-    "Sample-Level Review Summary",
-    "候选归类 Candidate Family",
+MULTI_LAYER_SECTION_NAMES = [
+    "P3",
+    "M8",
+    "M24",
+    "M128",
+    "Local",
     "Notes",
 ]
-PATTERN_3_DETAIL_FIELDS = [
+P3_LAYER_FIELDS = [
     "human_pattern_3_agreement",
     "human_pattern_3_correct_label",
     "human_pattern_3_feedback_zh",
 ]
-LOCAL_DETAIL_FIELDS = [
+M8_LAYER_FIELDS = [
+    "human_market_8_agreement",
+    "human_market_8_correct_state",
+    "human_market_8_feedback_zh",
+]
+M24_LAYER_FIELDS = [
+    "human_market_24_agreement",
+    "human_market_24_correct_state",
+    "human_market_24_feedback_zh",
+]
+M128_LAYER_FIELDS = [
+    "human_market_128_agreement",
+    "human_market_128_correct_state",
+    "human_market_128_feedback_zh",
+]
+LOCAL_LAYER_FIELDS = [
     "human_local_structure_agreement",
     "human_local_structure_correct_state",
     "human_local_structure_feedback_zh",
+]
+NOTES_LAYER_FIELDS = [
+    "human_definition_issue_zh",
+    "human_rule_adjustment_suggestion_zh",
 ]
 CANDIDATE_EXPLANATIONS_ZH = {
     "lower_wick_rejection_candidate": "下影线拒绝候选：目标K线出现下探后收回，需结合局部结构、短线背景和更大市场状态判断是否成立。",
@@ -201,7 +220,7 @@ def get_manual_feedback_layout_contract() -> dict:
         "overall_review_heading": "Overall Human Review / 总体人工审核",
         "overall_help_text": [
             "Overall fields are the final sample-level human decision.",
-            "Layer tabs below are supporting detail only.",
+            "Multi-layer evidence below is supporting detail only.",
             "human_label is the final sample-level review.",
             "P3/M8/M24/M128/Local fields are supporting layer feedback only.",
             "Local = local structure detail around the target candle. It helps explain the decision but does not replace human_label.",
@@ -209,18 +228,36 @@ def get_manual_feedback_layout_contract() -> dict:
             "Local/P3/M8/M24/M128 是证据层，不是最终结论。",
         ],
         "overall_field_names": list(OVERALL_REVIEW_FIELD_NAMES),
-        "detail_group_heading": "Detailed Layer Feedback / 分层辅助反馈",
-        "detail_ui_kind": "expanders",
-        "detail_tab_names": list(DETAIL_SECTION_NAMES),
+        "multi_layer_evidence_heading": "Multi-Layer Evidence Review / 多尺度证据审核",
+        "detail_group_heading": "Multi-Layer Evidence Review / 多尺度证据审核",
+        "detail_ui_kind": "tabs",
+        "detail_tab_names": list(MULTI_LAYER_SECTION_NAMES),
+        "multi_layer_evidence_section_visible": True,
+        "p3_layer_visible": True,
+        "m8_layer_visible": True,
+        "m24_layer_visible": True,
+        "m128_layer_visible": True,
+        "local_layer_visible": True,
         "overall_review_section_visible": True,
         "overall_review_before_detail_tabs": True,
         "overall_fields_outside_detail_tabs": True,
+        "overall_fields_before_layer_fields": True,
         "pattern_3_is_detail_only": True,
         "local_is_detail_only": True,
-        "pattern_3_detail_fields": list(PATTERN_3_DETAIL_FIELDS),
-        "local_detail_fields": list(LOCAL_DETAIL_FIELDS),
+        "pattern_3_detail_fields": list(P3_LAYER_FIELDS),
+        "m8_detail_fields": list(M8_LAYER_FIELDS),
+        "m24_detail_fields": list(M24_LAYER_FIELDS),
+        "m128_detail_fields": list(M128_LAYER_FIELDS),
+        "local_detail_fields": list(LOCAL_LAYER_FIELDS),
+        "notes_detail_fields": list(NOTES_LAYER_FIELDS),
+        "layer_fields_supporting_evidence_explained": True,
+        "canonical_save_includes_overall_fields": True,
+        "canonical_save_includes_layer_fields": True,
+        "jsonl_audit_includes_standard_version": True,
+        "trial_approval_status": "not_approved",
         "market_state_tabbed_app_path": "cajas/apps/eurusd_market_state_inspection_app.py",
         "market_state_tabbed_app_is_active": False,
+        "unified_review_gui_enabled": True,
     }
 
 
@@ -430,6 +467,23 @@ def main():
         "human_counterexample_zh": "human_counterexample_zh",
         "human_uncertainty_reason_zh": "human_uncertainty_reason_zh",
         "human_context_notes_zh": "human_context_notes_zh",
+        "human_pattern_3_agreement": "human_pattern_3_agreement",
+        "human_pattern_3_correct_label": "human_pattern_3_correct_label",
+        "human_pattern_3_feedback_zh": "human_pattern_3_feedback_zh",
+        "human_market_8_agreement": "human_market_8_agreement",
+        "human_market_8_correct_state": "human_market_8_correct_state",
+        "human_market_8_feedback_zh": "human_market_8_feedback_zh",
+        "human_market_24_agreement": "human_market_24_agreement",
+        "human_market_24_correct_state": "human_market_24_correct_state",
+        "human_market_24_feedback_zh": "human_market_24_feedback_zh",
+        "human_market_128_agreement": "human_market_128_agreement",
+        "human_market_128_correct_state": "human_market_128_correct_state",
+        "human_market_128_feedback_zh": "human_market_128_feedback_zh",
+        "human_local_structure_agreement": "human_local_structure_agreement",
+        "human_local_structure_correct_state": "human_local_structure_correct_state",
+        "human_local_structure_feedback_zh": "human_local_structure_feedback_zh",
+        "human_definition_issue_zh": "human_definition_issue_zh",
+        "human_rule_adjustment_suggestion_zh": "human_rule_adjustment_suggestion_zh",
     }
 
     if st.session_state.get("current_sample_id") != sample_id:
@@ -449,11 +503,31 @@ def main():
             "human_counterexample_zh",
             "human_uncertainty_reason_zh",
             "human_context_notes_zh",
+            "human_pattern_3_feedback_zh",
+            "human_market_8_feedback_zh",
+            "human_market_24_feedback_zh",
+            "human_market_128_feedback_zh",
+            "human_local_structure_feedback_zh",
+            "human_definition_issue_zh",
+            "human_rule_adjustment_suggestion_zh",
         ]:
             st.session_state[text_field] = sanitize_optional_text_value(st.session_state.get(text_field, ""))
 
     for field, key in review_key_map.items():
-        if field in {"review_notes", "human_rationale_zh", "human_counterexample_zh", "human_uncertainty_reason_zh", "human_context_notes_zh"}:
+        if field in {
+            "review_notes",
+            "human_rationale_zh",
+            "human_counterexample_zh",
+            "human_uncertainty_reason_zh",
+            "human_context_notes_zh",
+            "human_pattern_3_feedback_zh",
+            "human_market_8_feedback_zh",
+            "human_market_24_feedback_zh",
+            "human_market_128_feedback_zh",
+            "human_local_structure_feedback_zh",
+            "human_definition_issue_zh",
+            "human_rule_adjustment_suggestion_zh",
+        }:
             continue
         options = allowed.get(field)
         if isinstance(options, list) and options:
@@ -583,7 +657,7 @@ def main():
         st.markdown("##### Overall Human Review / 总体人工审核")
         st.caption("Fill these overall fields before the more detailed review dimensions.")
         st.caption("Overall fields are the final sample-level human decision.")
-        st.caption("Layer tabs below are supporting detail only.")
+        st.caption("Multi-layer evidence below is supporting detail only.")
         st.caption("human_label is the final sample-level review.")
         st.caption("P3/M8/M24/M128/Local fields are supporting layer feedback only.")
         st.caption("human_label 是当前 candidate_type 的最终人工判断。")
@@ -623,14 +697,115 @@ def main():
             key="human_context_notes_zh",
         )
 
-        st.markdown("##### Detailed Layer Feedback / 分层辅助反馈")
+        st.markdown("##### Multi-Layer Evidence Review / 多尺度证据审核")
         st.caption("Use these fields as supporting review context after the overall human decision.")
-        st.caption("Local = local structure detail around the target candle. It helps explain the decision but does not replace human_label.")
+        st.caption("P3：目标K线附近最小形态。")
+        st.caption("M8：短线节奏和附近结构。")
+        st.caption("M24：小波段背景。")
+        st.caption("M128：更大市场状态背景。")
+        st.caption("Local：目标K线周围的局部结构质量，用来判断当前候选是否有局部支撑。")
         st.caption("冲高回落/触底回升/急涨后整理/急跌后整理应填 recent_move_context，不要塞进 market_context。")
         st.caption("wick/doji 必须结合 structure_location 和 level_quality 判断。")
         st.caption("possible_false_breakout 必须看 level_quality、reclaim 和 follow-through。")
+        layer_tabs = st.tabs(MULTI_LAYER_SECTION_NAMES)
+        with layer_tabs[0]:
+            human_pattern_3_agreement = st.selectbox(
+                "human_pattern_3_agreement",
+                allowed.get("human_pattern_3_agreement", ["not_reviewed"]),
+                key="human_pattern_3_agreement",
+            )
+            human_pattern_3_correct_label = st.selectbox(
+                "human_pattern_3_correct_label",
+                allowed.get("human_pattern_3_correct_label", ["not_reviewed"]),
+                key="human_pattern_3_correct_label",
+            )
+            human_pattern_3_feedback_zh = st.text_area(
+                "human_pattern_3_feedback_zh",
+                placeholder="填写 P3 最小形态反馈...",
+                key="human_pattern_3_feedback_zh",
+            )
+        with layer_tabs[1]:
+            human_market_8_agreement = st.selectbox(
+                "human_market_8_agreement",
+                allowed.get("human_market_8_agreement", ["not_reviewed"]),
+                key="human_market_8_agreement",
+            )
+            human_market_8_correct_state = st.selectbox(
+                "human_market_8_correct_state",
+                allowed.get("human_market_8_correct_state", ["not_reviewed"]),
+                key="human_market_8_correct_state",
+            )
+            human_market_8_feedback_zh = st.text_area(
+                "human_market_8_feedback_zh",
+                placeholder="填写 M8 短线节奏反馈...",
+                key="human_market_8_feedback_zh",
+            )
+        with layer_tabs[2]:
+            human_market_24_agreement = st.selectbox(
+                "human_market_24_agreement",
+                allowed.get("human_market_24_agreement", ["not_reviewed"]),
+                key="human_market_24_agreement",
+            )
+            human_market_24_correct_state = st.selectbox(
+                "human_market_24_correct_state",
+                allowed.get("human_market_24_correct_state", ["not_reviewed"]),
+                key="human_market_24_correct_state",
+            )
+            human_market_24_feedback_zh = st.text_area(
+                "human_market_24_feedback_zh",
+                placeholder="填写 M24 小波段背景反馈...",
+                key="human_market_24_feedback_zh",
+            )
+        with layer_tabs[3]:
+            human_market_128_agreement = st.selectbox(
+                "human_market_128_agreement",
+                allowed.get("human_market_128_agreement", ["not_reviewed"]),
+                key="human_market_128_agreement",
+            )
+            human_market_128_correct_state = st.selectbox(
+                "human_market_128_correct_state",
+                allowed.get("human_market_128_correct_state", ["not_reviewed"]),
+                key="human_market_128_correct_state",
+            )
+            human_market_128_feedback_zh = st.text_area(
+                "human_market_128_feedback_zh",
+                placeholder="填写 M128 更大背景反馈...",
+                key="human_market_128_feedback_zh",
+            )
+        with layer_tabs[4]:
+            human_local_structure_agreement = st.selectbox(
+                "human_local_structure_agreement",
+                allowed.get("human_local_structure_agreement", ["not_reviewed"]),
+                key="human_local_structure_agreement",
+            )
+            human_local_structure_correct_state = st.selectbox(
+                "human_local_structure_correct_state",
+                allowed.get("human_local_structure_correct_state", ["not_reviewed"]),
+                key="human_local_structure_correct_state",
+            )
+            human_local_structure_feedback_zh = st.text_area(
+                "human_local_structure_feedback_zh",
+                placeholder="填写 Local 局部结构反馈...",
+                key="human_local_structure_feedback_zh",
+            )
+        with layer_tabs[5]:
+            review_notes = st.text_area(
+                "review_notes",
+                placeholder="Optional notes...",
+                key="review_notes",
+            )
+            human_definition_issue_zh = st.text_area(
+                "human_definition_issue_zh",
+                placeholder="填写标准定义问题...",
+                key="human_definition_issue_zh",
+            )
+            human_rule_adjustment_suggestion_zh = st.text_area(
+                "human_rule_adjustment_suggestion_zh",
+                placeholder="填写规则调整建议...",
+                key="human_rule_adjustment_suggestion_zh",
+            )
 
-        with st.expander("背景与走势 Context", expanded=True):
+        with st.expander("Legacy Context Details", expanded=False):
             c1, c2, c3 = st.columns(3)
             with c1:
                 market_context = st.selectbox("market_context", allowed.get("market_context", ["unclear"]), key="review_market_context")
@@ -641,47 +816,25 @@ def main():
             with c3:
                 recent_move_context = st.selectbox("recent_move_context", allowed.get("recent_move_context", ["not_reviewed"]), key="review_recent_move_context")
                 session_context = st.selectbox("session_context", allowed.get("session_context", ["not_reviewed"]), key="review_session_context")
-
-        with st.expander("结构位置 Structure", expanded=True):
-            c1, c2 = st.columns(2)
-            with c1:
+            c4, c5 = st.columns(2)
+            with c4:
                 structure_location = st.selectbox("structure_location", allowed.get("structure_location", ["not_reviewed"]), key="review_structure_location")
-            with c2:
-                level_quality = st.selectbox("level_quality", allowed.get("level_quality", ["not_reviewed"]), key="review_level_quality")
-
-        with st.expander("局部行为与确认 Behavior / Confirmation", expanded=True):
-            c1, c2 = st.columns(2)
-            with c1:
                 local_behavior = st.selectbox("local_behavior", allowed.get("local_behavior", ["not_reviewed"]), key="review_local_behavior")
-            with c2:
-                confirmation_result = st.selectbox("confirmation_result", allowed.get("confirmation_result", ["not_reviewed"]), key="review_confirmation_result")
-
-        with st.expander("Sample-Level Review Summary", expanded=True):
-            c1, c2 = st.columns(2)
-            with c1:
                 pattern_quality = st.selectbox("pattern_quality", allowed.get("pattern_quality", ["not_reviewed"]), key="pattern_quality")
-            with c2:
-                false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
-
-        with st.expander("候选归类 Candidate Family", expanded=False):
-            c1, c2 = st.columns(2)
-            with c1:
                 primary_candidate_family = st.selectbox(
                     "primary_candidate_family",
                     allowed.get("primary_candidate_family", ["not_reviewed"]),
                     key="primary_candidate_family",
                 )
-            with c2:
+            with c5:
+                level_quality = st.selectbox("level_quality", allowed.get("level_quality", ["not_reviewed"]), key="review_level_quality")
+                confirmation_result = st.selectbox("confirmation_result", allowed.get("confirmation_result", ["not_reviewed"]), key="review_confirmation_result")
+                false_positive_reason = st.selectbox("false_positive_reason", allowed.get("false_positive_reason", ["not_reviewed"]), key="false_positive_reason")
                 secondary_candidate_family = st.selectbox(
                     "secondary_candidate_family",
                     allowed.get("secondary_candidate_family", ["not_reviewed"]),
                     key="secondary_candidate_family",
                 )
-        review_notes = st.text_area(
-            "review_notes",
-            placeholder="Optional notes...",
-            key="review_notes",
-        )
 
         st.markdown("#### Bad Sample Workflow")
         reject_reason = st.selectbox("Reject Reason", REJECT_REASON_OPTIONS, key="reject_reason")
@@ -713,6 +866,23 @@ def main():
             "human_counterexample_zh": human_counterexample_zh,
             "human_uncertainty_reason_zh": human_uncertainty_reason_zh,
             "human_context_notes_zh": human_context_notes_zh,
+            "human_pattern_3_agreement": human_pattern_3_agreement,
+            "human_pattern_3_correct_label": human_pattern_3_correct_label,
+            "human_pattern_3_feedback_zh": human_pattern_3_feedback_zh,
+            "human_market_8_agreement": human_market_8_agreement,
+            "human_market_8_correct_state": human_market_8_correct_state,
+            "human_market_8_feedback_zh": human_market_8_feedback_zh,
+            "human_market_24_agreement": human_market_24_agreement,
+            "human_market_24_correct_state": human_market_24_correct_state,
+            "human_market_24_feedback_zh": human_market_24_feedback_zh,
+            "human_market_128_agreement": human_market_128_agreement,
+            "human_market_128_correct_state": human_market_128_correct_state,
+            "human_market_128_feedback_zh": human_market_128_feedback_zh,
+            "human_local_structure_agreement": human_local_structure_agreement,
+            "human_local_structure_correct_state": human_local_structure_correct_state,
+            "human_local_structure_feedback_zh": human_local_structure_feedback_zh,
+            "human_definition_issue_zh": human_definition_issue_zh,
+            "human_rule_adjustment_suggestion_zh": human_rule_adjustment_suggestion_zh,
         }
 
     def persist_review(action_type: str, advance_to_next: bool) -> None:

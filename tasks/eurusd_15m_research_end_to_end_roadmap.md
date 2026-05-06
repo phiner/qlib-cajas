@@ -829,6 +829,12 @@ tmp/validation-eurusd-research-readiness.md
 ./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
 ```
 
+Recommended launcher:
+
+```bash
+./scripts/run_eurusd_review_gui.sh
+```
+
 ### 16.3 Review workflow
 
 1. Open the local GUI.
@@ -840,7 +846,7 @@ tmp/validation-eurusd-research-readiness.md
 3. Select a sample.
 4. Inspect EURUSD 15m candlestick context around the sample timestamp.
 5. Read candidate type, confidence score, review priority, reason codes, and supporting metrics.
-6. Fill the human review fields.
+6. Fill the overall human review fields and the unified P3/M8/M24/M128/Local evidence fields in the same GUI session.
 7. Save.
 8. Continue through the batch.
 9. When enough rows are complete, run completed-batch intake/merge.

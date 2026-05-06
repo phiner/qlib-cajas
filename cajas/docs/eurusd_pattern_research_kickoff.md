@@ -155,11 +155,11 @@ A Streamlit-based local GUI app provides an ergonomic interface for pattern revi
 ./scripts/run_eurusd_review_gui.sh
 ```
 
-Use Pattern Review GUI for final human sample review.
-Use Market-State Inspection GUI only for layer/state inspection unless explicitly stated.
-human_label belongs to final sample-level review.
+Use `./scripts/run_eurusd_review_gui.sh` as the main unified review workflow.
+The unified Pattern Review GUI now includes candidate context, overall final review, and P3/M8/M24/M128/Local evidence review in one save path.
+Use Market-State Inspection GUI only as an auxiliary inspection surface when explicitly needed.
 `human_label` belongs to final sample-level review.
-P3/M8/M24/M128/Local are evidence layers.
+P3/M8/M24/M128/Local are evidence layers saved alongside the final review.
 
 Fresh-start reset command (explicit/manual only):
 ```bash
@@ -192,6 +192,7 @@ Optional local GUI dependencies (manual install only):
 - Form-based label entry
 - Overall Human Review section appears before detailed review dimensions
 - Overall fields are the final sample-level decision: `human_label`, `human_confidence`, `human_rationale_zh`, `human_counterexample_zh`, `human_uncertainty_reason_zh`, `human_context_notes_zh`
+- Multi-Layer Evidence Review adds P3/M8/M24/M128/Local/Notes fields in the same session and persists them through the same CSV/JSONL path
 - Detailed review dimensions remain supporting context and are not a substitute for the overall final label
 - Automatic save to completed CSV
 - Resume progress from existing completed file

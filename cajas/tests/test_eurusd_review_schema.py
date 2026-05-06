@@ -85,6 +85,13 @@ def test_canonical_review_fields_list_is_five_layer_only() -> None:
     assert "human_counterexample_zh" in CANONICAL_REVIEW_FIELDS
     assert "human_uncertainty_reason_zh" in CANONICAL_REVIEW_FIELDS
     assert "human_context_notes_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_pattern_3_feedback_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_market_8_feedback_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_market_24_feedback_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_market_128_feedback_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_local_structure_feedback_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_definition_issue_zh" in CANONICAL_REVIEW_FIELDS
+    assert "human_rule_adjustment_suggestion_zh" in CANONICAL_REVIEW_FIELDS
     assert "review_confidence_level" not in CANONICAL_REVIEW_FIELDS
     for field in ["direction_context", "review_status", "structure_quality", "follow_through_quality", "pattern_label"]:
         assert field not in CANONICAL_REVIEW_FIELDS

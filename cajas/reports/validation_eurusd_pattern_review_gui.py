@@ -196,8 +196,8 @@ def build_gui_validation_report(
         for token in [
             "##### Overall Human Review / 总体人工审核",
             "Overall fields are the final sample-level human decision.",
-            "Layer tabs below are supporting detail only.",
-            "##### Detailed Layer Feedback / 分层辅助反馈",
+            "Multi-layer evidence below is supporting detail only.",
+            "##### Multi-Layer Evidence Review / 多尺度证据审核",
         ]
     )
     active_render_path_checked = bool(layout_contract and layout_contract.get("active_render_path_checked") is True)
@@ -206,6 +206,19 @@ def build_gui_validation_report(
     overall_fields_outside_detail_tabs = bool(layout_contract and layout_contract.get("overall_fields_outside_detail_tabs") is True)
     overall_field_names = list((layout_contract or {}).get("overall_field_names", []))
     detail_tab_names = list((layout_contract or {}).get("detail_tab_names", []))
+    unified_review_gui_enabled = bool(layout_contract and layout_contract.get("unified_review_gui_enabled") is True)
+    multi_layer_evidence_section_visible = bool(layout_contract and layout_contract.get("multi_layer_evidence_section_visible") is True)
+    p3_layer_visible = bool(layout_contract and layout_contract.get("p3_layer_visible") is True)
+    m8_layer_visible = bool(layout_contract and layout_contract.get("m8_layer_visible") is True)
+    m24_layer_visible = bool(layout_contract and layout_contract.get("m24_layer_visible") is True)
+    m128_layer_visible = bool(layout_contract and layout_contract.get("m128_layer_visible") is True)
+    local_layer_visible = bool(layout_contract and layout_contract.get("local_layer_visible") is True)
+    overall_fields_before_layer_fields = bool(layout_contract and layout_contract.get("overall_fields_before_layer_fields") is True)
+    layer_fields_supporting_evidence_explained = bool(layout_contract and layout_contract.get("layer_fields_supporting_evidence_explained") is True)
+    canonical_save_includes_overall_fields = bool(layout_contract and layout_contract.get("canonical_save_includes_overall_fields") is True)
+    canonical_save_includes_layer_fields = bool(layout_contract and layout_contract.get("canonical_save_includes_layer_fields") is True)
+    jsonl_audit_includes_standard_version = bool(layout_contract and layout_contract.get("jsonl_audit_includes_standard_version") is True)
+    trial_approval_status = str((layout_contract or {}).get("trial_approval_status", "not_approved"))
     local_is_detail_only = bool(layout_contract and layout_contract.get("local_is_detail_only") is True)
     pattern_3_is_detail_only = bool(layout_contract and layout_contract.get("pattern_3_is_detail_only") is True)
     launcher_targets_active_app = bool(
@@ -239,7 +252,7 @@ def build_gui_validation_report(
         if not plotly_available:
             missing_deps.append("plotly")
     else:
-        status = "ready"
+        status = "unified_review_gui_ready"
         missing_deps = []
     
     return {
@@ -269,9 +282,17 @@ def build_gui_validation_report(
         "overall_review_section_present": overall_review_section_present,
         "active_render_path_checked": active_render_path_checked,
         "launcher_targets_active_app": launcher_targets_active_app,
+        "unified_review_gui_enabled": unified_review_gui_enabled,
         "overall_review_section_visible": overall_review_section_visible,
+        "multi_layer_evidence_section_visible": multi_layer_evidence_section_visible,
+        "p3_layer_visible": p3_layer_visible,
+        "m8_layer_visible": m8_layer_visible,
+        "m24_layer_visible": m24_layer_visible,
+        "m128_layer_visible": m128_layer_visible,
+        "local_layer_visible": local_layer_visible,
         "overall_review_before_detail_tabs": overall_review_before_detail_tabs,
         "overall_fields_outside_detail_tabs": overall_fields_outside_detail_tabs,
+        "overall_fields_before_layer_fields": overall_fields_before_layer_fields,
         "overall_field_names": overall_field_names,
         "detail_tab_names": detail_tab_names,
         "local_is_detail_only": local_is_detail_only,
@@ -283,9 +304,14 @@ def build_gui_validation_report(
         "layer_guide_visible": layer_guide_visible,
         "local_layer_explained": local_layer_explained,
         "human_label_final_decision_explained": human_label_final_decision_explained,
+        "layer_fields_supporting_evidence_explained": layer_fields_supporting_evidence_explained,
+        "canonical_save_includes_overall_fields": canonical_save_includes_overall_fields,
+        "canonical_save_includes_layer_fields": canonical_save_includes_layer_fields,
+        "jsonl_audit_includes_standard_version": jsonl_audit_includes_standard_version,
         "detail_layers_marked_supporting_only": detail_layers_marked_supporting_only,
+        "trial_approval_status": trial_approval_status,
         "layout_contract": layout_contract or {},
-        "recommendation": "run_local_review_app" if status == "ready" else "install_gui_dependencies"
+        "recommendation": "run_local_review_app" if status == "unified_review_gui_ready" else "install_gui_dependencies"
     }
 
 

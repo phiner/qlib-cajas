@@ -23,6 +23,13 @@ REQUIRED_COMPLETED_ENGLISH_KEYS = [
     "human_uncertainty_reason_zh",
     "human_context_notes_zh",
 ]
+LAYER_EVIDENCE_FIELDS = {
+    "p3_feedback_coverage": "human_pattern_3_feedback_zh",
+    "m8_feedback_coverage": "human_market_8_feedback_zh",
+    "m24_feedback_coverage": "human_market_24_feedback_zh",
+    "m128_feedback_coverage": "human_market_128_feedback_zh",
+    "local_feedback_coverage": "human_local_structure_feedback_zh",
+}
 LIVE_LLM_MARKERS = ["openai", "anthropic", "gemini", "cohere", "api_key", "responses.create"]
 
 
@@ -33,7 +40,8 @@ def _as_text(series: pd.Series) -> pd.Series:
 def _non_empty_count(df: pd.DataFrame, field: str) -> int:
     if field not in df.columns:
         return 0
-    return int((_as_text(df[field]) != "").sum())
+    text = _as_text(df[field])
+    return int(((text != "") & (text != "not_reviewed")).sum())
 
 
 def _is_reviewed(df: pd.DataFrame) -> pd.Series:
@@ -174,6 +182,7 @@ def build_human_review_quality_report(
     counterexample_count = _non_empty_count(reviewed, "human_counterexample_zh")
     uncertainty_reason_count = _non_empty_count(reviewed, "human_uncertainty_reason_zh")
     context_notes_count = _non_empty_count(reviewed, "human_context_notes_zh")
+    layer_counts = {metric: _non_empty_count(reviewed, field) for metric, field in LAYER_EVIDENCE_FIELDS.items()}
 
     label_no_rationale = 0
     uncertain_missing_reason = 0
@@ -192,6 +201,19 @@ def build_human_review_quality_report(
         missing_standard_version_count = int((_as_text(reviewed["standard_version"]) == "").sum())
     else:
         missing_standard_version_count = reviewed_samples
+
+    overall_label_present = _as_text(reviewed.get("human_label", pd.Series([""] * len(reviewed), index=reviewed.index))).isin(
+        ["valid_pattern", "weak_pattern", "false_positive", "not_enough_context", "unclear"]
+    )
+    overall_rationale_present = _as_text(
+        reviewed.get("human_rationale_zh", pd.Series([""] * len(reviewed), index=reviewed.index))
+    ) != ""
+    any_layer_evidence_present = pd.Series([False] * len(reviewed), index=reviewed.index)
+    for field in LAYER_EVIDENCE_FIELDS.values():
+        if field in reviewed.columns:
+            any_layer_evidence_present = any_layer_evidence_present | (_as_text(reviewed[field]) != "")
+    samples_with_overall_but_no_layer_evidence = int((overall_label_present & (~any_layer_evidence_present)).sum())
+    samples_with_layer_evidence_but_no_overall_label = int((any_layer_evidence_present & (~overall_label_present)).sum())
 
     report_status = "human_review_quality_ready"
     reasons: list[str] = []
@@ -222,11 +244,16 @@ def build_human_review_quality_report(
         "total_samples": total_samples,
         "reviewed_samples": reviewed_samples,
         "label_coverage": _coverage(human_label_count, reviewed_samples),
+        "overall_label_coverage": _coverage(human_label_count, reviewed_samples),
         "confidence_coverage": _coverage(human_confidence_count, reviewed_samples),
         "rationale_coverage": _coverage(rationale_count, reviewed_samples),
+        "overall_rationale_coverage": _coverage(rationale_count, reviewed_samples),
         "counterexample_coverage": _coverage(counterexample_count, reviewed_samples),
         "uncertainty_reason_coverage": _coverage(uncertainty_reason_count, reviewed_samples),
         "context_notes_coverage": _coverage(context_notes_count, reviewed_samples),
+        **{metric: _coverage(count, reviewed_samples) for metric, count in layer_counts.items()},
+        "samples_with_overall_but_no_layer_evidence": samples_with_overall_but_no_layer_evidence,
+        "samples_with_layer_evidence_but_no_overall_label": samples_with_layer_evidence_but_no_overall_label,
         "label_without_rationale_count": label_no_rationale,
         "uncertain_without_uncertainty_reason_count": uncertain_missing_reason,
         "high_confidence_without_rationale_count": high_confidence_empty_rationale,

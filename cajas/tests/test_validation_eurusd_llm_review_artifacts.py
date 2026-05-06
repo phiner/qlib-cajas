@@ -48,6 +48,11 @@ def _completed(path: Path) -> None:
             "human_counterexample_zh": ["若无结构支撑则无效"],
             "human_uncertainty_reason_zh": [""],
             "human_context_notes_zh": ["伦敦时段波动增强"],
+            "human_pattern_3_feedback_zh": ["P3 形态支持"],
+            "human_market_8_feedback_zh": ["M8 节奏支持"],
+            "human_market_24_feedback_zh": ["M24 小波段支持"],
+            "human_market_128_feedback_zh": ["M128 大背景中性偏支持"],
+            "human_local_structure_feedback_zh": ["Local 结构支撑明确"],
         }
     )
     df.to_csv(path, index=False)
@@ -78,6 +83,8 @@ def test_llm_artifacts_ready_and_review_merge(tmp_path: Path) -> None:
     assert row["language_policy"]["semantic_language"] == "zh"
     assert "trade_signal" in row["future_llm_boundary"]["forbidden_outputs"]
     assert row["human_review"]["human_rationale_zh"] == "下影线拒绝明显"
+    assert row["multi_layer_evidence"]["human_pattern_3_feedback_zh"] == "P3 形态支持"
+    assert row["multi_layer_evidence"]["human_local_structure_feedback_zh"] == "Local 结构支撑明确"
 
 
 def test_llm_artifacts_work_when_completed_missing(tmp_path: Path) -> None:
@@ -121,3 +128,5 @@ def test_llm_artifacts_jsonl_output(tmp_path: Path) -> None:
     row = json.loads(lines[0])
     assert "human_rationale_zh" in row["human_review"]
     assert "human_counterexample_zh" in row["human_review"]
+    assert "multi_layer_evidence" in row
+    assert "human_market_8_feedback_zh" in row["multi_layer_evidence"]

@@ -595,6 +595,23 @@ def test_build_review_update_row_fills_required_fields():
         "human_counterexample_zh",
         "human_uncertainty_reason_zh",
         "human_context_notes_zh",
+        "human_pattern_3_agreement",
+        "human_pattern_3_correct_label",
+        "human_pattern_3_feedback_zh",
+        "human_market_8_agreement",
+        "human_market_8_correct_state",
+        "human_market_8_feedback_zh",
+        "human_market_24_agreement",
+        "human_market_24_correct_state",
+        "human_market_24_feedback_zh",
+        "human_market_128_agreement",
+        "human_market_128_correct_state",
+        "human_market_128_feedback_zh",
+        "human_local_structure_agreement",
+        "human_local_structure_correct_state",
+        "human_local_structure_feedback_zh",
+        "human_definition_issue_zh",
+        "human_rule_adjustment_suggestion_zh",
     ]:
         assert field in row
     assert row["review_notes"] == ""
@@ -698,6 +715,9 @@ def test_append_review_event_jsonl_writes_required_fields(temp_dir):
     assert record["review"]["human_confidence"] == "medium"
     assert "recent_move_context" in record["review"]
     assert "session_context" in record["review"]
+    assert "human_pattern_3_feedback_zh" in record["review"]
+    assert "human_market_8_feedback_zh" in record["review"]
+    assert "human_local_structure_feedback_zh" in record["review"]
 
 
 def test_append_review_event_jsonl_is_append_friendly(temp_dir):
@@ -899,17 +919,18 @@ def test_app_shows_overall_human_review_before_detailed_sections():
     assert "Counterexample notes (ZH) / 反例/否定理由" in app_source
     assert "Uncertainty reason (ZH) / 不确定原因" in app_source
     assert "Context notes (ZH) / 上下文备注" in app_source
-    assert app_source.index("##### Overall Human Review / 总体人工审核") < app_source.index("##### Detailed Layer Feedback / 分层辅助反馈")
+    assert app_source.index("##### Overall Human Review / 总体人工审核") < app_source.index("##### Multi-Layer Evidence Review / 多尺度证据审核")
     contract = get_manual_feedback_layout_contract()
     assert contract["overall_review_before_detail_tabs"] is True
     assert contract["overall_fields_outside_detail_tabs"] is True
+    assert contract["overall_fields_before_layer_fields"] is True
 
 
 def test_app_explains_overall_label_boundary():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     assert "Overall Human Review is the final sample-level decision." in app_source
     assert "Overall fields are the final sample-level human decision." in app_source
-    assert "Layer tabs below are supporting detail only." in app_source
+    assert "Multi-layer evidence below is supporting detail only." in app_source
     assert "P3/M8/M24/M128/Local fields are supporting layer feedback only." in app_source
     assert "human_label 是当前 candidate_type 的最终人工判断。" in app_source
     assert "Local/P3/M8/M24/M128 是证据层，不是最终结论。" in app_source
@@ -922,7 +943,13 @@ def test_manual_feedback_layout_contract_matches_active_render_path():
     assert contract["app_path"] == "cajas/apps/eurusd_pattern_review_app.py"
     assert contract["launcher_path"] == "./scripts/run_eurusd_review_gui.sh"
     assert contract["overall_review_heading"] == "Overall Human Review / 总体人工审核"
-    assert contract["detail_group_heading"] == "Detailed Layer Feedback / 分层辅助反馈"
+    assert contract["detail_group_heading"] == "Multi-Layer Evidence Review / 多尺度证据审核"
+    assert contract["multi_layer_evidence_section_visible"] is True
+    assert contract["p3_layer_visible"] is True
+    assert contract["m8_layer_visible"] is True
+    assert contract["m24_layer_visible"] is True
+    assert contract["m128_layer_visible"] is True
+    assert contract["local_layer_visible"] is True
     assert contract["overall_review_before_detail_tabs"] is True
     assert contract["overall_fields_outside_detail_tabs"] is True
     assert contract["candidate_context_visible"] is True
@@ -934,6 +961,9 @@ def test_manual_feedback_layout_contract_matches_active_render_path():
     assert contract["local_is_detail_only"] is True
     assert contract["pattern_3_is_detail_only"] is True
     assert contract["market_state_tabbed_app_is_active"] is False
+    assert contract["trial_approval_status"] == "not_approved"
+    assert contract["canonical_save_includes_overall_fields"] is True
+    assert contract["canonical_save_includes_layer_fields"] is True
 
 
 def test_candidate_type_explanation_helper():
@@ -948,6 +978,12 @@ def test_app_shows_candidate_context_and_layer_meaning_copy():
     assert "你正在判断：当前样本是否构成" in app_source
     assert "##### Layer guide / 分层说明" in app_source
     assert "P3: target-near small pattern, roughly the smallest local candle combination." in app_source
+    assert "##### Multi-Layer Evidence Review / 多尺度证据审核" in app_source
+    assert "human_pattern_3_agreement" in app_source
+    assert "human_market_8_agreement" in app_source
+    assert "human_market_24_agreement" in app_source
+    assert "human_market_128_agreement" in app_source
+    assert "human_local_structure_agreement" in app_source
     assert "M8: short local rhythm/context around the target." in app_source
     assert "M24: small swing / local regime context." in app_source
     assert "M128: broader background context." in app_source
@@ -1278,11 +1314,14 @@ def test_app_source_uses_compact_left_form_right_actions_layout():
 def test_app_source_includes_all_five_layer_grouped_fields_and_help_text():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
     for heading in [
-        "背景与走势 Context",
-        "结构位置 Structure",
-        "局部行为与确认 Behavior / Confirmation",
-        "Sample-Level Review Summary",
-        "候选归类 Candidate Family",
+        "##### Multi-Layer Evidence Review / 多尺度证据审核",
+        "Legacy Context Details",
+        "P3",
+        "M8",
+        "M24",
+        "M128",
+        "Local",
+        "Notes",
     ]:
         assert heading in app_source
     for field_name in [
