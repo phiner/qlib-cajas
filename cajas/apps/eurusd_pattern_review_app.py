@@ -460,8 +460,10 @@ def main():
             if st.session_state.get(key) not in options:
                 st.session_state[key] = options[0]
 
+    st.markdown("## EURUSD Pattern Review / EURUSD 形态审核")
+    st.caption("final sample-level labels · CSV/JSONL persistence · no LLM · no trading")
     st.markdown(
-        f"#### EURUSD 15m Review · Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
+        f"#### Sample {global_index_to_sample_number(sample_idx)}/{row_count} · Reviewed {progress['reviewed']}"
     )
 
     meta_line = " | ".join(

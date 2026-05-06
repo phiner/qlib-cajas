@@ -116,9 +116,16 @@ Local GUI run commands:
 ```bash
 ./scripts/reset_eurusd_review_batch.sh
 ./scripts/run_eurusd_review_gui.sh
+./scripts/run_eurusd_market_state_inspection_gui.sh
 ./scripts/validate_eurusd_review_progress.sh
 ./.venv-qlib313/bin/python -m streamlit run cajas/apps/eurusd_pattern_review_app.py
 ```
+
+Use Pattern Review GUI for final human sample review.
+Use Market-State Inspection GUI only for layer/state inspection unless explicitly stated.
+human_label belongs to final sample-level review.
+`human_label` belongs to final sample-level review.
+P3/M8/M24/M128/Local are evidence layers.
 
 Reset policy:
 - reset only runs when `./scripts/reset_eurusd_review_batch.sh` is explicitly invoked

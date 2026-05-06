@@ -56,6 +56,7 @@ textarea, input, select { font-size: 16px !important; }
         '<div class="msi-sub">chart + feedback simultaneous review · research-only · no LLM · no trading</div>',
         unsafe_allow_html=True,
     )
+    st.caption("layer feedback only unless explicitly wired to final review")
 
     packet_csv = DEFAULT_PACKET_CSV
     raw_csv = DEFAULT_RAW_CSV
@@ -131,6 +132,9 @@ textarea, input, select { font-size: 16px !important; }
 
     with right:
         st.markdown('<div class="msi-section">Manual Feedback</div>', unsafe_allow_html=True)
+        st.caption("P3/M8/M24/M128/Local are layer evidence fields.")
+        st.caption("Local = immediate local structure around the target candle.")
+        st.caption("These fields support review reasoning but do not replace the final sample-level human_label in the Pattern Review GUI.")
         defaults = default_feedback_values(row)
         agree_opts = sorted(AGREEMENT_VALUES, key=lambda x: (x != "", x))
 

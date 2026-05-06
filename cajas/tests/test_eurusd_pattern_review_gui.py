@@ -1228,7 +1228,8 @@ def test_app_source_uses_global_sample_number_wording_and_keys():
 
 def test_app_source_removes_redundant_main_sample_header_and_compacts_title():
     app_source = Path("cajas/apps/eurusd_pattern_review_app.py").read_text(encoding="utf-8")
-    assert "#### EURUSD 15m Review · Sample" in app_source
+    assert 'st.markdown("## EURUSD Pattern Review / EURUSD 形态审核")' in app_source
+    assert 'final sample-level labels · CSV/JSONL persistence · no LLM · no trading' in app_source
     assert 'f"### EURUSD 15m Review · Sample' not in app_source
     assert "st.subheader(f\"Sample {sample['sample_id']}\")" not in app_source
     assert "st.header(f\"Sample: {sample['sample_id']}\")" not in app_source
@@ -1256,7 +1257,7 @@ def test_app_source_injects_compact_css_and_hides_streamlit_chrome():
     assert '[data-testid="stToolbar"] { display: none; }' in app_source
     assert '[data-testid="stDecoration"] { display: none; }' in app_source
     assert "inject_compact_review_css(st)" in app_source
-    assert "EURUSD 15m Review · Sample" in app_source
+    assert "EURUSD Pattern Review / EURUSD 形态审核" in app_source
 
 
 def test_app_source_keeps_sidebar_and_toast_behavior():
