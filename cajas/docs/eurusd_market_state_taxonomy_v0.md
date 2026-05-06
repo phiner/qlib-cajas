@@ -54,6 +54,9 @@ Enum examples:
 - No trading signals/orders/position sizing.
 - No Qlib core change requirement.
 - No real LLM provider calls.
+- Four-layer inspection packet defaults to complete rows only (exclude cold-start by default).
+- Cold-start/incomplete-window rows are diagnostic-only and not primary taxonomy quality evidence.
+- tmp cleanup follows conservative plan-first workflow; protected/manual artifacts are excluded from automatic candidates.
 
 
 ## Calibration Guard (Task 081)

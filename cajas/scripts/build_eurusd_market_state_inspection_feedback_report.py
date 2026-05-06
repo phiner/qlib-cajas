@@ -17,6 +17,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build EURUSD market-state inspection feedback report")
     parser.add_argument("--inspection-packet-csv", type=Path, required=True)
     parser.add_argument("--completed-feedback-csv", type=Path, required=True)
+    parser.add_argument(
+        "--inspection-packet-report-json",
+        type=Path,
+        default=Path("tmp/validation-eurusd-market-state-inspection-packet.json"),
+    )
     parser.add_argument("--trial-approval-json", type=Path, default=Path("tmp/validation-eurusd-llm-trial-approval.json"))
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
@@ -26,6 +31,7 @@ def main() -> int:
         inspection_packet_csv=args.inspection_packet_csv,
         completed_feedback_csv=args.completed_feedback_csv,
         trial_approval_json=args.trial_approval_json,
+        inspection_packet_report_json=args.inspection_packet_report_json,
     )
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_md.parent.mkdir(parents=True, exist_ok=True)

@@ -18,6 +18,8 @@ def test_bundle_watch_when_manual_labels_awaiting(tmp_path: Path) -> None:
     _write(tmp_path / "validation-eurusd-micro-pattern-review-packet.json", {"report_status": "micro_pattern_review_packet_ready"})
     _write(tmp_path / "validation-eurusd-micro-pattern-manual-labels.json", {"report_status": "awaiting_manual_micro_pattern_labels"})
     _write(tmp_path / "validation-eurusd-micro-pattern-rule-candidates.json", {"report_status": "awaiting_manual_labels"})
+    _write(tmp_path / "validation-eurusd-market-state-inspection-packet.json", {"report_status": "market_state_inspection_packet_ready"})
+    _write(tmp_path / "validation-tmp-artifact-cleanup-plan.json", {"report_status": "tmp_cleanup_plan_ready"})
     _write(tmp_path / "validation-eurusd-market-state-qlib-adapter-contract.json", {"report_status": "qlib_adapter_contract_ready"})
     _write(tmp_path / "validation-eurusd-market-state-dataset-quality.json", {"report_status": "market_state_dataset_quality_ready"})
     _write(tmp_path / "validation-eurusd-real-llm-integration-readiness.json", {"status": "ready_for_explicit_approval"})

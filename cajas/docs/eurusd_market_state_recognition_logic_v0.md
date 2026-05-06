@@ -98,3 +98,13 @@ No Qlib core modification is required for this phase.
 - Human feedback uses English runtime correction identifiers and `_zh` rationale fields.
 - Completed feedback is validated and summarized into definition-gap signals.
 - This workflow is inspection-only; no GUI wiring, no auto rule edits, no LLM/trading scope changes.
+- Main inspection packet now excludes cold-start/incomplete-window rows by default.
+- Main packet selection prioritizes complete four-layer rows (`3/8/24/128` complete, non-unknown states, stable micro-rule version).
+- Cold-start rows are diagnostic-only context and must be explicitly included via CLI opt-in.
+
+## tmp artifact cleanup policy
+
+- Cleanup is plan-first and conservative: generate cleanup plan report before any archive action.
+- Protected inputs (for example clean view CSV and quarantined rows) are never auto-selected.
+- Manual/human-completed artifacts (completed review CSVs and audit JSONL) are never auto-selected.
+- This phase keeps cleanup dry-run/proposed only.

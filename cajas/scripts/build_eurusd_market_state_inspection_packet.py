@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     parser.add_argument("--max-rows", type=int, default=40)
+    parser.add_argument("--include-cold-start", action="store_true")
     args = parser.parse_args()
 
     report = build_market_state_inspection_packet(
@@ -30,6 +31,7 @@ def main() -> int:
         output_jsonl=args.output_jsonl,
         trial_approval_json=args.trial_approval_json,
         max_rows=args.max_rows,
+        include_cold_start=args.include_cold_start,
     )
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_md.parent.mkdir(parents=True, exist_ok=True)

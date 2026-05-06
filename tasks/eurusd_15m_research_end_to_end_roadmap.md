@@ -83,6 +83,9 @@ Non-negotiable constraints:
     - 8/24/128 quantitative structure recognizer for short/mid/long state and confidence
     - combiner where 3-bar events qualify structure context and do not define long background alone
   - future Qlib adapter consumes 8/24/128 quantitative features + 3-bar categorical events + human-corrected labels
+  - four-layer inspection packet must use complete rows by default (exclude cold-start/incomplete 128-window rows)
+  - cold-start rows remain diagnostic-only artifacts, not main semantic-inspection evidence
+  - tmp artifact hygiene uses conservative cleanup-plan reports (dry-run) before any archive/apply action
   - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:

@@ -47,6 +47,7 @@ def test_feedback_missing_completed_is_awaiting(tmp_path: Path) -> None:
         trial_approval_json=tmp_path / "trial.json",
     )
     assert report["report_status"] == "awaiting_market_state_inspection_feedback"
+    assert "source_packet_quality_status" in report
 
 
 def test_feedback_empty_completed_is_awaiting(tmp_path: Path) -> None:
@@ -97,6 +98,7 @@ def test_feedback_ready_when_valid_feedback_present(tmp_path: Path) -> None:
         inspection_packet_csv=inspection,
         completed_feedback_csv=completed,
         trial_approval_json=trial,
+        inspection_packet_report_json=tmp_path / "packet_report.json",
     )
     assert report["report_status"] == "market_state_inspection_feedback_ready"
 

@@ -39,11 +39,15 @@ def build_market_state_inspection_feedback_report(
     inspection_packet_csv: Path,
     completed_feedback_csv: Path,
     trial_approval_json: Path,
+    inspection_packet_report_json: Path | None = None,
 ) -> dict[str, Any]:
     if not inspection_packet_csv.exists():
         return {
             "report_status": "blocked",
             "source_packet_row_count": 0,
+            "source_packet_quality_status": "blocked",
+            "source_packet_complete_four_layer_ratio": 0.0,
+            "source_packet_warning": "inspection_packet_missing",
             "completed_feedback_csv_exists": False,
             "reviewed_row_count": 0,
             "recommended_next_phase": "fix_inspection_feedback_schema",
@@ -51,10 +55,22 @@ def build_market_state_inspection_feedback_report(
             "trial_approval_status": "not_approved",
         }
     source = pd.read_csv(inspection_packet_csv)
+    source_packet_quality_status = "unknown"
+    source_packet_complete_four_layer_ratio = 0.0
+    source_packet_warning = ""
+    if inspection_packet_report_json is not None and inspection_packet_report_json.exists():
+        payload = _load_json(inspection_packet_report_json) or {}
+        source_packet_quality_status = str(payload.get("report_status", "unknown"))
+        source_packet_complete_four_layer_ratio = float(payload.get("complete_four_layer_ratio", 0.0) or 0.0)
+        warnings = payload.get("watch_reasons") or payload.get("blocking_reasons") or []
+        source_packet_warning = ";".join([str(x) for x in warnings if str(x)])
     if not completed_feedback_csv.exists():
         return {
             "report_status": "awaiting_market_state_inspection_feedback",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": False,
             "reviewed_row_count": 0,
             "agreement_distribution_by_layer": {},
@@ -77,6 +93,9 @@ def build_market_state_inspection_feedback_report(
         return {
             "report_status": "blocked",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": True,
             "reviewed_row_count": 0,
             "blocking_reasons": [f"missing_required_fields:{','.join(missing)}"],
@@ -89,6 +108,9 @@ def build_market_state_inspection_feedback_report(
         return {
             "report_status": "blocked",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": True,
             "reviewed_row_count": 0,
             "blocking_reasons": ["duplicate_sample_id"],
@@ -108,6 +130,9 @@ def build_market_state_inspection_feedback_report(
         return {
             "report_status": "blocked",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": True,
             "reviewed_row_count": 0,
             "blocking_reasons": reasons,
@@ -126,6 +151,9 @@ def build_market_state_inspection_feedback_report(
         return {
             "report_status": "blocked",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": True,
             "reviewed_row_count": 0,
             "blocking_reasons": [f"invalid_agreement_enum:{'|'.join(invalid)}"],
@@ -142,6 +170,9 @@ def build_market_state_inspection_feedback_report(
         return {
             "report_status": "awaiting_market_state_inspection_feedback",
             "source_packet_row_count": int(len(source)),
+            "source_packet_quality_status": source_packet_quality_status,
+            "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+            "source_packet_warning": source_packet_warning,
             "completed_feedback_csv_exists": True,
             "reviewed_row_count": 0,
             "agreement_distribution_by_layer": {},
@@ -215,6 +246,9 @@ def build_market_state_inspection_feedback_report(
     return {
         "report_status": report_status,
         "source_packet_row_count": int(len(source)),
+        "source_packet_quality_status": source_packet_quality_status,
+        "source_packet_complete_four_layer_ratio": source_packet_complete_four_layer_ratio,
+        "source_packet_warning": source_packet_warning,
         "completed_feedback_csv_exists": True,
         "reviewed_row_count": int(len(reviewed)),
         "agreement_distribution_by_layer": agreement_distribution_by_layer,
@@ -238,6 +272,9 @@ def render_market_state_inspection_feedback_markdown(report: dict[str, Any]) -> 
         "",
         f"- report_status: `{report.get('report_status')}`",
         f"- reviewed_row_count: `{report.get('reviewed_row_count')}`",
+        f"- source_packet_quality_status: `{report.get('source_packet_quality_status')}`",
+        f"- source_packet_complete_four_layer_ratio: `{report.get('source_packet_complete_four_layer_ratio')}`",
+        f"- source_packet_warning: `{report.get('source_packet_warning')}`",
         f"- missing_feedback_rationale_count: `{report.get('missing_feedback_rationale_count')}`",
         f"- recommended_next_phase: `{report.get('recommended_next_phase')}`",
         "",

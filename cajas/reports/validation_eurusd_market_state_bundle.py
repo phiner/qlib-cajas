@@ -27,14 +27,29 @@ def build_market_state_bundle_report(output_json: Path) -> dict[str, Any]:
     candidates = _status(base / "validation-eurusd-micro-pattern-rule-candidates.json")
     qlib_contract = _status(base / "validation-eurusd-market-state-qlib-adapter-contract.json")
     quality = _status(base / "validation-eurusd-market-state-dataset-quality.json")
+    inspection_packet = _status(base / "validation-eurusd-market-state-inspection-packet.json")
+    cleanup_plan = _status(base / "validation-tmp-artifact-cleanup-plan.json")
     readiness = _status(base / "validation-eurusd-real-llm-integration-readiness.json", key="status")
     trial = _status(base / "validation-eurusd-llm-trial-approval.json", key="approval_status")
 
     blocking = []
     watch = []
-    for name, s in [("market_state", market), ("calibration", cal), ("micro_pattern_rules", rules), ("micro_noise_profile", noise), ("review_packet", packet), ("qlib_adapter_contract", qlib_contract), ("dataset_quality", quality)]:
+    for name, s in [
+        ("market_state", market),
+        ("calibration", cal),
+        ("micro_pattern_rules", rules),
+        ("micro_noise_profile", noise),
+        ("review_packet", packet),
+        ("inspection_packet", inspection_packet),
+        ("qlib_adapter_contract", qlib_contract),
+        ("dataset_quality", quality),
+    ]:
         if s in {"blocked", "missing", "invalid"}:
             blocking.append(f"{name}:{s}")
+        elif s.endswith("_watch"):
+            watch.append(f"{name}:{s}")
+    if cleanup_plan in {"blocked", "missing", "invalid"}:
+        watch.append(f"tmp_cleanup_plan:{cleanup_plan}")
     if manual in {"awaiting_manual_micro_pattern_labels", "manual_micro_pattern_labels_watch", "missing"}:
         watch.append(f"manual_labels:{manual}")
     if candidates in {"awaiting_manual_labels", "rule_candidates_watch", "missing"}:
@@ -60,8 +75,11 @@ def build_market_state_bundle_report(output_json: Path) -> dict[str, Any]:
         "rule_candidates_status": candidates,
         "qlib_adapter_contract_status": qlib_contract,
         "dataset_quality_status": quality,
+        "inspection_packet_status": inspection_packet,
+        "tmp_cleanup_plan_status": cleanup_plan,
         "real_llm_readiness_status": readiness,
         "trial_approval_status": trial,
+        "tmp_cleanup_plan_dry_run_only": True,
         "blocking_reasons": blocking,
         "watch_reasons": watch,
         "recommended_next_phase": "manual_label_micro_pattern_packet" if watch else "review_market_state_bundle_then_wire_gui",
