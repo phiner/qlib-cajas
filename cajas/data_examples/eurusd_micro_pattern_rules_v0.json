@@ -294,6 +294,26 @@
       "rationale_template_zh": "连续方向不一致且收益有限，归类为微观震荡。"
     },
     {
+      "pattern_id": "inside_range_chop_v0",
+      "event": "inside_range_chop",
+      "direction": "mixed",
+      "strength": "weak",
+      "priority": 12,
+      "enabled": true,
+      "description_zh": "三K维持在前区间内且方向交替，属于区间内震荡。",
+      "conditions": {
+        "close_returns_inside_prior_range": true,
+        "consecutive_direction": "mixed",
+        "three_bar_return_abs_max": 0.0009
+      },
+      "flags": {
+        "micro_reversal_detected_3": false,
+        "micro_rejection_detected_3": false,
+        "micro_sweep_detected_3": false
+      },
+      "rationale_template_zh": "价格在区间内来回波动且无延续，归类为区间内震荡。"
+    },
+    {
       "pattern_id": "micro_compression_v0",
       "event": "micro_compression",
       "direction": "neutral",

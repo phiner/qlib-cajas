@@ -938,3 +938,10 @@ This audit is read-only and does not reset or rebuild active review artifacts.
 - Added micro-noise profiling report before further calibration tuning.
 - Keep `micro_noise` as residual class while splitting repeatable weak structures into named buckets for review quality.
 - Real LLM trial approval remains `not_approved`; no trading outputs.
+
+
+## Task 084 residual-noise gate
+
+- Introduced `validation-eurusd-micro-pattern-review-packet` as required artifact before further taxonomy expansion.
+- Keep GUI wiring deferred until residual-noise packet review stabilizes micro-event semantics.
+- Keep real LLM trial approval at `not_approved` and preserve non-trading boundaries.

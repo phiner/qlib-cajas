@@ -63,3 +63,10 @@ No Qlib core modification is required for this phase.
 - Workflow is now: profile micro-noise -> identify dominant subtypes -> add minimal stable rule buckets -> re-run calibration.
 - Rule additions are conservative and deterministic; stronger sweep/reversal/exhaustion rules keep higher priority.
 - GUI wiring should remain deferred until micro-event distribution is sufficiently interpretable.
+
+
+## Packet-driven refinement loop
+
+- Residual-noise refinement now follows: profile -> conservative rule split -> review packet sampling -> human semantic review -> next rule update.
+- Added review packet fields include 3-bar OHLC context and blank human semantic fields for later labeling.
+- Avoid blind threshold tuning; prioritize subtype evidence from review packet.

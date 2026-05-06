@@ -75,3 +75,10 @@ Enum examples:
 - Added deterministic `validation-eurusd-micro-noise-profile` to break `micro_noise` into reviewable diagnostic subtypes.
 - Added conservative buckets (`inside_range_pause`, `micro_drift_up/down`, `micro_chop`, `wick_conflict`) above residual `micro_noise`.
 - `micro_noise` remains residual catch-all; no trading semantics are introduced.
+
+
+## Residual Micro-noise Review Packet (Task 084)
+
+- Added `micro_pattern_review_packet` workflow for residual `micro_noise` inspection with deterministic sampling.
+- Residual `micro_noise` remains a valid catch-all; unresolved subtypes should be refined via human-reviewed packet evidence.
+- Micro-pattern semantics remain classification-only and non-trading.

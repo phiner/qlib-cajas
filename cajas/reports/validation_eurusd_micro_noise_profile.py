@@ -66,10 +66,12 @@ def build_micro_noise_profile_report(
     else:
         subtype_dist = {}
 
-    dominant = sorted(subtype_dist.items(), key=lambda kv: kv[1], reverse=True)[:5]
-    candidate_rule_suggestions = [k for k, _ in dominant if k not in {"unclassified_noise"}]
-    recommended_rule_updates = [f"consider_rule_bucket:{k}" for k in candidate_rule_suggestions[:3]]
+    dominant = sorted(subtype_dist.items(), key=lambda kv: kv[1], reverse=True)[:8]
+    safe_split = {"weak_up_drift", "weak_down_drift", "inside_range_no_break", "upper_lower_wick_conflict"}
+    candidate_rule_suggestions = [k for k, _ in dominant if k in safe_split]
+    recommended_rule_updates = [f"consider_rule_bucket:{k}" for k in candidate_rule_suggestions[:4]]
     manual_review_priority_subtypes = [k for k, _ in dominant]
+    defer_to_human = [k for k, _ in dominant if k not in safe_split]
 
     trial_status = "not_approved"
     if trial_approval_json.exists():
@@ -89,6 +91,12 @@ def build_micro_noise_profile_report(
         "micro_noise_ratio": noise_ratio,
         "profile_sample_count": noise_count,
         "noise_subtype_distribution": subtype_dist,
+        "residual_noise_subtype_distribution": subtype_dist,
+        "safe_rule_split_candidates": candidate_rule_suggestions,
+        "defer_to_human_review_subtypes": defer_to_human,
+        "review_packet_required": noise_count > 0,
+        "review_packet_sample_count": min(noise_count, 200),
+        "review_packet_path": "tmp/eurusd/EURUSD_15m_micro_pattern_review_packet.csv" if noise_count > 0 else "",
         "candidate_rule_suggestions": candidate_rule_suggestions,
         "recommended_rule_updates": recommended_rule_updates,
         "manual_review_priority_subtypes": manual_review_priority_subtypes,

@@ -21,6 +21,7 @@ REQUIRED_EVENTS = {
     "micro_drift_up",
     "micro_drift_down",
     "micro_chop",
+    "inside_range_chop",
     "wick_conflict",
     "micro_compression",
     "micro_noise",

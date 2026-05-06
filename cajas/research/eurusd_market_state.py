@@ -57,6 +57,7 @@ MICRO_EVENT_VALUES = {
     "micro_drift_up",
     "micro_drift_down",
     "micro_chop",
+    "inside_range_chop",
     "wick_conflict",
     "micro_compression",
     "failed_followthrough_up",
