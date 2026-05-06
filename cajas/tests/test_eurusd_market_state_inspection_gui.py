@@ -7,8 +7,10 @@ import pandas as pd
 
 from cajas.research.eurusd_market_state_inspection_gui import (
     build_inspection_chart,
+    build_compressed_time_axis,
     compute_chart_window,
     compute_layer_highlights,
+    detect_time_axis_gaps,
     load_completed_feedback,
     load_inspection_packet,
     load_raw_clean_csv,
@@ -58,6 +60,22 @@ def _raw_df(n: int = 220) -> pd.DataFrame:
     )
 
 
+def _raw_df_with_weekend_gap() -> pd.DataFrame:
+    p1 = pd.date_range("2025-01-03 18:00:00+00:00", periods=20, freq="15min")
+    p2 = pd.date_range("2025-01-06 00:00:00+00:00", periods=20, freq="15min")
+    ts = p1.tolist() + p2.tolist()
+    n = len(ts)
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": [1.10 + i * 0.0001 for i in range(n)],
+            "high": [1.101 + i * 0.0001 for i in range(n)],
+            "low": [1.099 + i * 0.0001 for i in range(n)],
+            "close": [1.1005 + i * 0.0001 for i in range(n)],
+        }
+    )
+
+
 def test_loaders_and_chart_helpers(tmp_path: Path) -> None:
     packet_csv = tmp_path / "packet.csv"
     raw_csv = tmp_path / "raw.csv"
@@ -73,8 +91,23 @@ def test_loaders_and_chart_helpers(tmp_path: Path) -> None:
     assert len(window) >= 128
     highlights = compute_layer_highlights(target_idx, packet.loc[0])
     assert highlights["pattern_3"][1] - highlights["pattern_3"][0] + 1 == 3
+    assert highlights["market_128"][1] - highlights["market_128"][0] + 1 == 128
     fig = build_inspection_chart(window, target_idx, highlights)
     assert len(fig.data) == 1
+    axis_info = fig.layout.meta["axis_info"]
+    assert axis_info["display_axis"] == "compressed_gap_axis"
+    assert axis_info["raw_time_axis_preserved_in_hover"] is True
+    assert fig.data[0]["customdata"][0] is not None
+
+
+def test_gap_detection_and_markers() -> None:
+    raw = _raw_df_with_weekend_gap()
+    gaps = detect_time_axis_gaps(raw["timestamp"].tolist())
+    assert len(gaps) >= 1
+    assert "gap_hours" in gaps[0]
+    axis_info = build_compressed_time_axis(raw)
+    assert axis_info["display_axis"] == "compressed_gap_axis"
+    assert len(axis_info["gap_markers"]) >= 1
 
 
 def test_feedback_persistence_latest_state_and_jsonl_append(tmp_path: Path) -> None:

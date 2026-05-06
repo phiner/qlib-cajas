@@ -108,8 +108,38 @@ No Qlib core modification is required for this phase.
   - rerun inspection feedback + bundle reports before any taxonomy/rule updates
 - Chart-first workflow is preferred over direct CSV review:
   - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
-  - inspect one sample at a time with candlestick chart + 3/8/24/128 highlighted windows
+  - inspect one sample at a time with compressed-axis candlestick chart + 3/8/24/128 highlighted windows
+  - weekends/market-closed periods are compressed and marked with vertical gap separators
+  - 128-layer is rendered as a broad explicit background span (not label-only)
   - fill feedback fields on the same screen and persist to latest-state CSV + append-only JSONL audit
+  - advanced path/diagnostic details are in collapsed `Advanced / Debug` section by default
+
+## First 10-20 chart inspection feedback loop
+
+- Launch:
+  - `cd /home/phiner/projects/research/qlib-cajas`
+  - `./scripts/run_eurusd_market_state_inspection_gui.sh`
+- Label scope:
+  - first pass only 10-20 rows
+  - prioritize obvious disagreements
+  - use `uncertain` with Chinese rationale when not confident
+- Fill fields:
+  - `human_pattern_3_agreement`
+  - `human_market_8_agreement`
+  - `human_market_24_agreement`
+  - `human_market_128_agreement`
+  - `human_local_structure_agreement`
+  - correction fields when `disagree`
+  - `_zh` feedback/rationale fields for non-trivial notes
+- Save semantics:
+  - latest-state CSV keyed by `sample_id`: `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
+  - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_market_state_inspection_feedback_events.jsonl`
+- After labeling, rebuild:
+  - `PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_market_state_inspection_feedback_report.py --inspection-packet-csv tmp/eurusd/EURUSD_15m_market_state_inspection_packet.csv --completed-feedback-csv tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv --output-json tmp/validation-eurusd-market-state-inspection-feedback.json --output-md tmp/validation-eurusd-market-state-inspection-feedback.md`
+  - `PYTHONPATH=. ./.venv-qlib313/bin/python cajas/scripts/build_eurusd_market_state_bundle_report.py --output-json tmp/validation-eurusd-market-state-bundle.json --output-md tmp/validation-eurusd-market-state-bundle.md`
+- Expected status:
+  - before real labels: `awaiting_market_state_inspection_feedback`
+  - after real 10-20 labels: typically `market_state_inspection_feedback_watch` or `market_state_inspection_feedback_ready`
 
 ## tmp artifact cleanup policy
 

@@ -27,10 +27,20 @@ Current focus:
   - regenerate manual labels/rule candidates/bundle reports after save
 - Dedicated four-layer market-state chart inspection loop:
   - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
-  - inspect one sample at a time on candlestick chart with 3/8/24/128 window highlights
+  - inspect one sample at a time on compressed-axis candlestick chart with 3/8/24/128 window highlights
+  - weekend/market-closed gaps are marked by vertical separators without blank horizontal regions
+  - `market_128` is rendered as an explicit broad background span
   - edit feedback on-screen and persist to:
     - latest-state CSV: `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
     - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_market_state_inspection_feedback_events.jsonl`
+  - default screen is compact review-first layout; advanced path/debug data is collapsed
+  - first manual pass:
+    - label 10-20 rows only
+    - prioritize obvious disagreements first
+    - use `uncertain` and Chinese rationale for ambiguous rows
+    - after labeling rebuild:
+      - `tmp/validation-eurusd-market-state-inspection-feedback.json`
+      - `tmp/validation-eurusd-market-state-bundle.json`
 
 Current scope is research-only and is **not** a trading system.
 

@@ -23,6 +23,8 @@ FORBIDDEN_UPDATE_FIELDS = {
     "buy",
     "sell",
 }
+EXPECTED_INTERVAL_MINUTES = 15
+GAP_THRESHOLD_BARS = 4
 
 
 def _utc_now_iso() -> str:
@@ -128,24 +130,111 @@ def compute_layer_highlights(target_local_idx: int, sample_row: pd.Series | dict
     }
 
 
+def detect_time_axis_gaps(
+    timestamps: list[Any],
+    expected_interval_minutes: int = EXPECTED_INTERVAL_MINUTES,
+    gap_threshold_bars: int = GAP_THRESHOLD_BARS,
+) -> list[dict[str, Any]]:
+    """Detect large market-closed or missing-data gaps on a compressed axis."""
+    out: list[dict[str, Any]] = []
+    threshold_minutes = expected_interval_minutes * gap_threshold_bars
+    normalized = [pd.to_datetime(ts, utc=True, errors="coerce") for ts in timestamps]
+    for idx in range(len(normalized) - 1):
+        prev_ts = normalized[idx]
+        next_ts = normalized[idx + 1]
+        if pd.isna(prev_ts) or pd.isna(next_ts):
+            continue
+        gap_minutes = float((next_ts - prev_ts).total_seconds() / 60.0)
+        if gap_minutes <= threshold_minutes:
+            continue
+        prev_wd = int(prev_ts.weekday())
+        next_wd = int(next_ts.weekday())
+        if prev_wd == 4 and next_wd in {6, 0} and gap_minutes >= 24 * 60:
+            label = "weekend gap"
+        elif gap_minutes >= 24 * 60:
+            label = "market closed"
+        else:
+            label = "time gap"
+        out.append(
+            {
+                "prev_index": idx,
+                "next_index": idx + 1,
+                "gap_minutes": gap_minutes,
+                "gap_hours": gap_minutes / 60.0,
+                "start_timestamp": str(prev_ts),
+                "end_timestamp": str(next_ts),
+                "label": f"{label} {gap_minutes/60.0:.1f}h",
+                "display_x": idx + 0.5,
+            }
+        )
+    return out
+
+
+def build_compressed_time_axis(window_df: pd.DataFrame) -> dict[str, Any]:
+    ts_list = window_df["timestamp"].tolist()
+    display_x = list(range(len(ts_list)))
+    gaps = detect_time_axis_gaps(ts_list)
+    tickvals: list[int] = []
+    ticktext: list[str] = []
+    if ts_list:
+        step = max(1, len(ts_list) // 8)
+        for i in range(0, len(ts_list), step):
+            tickvals.append(i)
+            ticktext.append(str(pd.to_datetime(ts_list[i], utc=True, errors="coerce"))[5:16])
+        if tickvals[-1] != len(ts_list) - 1:
+            tickvals.append(len(ts_list) - 1)
+            ticktext.append(str(pd.to_datetime(ts_list[-1], utc=True, errors="coerce"))[5:16])
+    return {
+        "display_axis": "compressed_gap_axis",
+        "display_x": display_x,
+        "tickvals": tickvals,
+        "ticktext": ticktext,
+        "gap_markers": gaps,
+        "raw_time_axis_preserved_in_hover": True,
+    }
+
+
+def build_layer_summary(sample_row: pd.Series | dict[str, Any]) -> list[dict[str, str]]:
+    r = sample_row if isinstance(sample_row, dict) else sample_row.to_dict()
+    return [
+        {"layer": "pattern_3", "state": str(r.get("pattern_3_event", "")), "actual_bars": str(r.get("pattern_3_actual_bars_used", ""))},
+        {"layer": "market_8", "state": str(r.get("market_8_state", "")), "actual_bars": str(r.get("market_8_actual_bars_used", ""))},
+        {"layer": "market_24", "state": str(r.get("market_24_state", "")), "actual_bars": str(r.get("market_24_actual_bars_used", ""))},
+        {"layer": "market_128", "state": str(r.get("market_128_state", "")), "actual_bars": str(r.get("market_128_actual_bars_used", ""))},
+        {"layer": "local_structure", "state": str(r.get("local_structure_state", "")), "actual_bars": str(r.get("market_128_actual_bars_used", ""))},
+    ]
+
+
 def build_inspection_chart(window_df: pd.DataFrame, target_local_idx: int, highlights: dict[str, tuple[int, int]]) -> go.Figure:
+    axis_info = build_compressed_time_axis(window_df)
+    x = axis_info["display_x"]
+    ts_text = [str(ts) for ts in window_df["timestamp"].tolist()]
     fig = go.Figure(
         data=[
             go.Candlestick(
-                x=window_df["timestamp"],
+                x=x,
                 open=window_df["open"],
                 high=window_df["high"],
                 low=window_df["low"],
                 close=window_df["close"],
                 name="EURUSD 15m",
+                customdata=ts_text,
+                hovertemplate=(
+                    "bar=%{x}<br>"
+                    "timestamp=%{customdata}<br>"
+                    "open=%{open}<br>"
+                    "high=%{high}<br>"
+                    "low=%{low}<br>"
+                    "close=%{close}<extra></extra>"
+                ),
             )
         ]
     )
     colors = {
-        "market_128": "rgba(80,80,80,0.10)",
-        "market_24": "rgba(255,145,0,0.15)",
-        "market_8": "rgba(0,140,255,0.18)",
-        "pattern_3": "rgba(220,20,60,0.20)",
+        "market_128": "rgba(40,60,90,0.22)",
+        "market_24": "rgba(255,145,0,0.20)",
+        "market_8": "rgba(0,140,255,0.24)",
+        "pattern_3": "rgba(220,20,60,0.30)",
     }
     labels = {
         "market_128": "128",
@@ -160,22 +249,30 @@ def build_inspection_chart(window_df: pd.DataFrame, target_local_idx: int, highl
         s = max(0, min(s, len(window_df) - 1))
         e = max(0, min(e, len(window_df) - 1))
         fig.add_vrect(
-            x0=window_df.iloc[s]["timestamp"],
-            x1=window_df.iloc[e]["timestamp"],
+            x0=s,
+            x1=e,
             fillcolor=colors[layer],
-            line_width=0,
+            line_width=1,
+            line_color="rgba(0,0,0,0.30)",
             annotation_text=f"{labels[layer]} bars",
             annotation_position="top left",
         )
+    for gap in axis_info.get("gap_markers", []):
+        gx = float(gap["display_x"])
+        fig.add_vline(x=gx, line_width=1, line_dash="dot", line_color="rgba(90,90,90,0.8)")
+        fig.add_annotation(x=gx, y=1.03, yref="paper", text=str(gap["label"]), showarrow=False, font={"size": 9, "color": "#444"})
     if 0 <= target_local_idx < len(window_df):
-        fig.add_vline(x=window_df.iloc[target_local_idx]["timestamp"], line_width=2, line_color="black")
+        fig.add_vline(x=target_local_idx, line_width=2, line_color="black")
     fig.update_layout(
         title="EURUSD Four-layer Market-state Inspection",
-        xaxis_title="timestamp",
+        xaxis_title="Compressed candle axis (timestamps in hover)",
         yaxis_title="price",
         xaxis_rangeslider_visible=False,
         template="plotly_white",
     )
+    if axis_info.get("tickvals") and axis_info.get("ticktext"):
+        fig.update_xaxes(tickmode="array", tickvals=axis_info["tickvals"], ticktext=axis_info["ticktext"])
+    fig.update_layout(meta={"axis_info": axis_info})
     return fig
 
 

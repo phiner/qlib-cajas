@@ -91,7 +91,18 @@ Non-negotiable constraints:
   - market-state inspection should be chart-first:
     - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
     - review `pattern_3`, `market_8`, `market_24`, `market_128` directly on chart highlights
+    - chart uses compressed sequential axis (no weekend blank spans) with vertical gap markers
+    - 128-layer must remain explicitly visible as broad background window
+    - default view is compact review layout; advanced/debug details stay collapsed
     - edit feedback on-screen and persist to latest-state CSV + append-only JSONL
+  - first feedback loop procedure:
+    - run one local session and label 10-20 rows only
+    - prioritize clear disagreements, use `uncertain` for ambiguous rows
+    - write rationale into `_zh` fields when disagree/uncertain
+    - rebuild:
+      - `tmp/validation-eurusd-market-state-inspection-feedback.json`
+      - `tmp/validation-eurusd-market-state-bundle.json`
+    - keep `real_llm_integration_approved=false` and `trial_approval_status=not_approved`
   - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:
