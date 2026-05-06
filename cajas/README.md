@@ -25,6 +25,12 @@ Current focus:
   - label only residual 3-bar packet rows
   - persist to latest-state CSV (`sample_id`) and append-only JSONL audit
   - regenerate manual labels/rule candidates/bundle reports after save
+- Dedicated four-layer market-state chart inspection loop:
+  - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
+  - inspect one sample at a time on candlestick chart with 3/8/24/128 window highlights
+  - edit feedback on-screen and persist to:
+    - latest-state CSV: `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
+    - append-only audit JSONL: `tmp/eurusd/EURUSD_15m_market_state_inspection_feedback_events.jsonl`
 
 Current scope is research-only and is **not** a trading system.
 

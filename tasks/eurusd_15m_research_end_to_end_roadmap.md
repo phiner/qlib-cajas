@@ -88,6 +88,10 @@ Non-negotiable constraints:
   - tmp artifact hygiene uses conservative cleanup-plan reports (dry-run) before any archive/apply action
   - archive executor defaults to dry-run; apply mode is explicit manual operation only
   - completed inspection feedback template should be prepared before the next manual review batch
+  - market-state inspection should be chart-first:
+    - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
+    - review `pattern_3`, `market_8`, `market_24`, `market_128` directly on chart highlights
+    - edit feedback on-screen and persist to latest-state CSV + append-only JSONL
   - next implementation phase is `define_market_state_taxonomy_v0_and_feature_contract` before GUI rewiring
 
 Local GUI run commands:

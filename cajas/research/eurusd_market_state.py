@@ -560,8 +560,9 @@ def combine_micro_event_with_structure(row: pd.Series | dict[str, Any]) -> dict[
     long_final = structure["long_term_state_128"]
 
     rationale_zh = (
-        f"微事件={micro};短期结构={short};中期结构={mid};长期结构={long_final};"
-        f"局部结构={local}"
+        f"3根层面出现 `{micro}`，"
+        f"短期8根判断为 `{short}`，中期24根为 `{mid}`，长期128根背景为 `{long_final}`。"
+        f"综合四层关系，局部结构归类为 `{local}`。"
     )
     return {
         "local_structure_state": local,

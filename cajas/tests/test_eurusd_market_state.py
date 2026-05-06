@@ -245,6 +245,8 @@ def test_combiner_long_downtrend_rebound_with_lower_sweep() -> None:
     }
     out = classify_market_state_row(row)
     assert out["local_structure_state"] == "rebound_in_downtrend"
+    assert "微事件=" not in out["market_state_rationale_zh"]
+    assert ";" not in out["market_state_rationale_zh"]
 
 
 def test_dataset_has_required_micro_and_no_trading_fields() -> None:

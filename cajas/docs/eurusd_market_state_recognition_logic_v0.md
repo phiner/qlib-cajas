@@ -106,6 +106,10 @@ No Qlib core modification is required for this phase.
   - build/use `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed_template.csv`
   - save reviewer edits to `tmp/eurusd/EURUSD_15m_market_state_inspection_packet_completed.csv`
   - rerun inspection feedback + bundle reports before any taxonomy/rule updates
+- Chart-first workflow is preferred over direct CSV review:
+  - launch `./scripts/run_eurusd_market_state_inspection_gui.sh`
+  - inspect one sample at a time with candlestick chart + 3/8/24/128 highlighted windows
+  - fill feedback fields on the same screen and persist to latest-state CSV + append-only JSONL audit
 
 ## tmp artifact cleanup policy
 

@@ -38,6 +38,89 @@ REQUESTED_MARKET_STATES = [
 FORBIDDEN_FIELDS = {"trade_signal", "entry", "exit", "order", "position_size", "target_position"}
 
 
+def _fmt_pct(value: Any) -> str:
+    try:
+        v = float(value)
+    except Exception:
+        return "未知"
+    return f"{v * 100:.2f}%"
+
+
+def _describe_pattern_3_rationale_zh(row: pd.Series) -> str:
+    event = str(row.get("micro_pattern_event_3", "unknown"))
+    if event == "lower_sweep_reclaim":
+        return "最近3根K线出现下探后收回，说明超短期下方承接存在，属于 `lower_sweep_reclaim`。"
+    if event == "upper_sweep_reject":
+        return "最近3根K线冲高回落，上方拒绝较明显，属于 `upper_sweep_reject`。"
+    if event == "three_bar_reversal_up":
+        return "最近3根K线由弱转强并出现反转上行，属于 `three_bar_reversal_up`。"
+    if event == "three_bar_reversal_down":
+        return "最近3根K线由强转弱并出现反转下行，属于 `three_bar_reversal_down`。"
+    if event in {"inside_range_chop", "micro_chop", "micro_noise", "micro_pause"}:
+        return f"最近3根K线在小区间内来回拉扯，方向不连续，属于 `{event}`。"
+    return f"最近3根K线命中 `{event}`，用于描述超短期形态变化。"
+
+
+def _describe_market_8_rationale_zh(row: pd.Series) -> str:
+    state = str(row.get("short_term_state_8", "unknown"))
+    ret = _fmt_pct(row.get("return_8"))
+    micro = str(row.get("micro_pattern_event_3", "unknown"))
+    if state == "sideways":
+        return f"最近8根K线主要横向波动，累计变化约 {ret}，即使3根层面出现 `{micro}`，短期仍偏 `sideways`。"
+    if state == "breakout_attempt":
+        return f"最近8根K线有突破尝试但延续不足，累计变化约 {ret}，更接近 `breakout_attempt`。"
+    if state == "false_breakout":
+        return f"最近8根K线出现突破后回收，累计变化约 {ret}，短期定义为 `false_breakout`。"
+    if state in {"impulse_up", "impulse_down"}:
+        return f"最近8根K线出现明显推进，累计变化约 {ret}，短期归为 `{state}`。"
+    return f"最近8根K线节奏偏过渡，累计变化约 {ret}，短期状态标记为 `{state}`。"
+
+
+def _describe_market_24_rationale_zh(row: pd.Series) -> str:
+    state = str(row.get("mid_term_state_24", "unknown"))
+    ret = _fmt_pct(row.get("return_24"))
+    if state == "consolidation":
+        return f"最近24根K线仍在整理区间内，累计变化约 {ret}，中期更接近 `consolidation`。"
+    if state == "rebound":
+        return f"最近24根K线从低位出现反弹，累计变化约 {ret}，中期定义为 `rebound`。"
+    if state == "pullback":
+        return f"最近24根K线在更大趋势内出现回撤，累计变化约 {ret}，中期定义为 `pullback`。"
+    if state in {"uptrend", "downtrend"}:
+        return f"最近24根K线方向连续，累计变化约 {ret}，中期归为 `{state}`。"
+    return f"最近24根K线累计变化约 {ret}，中期状态标记为 `{state}`。"
+
+
+def _describe_market_128_rationale_zh(row: pd.Series) -> str:
+    state = str(row.get("long_term_state_128", "unknown"))
+    ret = _fmt_pct(row.get("return_128"))
+    pos = row.get("range_position_128")
+    try:
+        pos_text = f"{float(pos):.2f}"
+    except Exception:
+        pos_text = "未知"
+    if state == "high_level_consolidation":
+        return f"最近128根K线位于区间偏高位置（位置={pos_text}），累计变化约 {ret}，背景为 `high_level_consolidation`。"
+    if state == "low_level_base":
+        return f"最近128根K线处于相对低位（位置={pos_text}）并有企稳迹象，累计变化约 {ret}，背景为 `low_level_base`。"
+    if state in {"uptrend", "downtrend", "weakening_uptrend", "weakening_downtrend"}:
+        return f"最近128根K线方向性仍在（累计变化约 {ret}，位置={pos_text}），背景归类为 `{state}`。"
+    return f"最近128根K线累计变化约 {ret}、区间位置 {pos_text}，背景状态标记为 `{state}`。"
+
+
+def _describe_combined_rationale_zh(row: pd.Series) -> str:
+    local = str(row.get("local_structure_state", "unknown"))
+    micro = str(row.get("micro_pattern_event_3", "unknown"))
+    m8 = str(row.get("short_term_state_8", "unknown"))
+    m24 = str(row.get("mid_term_state_24", "unknown"))
+    m128 = str(row.get("long_term_state_128", "unknown"))
+    conf = str(row.get("structure_confidence", "unknown"))
+    return (
+        f"在 `{m128}` 背景下，中期 `{m24}` 与短期 `{m8}` 的组合，"
+        f"再结合3根微事件 `{micro}`，当前局部结构判断为 `{local}`，"
+        f"置信度为 `{conf}`。"
+    )
+
+
 def _load_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -59,6 +142,12 @@ def _build_single_sample_row(row: pd.Series, sample_id: str, sample_type: str, a
     market24_used = min(MAX_BARS["market_24"], available_history_bars)
     market128_used = min(MAX_BARS["market_128"], available_history_bars)
 
+    pattern_rationale = _describe_pattern_3_rationale_zh(row)
+    market8_rationale = _describe_market_8_rationale_zh(row)
+    market24_rationale = _describe_market_24_rationale_zh(row)
+    market128_rationale = _describe_market_128_rationale_zh(row)
+    combined_rationale = _describe_combined_rationale_zh(row)
+
     return {
         "sample_id": sample_id,
         "sample_type": sample_type,
@@ -78,28 +167,29 @@ def _build_single_sample_row(row: pd.Series, sample_id: str, sample_type: str, a
         "pattern_3_direction": str(row.get("micro_pattern_direction_3", "")),
         "pattern_3_strength": str(row.get("micro_pattern_strength_3", "")),
         "pattern_3_evidence_summary_zh": str(row.get("micro_event_reason_code", "")),
-        "pattern_3_rationale_zh": str(row.get("micro_event_rationale_zh", "")),
+        "pattern_3_rationale_zh": pattern_rationale,
         "market_8_layer_type": "market_state",
         "market_8_max_bars": MAX_BARS["market_8"],
         "market_8_actual_bars_used": market8_used,
         "market_8_actual_bars_used_reason": "fixed_v0_window_or_available_history",
         "market_8_state": str(row.get("short_term_state_8", "")),
         "market_8_evidence_summary_zh": str(row.get("short_structure_reason_code", "")),
-        "market_8_rationale_zh": str(row.get("market_state_rationale_zh", "")),
+        "market_8_rationale_zh": market8_rationale,
         "market_24_layer_type": "market_state",
         "market_24_max_bars": MAX_BARS["market_24"],
         "market_24_actual_bars_used": market24_used,
         "market_24_actual_bars_used_reason": "fixed_v0_window_or_available_history",
         "market_24_state": str(row.get("mid_term_state_24", "")),
         "market_24_evidence_summary_zh": str(row.get("mid_structure_reason_code", "")),
-        "market_24_rationale_zh": str(row.get("market_state_rationale_zh", "")),
+        "market_24_rationale_zh": market24_rationale,
         "market_128_layer_type": "market_state",
         "market_128_max_bars": MAX_BARS["market_128"],
         "market_128_actual_bars_used": market128_used,
         "market_128_actual_bars_used_reason": "fixed_v0_window_or_available_history",
         "market_128_state": str(row.get("long_term_state_128", "")),
         "market_128_evidence_summary_zh": str(row.get("long_structure_reason_code", "")),
-        "market_128_rationale_zh": str(row.get("market_state_rationale_zh", "")),
+        "market_128_rationale_zh": market128_rationale,
+        "market_state_rationale_zh": combined_rationale,
         "bar_t_minus_2_open": row.get("prev_open_2"),
         "bar_t_minus_2_high": row.get("prev_high_2"),
         "bar_t_minus_2_low": row.get("prev_low_2"),
@@ -282,6 +372,16 @@ def build_market_state_sample_export(
         "unavailable_requested_classes": sorted(set(missing_patterns + missing_markets)),
         "bars_3_ohlc_context_present": bars_3_ohlc_context_present,
         "market_layer_summaries_present": market_layer_summaries_present,
+        "layer_specific_rationales_present": all(
+            c in out_df.columns for c in ["pattern_3_rationale_zh", "market_8_rationale_zh", "market_24_rationale_zh", "market_128_rationale_zh", "market_state_rationale_zh"]
+        ),
+        "templated_rationale_warning_count": int(
+            out_df.get("market_state_rationale_zh", pd.Series(dtype=str))
+            .fillna("")
+            .astype(str)
+            .str.contains("微事件=|;", regex=True)
+            .sum()
+        ),
         "micro_pattern_rule_version": str(out_df.get("micro_pattern_rule_version", pd.Series(dtype=str)).astype(str).mode().iloc[0]) if len(out_df) else "",
         "market_state_rule_version": str(out_df.get("market_state_rule_version", pd.Series(dtype=str)).astype(str).mode().iloc[0]) if len(out_df) else "",
         "trading_outputs_excluded": len(forbidden_cols) == 0,

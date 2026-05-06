@@ -100,6 +100,8 @@ def test_export_builds_and_contains_required_structure(tmp_path: Path) -> None:
     assert report["actual_bars_used_valid"] is True
     assert report["bars_3_ohlc_context_present"] is True
     assert report["market_layer_summaries_present"] is True
+    assert report["layer_specific_rationales_present"] is True
+    assert report["templated_rationale_warning_count"] == 0
     assert report["trial_approval_status"] == "not_approved"
 
     rows = pd.read_csv(output_csv)
@@ -113,6 +115,15 @@ def test_export_builds_and_contains_required_structure(tmp_path: Path) -> None:
     assert bool((rows["market_128_actual_bars_used"] <= rows["market_128_max_bars"]).all())
     for forbidden in ["trade_signal", "order", "position_size"]:
         assert forbidden not in rows.columns
+    for col in [
+        "pattern_3_rationale_zh",
+        "market_8_rationale_zh",
+        "market_24_rationale_zh",
+        "market_128_rationale_zh",
+        "market_state_rationale_zh",
+    ]:
+        assert bool(rows[col].fillna("").astype(str).str.strip().ne("").all())
+    assert not bool(rows["market_state_rationale_zh"].astype(str).str.contains("微事件=|;", regex=True).any())
 
 
 def test_violation_blocks_report(tmp_path: Path) -> None:
